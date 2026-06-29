@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V52.1 MES Enterprise Official｜Dashboard</title>
+<title>V52.2 MES Enterprise Official｜Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室｜V52.1 MES Enterprise Official</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
+<header><h1>生產戰情室｜V52.2 MES Enterprise Official</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -98,7 +98,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
   <button class="tab" type="button" data-meeting="1"><span class="ico">📺</span><span class="txt"><span class="main">晨會模式</span><span class="subtxt">Meeting</span></span></button>
 </div>
 
-<section id="dashboard" class="view active"><div class="card col12" style="border-left:6px solid #16a34a"><b>✅ V52.1 Enterprise Official</b><div class="hint">Dashboard / Key In / Target 已連接 Apps Script API：固定 GitHub 網址，不需每日更新 HTML。</div></div><div class="grid" id="dashboardGrid"></div></section>
+<section id="dashboard" class="view active"><div class="card col12" style="border-left:6px solid #16a34a"><b>✅ V52.2 Enterprise Official</b><div class="hint">Dashboard / Key In / Target 已連接 Apps Script API：固定 GitHub 網址，不需每日更新 HTML。</div></div><div class="grid" id="dashboardGrid"></div></section>
 <section id="command" class="view"><div class="grid" id="commandGrid"></div></section>
 <section id="datacenter" class="view"><div class="grid"><div class="card col12"><h2>Data Center 資料中心</h2><div class="sub">所有分頁共用同一份整合資料；此頁用來確認資料來源、筆數、更新時間與整合狀態。</div></div><div class="grid col12" id="dataCenterGrid"></div><div class="card col12"><h2>資料來源明細</h2><div id="dataCenterTableBox"></div></div></div></section>
 <section id="workorder" class="view"><div class="grid"><div class="card col12"><h2>工單搜尋中心</h2><div class="row"><input id="woSearchInput" placeholder="輸入工單、客戶、料號、規格、機台、製程關鍵字"><button class="btn ok" id="woSearchBtn">搜尋</button><button class="btn ghost" id="woClearBtn">清除</button></div><div class="sub">可快速查詢：工單、客戶、規格、目前狀態、預交日、達成率、來源。</div></div><div class="card col12"><div id="woSearchResult"></div></div></div></section>
@@ -106,9 +106,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <section id="setup" class="view">
   <div class="grid">
     <div class="card col12"><h2>每日操作</h2><div class="sub">上傳 4-3、PD11B、SL31A 後，按「上傳到雲端資料庫」。人員端固定網址不需更換。</div></div>
-    <div class="card col4"><h2>上傳 4-3</h2><input type="file" id="file43" accept=".xlsx,.xls,.csv"><div id="stat43" class="hint">尚未選擇</div></div>
-    <div class="card col4"><h2>上傳 PD11B</h2><input type="file" id="filePD" accept=".xlsx,.xls,.csv"><div id="statPD" class="hint">尚未選擇</div></div>
-    <div class="card col4"><h2>上傳 SL31A</h2><input type="file" id="fileSL" accept=".xlsx,.xls,.csv"><div id="statSL" class="hint">尚未選擇</div></div>
+    <div class="card col4"><h2>上傳 4-3</h2><input type="file" id="file43" accept=".xlsx,.xls,.xlsm,.csv"><div id="stat43" class="hint">尚未選擇</div></div>
+    <div class="card col4"><h2>上傳 PD11B</h2><input type="file" id="filePD" accept=".xlsx,.xls,.xlsm,.csv"><div id="statPD" class="hint">尚未選擇</div></div>
+    <div class="card col4"><h2>上傳 SL31A</h2><input type="file" id="fileSL" accept=".xlsx,.xls,.xlsm,.csv"><div id="statSL" class="hint">尚未選擇</div></div>
     <div class="card col12"><div class="row"><button class="btn ok" id="uploadBtn">上傳到雲端資料庫</button><button class="btn ghost" id="loadSourceBtn">讀取雲端工單</button><button class="btn ghost" id="loadKeyinBtn">讀取回報資料</button></div></div>
     <div class="card col3"><div class="hint">4-3筆數</div><div id="kpi43" style="font-size:30px;font-weight:900">0</div></div>
     <div class="card col3"><div class="hint">PD11B筆數</div><div id="kpiPD" style="font-size:30px;font-weight:900">0</div></div>
@@ -181,7 +181,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 
 <script>
 
-/* === MES V52.1 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
+/* === MES V52.2 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
    請將 Apps Script Web App /exec 網址貼到 WEB_APP_URL。
    若頁面是在 Apps Script 內開啟，會優先使用 google.script.run。
 */
@@ -228,12 +228,27 @@ function apiCall(name,args,ok,fail){
 var AppState={d43:[],pd:[],sl:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
 var EMP={};
 var EMP_ROWS=[];
-var AL={wo:["單號","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","work_order_no","WO","WorkOrder","訂單單號","訂單號","order_no"],order:["訂單單號","訂單號","客戶訂單","銷售單號","order_no"],part:["料號","料號標號","料品編號","品號","產品料號","產品編號","產品編號/料號","part_no","item","ITEM","產品名稱","品名"],batch:["生產批號","批號","製號","產出製號","投入製號","batch_no","Lot","LOT"],spec:["規格","產品規格","product_spec","長寬","尺寸","品名規格"],barcode:["日報條碼","日報條碼號","日報條碼編號","日報條碼資料號","報工條碼","生產日報條碼","條碼","Barcode","BARCODE","daily_report_barcode","report_barcode"],itemLabel:["料號標號","料號標籤","品號標號","標號","item_label","part_label"],target:["預計產量","目標數量","工單目標","訂單數量","目標卷數","卷數","target_qty","數量","換算捲數","預計數量"],process:["製程","製程站點","站點","目前製程","process","站別","加工製程"],customer:["客戶","客戶別","customer","客戶名稱"],machine:["機台","機台編號","machine","機台代碼","設備","設備編號"],plan:["日期","工單開立日","開立日","建立日","開單日","製令日期","工單日期","date","plan_date"],due:["預交日","入庫日期","預計入庫日","預計完工日","交期","預定完成日","預計交貨日","due_date"],status:["狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態","status"],issue:["異常","異常狀態","問題","備註","原因","issue_status"],material:["待料","領料狀態","備料狀態","物料狀態","material_status"],warehouse:["入庫","入庫狀態","倉庫狀態","warehouse_status"],stockin:["實際入庫日","入庫完成日","入庫日期","stockin_date"],finish:["完工日","完成日","finish_date"],pick:["領料日","領料日期","pick_date"],priority:["優先","急件","priority"]};
+var AL={wo:["單號","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","work_order_no","WO","WorkOrder","訂單單號","訂單號","order_no"],order:["訂單單號","訂單號","客戶訂單","銷售單號","order_no"],part:["料號","料號標號","料品編號","品號","產品料號","產出料號","投入料號","產品編號","產品編號/料號","part_no","item","ITEM","產品名稱","品名"],batch:["生產批號","批號","製號","產出製號","投入製號","batch_no","Lot","LOT"],spec:["規格","產品規格","product_spec","長寬","尺寸","品名規格"],barcode:["日報號","日報序號","日報單號","日報條碼","日報條碼號","日報條碼編號","日報條碼資料號","報工條碼","生產日報條碼","條碼","Barcode","BARCODE","daily_report_barcode","report_barcode"],itemLabel:["料號標號","料號標籤","品號標號","標號","item_label","part_label"],target:["預計產量","目標數量","工單目標","訂單數量","目標卷數","卷數","target_qty","數量","換算捲數","預計數量"],process:["製程","製程站點","站點","目前製程","process","站別","加工製程"],customer:["客戶","客戶別","customer","客戶名稱"],machine:["機台","機台編號","machine","機台代碼","設備","設備編號"],plan:["日期","工單開立日","開立日","建立日","開單日","製令日期","工單日期","date","plan_date"],due:["預交日","入庫日期","預計入庫日","預計完工日","交期","預定完成日","預計交貨日","due_date"],status:["狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態","status"],issue:["異常","異常狀態","問題","備註","原因","issue_status"],material:["待料","領料狀態","備料狀態","物料狀態","material_status"],warehouse:["入庫","入庫狀態","倉庫狀態","warehouse_status"],stockin:["實際入庫日","入庫完成日","入庫日期","stockin_date"],finish:["完工日","完成日","finish_date"],pick:["領料日","領料日期","pick_date"],priority:["優先","急件","priority"],outWidth:["產出寬","成品寬","寬_mm","投入寬","寬","寬度"],outLength:["產出長","成品長","投入長","長","長度"],productName:["產品名稱","品名","品名規格"],model:["型號"],category1:["中分類"],category2:["小分類"]};
 function el(id){return document.getElementById(id)}
 function norm(v){return String(v==null?"":v).trim().replace(/\s+/g,"").toUpperCase()}
 function wo12(v){return norm(v).slice(0,12)}
 function enforceWO12Input(id){var x=el(id);if(!x)return;var v=wo12(x.value);if(x.value!==v)x.value=v;return v}
 function num(v){var n=parseFloat(String(v==null?"":v).replace(/,/g,""));return isNaN(n)?0:n}
+function pd11Spec(r){
+  var spec=pick(r,"spec");
+  if(spec && String(spec).trim()!=="0")return spec;
+  var w=pick(r,"outWidth"), l=pick(r,"outLength"), m=pick(r,"model"), c1=pick(r,"category1"), c2=pick(r,"category2");
+  var size="";
+  if(w&&l)size=String(w).replace(/\.0$/,'')+"mm × "+String(l).replace(/\.0$/,'')+"M";
+  else if(w)size=String(w).replace(/\.0$/,'')+"mm";
+  var name=pick(r,"productName");
+  var parts=[];
+  if(m)parts.push(m);
+  if(size)parts.push(size);
+  if(!parts.length && name)parts.push(name);
+  if(!parts.length && (c1||c2))parts.push([c1,c2].filter(Boolean).join("/"));
+  return parts.join(" | ");
+}
 function today(){return new Date().toISOString().slice(0,10)}
 function targetDate(){return AppState.targetDate||today()}
 function yesterday(){var d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10)}
@@ -263,10 +278,46 @@ function setColFilter(id,i,v){AppState.tables[id].filters[i]=v;drawTable(id)}
 function sortTable(id,i){var t=AppState.tables[id];if(t.sortCol===i)t.sortDir*=-1;else{t.sortCol=i;t.sortDir=1}drawTable(id)}
 function clearTableFilter(id){var t=AppState.tables[id];t.filters=new Array(t.heads.length).fill("");t.global="";t.sortCol=null;drawTable(id)}
 
-async function readFile(file){var data=await file.arrayBuffer(),wb=XLSX.read(data,{type:"array"}),out=[],keys=["單號","工單號","命令單","訂單單號","料品編號","生產批號","製程","站別","預計產量","規格","日期","預交日"];wb.SheetNames.forEach(function(name){var ws=wb.Sheets[name],arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});if(!arr.length)return;var hr=0,best=-1;for(var i=0;i<Math.min(arr.length,30);i++){var vals=arr[i].map(function(v){return String(v||"").trim()}),score=keys.reduce(function(n,k){return n+(vals.indexOf(k)>=0?1:0)},0);if(score>best){best=score;hr=i}}XLSX.utils.sheet_to_json(ws,{defval:"",range:hr}).forEach(function(r){r.__sheet=name;out.push(r)})});return out}
-function toSourceRows(src,rows){return rows.map(function(r){return{source:src,work_order_no:norm(pick(r,"wo")),order_no:pick(r,"order"),part_no:pick(r,"part"),batch_no:pick(r,"batch"),daily_report_barcode:pick(r,"barcode"),item_label:pick(r,"itemLabel"),product_spec:pick(r,"spec"),target_qty:num(pick(r,"target"))||"",process:pick(r,"process"),customer:pick(r,"customer"),machine:pick(r,"machine"),plan_date:dateKey(pick(r,"plan")),due_date:dateKey(pick(r,"due")),status:pick(r,"status"),issue_status:pick(r,"issue"),material_status:pick(r,"material"),warehouse_status:pick(r,"warehouse"),stockin_date:dateKey(pick(r,"stockin")),finish_date:dateKey(pick(r,"finish")),pick_date:dateKey(pick(r,"pick")),priority:pick(r,"priority"),raw_json:""}}).filter(function(r){return r.work_order_no})}
+async function readFile(file){var data=await file.arrayBuffer(),wb=XLSX.read(data,{type:"array"}),out=[],keys=["單號","工單號","命令單","訂單單號","料品編號","產品料號","產出料號","日報號","日報條碼","生產批號","產出製號","製程","站別","機台","客戶簡稱","預計產量","規格","寬_mm","產出寬","產出長","日期","預交日"];wb.SheetNames.forEach(function(name){var ws=wb.Sheets[name],arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});if(!arr.length)return;var hr=0,best=-1;for(var i=0;i<Math.min(arr.length,30);i++){var vals=arr[i].map(function(v){return String(v||"").trim()}),score=keys.reduce(function(n,k){return n+(vals.indexOf(k)>=0?1:0)},0);if(score>best){best=score;hr=i}}XLSX.utils.sheet_to_json(ws,{defval:"",range:hr}).forEach(function(r){r.__sheet=name;out.push(r)})});return out}
+function toSourceRows(src,rows){return rows.map(function(r){return{source:src,work_order_no:norm(pick(r,"wo")),order_no:pick(r,"order"),part_no:pick(r,"part"),batch_no:pick(r,"batch"),daily_report_barcode:pick(r,"barcode"),item_label:pick(r,"itemLabel"),product_spec:pd11Spec(r),target_qty:num(pick(r,"target"))||"",process:pick(r,"process"),customer:pick(r,"customer"),machine:pick(r,"machine"),plan_date:dateKey(pick(r,"plan")),due_date:dateKey(pick(r,"due")),status:pick(r,"status"),issue_status:pick(r,"issue"),material_status:pick(r,"material"),warehouse_status:pick(r,"warehouse"),stockin_date:dateKey(pick(r,"stockin")),finish_date:dateKey(pick(r,"finish")),pick_date:dateKey(pick(r,"pick")),priority:pick(r,"priority"),raw_json:""}}).filter(function(r){return r.work_order_no})}
 async function bindFile(id,key,stat,kpi){var f=el(id).files[0];if(!f)return;AppState[key]=await readFile(f);el(stat).textContent="已讀取："+f.name+"，"+AppState[key].length+" 筆";el(kpi).textContent=AppState[key].length;toast("已讀取 "+f.name)}
-function buildIndex(){AppState.idx={};AppState.source.forEach(function(r){var wo=wo12(r.work_order_no||r.order_no);if(!wo)return;var o=AppState.idx[wo]=AppState.idx[wo]||{wo:wo,from:{},target:0,actual:0};o.from[r.source||"source"]=true;o.order=o.order||r.order_no;o.part=o.part||r.part_no;o.batch=o.batch||r.batch_no;o.barcode=o.barcode||r.daily_report_barcode||r.report_barcode||r.barcode;o.itemLabel=o.itemLabel||r.item_label||r.part_label;o.spec=o.spec||r.product_spec;o.customer=o.customer||r.customer;o.process=o.process||r.process;o.machine=o.machine||r.machine;o.plan=o.plan||r.plan_date;o.due=o.due||r.due_date;o.rawStatus=o.rawStatus||r.status;o.issueStatus=o.issueStatus||r.issue_status;o.materialStatus=o.materialStatus||r.material_status;o.warehouseStatus=o.warehouseStatus||r.warehouse_status;o.stockin=o.stockin||r.stockin_date;o.finish=o.finish||r.finish_date;o.pick=o.pick||r.pick_date;var tg=num(r.target_qty);if(tg&&!o.target)o.target=tg});calcActual();if(el("kpiIdx"))el("kpiIdx").textContent=Object.keys(AppState.idx).length}
+function buildIndex(){
+  AppState.idx={};
+  AppState.source.forEach(function(r){
+    var wo=wo12(r.work_order_no||r.order_no);if(!wo)return;
+    var src=String(r.source||"source").toUpperCase();
+    var o=AppState.idx[wo]=AppState.idx[wo]||{wo:wo,from:{},target:0,actual:0};
+    o.from[r.source||"source"]=true;
+
+    // V52.2 主檔合併規則：
+    // 1) 日報條碼/批號/機台/製程：PD11B 部門日報優先。
+    // 2) 料號/訂單/客戶/規格：SL31A 訂單主檔優先，PD11B 備援。
+    // 3) 4-3 補工單狀態、交期等資訊。
+    if(r.order_no && (!o.order || src.indexOf("SL31")>=0)) o.order=r.order_no;
+    if(r.part_no && (!o.part || src.indexOf("SL31")>=0)) o.part=r.part_no;
+    if(r.product_spec && String(r.product_spec).trim()!=="0" && (!o.spec || src.indexOf("SL31")>=0)) o.spec=r.product_spec;
+    if(r.customer && (!o.customer || src.indexOf("SL31")>=0)) o.customer=r.customer;
+
+    if((r.daily_report_barcode||r.report_barcode||r.barcode) && (!o.barcode || src.indexOf("PD11")>=0)) o.barcode=r.daily_report_barcode||r.report_barcode||r.barcode;
+    if(r.batch_no && (!o.batch || src.indexOf("PD11")>=0)) o.batch=r.batch_no;
+    if(r.process && (!o.process || src.indexOf("PD11")>=0)) o.process=r.process;
+    if(r.machine && (!o.machine || src.indexOf("PD11")>=0)) o.machine=r.machine;
+
+    o.itemLabel=o.itemLabel||r.item_label||r.part_label;
+    o.plan=o.plan||r.plan_date;
+    o.due=o.due||r.due_date;
+    o.rawStatus=o.rawStatus||r.status;
+    o.issueStatus=o.issueStatus||r.issue_status;
+    o.materialStatus=o.materialStatus||r.material_status;
+    o.warehouseStatus=o.warehouseStatus||r.warehouse_status;
+    o.stockin=o.stockin||r.stockin_date;
+    o.finish=o.finish||r.finish_date;
+    o.pick=o.pick||r.pick_date;
+    var tg=num(r.target_qty);if(tg&&!o.target)o.target=tg;
+  });
+  calcActual();
+  if(el("kpiIdx"))el("kpiIdx").textContent=Object.keys(AppState.idx).length;
+}
 function calcActual(){Object.values(AppState.idx).forEach(function(o){o.actual=0});AppState.keyin.forEach(function(r){if(AppState.idx[r.wo])AppState.idx[r.wo].actual+=num(r.actual)})}
 function orderStatus(o){var all=String([o.rawStatus,o.issueStatus,o.materialStatus,o.warehouseStatus].join(" ")).toLowerCase();if(o.stockin||o.finish||all.indexOf("入庫")>=0||all.indexOf("完工")>=0||all.indexOf("結案")>=0)return"已入庫";if(num(o.target)&&num(o.actual)>=num(o.target))return"已入庫";if(all.indexOf("待料")>=0||all.indexOf("缺料")>=0)return"待料";if(o.pick||all.indexOf("領料")>=0)return"已領料";if(o.due&&o.due<today())return"逾期";if(num(o.actual)>0||all.indexOf("生產")>=0||all.indexOf("開工")>=0)return"生產中";return"未開工"}
 function getStats(){
@@ -297,7 +348,7 @@ function getTargetQueryDate(){
 function loadTargets(date){var queryDate=date||getTargetQueryDate();AppState.targetDate=dateKey(queryDate)||today();apiCall('listTargetPlans',[queryDate],function(res){AppState.targets=(res&&res.rows)||[];renderActive();},function(e){console.warn("讀取目標失敗",e);toast("讀取目標失敗");});}
 function uploadCloud(){var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));if(!rows.length){alert("沒有資料，請先選三份檔案");return}el("uploadBtn").disabled=true;toast("同步中，資料較多時請等候...");apiCall('replaceSourceData',[rows],function(res){el("uploadBtn").disabled=false;alert("✅ 已送出同步："+((res&&res.count)||rows.length)+" 筆。若為 GitHub Pages，請稍候 3 秒再讀取雲端工單。");setTimeout(loadSource,3000)},function(e){el("uploadBtn").disabled=false;alert("上傳失敗："+(e.message||e))})}
 function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";apiCall('saveKeyin',[data],function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}},function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)})}
-function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>日報條碼</th><td><b>'+(o.barcode||"-")+'</b></td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
+function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>日報條碼</th><td><b>'+(o.barcode||"PD11B 尚未提供或未上傳")+'</b></td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
 function fillEmp(){
   var raw=el("empNo").value.trim();
   if(!raw)return;
@@ -906,7 +957,7 @@ header h1{font-size:30px!important} header p{color:#c7d8ff!important}
     var proc={};orders.forEach(function(o){var p=o.process||'未指定';proc[p]=(proc[p]||0)+1});var procs=Object.keys(proc).map(function(k){return[k,proc[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10),maxP=Math.max(1,...procs.map(function(x){return x[1]}));
     var riskRows=d.items.slice(0,6).map(function(x){var o=x.o;return '<tr><td><span class="v44Tag '+x.tag+'">'+x.sev+'</span></td><td>'+safe(o.wo)+'</td><td>'+safe(x.reason)+'</td><td>'+safe(o.machine||'-')+'</td><td>'+safe(o.due||'-')+'</td><td>'+safe(o.customer||'-')+'</td></tr>'}).join('')||'<tr><td colspan="6">目前沒有高風險問題</td></tr>';
     var targetRows=(s.todayPlans||[]).map(function(t){var done=actualByPlan(t,qDate),tg=targetValue(t),rate=tg?Math.round(done/tg*100):0,remain=tg-done;return[rateEmoji(rate),t.machine_code||'',t.work_order_no||'',(t.leader_role||'')+' '+(t.leader_name||''),t.product_spec||'',tg,done,remain,rate+'%',t.planned_finish||''];});
-    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V52.1 MES Enterprise Official｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="switchView(\'alert\')">⚠ 異常中心</button></div></div>'+ 
+    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V52.2 MES Enterprise Official｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="switchView(\'alert\')">⚠ 異常中心</button></div></div>'+ 
       '<div class="v44Kpis">'+kpi('v44Blue','雲端工單',countText(orders.length),'生產中 '+(((s.c||{})['生產中'])||0),0)+kpi('v44Orange','有回報/開工',countText(((s.c||{})['生產中'])||0),'追蹤中',1)+kpi('v44Green','完成',countText(((s.c||{})['已入庫'])||0),'已入庫/完成',2)+kpi('v44Red','逾期未完成',countText(((s.c||{})['逾期'])||0),'請優先處理',3)+kpi('v44Cyan','今日 KeyIn',countText(s.todayKeyin||0),'人員 '+(s.todayEmp||0),4)+kpi('v44Slate','今日人員',countText(s.todayEmp||0),'回報人員',5)+kpi('v44Purple','完成率',(s.targetRate||s.rate||0)+'%','實績/目標',6)+kpi('v44Teal','總產量',countText(s.actual||s.actualM2||0),'Key In 累計',7)+'</div>'+ 
       '<div class="v44Panel problemPanel"><h2><span class="problemDot"></span>問題解決進度總覽</h2><div class="problemMini"><div><span>逾期警示</span><b>'+(((s.c||{})['逾期'])||0)+'</b><span>請優先處理</span></div><div><span>待料/待確認</span><b>'+((((s.c||{})['待料'])||0)+(((s.c||{})['未開工'])||0))+'</b><span>需確認節點</span></div><div><span>未結案問題</span><b>'+d.open+'</b><span>追蹤中</span></div></div><div class="problemFlow">'+step(0,'建立團隊','Owner',d.stages[0])+step(1,'描述問題','Define',d.stages[1])+step(2,'暫時措施','Contain',d.stages[2])+step(3,'根本原因','Root Cause',d.stages[3])+step(4,'永久對策','Corrective',d.stages[4])+step(5,'執行驗證','Verify',d.stages[5])+step(6,'預防再發','Prevent',d.stages[6])+step(7,'結案標準化','Close',d.stages[7])+'</div></div>'+ 
       '<div class="v44Grid3"><div class="v44Panel"><h2>機台 KPI 即時狀態 <button class="sortBtn" onclick="switchView(\'machine\')">查看全部</button></h2><div class="v44MachineGrid">'+(machines.length?machines.map(function(x){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):0,st=x.late?'異常/逾期':x.run?'運轉中':'待排',cls=x.late?'v44Bad':x.run?'v44Run':'v44Warn';return '<div class="v44Machine"><b>'+safe(x.m)+'</b><div class="'+cls+'">'+st+'</div><div class="v44Ring" style="--deg:'+pct*3.6+'deg"><span>'+pct+'%</span></div><div class="hint">工單 '+x.count+'｜逾期 '+x.late+'</div></div>'}).join(''):'<div class="hint">尚無機台資料</div>')+'</div></div>'+ 
@@ -1007,7 +1058,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var proc={};orders.forEach(function(o){var p=o.process||'未指定';proc[p]=(proc[p]||0)+1});var procs=Object.keys(proc).map(function(k){return[k,proc[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10),maxP=Math.max(1,...procs.map(function(x){return x[1]}));
     var riskRows=d.items.slice(0,8).map(function(x){var o=x.o;return '<tr><td><span class="prodTag '+x.tag+'">'+x.sev+'</span></td><td>'+safe(x.type)+'</td><td><b>'+safe(o.wo)+'</b></td><td>'+safe(x.reason)+'</td><td>'+safe(o.machine||'-')+'</td><td>'+safe(o.process||'-')+'</td><td>'+safe(o.due||'-')+'</td><td>'+safe(o.customer||'-')+'</td></tr>'}).join('')||'<tr><td colspan="8">目前沒有高風險問題</td></tr>';
     var targetRows=(s.todayPlans||[]).map(function(t){var done=actualByPlan(t,qDate),tg=targetValue(t),rate=tg?Math.round(done/tg*100):0,remain=tg-done;return[rateEmoji(rate),t.machine_code||'',t.work_order_no||'',(t.leader_role||'')+' '+(t.leader_name||''),t.product_spec||'',tg,done,remain,rate+'%',t.planned_finish||''];});
-    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V52.1 MES Enterprise Official｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
+    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V52.2 MES Enterprise Official｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
       '<div class="v44Kpis">'+kpi('v44Blue','雲端工單',countText(orders.length),'生產中 '+(((s.c||{})['生產中'])||0),0)+kpi('v44Green','完成',countText(((s.c||{})['已入庫'])||0),'已入庫/完成',1)+kpi('v44Red','逾期未完成',countText(((s.c||{})['逾期'])||0),'請優先處理',2)+kpi('v44Orange','待確認/待料',countText(d.c.material+d.c.confirm),'現場追蹤',3)+kpi('v44Cyan','今日 KeyIn',countText(s.todayKeyin||0),'人員 '+(s.todayEmp||0),4)+kpi('v44Slate','今日人員',countText(s.todayEmp||0),'回報人員',5)+kpi('v44Purple','完成率',(s.targetRate||s.rate||0)+'%','實績/目標',6)+kpi('v44Teal','總產量',countText(s.actual||s.actualM2||0),'Key In 累計',7)+'</div>'+ 
       '<div class="v44Panel prodIssuePanel"><h2><span class="prodDot"></span>生產問題管理中心</h2><div class="prodIssueKpis">'+issueCard('red','逾期工單',d.c.overdue,'今日最優先',0)+issueCard('orange','待料工單',d.c.material,'等待原料/領料',1)+issueCard('purple','品質異常',d.c.quality,'待判定/檢驗',2)+issueCard('green','機台異常',d.c.machine,'停機/設備問題',3)+issueCard('blue','未開工',d.c.notStart,'待排程/未投入',4)+issueCard('slate','待確認',d.c.confirm,'待包裝/待入庫',5)+'</div><div class="prodIssueLayout"><div><h2 style="font-size:17px;margin-bottom:8px;color:#fff">TOP 問題工單</h2><table class="prodIssueTable"><thead><tr><th>等級</th><th>分類</th><th>工單</th><th>原因</th><th>機台</th><th>製程</th><th>預交</th><th>客戶</th></tr></thead><tbody>'+riskRows+'</tbody></table></div><div><h2 style="font-size:17px;margin-bottom:8px;color:#fff">問題來源分析</h2>'+sourceBars(d.source)+'<div class="prodActionList"><div class="prodAction"><b>今日新增</b><span>'+d.items.length+' 件</span></div><div class="prodAction"><b>高風險</b><span>'+d.items.filter(function(x){return x.sev==='高'}).length+' 件</span></div><div class="prodAction"><b>建議</b><span>先追逾期與待料</span></div></div></div></div></div>'+ 
       '<div class="v44Grid3"><div class="v44Panel"><h2>機台 KPI 即時狀態 <button class="sortBtn" onclick="switchView(\'machine\')">查看全部</button></h2><div class="v44MachineGrid">'+(machines.length?machines.map(function(x){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):0,st=x.late?'異常/逾期':x.run?'運轉中':'待排',cls=x.late?'v44Bad':x.run?'v44Run':'v44Warn';return '<div class="v44Machine"><b>'+safe(x.m)+'</b><div class="'+cls+'">'+st+'</div><div class="v44Ring" style="--deg:'+pct*3.6+'deg"><span>'+pct+'%</span></div><div class="hint">工單 '+x.count+'｜逾期 '+x.late+'</div></div>'}).join(''):'<div class="hint">尚無機台資料</div>')+'</div></div>'+ 
@@ -1149,7 +1200,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       card('purple','🛠️','品質 / 機台異常',abnormal,'需判定處置',donut([{k:'品質',v:d.c.quality},{k:'機台',v:d.c.machine},{k:'其他',v:Math.max(0,abnormal-d.c.quality-d.c.machine)}]),'Abnormal')+
       card('slate','📝','今日 KeyIn',s.todayKeyin||0,'回報筆數 / 人員 '+(s.todayEmp||0),line(history(s.todayKeyin||0,'flat'),'#3b82f6'),'Live');
     el('meetClock').textContent=new Date().toLocaleString();
-    var title=document.querySelector('#meeting .meetTitle');if(title)title.innerHTML='V52.1 MES Enterprise Official｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';
+    var title=document.querySelector('#meeting .meetTitle');if(title)title.innerHTML='V52.2 MES Enterprise Official｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';
     el('slide1').innerHTML='<div class="meetSixGrid">'+cards+'</div>';
     el('slide2').innerHTML='<div class="meetPriorityTitle">生產問題管理中心</div><div class="meetFlowGrid"><div class="meetFlowCard"><b>逾期工單</b><strong>'+d.c.overdue+'</strong><span>優先追蹤</span></div><div class="meetFlowCard"><b>待料工單</b><strong>'+d.c.material+'</strong><span>等待原料</span></div><div class="meetFlowCard"><b>待確認</b><strong>'+d.c.confirm+'</strong><span>包裝/入庫</span></div><div class="meetFlowCard"><b>品質異常</b><strong>'+d.c.quality+'</strong><span>待判定</span></div><div class="meetFlowCard"><b>機台異常</b><strong>'+d.c.machine+'</strong><span>設備處理</span></div><div class="meetFlowCard"><b>未開工</b><strong>'+d.c.notStart+'</strong><span>待排程</span></div></div>';
     el('slide3').innerHTML='<div class="meetPriorityTitle">TOP 問題工單</div>'+meetTable(['等級','分類','工單','原因','機台','製程','預交','客戶'],d.items.slice(0,18).map(function(x){var o=x.o;return[x.sev,x.type,o.wo,x.reason,o.machine||'-',o.process||'-',o.due||'-',o.customer||'-']}));
@@ -1257,7 +1308,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var m=document.getElementById('meeting');
     if(m){m.classList.add('meetingPlus','meetingV44','meetingV45Charts','meetingV454LTS');}
     var title=document.querySelector('#meeting .meetTitle');
-    if(title){title.innerHTML='V52.1 MES Enterprise Official｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';}
+    if(title){title.innerHTML='V52.2 MES Enterprise Official｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';}
     var clock=document.getElementById('meetClock');
     if(clock){clock.textContent=new Date().toLocaleString();}
     setTimeout(function(){
@@ -1425,7 +1476,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var machineRows=(machines.length?machines:[{m:'1S03',actual:82,target:100,count:1},{m:'1S12',actual:75,target:100,count:1},{m:'1B02',actual:68,target:100,count:1},{m:'1S16',actual:62,target:100,count:1}]).slice(0,10).map(function(x,i){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):Math.min(100,Math.max(18,100-i*8));return '<div class="v456MachineRow"><div class="rank">'+(i+1)+'</div><b>'+esc(x.m)+'</b><div class="v456Bar '+(pct<50?'warn':'')+'"><i style="width:'+pct+'%"></i></div><span>'+pct+'%</span></div>'}).join('');
     var alerts=[['⚠️','逾期工單：'+counts.overdue+' 筆，請優先處理','01:45'],['🟡','待料/待確認：'+(counts.material+counts.confirm)+' 筆，現場追蹤','01:45'],['ℹ️','今日 KeyIn：'+s.todayKeyin+' 筆（人員 '+s.todayEmp+'）','01:45'],['✅','系統資料已更新','01:45']].map(function(a){return '<div class="v456Alert"><div>'+a[0]+'</div><div>'+a[1]+'</div><time>'+a[2]+'</time></div>'}).join('');
     var box=el('dashboardGrid');
-    box.innerHTML='<div class="v456Dash"><div class="v456Top"><div class="v456Title"><h1>V52.1 MES Enterprise Official｜生產戰情室</h1><div class="meta">資料更新時間：'+new Date().toLocaleString()+'｜資料區間與圖表連動已啟用｜晨會模式未修改</div></div><div class="v456Toolbar"><button class="v456Tool" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v456Tool" onclick="openMeeting()">📺 晨會模式</button><button class="v456Tool" onclick="toggleEpSidebar&&toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
+    box.innerHTML='<div class="v456Dash"><div class="v456Top"><div class="v456Title"><h1>V52.2 MES Enterprise Official｜生產戰情室</h1><div class="meta">資料更新時間：'+new Date().toLocaleString()+'｜資料區間與圖表連動已啟用｜晨會模式未修改</div></div><div class="v456Toolbar"><button class="v456Tool" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v456Tool" onclick="openMeeting()">📺 晨會模式</button><button class="v456Tool" onclick="toggleEpSidebar&&toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
       '<div class="v456Filter"><select onchange="v456SetFilter(\'dateMode\',this.value)">'+v456DateOptions(filter.dateMode||'today')+'</select><input class="dateInput" type="date" value="'+esc(filter.start||today())+'" '+((filter.dateMode||'today')==='custom'?'':'disabled')+' onchange="v456SetFilter(\'start\',this.value)"><input class="dateInput" type="date" value="'+esc(filter.end||today())+'" '+((filter.dateMode||'today')==='custom'?'':'disabled')+' onchange="v456SetFilter(\'end\',this.value)"><select onchange="v456SetFilter(\'process\',this.value)">'+optHtml('製程站點',processOptions,filter.process)+'</select><select onchange="v456SetFilter(\'customer\',this.value)">'+optHtml('客戶別',customerOptions,filter.customer)+'</select><select onchange="v456SetFilter(\'status\',this.value)">'+optHtml('資料篩選',statusOptions,filter.status)+'</select><input value="'+esc(filter.q||'')+'" placeholder="工單/批號/機台 搜尋..." oninput="v456SetFilter(\'q\',this.value)"><div class="v456RangeHint">連動：'+rangeLabel+'</div><button class="v456Tool" onclick="v456ClearFilter()" style="padding:9px 12px">清除</button></div>'+ 
       '<div class="v456Hero"><div class="v456KpiGrid">'+
       kpi('v456Blue','總工單數',fmt(orders.length),'生產中 '+counts.run,bars([1120,1180,1210,1190,1240,1290,orders.length],'#3b82f6'),0)+
