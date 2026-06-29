@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V52.1 MES 生產 Key In｜Enterprise Official</title>
+<title>V52.1 MES 生產 Key In｜SL31A料號日報條碼版</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -70,7 +70,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產 Key In / บันทึกผลงานผลิต｜V52.1 MES 生產 Key In｜Enterprise Official</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
+<header><h1>生產 Key In / บันทึกผลงานผลิต｜V52.1 MES 生產 Key In｜SL31A料號日報條碼版</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -129,9 +129,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
         <option value="其他">其他 / อื่นๆ</option>
       </select>
       <label>工單號 / เลขที่ใบสั่งผลิต（12碼主工單）</label><input id="wo" maxlength="12" placeholder="例如 MM2605060026，超過12碼自動截斷">
-      <label>生產批號 / ล็อตการผลิต / Lot（系統帶入，不可手動修改）</label><input id="batch" readonly placeholder="由工單自動帶入 / ระบบเติมอัตโนมัติ">
-      <label>料號 / รหัสสินค้า（由 SL31A / 工單自動帶入）</label><input id="partNoDisplay" readonly placeholder="由工單自動帶入 / ระบบเติมอัตโนมัติ">
-      <label>日報條碼 / บาร์โค้ดรายงานประจำวัน（由 SL31A 自動帶入）</label><input id="dailyBarcode" readonly placeholder="由 SL31A 自動帶入 / ระบบเติมอัตโนมัติ">
+      <div id="sl31aInfoCard" class="found" style="border-left:6px solid #2563eb;background:#eff6ff;margin-top:12px">
+        <b>SL31A 自動帶出資料 / ข้อมูลจาก SL31A</b>
+        <div class="grid" style="margin-top:8px;gap:8px">
+          <div class="col6"><label>料號 / รหัสสินค้า</label><input id="partNoDisplay" readonly placeholder="輸入工單後自動顯示"></div>
+          <div class="col6"><label>日報條碼 / บาร์โค้ดรายงาน</label><input id="dailyBarcode" readonly placeholder="輸入工單後自動顯示"></div>
+          <div class="col6"><label>生產批號 / Lot</label><input id="batch" readonly placeholder="由工單自動帶入"></div>
+          <div class="col6"><label>訂單號 / เลขที่ออเดอร์</label><input id="orderNoDisplay" readonly placeholder="由工單自動帶入"></div>
+          <div class="col6"><label>客戶 / ลูกค้า</label><input id="customerDisplay" readonly placeholder="由工單自動帶入"></div>
+          <div class="col6"><label>規格 / สเปค</label><input id="specDisplay" readonly placeholder="由工單自動帶入"></div>
+        </div>
+      </div>
       <div id="lookupBox" class="found notfound">請先讀取最新工單 / กรุณาโหลดใบสั่งผลิตล่าสุดก่อน</div>
       <div id="todayTargetBox" class="found" style="margin-top:12px">
         <b>今日待辦工單 / งานผลิตวันนี้</b><br>
@@ -176,7 +184,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 
 <script>
 
-/* === MES V52.1 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
+/* === MES V52.1 SL31A料號日報條碼版：GitHub Pages ↔ Apps Script API Bridge ===
    請將 Apps Script Web App /exec 網址貼到 WEB_APP_URL。
    若頁面是在 Apps Script 內開啟，會優先使用 google.script.run。
 */
@@ -292,7 +300,7 @@ function getTargetQueryDate(){
 function loadTargets(date){var queryDate=date||getTargetQueryDate();AppState.targetDate=dateKey(queryDate)||today();apiCall('listTargetPlans',[queryDate],function(res){AppState.targets=(res&&res.rows)||[];renderActive();},function(e){console.warn("讀取目標失敗",e);toast("讀取目標失敗");});}
 function uploadCloud(){var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));if(!rows.length){alert("沒有資料，請先選三份檔案");return}el("uploadBtn").disabled=true;toast("同步中，資料較多時請等候...");apiCall('replaceSourceData',[rows],function(res){el("uploadBtn").disabled=false;alert("✅ 已送出同步："+((res&&res.count)||rows.length)+" 筆。若為 GitHub Pages，請稍候 3 秒再讀取雲端工單。");setTimeout(loadSource,3000)},function(e){el("uploadBtn").disabled=false;alert("上傳失敗："+(e.message||e))})}
 function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",daily_report_barcode:base.barcode||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";apiCall('saveKeyin',[data],function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}},function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)})}
-function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";if(el("partNoDisplay"))el("partNoDisplay").value=o.part||"";if(el("dailyBarcode"))el("dailyBarcode").value=o.barcode||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>日報條碼</th><td><b>'+(o.barcode||"-")+'</b></td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
+function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";if(el("partNoDisplay"))el("partNoDisplay").value=o.part||"";if(el("dailyBarcode"))el("dailyBarcode").value=o.barcode||"";if(el("orderNoDisplay"))el("orderNoDisplay").value=o.order||"";if(el("customerDisplay"))el("customerDisplay").value=o.customer||"";if(el("specDisplay"))el("specDisplay").value=o.spec||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>日報條碼</th><td><b>'+(o.barcode||"-")+'</b></td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
 function fillEmp(){
   var raw=el("empNo").value.trim();
   if(!raw)return;
@@ -349,7 +357,7 @@ function useTargetPlan(i){
   var t=(AppState.keyinTargetRows||[])[i]; if(!t)return;
   if(el("wo"))el("wo").value=wo12(t.work_order_no||"");
   if(el("machineInput"))el("machineInput").value=t.machine_code||"";
-  if(el("batch"))el("batch").value=t.batch_no||"";if(el("partNoDisplay"))el("partNoDisplay").value=t.part_no||"";if(el("dailyBarcode"))el("dailyBarcode").value=t.daily_report_barcode||t.report_barcode||"";
+  if(el("batch"))el("batch").value=t.batch_no||"";if(el("partNoDisplay"))el("partNoDisplay").value=t.part_no||"";if(el("dailyBarcode"))el("dailyBarcode").value=t.daily_report_barcode||t.report_barcode||"";if(el("orderNoDisplay"))el("orderNoDisplay").value=t.order_no||"";if(el("customerDisplay"))el("customerDisplay").value=t.customer||"";if(el("specDisplay"))el("specDisplay").value=t.product_spec||"";
   if(el("processSite")&&t.process_site){el("processSite").value=t.process_site;}
   var box=el("lookupBox");
   if(box){
