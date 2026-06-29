@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V43.0 MES 生產 Key In LTS｜Employee資料中心</title>
+<title>V50.1 MES 生產 Key In｜Enterprise Official｜Employee資料中心</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -70,7 +70,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產 Key In / บันทึกผลงานผลิต｜V43.0 MES 生產 Key In LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
+<header><h1>生產 Key In / บันทึกผลงานผลิต｜V50.1 MES 生產 Key In｜Enterprise Official</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -173,6 +173,51 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <div id="toast" class="toast"></div>
 
 <script>
+
+/* === MES V50.1 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
+   請將 Apps Script Web App /exec 網址貼到 WEB_APP_URL。
+   若頁面是在 Apps Script 內開啟，會優先使用 google.script.run。
+*/
+var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+function hasGas(){return !!(window.google&&google.script&&google.script.run)}
+function apiGet(action, params, ok, fail){
+  params=params||{};
+  if(!WEB_APP_URL || WEB_APP_URL.indexOf('PASTE_')===0){
+    (fail||function(msg){alert(msg)})("尚未設定 Apps Script Web App URL。請先部署 Code.gs，並把 /exec 網址貼到 WEB_APP_URL。");
+    return;
+  }
+  var cb='mes_cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+  params.action=action; params.callback=cb;
+  var qs=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]||'')}).join('&');
+  var s=document.createElement('script');
+  var timer=setTimeout(function(){cleanup();(fail||console.error)("API讀取逾時")},30000);
+  function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined} if(s&&s.parentNode)s.parentNode.removeChild(s)}
+  window[cb]=function(res){cleanup(); ok&&ok(res)};
+  s.onerror=function(){cleanup();(fail||console.error)("API連線失敗")};
+  s.src=WEB_APP_URL+(WEB_APP_URL.indexOf('?')>=0?'&':'?')+qs;
+  document.head.appendChild(s);
+}
+function apiPost(fn, args, ok, fail){
+  if(hasGas()){
+    try{var r=google.script.run.withSuccessHandler(function(res){ok&&ok(res)}).withFailureHandler(function(e){(fail||console.error)(e&&e.message?e.message:e)}); r[fn].apply(r,args||[]); return;}catch(e){}
+  }
+  if(!WEB_APP_URL || WEB_APP_URL.indexOf('PASTE_')===0){
+    (fail||function(msg){alert(msg)})("尚未設定 Apps Script Web App URL。請先部署 Code.gs，並把 /exec 網址貼到 WEB_APP_URL。");
+    return;
+  }
+  fetch(WEB_APP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:fn,args:args||[]})})
+    .then(function(){setTimeout(function(){ok&&ok({ok:true,mode:'no-cors'})},1200)})
+    .catch(function(e){(fail||console.error)(e&&e.message?e.message:e)});
+}
+function apiCall(name,args,ok,fail){
+  if(hasGas()){
+    try{var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){(fail||console.error)(e&&e.message?e.message:e)}); r[name].apply(r,args||[]); return;}catch(e){}
+  }
+  var map={getSourceData:'source',listKeyin:'list',listEmployees:'employees',listTargetPlans:'targets'};
+  if(map[name]){var params={}; if(name==='listTargetPlans' && args && args[0]) params.date=args[0]; return apiGet(map[name],params,ok,fail);}
+  return apiPost(name,args,ok,fail);
+}
+
 var AppState={d43:[],pd:[],sl:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
 var EMP={};
 var EMP_ROWS=[];
@@ -232,46 +277,19 @@ function getStats(){
 }
 
 
-function loadEmployees(){
-  google.script.run
-    .withSuccessHandler(function(res){
-      var rows=(res&&res.rows)||[];
-      EMP={}; EMP_ROWS=rows;
-      rows.forEach(function(r){
-        var no=String(r.emp_no||'').trim();
-        if(no) EMP[no]=r.emp_name||'';
-      });
-      console.log('Employee loaded',rows.length);
-    })
-    .withFailureHandler(function(e){
-      console.warn('讀取Employee失敗',e);
-      toast('讀取員工資料失敗，暫用手動姓名');
-    })
-    .listEmployees();
-}
+function loadEmployees(){apiCall('listEmployees',[],function(res){var rows=(res&&res.rows)||[];EMP={}; EMP_ROWS=rows;rows.forEach(function(r){var no=String(r.emp_no||'').trim();if(no) EMP[no]=r.emp_name||'';});console.log('Employee loaded',rows.length);},function(e){console.warn('讀取Employee失敗',e);toast('讀取員工資料失敗，暫用手動姓名');});}
 
-function loadSource(){google.script.run.withSuccessHandler(function(res){AppState.source=(res&&res.rows)||[];buildIndex();toast("雲端工單："+AppState.source.length+" 筆");renderActive()}).withFailureHandler(function(e){alert("讀取雲端工單失敗："+(e.message||e))}).getSourceData()}
-function loadKeyin(){google.script.run.withSuccessHandler(function(res){AppState.keyin=((res&&res.rows)||[]).map(function(r){return{date:r.report_date||"",site:r.site||"",wo:wo12(r.work_order_no||r.order_no||""),batch:r.batch_no||"",part:r.part_no||"",spec:r.product_spec||"",target:num(r.target_qty),empNo:r.emp_no||"",empName:r.emp_name||"",machine:r.machine_code||"",actual:num(r.actual_output),unit:r.unit||"",note:r.process_note||"",createdAt:r.created_at||""}}).filter(function(r){return r.wo||r.actual||r.empNo});calcActual();toast("回報資料："+AppState.keyin.length+" 筆");renderActive()}).withFailureHandler(function(e){alert("讀取回報資料失敗："+(e.message||e))}).listKeyin()}
+function loadSource(){apiCall('getSourceData',[],function(res){AppState.source=(res&&res.rows)||[];buildIndex();toast("雲端工單："+AppState.source.length+" 筆");renderActive()},function(e){alert("讀取雲端工單失敗："+(e.message||e))})}
+function loadKeyin(){apiCall('listKeyin',[],function(res){AppState.keyin=((res&&res.rows)||[]).map(function(r){return{date:r.report_date||"",site:r.site||"",wo:wo12(r.work_order_no||r.order_no||""),batch:r.batch_no||"",part:r.part_no||"",spec:r.product_spec||"",target:num(r.target_qty),empNo:r.emp_no||"",empName:r.emp_name||"",machine:r.machine_code||"",actual:num(r.actual_output),unit:r.unit||"",note:r.process_note||"",createdAt:r.created_at||""}}).filter(function(r){return r.wo||r.actual||r.empNo});calcActual();toast("回報資料："+AppState.keyin.length+" 筆");renderActive()},function(e){alert("讀取回報資料失敗："+(e.message||e))})}
 function getTargetQueryDate(){
   // 主管頁使用 targetQueryDate；Key In 頁使用 reportDate。
   var d = el("targetQueryDate") || el("targetFilterDate") || el("reportDate");
   return d && d.value ? d.value : targetDate();
 }
 
-function loadTargets(date){
-  var queryDate = date || getTargetQueryDate();
-  AppState.targetDate = dateKey(queryDate) || today();
-
-  google.script.run.withSuccessHandler(function(res){
-    AppState.targets = (res && res.rows) || [];
-    renderActive();
-  }).withFailureHandler(function(e){
-    console.warn("讀取目標失敗", e);
-    toast("讀取目標失敗");
-  }).listTargetPlans(queryDate);
-}
-function uploadCloud(){var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));if(!rows.length){alert("沒有資料，請先選三份檔案");return}el("uploadBtn").disabled=true;google.script.run.withSuccessHandler(function(res){el("uploadBtn").disabled=false;alert("✅ 已上傳："+(res.count||rows.length)+" 筆");loadSource()}).withFailureHandler(function(e){el("uploadBtn").disabled=false;alert("上傳失敗："+(e.message||e))}).replaceSourceData(rows)}
-function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";google.script.run.withSuccessHandler(function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}}).withFailureHandler(function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)}).saveKeyin(data)}
+function loadTargets(date){var queryDate=date||getTargetQueryDate();AppState.targetDate=dateKey(queryDate)||today();apiCall('listTargetPlans',[queryDate],function(res){AppState.targets=(res&&res.rows)||[];renderActive();},function(e){console.warn("讀取目標失敗",e);toast("讀取目標失敗");});}
+function uploadCloud(){var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));if(!rows.length){alert("沒有資料，請先選三份檔案");return}el("uploadBtn").disabled=true;toast("同步中，資料較多時請等候...");apiCall('replaceSourceData',[rows],function(res){el("uploadBtn").disabled=false;alert("✅ 已送出同步："+((res&&res.count)||rows.length)+" 筆。若為 GitHub Pages，請稍候 3 秒再讀取雲端工單。");setTimeout(loadSource,3000)},function(e){el("uploadBtn").disabled=false;alert("上傳失敗："+(e.message||e))})}
+function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";apiCall('saveKeyin',[data],function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}},function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)})}
 function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
 function fillEmp(){
   var raw=el("empNo").value.trim();
