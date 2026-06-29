@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V50.1 MES Enterprise Official｜Interactive Dashboard</title>
+<title>V51.0 MES Enterprise Official｜Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V46.1 Enterprise Professional LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
+<header><h1>生產戰情室｜V51.0 MES Enterprise Official</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -98,7 +98,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
   <button class="tab" type="button" data-meeting="1"><span class="ico">📺</span><span class="txt"><span class="main">晨會模式</span><span class="subtxt">Meeting</span></span></button>
 </div>
 
-<section id="dashboard" class="view active"><div class="grid" id="dashboardGrid"></div></section>
+<section id="dashboard" class="view active"><div class="card col12" style="border-left:6px solid #16a34a"><b>✅ V51.0 Enterprise Official</b><div class="hint">Dashboard / Key In / Target 已連接 Apps Script API：固定 GitHub 網址，不需每日更新 HTML。</div></div><div class="grid" id="dashboardGrid"></div></section>
 <section id="command" class="view"><div class="grid" id="commandGrid"></div></section>
 <section id="datacenter" class="view"><div class="grid"><div class="card col12"><h2>Data Center 資料中心</h2><div class="sub">所有分頁共用同一份整合資料；此頁用來確認資料來源、筆數、更新時間與整合狀態。</div></div><div class="grid col12" id="dataCenterGrid"></div><div class="card col12"><h2>資料來源明細</h2><div id="dataCenterTableBox"></div></div></div></section>
 <section id="workorder" class="view"><div class="grid"><div class="card col12"><h2>工單搜尋中心</h2><div class="row"><input id="woSearchInput" placeholder="輸入工單、客戶、料號、規格、機台、製程關鍵字"><button class="btn ok" id="woSearchBtn">搜尋</button><button class="btn ghost" id="woClearBtn">清除</button></div><div class="sub">可快速查詢：工單、客戶、規格、目前狀態、預交日、達成率、來源。</div></div><div class="card col12"><div id="woSearchResult"></div></div></div></section>
@@ -181,7 +181,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 
 <script>
 
-/* === MES V50.1 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
+/* === MES V51.0 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
    請將 Apps Script Web App /exec 網址貼到 WEB_APP_URL。
    若頁面是在 Apps Script 內開啟，會優先使用 google.script.run。
 */
@@ -906,7 +906,7 @@ header h1{font-size:30px!important} header p{color:#c7d8ff!important}
     var proc={};orders.forEach(function(o){var p=o.process||'未指定';proc[p]=(proc[p]||0)+1});var procs=Object.keys(proc).map(function(k){return[k,proc[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10),maxP=Math.max(1,...procs.map(function(x){return x[1]}));
     var riskRows=d.items.slice(0,6).map(function(x){var o=x.o;return '<tr><td><span class="v44Tag '+x.tag+'">'+x.sev+'</span></td><td>'+safe(o.wo)+'</td><td>'+safe(x.reason)+'</td><td>'+safe(o.machine||'-')+'</td><td>'+safe(o.due||'-')+'</td><td>'+safe(o.customer||'-')+'</td></tr>'}).join('')||'<tr><td colspan="6">目前沒有高風險問題</td></tr>';
     var targetRows=(s.todayPlans||[]).map(function(t){var done=actualByPlan(t,qDate),tg=targetValue(t),rate=tg?Math.round(done/tg*100):0,remain=tg-done;return[rateEmoji(rate),t.machine_code||'',t.work_order_no||'',(t.leader_role||'')+' '+(t.leader_name||''),t.product_spec||'',tg,done,remain,rate+'%',t.planned_finish||''];});
-    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V44.0 MES Enterprise Professional｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="switchView(\'alert\')">⚠ 異常中心</button></div></div>'+ 
+    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V51.0 MES Enterprise Official｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="switchView(\'alert\')">⚠ 異常中心</button></div></div>'+ 
       '<div class="v44Kpis">'+kpi('v44Blue','雲端工單',countText(orders.length),'生產中 '+(((s.c||{})['生產中'])||0),0)+kpi('v44Orange','有回報/開工',countText(((s.c||{})['生產中'])||0),'追蹤中',1)+kpi('v44Green','完成',countText(((s.c||{})['已入庫'])||0),'已入庫/完成',2)+kpi('v44Red','逾期未完成',countText(((s.c||{})['逾期'])||0),'請優先處理',3)+kpi('v44Cyan','今日 KeyIn',countText(s.todayKeyin||0),'人員 '+(s.todayEmp||0),4)+kpi('v44Slate','今日人員',countText(s.todayEmp||0),'回報人員',5)+kpi('v44Purple','完成率',(s.targetRate||s.rate||0)+'%','實績/目標',6)+kpi('v44Teal','總產量',countText(s.actual||s.actualM2||0),'Key In 累計',7)+'</div>'+ 
       '<div class="v44Panel problemPanel"><h2><span class="problemDot"></span>問題解決進度總覽</h2><div class="problemMini"><div><span>逾期警示</span><b>'+(((s.c||{})['逾期'])||0)+'</b><span>請優先處理</span></div><div><span>待料/待確認</span><b>'+((((s.c||{})['待料'])||0)+(((s.c||{})['未開工'])||0))+'</b><span>需確認節點</span></div><div><span>未結案問題</span><b>'+d.open+'</b><span>追蹤中</span></div></div><div class="problemFlow">'+step(0,'建立團隊','Owner',d.stages[0])+step(1,'描述問題','Define',d.stages[1])+step(2,'暫時措施','Contain',d.stages[2])+step(3,'根本原因','Root Cause',d.stages[3])+step(4,'永久對策','Corrective',d.stages[4])+step(5,'執行驗證','Verify',d.stages[5])+step(6,'預防再發','Prevent',d.stages[6])+step(7,'結案標準化','Close',d.stages[7])+'</div></div>'+ 
       '<div class="v44Grid3"><div class="v44Panel"><h2>機台 KPI 即時狀態 <button class="sortBtn" onclick="switchView(\'machine\')">查看全部</button></h2><div class="v44MachineGrid">'+(machines.length?machines.map(function(x){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):0,st=x.late?'異常/逾期':x.run?'運轉中':'待排',cls=x.late?'v44Bad':x.run?'v44Run':'v44Warn';return '<div class="v44Machine"><b>'+safe(x.m)+'</b><div class="'+cls+'">'+st+'</div><div class="v44Ring" style="--deg:'+pct*3.6+'deg"><span>'+pct+'%</span></div><div class="hint">工單 '+x.count+'｜逾期 '+x.late+'</div></div>'}).join(''):'<div class="hint">尚無機台資料</div>')+'</div></div>'+ 
@@ -933,7 +933,7 @@ header h1{font-size:30px!important} header p{color:#c7d8ff!important}
 
 
 
-<!-- V45.0 Production Issue Center + Sidebar Collapse Patch -->
+<!-- V51.0 Production Issue Center + Sidebar Collapse Patch -->
 <style id="v45ProductionIssuePatchCss">
 /* 左側列表：可收合 / 展開 */
 .epSideToggle{position:fixed;left:14px;top:14px;z-index:160;width:44px;height:44px;border-radius:13px;border:1px solid rgba(148,163,184,.35);background:rgba(8,25,52,.92);color:#fff;font-size:22px;font-weight:950;cursor:pointer;box-shadow:0 10px 26px rgba(2,6,23,.32);backdrop-filter:blur(10px);transition:.22s ease}
@@ -1007,7 +1007,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var proc={};orders.forEach(function(o){var p=o.process||'未指定';proc[p]=(proc[p]||0)+1});var procs=Object.keys(proc).map(function(k){return[k,proc[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10),maxP=Math.max(1,...procs.map(function(x){return x[1]}));
     var riskRows=d.items.slice(0,8).map(function(x){var o=x.o;return '<tr><td><span class="prodTag '+x.tag+'">'+x.sev+'</span></td><td>'+safe(x.type)+'</td><td><b>'+safe(o.wo)+'</b></td><td>'+safe(x.reason)+'</td><td>'+safe(o.machine||'-')+'</td><td>'+safe(o.process||'-')+'</td><td>'+safe(o.due||'-')+'</td><td>'+safe(o.customer||'-')+'</td></tr>'}).join('')||'<tr><td colspan="8">目前沒有高風險問題</td></tr>';
     var targetRows=(s.todayPlans||[]).map(function(t){var done=actualByPlan(t,qDate),tg=targetValue(t),rate=tg?Math.round(done/tg*100):0,remain=tg-done;return[rateEmoji(rate),t.machine_code||'',t.work_order_no||'',(t.leader_role||'')+' '+(t.leader_name||''),t.product_spec||'',tg,done,remain,rate+'%',t.planned_finish||''];});
-    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V45.4 MES Enterprise Professional LTS｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
+    box.innerHTML='<div class="col12 v44Dash"><div class="v44Top"><div class="v44Title"><h2>V51.0 MES Enterprise Official｜生產戰情室</h2><div class="hint">資料更新時間：'+new Date().toLocaleString()+'｜'+dateLabel+' 即時戰情</div></div><div class="v44Actions"><button class="v44Btn" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v44Btn" onclick="openMeeting()">📺 晨會模式</button><button class="v44Btn" onclick="toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
       '<div class="v44Kpis">'+kpi('v44Blue','雲端工單',countText(orders.length),'生產中 '+(((s.c||{})['生產中'])||0),0)+kpi('v44Green','完成',countText(((s.c||{})['已入庫'])||0),'已入庫/完成',1)+kpi('v44Red','逾期未完成',countText(((s.c||{})['逾期'])||0),'請優先處理',2)+kpi('v44Orange','待確認/待料',countText(d.c.material+d.c.confirm),'現場追蹤',3)+kpi('v44Cyan','今日 KeyIn',countText(s.todayKeyin||0),'人員 '+(s.todayEmp||0),4)+kpi('v44Slate','今日人員',countText(s.todayEmp||0),'回報人員',5)+kpi('v44Purple','完成率',(s.targetRate||s.rate||0)+'%','實績/目標',6)+kpi('v44Teal','總產量',countText(s.actual||s.actualM2||0),'Key In 累計',7)+'</div>'+ 
       '<div class="v44Panel prodIssuePanel"><h2><span class="prodDot"></span>生產問題管理中心</h2><div class="prodIssueKpis">'+issueCard('red','逾期工單',d.c.overdue,'今日最優先',0)+issueCard('orange','待料工單',d.c.material,'等待原料/領料',1)+issueCard('purple','品質異常',d.c.quality,'待判定/檢驗',2)+issueCard('green','機台異常',d.c.machine,'停機/設備問題',3)+issueCard('blue','未開工',d.c.notStart,'待排程/未投入',4)+issueCard('slate','待確認',d.c.confirm,'待包裝/待入庫',5)+'</div><div class="prodIssueLayout"><div><h2 style="font-size:17px;margin-bottom:8px;color:#fff">TOP 問題工單</h2><table class="prodIssueTable"><thead><tr><th>等級</th><th>分類</th><th>工單</th><th>原因</th><th>機台</th><th>製程</th><th>預交</th><th>客戶</th></tr></thead><tbody>'+riskRows+'</tbody></table></div><div><h2 style="font-size:17px;margin-bottom:8px;color:#fff">問題來源分析</h2>'+sourceBars(d.source)+'<div class="prodActionList"><div class="prodAction"><b>今日新增</b><span>'+d.items.length+' 件</span></div><div class="prodAction"><b>高風險</b><span>'+d.items.filter(function(x){return x.sev==='高'}).length+' 件</span></div><div class="prodAction"><b>建議</b><span>先追逾期與待料</span></div></div></div></div></div>'+ 
       '<div class="v44Grid3"><div class="v44Panel"><h2>機台 KPI 即時狀態 <button class="sortBtn" onclick="switchView(\'machine\')">查看全部</button></h2><div class="v44MachineGrid">'+(machines.length?machines.map(function(x){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):0,st=x.late?'異常/逾期':x.run?'運轉中':'待排',cls=x.late?'v44Bad':x.run?'v44Run':'v44Warn';return '<div class="v44Machine"><b>'+safe(x.m)+'</b><div class="'+cls+'">'+st+'</div><div class="v44Ring" style="--deg:'+pct*3.6+'deg"><span>'+pct+'%</span></div><div class="hint">工單 '+x.count+'｜逾期 '+x.late+'</div></div>'}).join(''):'<div class="hint">尚無機台資料</div>')+'</div></div>'+ 
@@ -1111,7 +1111,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </script>
 
 
-<!-- V45.3 Meeting Six KPI Charts + Priority Gantt Preserve Patch -->
+<!-- V51.0 Meeting Six KPI Charts + Priority Gantt Preserve Patch -->
 <style id="v45_3_meeting_six_charts_css">
 #meeting.meetingV45Charts{background:radial-gradient(circle at 15% 0%,rgba(37,99,235,.35),transparent 32%),radial-gradient(circle at 90% 10%,rgba(124,58,237,.25),transparent 30%),linear-gradient(135deg,#020617,#071a38 50%,#000)!important;padding:20px!important;overflow:hidden!important}
 #meeting.meetingV45Charts .meetTop{position:relative!important;top:auto!important;z-index:20!important;margin:0 0 18px 0!important;padding:18px 22px!important;border-radius:22px!important;background:rgba(2,6,23,.82)!important;border:1px solid rgba(148,163,184,.25)!important;box-shadow:0 16px 40px rgba(0,0,0,.35)!important;backdrop-filter:blur(12px)!important}
@@ -1149,7 +1149,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       card('purple','🛠️','品質 / 機台異常',abnormal,'需判定處置',donut([{k:'品質',v:d.c.quality},{k:'機台',v:d.c.machine},{k:'其他',v:Math.max(0,abnormal-d.c.quality-d.c.machine)}]),'Abnormal')+
       card('slate','📝','今日 KeyIn',s.todayKeyin||0,'回報筆數 / 人員 '+(s.todayEmp||0),line(history(s.todayKeyin||0,'flat'),'#3b82f6'),'Live');
     el('meetClock').textContent=new Date().toLocaleString();
-    var title=document.querySelector('#meeting .meetTitle');if(title)title.innerHTML='V45.4 MES Enterprise Professional LTS｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';
+    var title=document.querySelector('#meeting .meetTitle');if(title)title.innerHTML='V51.0 MES Enterprise Official｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';
     el('slide1').innerHTML='<div class="meetSixGrid">'+cards+'</div>';
     el('slide2').innerHTML='<div class="meetPriorityTitle">生產問題管理中心</div><div class="meetFlowGrid"><div class="meetFlowCard"><b>逾期工單</b><strong>'+d.c.overdue+'</strong><span>優先追蹤</span></div><div class="meetFlowCard"><b>待料工單</b><strong>'+d.c.material+'</strong><span>等待原料</span></div><div class="meetFlowCard"><b>待確認</b><strong>'+d.c.confirm+'</strong><span>包裝/入庫</span></div><div class="meetFlowCard"><b>品質異常</b><strong>'+d.c.quality+'</strong><span>待判定</span></div><div class="meetFlowCard"><b>機台異常</b><strong>'+d.c.machine+'</strong><span>設備處理</span></div><div class="meetFlowCard"><b>未開工</b><strong>'+d.c.notStart+'</strong><span>待排程</span></div></div>';
     el('slide3').innerHTML='<div class="meetPriorityTitle">TOP 問題工單</div>'+meetTable(['等級','分類','工單','原因','機台','製程','預交','客戶'],d.items.slice(0,18).map(function(x){var o=x.o;return[x.sev,x.type,o.wo,x.reason,o.machine||'-',o.process||'-',o.due||'-',o.customer||'-']}));
@@ -1257,7 +1257,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var m=document.getElementById('meeting');
     if(m){m.classList.add('meetingPlus','meetingV44','meetingV45Charts','meetingV454LTS');}
     var title=document.querySelector('#meeting .meetTitle');
-    if(title){title.innerHTML='V45.4 MES Enterprise Professional LTS｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';}
+    if(title){title.innerHTML='V51.0 MES Enterprise Official｜晨會戰情室 <span class="meetBadge"><i class="meetDot"></i>Six KPI Charts</span>';}
     var clock=document.getElementById('meetClock');
     if(clock){clock.textContent=new Date().toLocaleString();}
     setTimeout(function(){
@@ -1425,7 +1425,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var machineRows=(machines.length?machines:[{m:'1S03',actual:82,target:100,count:1},{m:'1S12',actual:75,target:100,count:1},{m:'1B02',actual:68,target:100,count:1},{m:'1S16',actual:62,target:100,count:1}]).slice(0,10).map(function(x,i){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):Math.min(100,Math.max(18,100-i*8));return '<div class="v456MachineRow"><div class="rank">'+(i+1)+'</div><b>'+esc(x.m)+'</b><div class="v456Bar '+(pct<50?'warn':'')+'"><i style="width:'+pct+'%"></i></div><span>'+pct+'%</span></div>'}).join('');
     var alerts=[['⚠️','逾期工單：'+counts.overdue+' 筆，請優先處理','01:45'],['🟡','待料/待確認：'+(counts.material+counts.confirm)+' 筆，現場追蹤','01:45'],['ℹ️','今日 KeyIn：'+s.todayKeyin+' 筆（人員 '+s.todayEmp+'）','01:45'],['✅','系統資料已更新','01:45']].map(function(a){return '<div class="v456Alert"><div>'+a[0]+'</div><div>'+a[1]+'</div><time>'+a[2]+'</time></div>'}).join('');
     var box=el('dashboardGrid');
-    box.innerHTML='<div class="v456Dash"><div class="v456Top"><div class="v456Title"><h1>V45.8 MES Enterprise Professional LTS｜生產戰情室</h1><div class="meta">資料更新時間：'+new Date().toLocaleString()+'｜資料區間與圖表連動已啟用｜晨會模式未修改</div></div><div class="v456Toolbar"><button class="v456Tool" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v456Tool" onclick="openMeeting()">📺 晨會模式</button><button class="v456Tool" onclick="toggleEpSidebar&&toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
+    box.innerHTML='<div class="v456Dash"><div class="v456Top"><div class="v456Title"><h1>V51.0 MES Enterprise Official｜生產戰情室</h1><div class="meta">資料更新時間：'+new Date().toLocaleString()+'｜資料區間與圖表連動已啟用｜晨會模式未修改</div></div><div class="v456Toolbar"><button class="v456Tool" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v456Tool" onclick="openMeeting()">📺 晨會模式</button><button class="v456Tool" onclick="toggleEpSidebar&&toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
       '<div class="v456Filter"><select onchange="v456SetFilter(\'dateMode\',this.value)">'+v456DateOptions(filter.dateMode||'today')+'</select><input class="dateInput" type="date" value="'+esc(filter.start||today())+'" '+((filter.dateMode||'today')==='custom'?'':'disabled')+' onchange="v456SetFilter(\'start\',this.value)"><input class="dateInput" type="date" value="'+esc(filter.end||today())+'" '+((filter.dateMode||'today')==='custom'?'':'disabled')+' onchange="v456SetFilter(\'end\',this.value)"><select onchange="v456SetFilter(\'process\',this.value)">'+optHtml('製程站點',processOptions,filter.process)+'</select><select onchange="v456SetFilter(\'customer\',this.value)">'+optHtml('客戶別',customerOptions,filter.customer)+'</select><select onchange="v456SetFilter(\'status\',this.value)">'+optHtml('資料篩選',statusOptions,filter.status)+'</select><input value="'+esc(filter.q||'')+'" placeholder="工單/批號/機台 搜尋..." oninput="v456SetFilter(\'q\',this.value)"><div class="v456RangeHint">連動：'+rangeLabel+'</div><button class="v456Tool" onclick="v456ClearFilter()" style="padding:9px 12px">清除</button></div>'+ 
       '<div class="v456Hero"><div class="v456KpiGrid">'+
       kpi('v456Blue','總工單數',fmt(orders.length),'生產中 '+counts.run,bars([1120,1180,1210,1190,1240,1290,orders.length],'#3b82f6'),0)+
