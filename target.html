@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V52.0 Enterprise Official｜幹部目標管理</title>
+<title>V52.1 Enterprise Official｜幹部目標管理</title>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}
@@ -18,7 +18,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 </head>
 <body>
 <header>
-  <h1>幹部目標管理｜V52.0 Enterprise Official</h1>
+  <h1>幹部目標管理｜V52.1 Enterprise Official</h1>
   <p>Target Planning：幹部每日目標排程、機台目標、工單目標、晨會追蹤資料來源。</p>
 </header>
 <div class="wrap">
@@ -82,7 +82,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 <div id="toast" class="toast"></div>
 <script>
 
-/* === MES V52.0 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
+/* === MES V52.1 Enterprise Official：GitHub Pages ↔ Apps Script API Bridge ===
    請將 Apps Script Web App /exec 網址貼到 WEB_APP_URL。
    若頁面是在 Apps Script 內開啟，會優先使用 google.script.run。
 */
@@ -204,7 +204,7 @@ function fillLeader(forceReload){
     },'讀取 Employee 分頁失敗');
   }
 }
-function sourceObj(r){return {work_order_no:r.work_order_no||r.order_no||'',order_no:r.order_no||'',part_no:r.part_no||'',batch_no:r.batch_no||'',customer:r.customer||'',product_spec:r.product_spec||'',process_site:r.process||'',machine_code:r.machine||'',target_roll:r.target_roll||'',target_m2:r.target_m2||r.target_qty||'',priority:r.priority||'一般'}}
+function sourceObj(r){return {work_order_no:r.work_order_no||r.order_no||'',order_no:r.order_no||'',part_no:r.part_no||'',batch_no:r.batch_no||'',daily_report_barcode:r.daily_report_barcode||r.report_barcode||'',customer:r.customer||'',product_spec:r.product_spec||'',process_site:r.process||'',machine_code:r.machine||'',target_roll:r.target_roll||'',target_m2:r.target_m2||r.target_qty||'',priority:r.priority||'一般'}}
 function extractWidthMm(spec){
   var s=String(spec||'').replace(/×/g,'x').replace(/＊/g,'*');
   var vals=[],m;
@@ -274,7 +274,7 @@ function calcTargetM2(){
 
 function lookupWO(){var w=wo12(getVal('work_order_no'));if(!w){el('lookupMsg').textContent='';return}var r=App.source.find(function(x){return wo12(x.work_order_no||x.order_no)===w});if(!r){el('lookupMsg').innerHTML='<span class="pill warn">查無工單</span>';return}applySource(sourceObj(r));el('lookupMsg').innerHTML='<span class="pill ok">已帶入工單資料</span>'}
 function applySourceObject(o){Object.keys(o).forEach(function(k){if(el(k)&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')setVal(k,o[k])});prepareAutoLengthFromSource(o);calcTargetM2();}
-function renderQuickOrders(){var q=norm(getVal('woFilter'));var list=App.source.filter(function(r){var s=norm([r.work_order_no,r.order_no,r.customer,r.machine,r.process,r.product_spec].join(' '));return !q||s.indexOf(q)>=0}).slice(0,40);el('quickOrders').innerHTML=list.map(function(r){var o=sourceObj(r);return '<div class="quickCard" onclick="applySource('+encodeURIComponent(JSON.stringify(o))+')"><b>'+esc(o.work_order_no||o.order_no)+'</b><div class="hint">'+esc(o.customer||'-')+'｜'+esc(o.machine_code||'-')+'｜'+esc(o.process_site||'-')+'</div><div class="hint">'+esc(o.product_spec||'')+'</div></div>'}).join('')||'<div class="hint">尚無工單資料，請確認 source_data。</div>'}
+function renderQuickOrders(){var q=norm(getVal('woFilter'));var list=App.source.filter(function(r){var s=norm([r.work_order_no,r.order_no,r.customer,r.machine,r.process,r.part_no,r.daily_report_barcode,r.product_spec].join(' '));return !q||s.indexOf(q)>=0}).slice(0,40);el('quickOrders').innerHTML=list.map(function(r){var o=sourceObj(r);return '<div class="quickCard" onclick="applySource('+encodeURIComponent(JSON.stringify(o))+')"><b>'+esc(o.work_order_no||o.order_no)+'</b><div class="hint">'+esc(o.customer||'-')+'｜'+esc(o.machine_code||'-')+'｜'+esc(o.process_site||'-')+'</div><div class="hint">料號：'+esc(o.part_no||'-')+'｜日報條碼：'+esc(o.daily_report_barcode||'-')+'</div><div class="hint">'+esc(o.product_spec||'')+'</div></div>'}).join('')||'<div class="hint">尚無工單資料，請確認 source_data。</div>'}
 function applySource(encoded){var o=typeof encoded==='string'?JSON.parse(decodeURIComponent(encoded)):encoded;Object.keys(o).forEach(function(k){if(el(k))setVal(k,o[k])});prepareAutoLengthFromSource(o);calcTargetM2();toast('已帶入工單')}
 function formData(){return {plan_id:getVal('plan_id'),report_date:getVal('report_date'),shift:getVal('shift'),leader_no:getVal('leader_no'),leader_role:getVal('leader_role'),leader_name:getVal('leader_name'),work_order_no:wo12(getVal('work_order_no')),order_no:getVal('order_no'),part_no:getVal('part_no'),batch_no:getVal('batch_no'),customer:getVal('customer'),product_spec:getVal('product_spec'),process_site:getVal('process_site'),machine_code:getVal('machine_code'),target_roll:getVal('target_roll'),target_m2:getVal('target_m2'),planned_start:getVal('planned_start'),planned_finish:getVal('planned_finish'),priority:getVal('priority'),remark:getVal('remark'),status:getVal('status')}}
 function savePlan(){var d=formData();if(!d.report_date){toast('請輸入目標日期');return}if(!d.work_order_no){toast('請輸入工單號');return}run('saveTargetPlan',[d],function(res){toast('幹部目標已儲存');clearForm(false);loadAll();},'儲存失敗')}
