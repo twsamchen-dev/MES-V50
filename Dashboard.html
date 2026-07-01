@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V54.2 MES Enterprise Official LTS｜Data Hub</title>
+<title>V55.1 MES Enterprise Official LTS｜Data Hub</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V55.0 Enterprise DataHub LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V55 五資料源 DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V55.1 Enterprise DataHub LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V55.1 五資料源 DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -105,7 +105,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 
 <section id="setup" class="view">
   <div class="grid">
-    <div class="card col12"><h2>每日操作｜五份資料更新</h2><div class="sub">每日上傳 SL31A、4-3、PD11B、5-C、5-3 後，按「上傳五份資料到雲端」。人員端固定網址不需更換。</div></div>
+    <div class="card col12"><h2>每日操作｜五份資料更新</h2><div class="sub">管理員請使用 Apps Script 資料更新中心上傳 SL31A、4-3、PD11B、5-C、5-3。GitHub 版只負責查詢與顯示，避免 CORS 造成上傳失敗。</div></div>
+    <div class="card col12" id="githubUploadNotice" style="display:none;border-left:6px solid #f59e0b;background:#fffbeb">
+      <h2>⚠️ GitHub 版不支援 Excel 上傳</h2>
+      <div class="sub">目前瀏覽的是 GitHub Pages。大量 Excel 寫入 Google Sheet 會被瀏覽器 CORS 擋住，請改用 Apps Script 管理端上傳五份資料。</div>
+      <div class="row" style="margin-top:10px"><button class="btn ok" type="button" onclick="openAdminUploadCenter()">🚀 開啟 Apps Script 資料更新中心</button><button class="btn ghost" type="button" onclick="v541ReloadAll&&v541ReloadAll()">重新讀取五份資料</button></div>
+    </div>
     <div class="card col4"><h2>上傳 4-3</h2><input type="file" id="file43" accept=".xlsx,.xls,.csv"><div id="stat43" class="hint">尚未選擇</div></div>
     <div class="card col4"><h2>上傳 PD11B</h2><input type="file" id="filePD" accept=".xlsx,.xls,.csv"><div id="statPD" class="hint">尚未選擇</div></div>
     <div class="card col4"><h2>上傳 SL31A</h2><input type="file" id="fileSL" accept=".xlsx,.xls,.csv"><div id="statSL" class="hint">尚未選擇</div></div>
@@ -353,6 +358,25 @@ function loadTargets(date){
     toast("讀取目標失敗");
   }).listTargetPlans(queryDate);
 }
+function openAdminUploadCenter(){
+  var url=(window.API_URL||API_URL||"")+"?mode=admin";
+  window.open(url,"_blank");
+}
+function configureUploadMode(){
+  if(!window.MES_IS_GITHUB)return;
+  var notice=el("githubUploadNotice");
+  if(notice) notice.style.display="block";
+  ["file43","filePD","fileSL","file5C","file53"].forEach(function(id){
+    var input=el(id);
+    if(input && input.closest) input.closest(".card").style.display="none";
+  });
+  var btn=el("uploadBtn");
+  if(btn){
+    btn.textContent="🚀 開啟 Apps Script 資料更新中心";
+    btn.className="btn ok";
+  }
+}
+
 function gasCall(name,args){
   return new Promise(function(resolve,reject){
     try{
@@ -362,6 +386,11 @@ function gasCall(name,args){
   });
 }
 function uploadCloud(){
+  if(window.MES_IS_GITHUB){
+    alert("GitHub 版不支援 Excel 上傳，請改用 Apps Script 資料更新中心。");
+    openAdminUploadCenter();
+    return;
+  }
   var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));
   if(!rows.length && !AppState.prod5cRaw.length && !AppState.prod53Raw.length){alert("沒有資料，請先選五份檔案");return}
   var btn=el("uploadBtn"); if(btn)btn.disabled=true;
@@ -701,6 +730,7 @@ function init(){
     if(el("keyin")) el("keyin").classList.add("active");
   }
   if(el("reportDate"))el("reportDate").value=today();
+  configureUploadMode();
   el("file43").addEventListener("change",function(){bindFile("file43","d43","stat43","kpi43")});
   el("filePD").addEventListener("change",function(){bindFile("filePD","pd","statPD","kpiPD")});
   el("fileSL").addEventListener("change",function(){bindFile("fileSL","sl","statSL","kpiSL")});
@@ -1748,7 +1778,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V54.2.0';
+  window.MES_VERSION='V55.1.0';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
