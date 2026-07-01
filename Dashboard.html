@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V56.1 MES Enterprise Stable｜Data Hub</title>
+<title>V56.2 MES Enterprise Stable｜Data Hub</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V56.1 Enterprise Stable LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V56.1 DataHub Stable Hybrid。</p></header>
+<header><h1>生產戰情室 | V56.2 Enterprise Stable LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V56.2 DataHub Stable Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -109,14 +109,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
     <div class="card col12" id="githubUploadNotice" style="display:none;border-left:6px solid #f59e0b;background:#fffbeb">
       <h2>⚠️ GitHub 版不支援 Excel 上傳</h2>
       <div class="sub">目前瀏覽的是 GitHub Pages。大量 Excel 寫入 Google Sheet 會被瀏覽器 CORS 擋住，請改用 Apps Script 管理端上傳五份資料。</div>
-      <div class="row" style="margin-top:10px"><button class="btn ok" type="button" onclick="openAdminUploadCenter()">🚀 開啟 Apps Script 資料更新中心</button><button class="btn ghost" type="button" onclick="v541ReloadAll&&v541ReloadAll()">重新讀取五份資料</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn ok" type="button" onclick="openAdminUploadCenter()">🚀 開啟 Apps Script 資料更新中心</button><button class="btn ghost" type="button" onclick="window.v541ReloadAll&&window.v541ReloadAll()">重新讀取五份資料</button></div>
     </div>
     <div class="card col4"><h2>上傳 4-3</h2><input type="file" id="file43" accept=".xlsx,.xls,.csv"><div id="stat43" class="hint">尚未選擇</div></div>
     <div class="card col4"><h2>上傳 PD11B</h2><input type="file" id="filePD" accept=".xlsx,.xls,.csv"><div id="statPD" class="hint">尚未選擇</div></div>
     <div class="card col4"><h2>上傳 SL31A</h2><input type="file" id="fileSL" accept=".xlsx,.xls,.csv"><div id="statSL" class="hint">尚未選擇</div></div>
     <div class="card col6"><h2>上傳 5-C</h2><input type="file" id="file5C" accept=".xlsx,.xls,.csv"><div id="stat5C" class="hint">尚未選擇</div><div class="hint">命令單、製號、尺寸、換算㎡。</div></div>
     <div class="card col6"><h2>上傳 5-3</h2><input type="file" id="file53" accept=".xlsx,.xls,.csv"><div id="stat53" class="hint">尚未選擇</div><div class="hint">製程、機台、產出、閒置。</div></div>
-    <div class="card col12"><div class="row"><button class="btn ok" id="uploadBtn">上傳五份資料到雲端</button><button class="btn ghost" id="loadSourceBtn">讀取雲端工單</button><button class="btn ghost" id="loadKeyinBtn">讀取回報資料</button><button class="btn ghost" onclick="v541ReloadAll&&v541ReloadAll()">重新讀取五份資料</button></div></div>
+    <div class="card col12"><div class="row"><button class="btn ok" id="uploadBtn">上傳五份資料到雲端</button><button class="btn ghost" id="loadSourceBtn">讀取雲端工單</button><button class="btn ghost" id="loadKeyinBtn">讀取回報資料</button><button class="btn ghost" onclick="window.v541ReloadAll&&window.v541ReloadAll()">重新讀取五份資料</button></div></div>
     <div class="card col2"><div class="hint">4-3筆數</div><div id="kpi43" style="font-size:30px;font-weight:900">0</div></div>
     <div class="card col2"><div class="hint">PD11B筆數</div><div id="kpiPD" style="font-size:30px;font-weight:900">0</div></div>
     <div class="card col2"><div class="hint">SL31A筆數</div><div id="kpiSL" style="font-size:30px;font-weight:900">0</div></div>
@@ -406,10 +406,18 @@ function configureUploadMode(){
 }
 
 function gasCall(name,args){
+  args=args||[];
   return new Promise(function(resolve,reject){
     try{
       var runner=google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
-      runner[name].apply(runner,args||[]);
+      // Apps Script 的 google.script.run 在部分瀏覽器/部署環境不支援 runner[name].apply，
+      // 改為明確對應，避免 Cannot read properties of undefined (reading 'apply')。
+      if(name==='replaceSourceData') return runner.replaceSourceData(args[0]||[]);
+      if(name==='replaceProd5CData') return runner.replaceProd5CData(args[0]||[]);
+      if(name==='replaceProd53Data') return runner.replaceProd53Data(args[0]||[]);
+      if(name==='saveKeyin') return runner.saveKeyin(args[0]||{});
+      if(name==='saveTargetPlan') return runner.saveTargetPlan(args[0]||{});
+      reject(new Error('Unknown GAS function: '+name));
     }catch(e){reject(e)}
   });
 }
@@ -1806,7 +1814,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V56.1.0';
+  window.MES_VERSION='V56.2.0';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -1865,7 +1873,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 <!-- V56 Stable Patch：GitHub 只讀、Apps Script 管理端上傳；API action 雙路由相容 -->
 <script id="v56-stable-api-patch">
 (function(){
-  window.MES_VERSION='V56.1.0';
+  window.MES_VERSION='V56.2.0';
   // 統一管理端入口
   window.openAdminUploadCenter=function(){
     var url=(window.API_URL||API_URL||'')+'?mode=admin';
