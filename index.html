@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V54.2 MES 生產 Key In LTS｜Hybrid</title>
+<title>V56.1 MES 生產 Key In Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -70,7 +70,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產 Key In / บันทึกผลงานผลิต｜V54.2 MES 生產 Key In LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
+<header><h1>生產 Key In / บันทึกผลงานผลิต｜V56.1 MES 生產 Key In Stable</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -179,8 +179,9 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
   if(hasGas) return;
   function encodeParams(obj){var q=[];Object.keys(obj||{}).forEach(function(k){if(k!=='action'&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(obj[k]));});return q.length?"&"+q.join("&"):"";}
   function getAction(name,args){var low=String(name||'').toLowerCase();if(low==='getsourcedata')return{action:'source'};if(low==='listkeyin')return{action:'list'};if(low==='listemployees')return{action:'employees'};if(low==='listtargetplans')return{action:'targets',date:args&&args[0]};return{action:low};}
-  function callGet(name,args,ok,fail){var a=getAction(name,args||[]);fetch(API_URL+'?action='+encodeURIComponent(a.action)+encodeParams(a),{method:'GET',redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){console.error('MES API GET failed',name,e);fail&&fail(e);});}
-  function callPost(name,args,ok,fail){var action=String(name||'').toLowerCase();var body=args&&args.length===1?args[0]:{args:args||[]};fetch(API_URL+'?action='+encodeURIComponent(action),{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){console.error('MES API POST failed',name,e);fail&&fail(e);});}
+  function jsonpRequest(url){return new Promise(function(resolve,reject){var cb='MES_JSONP_'+Date.now()+'_'+Math.floor(Math.random()*1000000);var s=document.createElement('script');var timer=setTimeout(function(){cleanup();reject(new Error('API timeout'));},20000);function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;} if(s&&s.parentNode)s.parentNode.removeChild(s);}window[cb]=function(res){cleanup();if(res&&res.ok===false)reject(new Error(res.error||res.message||'API error'));else resolve(res);};s.onerror=function(){cleanup();reject(new Error('JSONP 連線失敗'));};s.src=url+(url.indexOf('?')>=0?'&':'?')+'callback='+encodeURIComponent(cb)+'&_='+Date.now();document.head.appendChild(s);});}
+  function callGet(name,args,ok,fail){var a=getAction(name,args||[]);var url=API_URL+'?action='+encodeURIComponent(a.action)+encodeParams(a);jsonpRequest(url).then(function(res){ok&&ok(res);}).catch(function(e){console.error('MES API GET failed',name,e);fail&&fail(e);});}
+  function callPost(name,args,ok,fail){var action=String(name||'').toLowerCase();var body=args&&args.length===1?args[0]:{args:args||[]};var bulk={replacesourcedata:1,replaceprod5cdata:1,replaceprod53data:1};if(bulk[action]){var e=new Error('GitHub 版不支援大量上傳，請使用 Apps Script 管理端');if(fail)fail(e);return;}var url=API_URL+'?action='+encodeURIComponent(action)+'&data='+encodeURIComponent(JSON.stringify(body));jsonpRequest(url).then(function(res){ok&&ok(res);}).catch(function(e){console.error('MES API POST failed',name,e);fail&&fail(e);});}
   function makeRunner(){var ok=null,fail=null;var runner={withSuccessHandler:function(fn){ok=fn;return proxy;},withFailureHandler:function(fn){fail=fn;return proxy;}};var proxy=new Proxy(runner,{get:function(target,prop){if(prop in target)return target[prop];return function(){var args=[].slice.call(arguments);var post={saveKeyin:1,replaceSourceData:1};if(post[prop])callPost(prop,args,ok,fail);else callGet(prop,args,ok,fail);ok=null;fail=null;return proxy;};}});return proxy;}
   window.google={script:{run:makeRunner()}};
 })();

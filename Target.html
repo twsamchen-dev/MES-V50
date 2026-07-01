@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V54.0 Enterprise Professional｜幹部目標管理</title>
+<title>V56.1 Enterprise Stable｜幹部目標管理</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
@@ -19,7 +19,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 </head>
 <body>
 <header>
-  <h1>幹部目標管理｜V54.0 Enterprise Professional</h1>
+  <h1>幹部目標管理｜V56.1 Enterprise Stable</h1>
   <p>Target Planning：幹部每日目標排程、機台目標、工單目標、晨會追蹤資料來源。</p>
 </header>
 <div class="wrap">
@@ -127,6 +127,18 @@ function actionName(name){
   if(low==='listprod53data')return 'prod53';
   return low;
 }
+function jsonpRequest(url){
+  return new Promise(function(resolve,reject){
+    var cb='MES_JSONP_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+    var s=document.createElement('script');
+    var timer=setTimeout(function(){cleanup();reject(new Error('API timeout'));},20000);
+    function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;} if(s&&s.parentNode)s.parentNode.removeChild(s);}
+    window[cb]=function(res){cleanup(); if(res&&res.ok===false)reject(new Error(res.error||res.message||'API error')); else resolve(res);};
+    s.onerror=function(){cleanup();reject(new Error('JSONP 連線失敗'));};
+    s.src=url+(url.indexOf('?')>=0?'&':'?')+'callback='+encodeURIComponent(cb)+'&_='+Date.now();
+    document.head.appendChild(s);
+  });
+}
 function run(name,args,ok,fail){
   args=args||[];
   try{
@@ -136,18 +148,15 @@ function run(name,args,ok,fail){
       return;
     }
     var low=String(name||'').toLowerCase();
-    var post={savekeyin:1,savetargetplan:1,replacesourcedata:1,replaceprod5cdata:1,replaceprod53data:1,deletetargetplan:1};
+    var write={savekeyin:1,savetargetplan:1,deletetargetplan:1};
+    var bulk={replacesourcedata:1,replaceprod5cdata:1,replaceprod53data:1};
+    if(bulk[low]){toast('GitHub 版不支援大量上傳，請使用 Apps Script 管理端'); return;}
     var action=actionName(name);
-    var opt={method:post[low]?'POST':'GET',redirect:'follow'};
     var url=API_URL+'?action='+encodeURIComponent(action);
-    if(!post[low]){
-      if(low==='listtargetplans'&&args[0])url+='&date='+encodeURIComponent(args[0]);
-      if((low==='listprod5cdata'||low==='listprod53data')&&args[0])url+='&date='+encodeURIComponent(args[0]);
-    }else{
-      opt.headers={'Content-Type':'text/plain;charset=utf-8'};
-      opt.body=JSON.stringify(args.length===1?args[0]:{args:args});
-    }
-    fetch(url,opt).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){toast((fail||'API連線失敗')+'：'+e.message);});
+    if(low==='listtargetplans'&&args[0])url+='&date='+encodeURIComponent(args[0]);
+    if((low==='listprod5cdata'||low==='listprod53data')&&args[0])url+='&date='+encodeURIComponent(args[0]);
+    if(write[low])url+='&data='+encodeURIComponent(JSON.stringify(args.length===1?args[0]:{args:args}));
+    jsonpRequest(url).then(function(res){ok&&ok(res);}).catch(function(e){toast((fail||'API連線失敗')+'：'+e.message);});
   }catch(e){toast('執行失敗：'+e.message)}
 }
 function loadAll(){

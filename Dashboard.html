@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V56.0 MES Enterprise Stable｜Data Hub</title>
+<title>V56.1 MES Enterprise Stable｜Data Hub</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V56.0 Enterprise Stable LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V56.0 DataHub Stable Hybrid。</p></header>
+<header><h1>生產戰情室 | V56.1 Enterprise Stable LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V56.1 DataHub Stable Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -220,15 +220,31 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
   function parseJsonText(t){
     try{return JSON.parse(t)}catch(e){throw new Error("API 回傳非 JSON："+String(t||"").slice(0,120))}
   }
+  function buildUrl(a){
+    return API_URL+"?action="+encodeURIComponent(a.action)+encodeParams(a);
+  }
   function fetchGetAction(a){
-    return fetch(API_URL+"?action="+encodeURIComponent(a.action)+encodeParams(a), {
-      method:"GET",
-      redirect:"follow",
-      cache:"no-store"
-    })
+    return fetch(buildUrl(a), {method:"GET", redirect:"follow", cache:"no-store"})
       .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
       .then(parseJsonText)
-      .then(function(res){ if(res && res.ok===false) throw new Error(res.error||"API error"); return res; });
+      .then(function(res){ if(res && res.ok===false) throw new Error(res.error||res.message||"API error"); return res; });
+  }
+  function jsonpGetAction(a){
+    return new Promise(function(resolve,reject){
+      var cb="MES_JSONP_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
+      var s=document.createElement("script");
+      var timer=setTimeout(function(){cleanup();reject(new Error("API timeout"));},20000);
+      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;} if(s&&s.parentNode)s.parentNode.removeChild(s);}
+      window[cb]=function(res){cleanup(); if(res && res.ok===false) reject(new Error(res.error||res.message||"API error")); else resolve(res);};
+      s.onerror=function(){cleanup();reject(new Error("JSONP 連線失敗"));};
+      s.src=buildUrl(a)+"&callback="+encodeURIComponent(cb)+"&_="+Date.now();
+      document.head.appendChild(s);
+    });
+  }
+  function getActionWithTransport(a){
+    // GitHub Pages 跨網域讀 Apps Script JSON 會被 CORS 擋住，改用 JSONP；Apps Script 內嵌仍用一般 GET。
+    if(window.MES_IS_GITHUB) return jsonpGetAction(a);
+    return fetchGetAction(a);
   }
   function callGet(name,args,ok,fail){
     var a=getAction(name,args||[]);
@@ -237,7 +253,7 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
     function tryOne(i){
       if(i>=actions.length) throw (lastErr||new Error("API 連線失敗"));
       var next=Object.assign({},a,{action:actions[i]});
-      return fetchGetAction(next).catch(function(e){lastErr=e;console.warn("MES API GET retry",name,next.action,e);return tryOne(i+1);});
+      return getActionWithTransport(next).catch(function(e){lastErr=e;console.warn("MES API GET retry",name,next.action,e);return tryOne(i+1);});
     }
     tryOne(0)
       .then(function(res){ if(ok) ok(res); })
@@ -1790,7 +1806,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V56.0.0';
+  window.MES_VERSION='V56.1.0';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -1849,7 +1865,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 <!-- V56 Stable Patch：GitHub 只讀、Apps Script 管理端上傳；API action 雙路由相容 -->
 <script id="v56-stable-api-patch">
 (function(){
-  window.MES_VERSION='V56.0.0';
+  window.MES_VERSION='V56.1.0';
   // 統一管理端入口
   window.openAdminUploadCenter=function(){
     var url=(window.API_URL||API_URL||'')+'?mode=admin';
