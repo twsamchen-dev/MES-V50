@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V54.2 Enterprise Official LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V54 GitHub + Apps Script Hybrid。</p></header>
+<header><h1>生產戰情室 | V55.0 Enterprise DataHub LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V55 五資料源 DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -105,15 +105,19 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 
 <section id="setup" class="view">
   <div class="grid">
-    <div class="card col12"><h2>每日操作</h2><div class="sub">上傳 4-3、PD11B、SL31A 後，按「上傳到雲端資料庫」。人員端固定網址不需更換。</div></div>
+    <div class="card col12"><h2>每日操作｜五份資料更新</h2><div class="sub">每日上傳 SL31A、4-3、PD11B、5-C、5-3 後，按「上傳五份資料到雲端」。人員端固定網址不需更換。</div></div>
     <div class="card col4"><h2>上傳 4-3</h2><input type="file" id="file43" accept=".xlsx,.xls,.csv"><div id="stat43" class="hint">尚未選擇</div></div>
     <div class="card col4"><h2>上傳 PD11B</h2><input type="file" id="filePD" accept=".xlsx,.xls,.csv"><div id="statPD" class="hint">尚未選擇</div></div>
     <div class="card col4"><h2>上傳 SL31A</h2><input type="file" id="fileSL" accept=".xlsx,.xls,.csv"><div id="statSL" class="hint">尚未選擇</div></div>
-    <div class="card col12"><div class="row"><button class="btn ok" id="uploadBtn">上傳到雲端資料庫</button><button class="btn ghost" id="loadSourceBtn">讀取雲端工單</button><button class="btn ghost" id="loadKeyinBtn">讀取回報資料</button></div></div>
-    <div class="card col3"><div class="hint">4-3筆數</div><div id="kpi43" style="font-size:30px;font-weight:900">0</div></div>
-    <div class="card col3"><div class="hint">PD11B筆數</div><div id="kpiPD" style="font-size:30px;font-weight:900">0</div></div>
-    <div class="card col3"><div class="hint">SL31A筆數</div><div id="kpiSL" style="font-size:30px;font-weight:900">0</div></div>
-    <div class="card col3"><div class="hint">雲端工單索引</div><div id="kpiIdx" style="font-size:30px;font-weight:900">0</div></div>
+    <div class="card col6"><h2>上傳 5-C</h2><input type="file" id="file5C" accept=".xlsx,.xls,.csv"><div id="stat5C" class="hint">尚未選擇</div><div class="hint">命令單、製號、尺寸、換算㎡。</div></div>
+    <div class="card col6"><h2>上傳 5-3</h2><input type="file" id="file53" accept=".xlsx,.xls,.csv"><div id="stat53" class="hint">尚未選擇</div><div class="hint">製程、機台、產出、閒置。</div></div>
+    <div class="card col12"><div class="row"><button class="btn ok" id="uploadBtn">上傳五份資料到雲端</button><button class="btn ghost" id="loadSourceBtn">讀取雲端工單</button><button class="btn ghost" id="loadKeyinBtn">讀取回報資料</button><button class="btn ghost" onclick="v541ReloadAll&&v541ReloadAll()">重新讀取五份資料</button></div></div>
+    <div class="card col2"><div class="hint">4-3筆數</div><div id="kpi43" style="font-size:30px;font-weight:900">0</div></div>
+    <div class="card col2"><div class="hint">PD11B筆數</div><div id="kpiPD" style="font-size:30px;font-weight:900">0</div></div>
+    <div class="card col2"><div class="hint">SL31A筆數</div><div id="kpiSL" style="font-size:30px;font-weight:900">0</div></div>
+    <div class="card col2"><div class="hint">5-C筆數</div><div id="kpi5C" style="font-size:30px;font-weight:900">0</div></div>
+    <div class="card col2"><div class="hint">5-3筆數</div><div id="kpi53" style="font-size:30px;font-weight:900">0</div></div>
+    <div class="card col2"><div class="hint">雲端工單索引</div><div id="kpiIdx" style="font-size:30px;font-weight:900">0</div></div>
   </div>
 </section>
 
@@ -180,7 +184,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <div id="toast" class="toast"></div>
 
 <script>
-var AppState={d43:[],pd:[],sl:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
+var AppState={d43:[],pd:[],sl:[],prod5cRaw:[],prod53Raw:[],prod5c:[],prod53:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
 /* V54 Hybrid API：Apps Script 內嵌用 google.script.run；GitHub Pages 自動改用 Apps Script Web API */
 var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
 (function setupHybridApi(){
@@ -349,7 +353,32 @@ function loadTargets(date){
     toast("讀取目標失敗");
   }).listTargetPlans(queryDate);
 }
-function uploadCloud(){var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));if(!rows.length){alert("沒有資料，請先選三份檔案");return}el("uploadBtn").disabled=true;google.script.run.withSuccessHandler(function(res){el("uploadBtn").disabled=false;alert("✅ 已上傳："+(res.count||rows.length)+" 筆");loadSource()}).withFailureHandler(function(e){el("uploadBtn").disabled=false;alert("上傳失敗："+(e.message||e))}).replaceSourceData(rows)}
+function gasCall(name,args){
+  return new Promise(function(resolve,reject){
+    try{
+      var runner=google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+      runner[name].apply(runner,args||[]);
+    }catch(e){reject(e)}
+  });
+}
+function uploadCloud(){
+  var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));
+  if(!rows.length && !AppState.prod5cRaw.length && !AppState.prod53Raw.length){alert("沒有資料，請先選五份檔案");return}
+  var btn=el("uploadBtn"); if(btn)btn.disabled=true;
+  var jobs=[];
+  if(rows.length) jobs.push(gasCall("replaceSourceData",[rows]));
+  if(AppState.prod5cRaw.length) jobs.push(gasCall("replaceProd5CData",[AppState.prod5cRaw]));
+  if(AppState.prod53Raw.length) jobs.push(gasCall("replaceProd53Data",[AppState.prod53Raw]));
+  Promise.all(jobs).then(function(res){
+    if(btn)btn.disabled=false;
+    var msg=res.map(function(x){return (x&&x.count)||0}).join(" / ");
+    alert("✅ 五份資料已更新完成："+msg+" 筆");
+    loadSource(); if(typeof v541ReloadAll==="function") setTimeout(v541ReloadAll,600);
+  }).catch(function(e){
+    if(btn)btn.disabled=false;
+    alert("上傳失敗："+((e&&e.message)||e));
+  });
+}
 function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";google.script.run.withSuccessHandler(function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}}).withFailureHandler(function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)}).saveKeyin(data)}
 function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
 function fillEmp(){
@@ -675,6 +704,8 @@ function init(){
   el("file43").addEventListener("change",function(){bindFile("file43","d43","stat43","kpi43")});
   el("filePD").addEventListener("change",function(){bindFile("filePD","pd","statPD","kpiPD")});
   el("fileSL").addEventListener("change",function(){bindFile("fileSL","sl","statSL","kpiSL")});
+  if(el("file5C")) el("file5C").addEventListener("change",function(){bindFile("file5C","prod5cRaw","stat5C","kpi5C")});
+  if(el("file53")) el("file53").addEventListener("change",function(){bindFile("file53","prod53Raw","stat53","kpi53")});
   el("uploadBtn").addEventListener("click",uploadCloud);
   el("loadSourceBtn").addEventListener("click",loadSource);
   el("loadKeyinBtn").addEventListener("click",loadKeyin);
@@ -1479,7 +1510,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var machineRows=(machines.length?machines:[{m:'1S03',actual:82,target:100,count:1},{m:'1S12',actual:75,target:100,count:1},{m:'1B02',actual:68,target:100,count:1},{m:'1S16',actual:62,target:100,count:1}]).slice(0,10).map(function(x,i){var pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):Math.min(100,Math.max(18,100-i*8));return '<div class="v456MachineRow"><div class="rank">'+(i+1)+'</div><b>'+esc(x.m)+'</b><div class="v456Bar '+(pct<50?'warn':'')+'"><i style="width:'+pct+'%"></i></div><span>'+pct+'%</span></div>'}).join('');
     var alerts=[['⚠️','逾期工單：'+counts.overdue+' 筆，請優先處理','01:45'],['🟡','待料/待確認：'+(counts.material+counts.confirm)+' 筆，現場追蹤','01:45'],['ℹ️','今日 KeyIn：'+s.todayKeyin+' 筆（人員 '+s.todayEmp+'）','01:45'],['✅','系統資料已更新','01:45']].map(function(a){return '<div class="v456Alert"><div>'+a[0]+'</div><div>'+a[1]+'</div><time>'+a[2]+'</time></div>'}).join('');
     var box=el('dashboardGrid');
-    box.innerHTML='<div class="v456Dash"><div class="v456Top"><div class="v456Title"><h1>V45.8 MES Enterprise Professional LTS｜生產戰情室</h1><div class="meta">資料更新時間：'+new Date().toLocaleString()+'｜資料區間與圖表連動已啟用｜晨會模式未修改</div></div><div class="v456Toolbar"><button class="v456Tool" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v456Tool" onclick="openMeeting()">📺 晨會模式</button><button class="v456Tool" onclick="toggleEpSidebar&&toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
+    box.innerHTML='<div class="v456Dash"><div class="v456Top"><div class="v456Title"><h1>V55.0 MES Enterprise DataHub LTS｜生產戰情室</h1><div class="meta">資料更新時間：'+new Date().toLocaleString()+'｜資料區間與圖表連動已啟用｜晨會模式未修改</div></div><div class="v456Toolbar"><button class="v456Tool" onclick="loadSource();loadKeyin();loadTargets();">↻ 立即更新</button><button class="v456Tool" onclick="openMeeting()">📺 晨會模式</button><button class="v456Tool" onclick="toggleEpSidebar&&toggleEpSidebar()">☰ 收合選單</button></div></div>'+ 
       '<div class="v456Filter"><select onchange="v456SetFilter(\'dateMode\',this.value)">'+v456DateOptions(filter.dateMode||'today')+'</select><input class="dateInput" type="date" value="'+esc(filter.start||today())+'" '+((filter.dateMode||'today')==='custom'?'':'disabled')+' onchange="v456SetFilter(\'start\',this.value)"><input class="dateInput" type="date" value="'+esc(filter.end||today())+'" '+((filter.dateMode||'today')==='custom'?'':'disabled')+' onchange="v456SetFilter(\'end\',this.value)"><select onchange="v456SetFilter(\'process\',this.value)">'+optHtml('製程站點',processOptions,filter.process)+'</select><select onchange="v456SetFilter(\'customer\',this.value)">'+optHtml('客戶別',customerOptions,filter.customer)+'</select><select onchange="v456SetFilter(\'status\',this.value)">'+optHtml('資料篩選',statusOptions,filter.status)+'</select><input value="'+esc(filter.q||'')+'" placeholder="工單/批號/機台 搜尋..." oninput="v456SetFilter(\'q\',this.value)"><div class="v456RangeHint">連動：'+rangeLabel+'</div><button class="v456Tool" onclick="v456ClearFilter()" style="padding:9px 12px">清除</button></div>'+ 
       '<div class="v456Hero"><div class="v456KpiGrid">'+
       kpi('v456Blue','總工單數',fmt(orders.length),'生產中 '+counts.run,bars([1120,1180,1210,1190,1240,1290,orders.length],'#3b82f6'),0)+
@@ -1711,7 +1742,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
 
 
-<!-- V54.2 Data Hub / 五份資料更新中心：不覆蓋既有Dashboard，只補強資料完整度與GitHub混合API -->
+<!-- V55.0 Data Hub / 五份資料更新中心：支援 SL31A、4-3、PD11B、5-C、5-3 上傳與讀取 -->
 <style id="v541-datahub-style">
 .v541-hub{grid-column:span 12;background:linear-gradient(135deg,#071a33,#123b7a);border:1px solid rgba(147,197,253,.28);border-radius:22px;padding:16px 18px;color:#fff;box-shadow:0 14px 36px rgba(2,6,23,.25);margin-bottom:12px}.v541-hubTop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.v541-hub h2{margin:0;font-size:24px;color:#fff}.v541-hub .meta{color:#bfdbfe;font-size:13px;margin-top:4px}.v541-sourceGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.v541-source{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:12px;min-height:98px;position:relative;overflow:hidden}.v541-source:after{content:"";position:absolute;right:-25px;bottom:-35px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08)}.v541-source .name{font-weight:900;font-size:16px}.v541-source .sub{color:#dbeafe;font-size:12px;margin-top:2px}.v541-source .num{font-size:30px;font-weight:900;margin-top:8px;line-height:1}.v541-source .time{font-size:11px;color:#bfdbfe;margin-top:6px}.v541-ok{border-color:rgba(34,197,94,.55)}.v541-warn{border-color:rgba(245,158,11,.65)}.v541-empty{border-color:rgba(248,113,113,.55);opacity:.92}.v541-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900;background:rgba(255,255,255,.12);color:#dbeafe}.v541-bar{height:9px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden;margin-top:12px}.v541-fill{height:100%;background:linear-gradient(90deg,#22c55e,#60a5fa);border-radius:999px;transition:width .5s ease}.v541-actions{display:flex;gap:8px;flex-wrap:wrap}.v541-btn{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.11);color:#fff;border-radius:12px;padding:9px 12px;font-weight:900;cursor:pointer}.v541-btn:hover{background:rgba(255,255,255,.18)}@media(max-width:1100px){.v541-sourceGrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.v541-sourceGrid{grid-template-columns:1fr}}
 </style>
