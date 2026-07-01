@@ -116,7 +116,40 @@ function norm(v){return String(v||'').trim().toUpperCase()}
 function wo12(v){return norm(v).replace(/\s+/g,'').slice(0,12)}
 function setVal(id,v){if(el(id))el(id).value=v||''}
 function getVal(id){return el(id)?el(id).value:''}
-function run(name,args,ok,fail){try{if(window.google&&google.script&&google.script.run){var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){toast((fail||'執行失敗')+'：'+(e&&e.message?e.message:e));});r[name].apply(r,args||[])}else{ok&&ok({ok:true,rows:[]})}}catch(e){toast('執行失敗：'+e.message)}}
+var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+function actionName(name){
+  var low=String(name||'').toLowerCase();
+  if(low==='getsourcedata')return 'source';
+  if(low==='listkeyin')return 'list';
+  if(low==='listemployees')return 'employees';
+  if(low==='listtargetplans')return 'targets';
+  if(low==='listprod5cdata')return 'prod5c';
+  if(low==='listprod53data')return 'prod53';
+  return low;
+}
+function run(name,args,ok,fail){
+  args=args||[];
+  try{
+    if(window.google&&google.script&&google.script.run){
+      var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){toast((fail||'執行失敗')+'：'+(e&&e.message?e.message:e));});
+      r[name].apply(r,args);
+      return;
+    }
+    var low=String(name||'').toLowerCase();
+    var post={savekeyin:1,savetargetplan:1,replacesourcedata:1,replaceprod5cdata:1,replaceprod53data:1,deletetargetplan:1};
+    var action=actionName(name);
+    var opt={method:post[low]?'POST':'GET',redirect:'follow'};
+    var url=API_URL+'?action='+encodeURIComponent(action);
+    if(!post[low]){
+      if(low==='listtargetplans'&&args[0])url+='&date='+encodeURIComponent(args[0]);
+      if((low==='listprod5cdata'||low==='listprod53data')&&args[0])url+='&date='+encodeURIComponent(args[0]);
+    }else{
+      opt.headers={'Content-Type':'text/plain;charset=utf-8'};
+      opt.body=JSON.stringify(args.length===1?args[0]:{args:args});
+    }
+    fetch(url,opt).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){toast((fail||'API連線失敗')+'：'+e.message);});
+  }catch(e){toast('執行失敗：'+e.message)}
+}
 function loadAll(){
   setVal('report_date',getVal('report_date')||today());
   setVal('targetDate',getVal('targetDate')||today());

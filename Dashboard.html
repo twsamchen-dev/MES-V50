@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V54.0 MES Enterprise Official LTS｜Hybrid Dashboard</title>
+<title>V54.1 MES Enterprise Official LTS｜Data Hub</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V54.0 Enterprise Official LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V54 GitHub + Apps Script Hybrid。</p></header>
+<header><h1>生產戰情室 | V54.1 Enterprise Official LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V54 GitHub + Apps Script Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -191,18 +191,21 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
   function encodeParams(obj){
     var q=[];
     Object.keys(obj||{}).forEach(function(k){
+      if(k==="action") return;
       if(obj[k]!==undefined && obj[k]!==null && obj[k]!=="") q.push(encodeURIComponent(k)+"="+encodeURIComponent(obj[k]));
     });
     return q.length ? "&"+q.join("&") : "";
   }
   function getAction(name,args){
     var low=String(name||"").toLowerCase();
-    if(low==="getsourcedata") return {action:"getsourcedata"};
-    if(low==="listkeyin") return {action:"listkeyin"};
-    if(low==="listemployees") return {action:"listemployees"};
-    if(low==="listtargetplans") return {action:"listtargetplans", date:args && args[0]};
-    if(low==="listprod5cdata") return {action:"listprod5cdata"};
-    if(low==="listprod53data") return {action:"listprod53data", date:args && args[0]};
+    // GitHub Pages 版：把前端函式名稱轉成目前 Apps Script doGet(e) 支援的 action
+    // Apps Script 目前路由：source / list / employees / targets / prod5c / prod53
+    if(low==="getsourcedata") return {action:"source"};
+    if(low==="listkeyin") return {action:"list"};
+    if(low==="listemployees") return {action:"employees"};
+    if(low==="listtargetplans") return {action:"targets", date:args && args[0]};
+    if(low==="listprod5cdata") return {action:"prod5c", date:args && args[0]};
+    if(low==="listprod53data") return {action:"prod53", date:args && args[0]};
     return {action:low};
   }
   function callGet(name,args,ok,fail){
@@ -1703,6 +1706,69 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   document.addEventListener('touchmove', closeByScroll, true);
   window.addEventListener('resize', function(){closeFilter(true);});
   document.addEventListener('keydown', closeByEsc, true);
+})();
+</script>
+
+
+
+<!-- V54.1 Data Hub / 五份資料更新中心：不覆蓋既有Dashboard，只補強資料完整度與GitHub混合API -->
+<style id="v541-datahub-style">
+.v541-hub{grid-column:span 12;background:linear-gradient(135deg,#071a33,#123b7a);border:1px solid rgba(147,197,253,.28);border-radius:22px;padding:16px 18px;color:#fff;box-shadow:0 14px 36px rgba(2,6,23,.25);margin-bottom:12px}.v541-hubTop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.v541-hub h2{margin:0;font-size:24px;color:#fff}.v541-hub .meta{color:#bfdbfe;font-size:13px;margin-top:4px}.v541-sourceGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.v541-source{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:12px;min-height:98px;position:relative;overflow:hidden}.v541-source:after{content:"";position:absolute;right:-25px;bottom:-35px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08)}.v541-source .name{font-weight:900;font-size:16px}.v541-source .sub{color:#dbeafe;font-size:12px;margin-top:2px}.v541-source .num{font-size:30px;font-weight:900;margin-top:8px;line-height:1}.v541-source .time{font-size:11px;color:#bfdbfe;margin-top:6px}.v541-ok{border-color:rgba(34,197,94,.55)}.v541-warn{border-color:rgba(245,158,11,.65)}.v541-empty{border-color:rgba(248,113,113,.55);opacity:.92}.v541-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900;background:rgba(255,255,255,.12);color:#dbeafe}.v541-bar{height:9px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden;margin-top:12px}.v541-fill{height:100%;background:linear-gradient(90deg,#22c55e,#60a5fa);border-radius:999px;transition:width .5s ease}.v541-actions{display:flex;gap:8px;flex-wrap:wrap}.v541-btn{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.11);color:#fff;border-radius:12px;padding:9px 12px;font-weight:900;cursor:pointer}.v541-btn:hover{background:rgba(255,255,255,.18)}@media(max-width:1100px){.v541-sourceGrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.v541-sourceGrid{grid-template-columns:1fr}}
+</style>
+<script id="v541-datahub-upgrade">
+(function(){
+  window.MES_VERSION='V54.1.0';
+  if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
+  function now(){return new Date().toLocaleString();}
+  function safeCount(a){return Array.isArray(a)?a.length:0;}
+  function bySource(name){var rows=(window.AppState&&AppState.source)||[];return rows.filter(function(r){return String((r.source||'')).toUpperCase().indexOf(String(name).toUpperCase())>=0;}).length;}
+  function updatedAt(rows){
+    rows=rows||[];var m='';rows.forEach(function(r){var u=r.updated_at||r.created_at||r.prod_date||r.report_date||r.plan_date||'';if(String(u)>String(m))m=u;});return m||'-';
+  }
+  function hubSources(){
+    var source=(window.AppState&&AppState.source)||[];
+    var sl=bySource('SL31A'), f43=bySource('4-3'), pd=bySource('PD11B');
+    if(!sl && source.length) sl=source.filter(function(r){return /SL31|訂單/.test(String(r.source||''));}).length;
+    if(!f43 && source.length) f43=source.filter(function(r){return /4-3|工單/.test(String(r.source||''));}).length;
+    if(!pd && source.length) pd=source.filter(function(r){return /PD11/i.test(String(r.source||''));}).length;
+    return [
+      {k:'SL31A',name:'SL31A',sub:'訂單 / 規格 / 目標',count:sl,time:updatedAt(source.filter(function(r){return /SL31/i.test(String(r.source||''));}))},
+      {k:'4-3',name:'4-3',sub:'工單 / 排程',count:f43,time:updatedAt(source.filter(function(r){return /4-3/.test(String(r.source||''));}))},
+      {k:'PD11B',name:'PD11B',sub:'日報 / 狀態',count:pd,time:updatedAt(source.filter(function(r){return /PD11/i.test(String(r.source||''));}))},
+      {k:'5-C',name:'5-C',sub:'命令單 / 製號 / 尺寸',count:safeCount(AppState.prod5c),time:updatedAt(AppState.prod5c)},
+      {k:'5-3',name:'5-3',sub:'製程 / 機台 / 實績',count:safeCount(AppState.prod53),time:updatedAt(AppState.prod53)}
+    ];
+  }
+  function sourceCard(x){var cls=x.count>0?'v541-ok':'v541-empty';var icon=x.count>0?'🟢':'🟡';return '<div class="v541-source '+cls+'"><div class="name">'+icon+' '+x.name+'</div><div class="sub">'+x.sub+'</div><div class="num">'+(x.count||0).toLocaleString()+'</div><div class="time">最後資料：'+(x.time||'-')+'</div></div>';}
+  window.v541RenderDataHub=function(){
+    var grid=document.getElementById('dashboardGrid');if(!grid)return;
+    var old=document.getElementById('v541DataHub');if(old)old.remove();
+    var list=hubSources(), ok=list.filter(function(x){return x.count>0;}).length, pct=Math.round(ok/list.length*100);
+    var h=document.createElement('div');h.id='v541DataHub';h.className='v541-hub';
+    h.innerHTML='<div class="v541-hubTop"><div><h2>📁 五份資料更新中心｜Data Hub</h2><div class="meta">每日更新：SL31A、4-3、PD11B、5-C、5-3；Dashboard / Target / Key In / 晨會共用同一份資料。</div></div><div class="v541-actions"><span class="v541-badge">完整度 '+ok+'/'+list.length+'｜'+pct+'%</span><button class="v541-btn" onclick="v541ReloadAll()">↻ 重新讀取五份資料</button><button class="v541-btn" onclick="switchView&&switchView(\'datacenter\')">資料中心</button></div></div><div class="v541-sourceGrid">'+list.map(sourceCard).join('')+'</div><div class="v541-bar"><div class="v541-fill" style="width:'+pct+'%"></div></div>';
+    grid.insertBefore(h, grid.firstChild);
+  };
+  function loadProd5C(){
+    if(!window.google||!google.script||!google.script.run||!window.AppState)return;
+    google.script.run.withSuccessHandler(function(res){AppState.prod5c=(res&&res.rows)||[];AppState.apiHealth.prod5c=true;v541RenderDataHub();}).withFailureHandler(function(e){AppState.apiHealth.prod5c=false;console.warn('5-C讀取失敗',e);v541RenderDataHub();}).listProd5CData();
+  }
+  function loadProd53(){
+    if(!window.google||!google.script||!google.script.run||!window.AppState)return;
+    google.script.run.withSuccessHandler(function(res){AppState.prod53=(res&&res.rows)||[];AppState.apiHealth.prod53=true;v541RenderDataHub();}).withFailureHandler(function(e){AppState.apiHealth.prod53=false;console.warn('5-3讀取失敗',e);v541RenderDataHub();}).listProd53Data();
+  }
+  window.v541ReloadAll=function(){
+    try{ if(typeof loadSource==='function')loadSource(); }catch(e){}
+    try{ if(typeof loadKeyin==='function')loadKeyin(); }catch(e){}
+    try{ if(typeof loadTargets==='function')loadTargets(); }catch(e){}
+    loadProd5C();loadProd53();
+    setTimeout(v541RenderDataHub,700);
+  };
+  var oldRender=window.renderDashboard;
+  if(typeof oldRender==='function'){
+    window.renderDashboard=function(){oldRender.apply(this,arguments);setTimeout(v541RenderDataHub,30);};
+    if(window.R)R.dashboard=window.renderDashboard;
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){v541ReloadAll(); if((AppState.activeView||'dashboard')==='dashboard')v541RenderDataHub();},1200);});
 })();
 </script>
 

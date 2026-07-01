@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V43.0 MES 生產 Key In LTS｜Employee資料中心</title>
+<title>V54.1 MES 生產 Key In LTS｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -173,6 +173,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <div id="toast" class="toast"></div>
 
 <script>
+var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+(function setupHybridApi(){
+  var hasGas = !!(window.google && google.script && google.script.run);
+  if(hasGas) return;
+  function encodeParams(obj){var q=[];Object.keys(obj||{}).forEach(function(k){if(k!=='action'&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(obj[k]));});return q.length?"&"+q.join("&"):"";}
+  function getAction(name,args){var low=String(name||'').toLowerCase();if(low==='getsourcedata')return{action:'source'};if(low==='listkeyin')return{action:'list'};if(low==='listemployees')return{action:'employees'};if(low==='listtargetplans')return{action:'targets',date:args&&args[0]};return{action:low};}
+  function callGet(name,args,ok,fail){var a=getAction(name,args||[]);fetch(API_URL+'?action='+encodeURIComponent(a.action)+encodeParams(a),{method:'GET',redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){console.error('MES API GET failed',name,e);fail&&fail(e);});}
+  function callPost(name,args,ok,fail){var action=String(name||'').toLowerCase();var body=args&&args.length===1?args[0]:{args:args||[]};fetch(API_URL+'?action='+encodeURIComponent(action),{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){console.error('MES API POST failed',name,e);fail&&fail(e);});}
+  function makeRunner(){var ok=null,fail=null;var runner={withSuccessHandler:function(fn){ok=fn;return proxy;},withFailureHandler:function(fn){fail=fn;return proxy;}};var proxy=new Proxy(runner,{get:function(target,prop){if(prop in target)return target[prop];return function(){var args=[].slice.call(arguments);var post={saveKeyin:1,replaceSourceData:1};if(post[prop])callPost(prop,args,ok,fail);else callGet(prop,args,ok,fail);ok=null;fail=null;return proxy;};}});return proxy;}
+  window.google={script:{run:makeRunner()}};
+})();
 var AppState={d43:[],pd:[],sl:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
 var EMP={};
 var EMP_ROWS=[];
