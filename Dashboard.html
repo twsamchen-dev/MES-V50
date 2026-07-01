@@ -1,6 +1,6 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V57.1 MES Enterprise Stable Fetch</title><style>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V57.2 MES Enterprise Hybrid Stable</title><style>
 :root{--bg:#071529;--panel:#0b2140;--card:#112b52;--line:#29466f;--txt:#eef6ff;--muted:#a9c1df;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#061529,#0b2140 55%,#061529);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--txt)}header{padding:22px 28px;background:linear-gradient(135deg,#0f3b8f,#071529);border-bottom:1px solid #1e3a5f}h1{margin:0;font-size:34px}header p{color:#c7d7f0;margin:8px 0 0}.wrap{max-width:1500px;margin:auto;padding:18px}.card{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 12px 32px rgba(0,0,0,.18)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.col12{grid-column:span 12}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}.col2{grid-column:span 2}@media(max-width:900px){.col6,.col4,.col3,.col2{grid-column:span 12}}.kpi{background:linear-gradient(135deg,#174ea6,#0b2140);border:1px solid #2b5a9b;border-radius:18px;padding:18px}.kpi .label{color:#c7d7f0;font-weight:800}.kpi .num{font-size:42px;font-weight:900;margin-top:8px}.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:900;color:white;background:var(--brand);cursor:pointer;margin:4px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.warn{background:var(--warn)}input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #bed0e8;font-size:16px}label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.muted{color:var(--muted);font-size:13px}.oktext{color:#86efac}.badtext{color:#fecaca}table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.04)}th,td{padding:9px;border-bottom:1px solid #27466e;text-align:left;font-size:13px}th{background:rgba(255,255,255,.08);position:sticky;top:0}.scroll{max-height:450px;overflow:auto;border-radius:12px;border:1px solid #27466e}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.pill{display:inline-block;background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 9px;font-weight:900;font-size:12px;margin:2px}.warnbox{background:#fff7ed;color:#7c2d12;border-left:6px solid var(--warn)}.light{background:#f8fbff;color:#10213c}.light h2{color:#10213c}.light .muted{color:#64748b}.nav{display:flex;gap:10px;flex-wrap:wrap}.nav a{color:#fff;background:#1d4ed8;text-decoration:none;padding:9px 13px;border-radius:10px;font-weight:900}
-</style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body><header><h1>生產戰情室｜V57.1 Enterprise Stable LTS</h1><p>五份資料 DataHub：SL31A、4-3、PD11B、5-C、5-3｜GitHub + Apps Script 統一 API</p></header><div class="wrap"><div class="nav"><a href="Dashboard.html">Dashboard</a><a href="index.html">Key In</a><a href="Target.html">Target</a><a href="https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec?mode=admin" target="_blank">Apps Script 管理端</a></div><div class="card warnbox"><b>GitHub 版僅讀取顯示，不直接上傳 Excel。</b> 若要更新五份資料，請開啟 Apps Script 管理端。</div><div class="card"><div class="row"><button class="btn ok" onclick="loadAll()">重新讀取五份資料</button><button class="btn ghost" onclick="window.open(API_URL+'?mode=admin','_blank')">開啟 Apps Script 管理端</button><span id="status" class="muted">尚未讀取</span></div></div><div class="grid" id="kpis"></div><div class="grid"><div class="card col6"><h2>資料來源明細</h2><div id="sourceBox"></div></div><div class="card col6"><h2>今日 Key In</h2><div id="keyinBox"></div></div><div class="card col6"><h2>5-C</h2><div id="prod5cBox"></div></div><div class="card col6"><h2>5-3</h2><div id="prod53Box"></div></div></div></div><div id="toast" class="toast"></div><script>
+</style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body><header><h1>生產戰情室｜V57.2 Enterprise Hybrid Stable LTS</h1><p>五份資料 DataHub：SL31A、4-3、PD11B、5-C、5-3｜GitHub + Apps Script 統一 API</p></header><div class="wrap"><div class="nav"><a href="Dashboard.html">Dashboard</a><a href="index.html">Key In</a><a href="Target.html">Target</a><a href="https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec?mode=admin" target="_blank">Apps Script 管理端</a></div><div class="card warnbox"><b>GitHub 版僅讀取顯示，不直接上傳 Excel。</b> 若要更新五份資料，請開啟 Apps Script 管理端。</div><div class="card"><div class="row"><button class="btn ok" onclick="loadAll()">重新讀取五份資料</button><button class="btn ghost" onclick="window.open(API_URL+'?mode=admin','_blank')">開啟 Apps Script 管理端</button><span id="status" class="muted">尚未讀取</span></div></div><div class="grid" id="kpis"></div><div class="grid"><div class="card col6"><h2>資料來源明細</h2><div id="sourceBox"></div></div><div class="card col6"><h2>今日 Key In</h2><div id="keyinBox"></div></div><div class="card col6"><h2>5-C</h2><div id="prod5cBox"></div></div><div class="card col6"><h2>5-3</h2><div id="prod53Box"></div></div></div></div><div id="toast" class="toast"></div><script>
 const API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
 function toast(s){let t=document.getElementById('toast');if(t){t.textContent=s;t.className='toast show';setTimeout(()=>t.className='toast',2600)}}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -8,23 +8,68 @@ function dateKey(v){let s=String(v||'').trim().replace(/\//g,'-');let m=s.match(
 function num(v){let n=parseFloat(String(v??'').replace(/,/g,''));return isNaN(n)?0:n}
 function wo12(v){return String(v??'').trim().replace(/\s+/g,'').toUpperCase().slice(0,12)}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function apiGet(action, params={}){
+function apiGetFetch(action, params={}){
   const qs = new URLSearchParams(Object.assign({action, _: Date.now()}, params)).toString();
   const url = API_URL + '?' + qs;
-  const res = await fetch(url, {method:'GET', redirect:'follow', cache:'no-store'});
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); }
-  catch(e) { throw new Error('API 回傳非 JSON：' + text.slice(0,120)); }
-  if(json && json.ok === false) throw new Error(json.error || json.message || 'API error');
-  return json || {};
+  return fetch(url, {method:'GET', redirect:'follow', cache:'no-store'})
+    .then(res => {
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      return res.text();
+    })
+    .then(text => {
+      let json;
+      try { json = JSON.parse(text); }
+      catch(e) { throw new Error('API 回傳非 JSON：' + text.slice(0,120)); }
+      if(json && json.ok === false) throw new Error(json.error || json.message || 'API error');
+      return json || {};
+    });
+}
+function apiGetJsonp(action, params={}){
+  return new Promise((resolve,reject)=>{
+    const cb='MES_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);
+    const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();
+    const s=document.createElement('script');
+    let done=false;
+    const timer=setTimeout(()=>cleanup(new Error('JSONP timeout')),25000);
+    function cleanup(err,res){
+      if(done) return; done=true;
+      clearTimeout(timer);
+      try{delete window[cb]}catch(e){window[cb]=undefined}
+      if(s.parentNode) s.parentNode.removeChild(s);
+      if(err) reject(err); else resolve(res||{});
+    }
+    window[cb]=(res)=>{
+      if(res && res.ok===false) cleanup(new Error(res.error||res.message||'API error'));
+      else cleanup(null,res||{});
+    };
+    s.onerror=()=>cleanup(new Error('JSONP 連線失敗'));
+    s.src=API_URL+'?'+qs;
+    document.head.appendChild(s);
+  });
+}
+async function apiGet(action, params={}){
+  if(location.hostname.includes('github.io')) return apiGetJsonp(action, params);
+  try { return await apiGetFetch(action, params); }
+  catch(e) { return apiGetJsonp(action, params); }
 }
 
 function apiPost(action, body){
-  if(location.hostname.includes('github.io')){window.open(API_URL+'?mode=admin','_blank'); return Promise.reject(new Error('GitHub 版不寫入，已開啟 Apps Script 管理端'));}
+  if(location.hostname.includes('github.io')){
+    window.open(API_URL+'?mode=admin','_blank');
+    return Promise.reject(new Error('GitHub 版不寫入，已開啟 Apps Script 管理端'));
+  }
+  if(window.google && google.script && google.script.run){
+    const map={savekeyin:'saveKeyin',savetargetplan:'saveTargetPlan',deletetargetplan:'deleteTargetPlan',replacesourcedata:'replaceSourceData',replaceprod5cdata:'replaceProd5CData',replaceprod53data:'replaceProd53Data'};
+    const fn=map[String(action||'').toLowerCase()];
+    if(fn && google.script.run[fn]){
+      return new Promise((resolve,reject)=>{
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](body);
+      });
+    }
+  }
   return fetch(API_URL+'?action='+encodeURIComponent(action),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body||{})}).then(r=>r.text()).then(t=>JSON.parse(t));
 }
+
 function table(rows, heads){rows=rows||[]; if(!rows.length)return '<div class="muted">目前無資料</div>'; return '<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,600).map(r=>'<tr>'+heads.map(h=>'<td>'+esc(r[h]||'')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';}
 
 let S={source:[],keyin:[],employees:[],targets:[],prod5c:[],prod53:[]};
@@ -40,7 +85,36 @@ function setKpis(){
   <div class="kpi col2"><div class="label">總產量</div><div class="num">${Math.round(totalM2)}</div></div>`;
 }
 async function loadAll(){
- try{document.getElementById('status').textContent='讀取中...'; const [source,keyin,emp,targets,p5,p53]=await Promise.all([apiGet('source'),apiGet('list'),apiGet('employees'),apiGet('targets'),apiGet('prod5c'),apiGet('prod53')]); S={source:source.rows||[],keyin:keyin.rows||[],employees:emp.rows||[],targets:targets.rows||[],prod5c:p5.rows||[],prod53:p53.rows||[]}; setKpis(); renderTables(); document.getElementById('status').textContent='已讀取 '+new Date().toLocaleString(); toast('五份資料讀取完成');}catch(e){alert('讀取失敗：'+e.message);document.getElementById('status').textContent='讀取失敗';}
+  const status=document.getElementById('status');
+  status.textContent='讀取中...';
+  const jobs=[
+    ['source', apiGet('source')],
+    ['keyin', apiGet('list')],
+    ['employees', apiGet('employees')],
+    ['targets', apiGet('targets')],
+    ['prod5c', apiGet('prod5c')],
+    ['prod53', apiGet('prod53')]
+  ];
+  const results=await Promise.allSettled(jobs.map(j=>j[1]));
+  let errors=[];
+  results.forEach((r,i)=>{
+    const key=jobs[i][0];
+    if(r.status==='fulfilled'){
+      S[key]=r.value.rows||[];
+    }else{
+      S[key]=[];
+      errors.push(key+': '+(r.reason&&r.reason.message?r.reason.message:r.reason));
+    }
+  });
+  setKpis();
+  renderTables();
+  status.textContent='已讀取 '+new Date().toLocaleString();
+  if(errors.length){
+    toast('部分資料讀取失敗：'+errors.join('；'));
+    console.warn('MES API partial errors', errors);
+  }else{
+    toast('五份資料讀取完成');
+  }
 }
 function renderTables(){document.getElementById('sourceBox').innerHTML=table(S.source,['source','work_order_no','order_no','part_no','batch_no','product_spec','target_qty','process','customer','machine','due_date','status','updated_at']);document.getElementById('keyinBox').innerHTML=table(S.keyin,['report_date','work_order_no','batch_no','machine_code','actual_output','unit','emp_no','emp_name','created_at']);document.getElementById('prod5cBox').innerHTML=table(S.prod5c,['command_no','work_order_no','part_no','product_name','batch_no','qty','unit','convert_m2','updated_at']);document.getElementById('prod53Box').innerHTML=table(S.prod53,['report_date','work_order_no','process','machine','actual_output','idle_time','reason','updated_at']);}
 loadAll();</script></body></html>
