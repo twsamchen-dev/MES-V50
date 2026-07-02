@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>V57.4 Enterprise Professional｜幹部目標管理</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}
@@ -350,38 +349,6 @@ function normalize53Row(row){
     raw_json: JSON.stringify(row)
   };
 }
-async function upload53File(){
-  var f=el('file53')&&el('file53').files&&el('file53').files[0];
-  if(!f){toast('請先選擇 5-3.xlsx');return;}
-  if(!window.XLSX){toast('XLSX 套件未載入，請重新整理後再試');return;}
-  var data=await f.arrayBuffer();
-  var wb=XLSX.read(data,{type:'array'});
-  var out=[];
-  wb.SheetNames.forEach(function(name){
-    var ws=wb.Sheets[name];
-    var arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    if(!arr.length)return;
-    var headerRow=0,best=-1;
-    for(var i=0;i<Math.min(arr.length,30);i++){
-      var txt=arr[i].map(function(v){return normalize5CHeader(v)}).join('|');
-      var score=0;
-      ['生產日期','類別','班別','日報條碼','時間起','時間迄','料品編號','產出數','機台','製程說明'].forEach(function(k){if(txt.indexOf(normalize5CHeader(k))>=0)score++;});
-      if(score>best){best=score;headerRow=i;}
-    }
-    var json=XLSX.utils.sheet_to_json(ws,{defval:'',range:headerRow});
-    json.forEach(function(r){
-      var nr={};
-      Object.keys(r).forEach(function(k){nr[k]=r[k]; nr[normalize5CHeader(k)]=r[k];});
-      var o=normalize53Row(nr);
-      if(o.prod_date||o.daily_barcode||o.machine||o.process_name)out.push(o);
-    });
-  });
-  if(!out.length){toast('5-3 未讀到可用資料，請確認表頭');return;}
-  run('replaceProd53Data',[out],function(res){
-    toast('5-3 已上傳 '+((res&&res.count)||out.length)+' 筆');
-    loadProd53(function(){renderPlans();});
-  },'上傳 5-3 失敗');
-}
 function actual53ByWorkOrder(wo){
   var w=wo12(wo);
   if(!w)return 0;
@@ -457,38 +424,6 @@ function normalize5CRow(row){
     converted_m2:m2||'',
     raw_json:JSON.stringify(row)
   };
-}
-async function upload5CFile(){
-  var f=el('file5c')&&el('file5c').files&&el('file5c').files[0];
-  if(!f){toast('請先選擇 5-C.xlsx');return;}
-  if(!window.XLSX){toast('XLSX 套件未載入，請重新整理後再試');return;}
-  var data=await f.arrayBuffer();
-  var wb=XLSX.read(data,{type:'array'});
-  var out=[];
-  wb.SheetNames.forEach(function(name){
-    var ws=wb.Sheets[name];
-    var arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    if(!arr.length)return;
-    var headerRow=0,best=-1;
-    for(var i=0;i<Math.min(arr.length,30);i++){
-      var txt=arr[i].map(function(v){return normalize5CHeader(v)}).join('|');
-      var score=0;
-      ['命令單號','產品編號','品名','數量','日期','單號','部門','製號','寬mm','長'].forEach(function(k){if(txt.indexOf(normalize5CHeader(k))>=0)score++;});
-      if(score>best){best=score;headerRow=i;}
-    }
-    var json=XLSX.utils.sheet_to_json(ws,{defval:'',range:headerRow});
-    json.forEach(function(r){
-      var nr={};
-      Object.keys(r).forEach(function(k){nr[k]=r[k]; nr[normalize5CHeader(k)]=r[k];});
-      var o=normalize5CRow(nr);
-      if(o.command_no||o.batch_no||o.product_no)out.push(o);
-    });
-  });
-  if(!out.length){toast('5-C 未讀到可用資料，請確認表頭');return;}
-  run('replaceProd5CData',[out],function(res){
-    toast('5-C 已上傳 '+((res&&res.count)||out.length)+' 筆');
-    loadProd5C(function(){renderQuickOrders();lookupWO();});
-  },'上傳 5-C 失敗');
 }
 function find5CByWorkOrder(wo,batch){
   var w=wo12(wo), b=norm(batch).replace(/\s+/g,'');
