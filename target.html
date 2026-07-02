@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V54.2 Enterprise Professional｜幹部目標管理</title>
+<title>V57.4 Enterprise Professional｜幹部目標管理</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
@@ -33,28 +33,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
         <span class="pill" id="lastLoad">尚未讀取</span>
       </div>
     </div>
-
-    <div class="card col12">
-      <h2>5-C 命令單別產出明細</h2>
-      <div class="sub">上傳 5-C 後，系統會依命令單號 / 製號補強產品編號、品名、厚寬長與換算㎡，Target 目標面積會優先使用 5-C 的寬度與長度計算。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file5c" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="upload5CFile()">上傳 5-C 資料</button>
-        <button class="btn ghost" type="button" onclick="loadProd5C()">讀取 5-C 資料</button>
-        <span class="pill" id="prod5cStatus">5-C 尚未讀取</span>
-      </div>
-    </div>
-
-    <div class="card col12">
-      <h2>5-3 生產日報／機台產出明細</h2>
-      <div class="sub">上傳 5-3 後，系統會依日報條碼 / 工單前 12 碼整合實際產出、機台、製程與閒置原因，用於 Target 目標 vs 實績比對。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file53" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="upload53File()">上傳 5-3 資料</button>
-        <button class="btn ghost" type="button" onclick="loadProd53()">讀取 5-3 資料</button>
-        <span class="pill" id="prod53Status">5-3 尚未讀取</span>
-      </div>
-    </div>
+</div>
 
     <div class="card kpi blue col2"><div class="name">今日目標筆數</div><div class="num" id="kpiCount">0</div></div>
     <div class="card kpi green col2"><div class="name">今日目標 R</div><div class="num" id="kpiRoll">0</div></div>
@@ -106,6 +85,105 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 </div>
 <div id="toast" class="toast"></div>
 <script>
+var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+(function setupHybridApi(){
+  var hasGas = !!(window.google && google.script && google.script.run);
+  window.MES_IS_GITHUB = !hasGas;
+  if(hasGas) return;
+
+  function encodeParams(obj){
+    var q=[];
+    Object.keys(obj||{}).forEach(function(k){
+      if(k==="action") return;
+      if(obj[k]!==undefined && obj[k]!==null && obj[k]!=="") q.push(encodeURIComponent(k)+"="+encodeURIComponent(obj[k]));
+    });
+    return q.length ? "&"+q.join("&") : "";
+  }
+  function getAction(name,args){
+    var low=String(name||"").toLowerCase();
+    // V56 Stable：支援 Apps Script 新舊 action 名稱，避免前後端版本不同步。
+    // primary 是目前 Code.gs 建議路由；fallback 可支援舊版 doGet。
+    if(low==="getsourcedata") return {action:"source", fallback:["getsourcedata"], date:args && args[0]};
+    if(low==="listkeyin") return {action:"list", fallback:["listkeyin"], date:args && args[0]};
+    if(low==="listemployees") return {action:"employees", fallback:["listemployees"], date:args && args[0]};
+    if(low==="listtargetplans") return {action:"targets", fallback:["listtargetplans"], date:args && args[0]};
+    if(low==="listprod5cdata") return {action:"prod5c", fallback:["listprod5cdata"], date:args && args[0]};
+    if(low==="listprod53data") return {action:"prod53", fallback:["listprod53data"], date:args && args[0]};
+    return {action:low, fallback:[]};
+  }
+  function parseJsonText(t){
+    try{return JSON.parse(t)}catch(e){throw new Error("API 回傳非 JSON："+String(t||"").slice(0,120))}
+  }
+  function buildUrl(a){
+    return API_URL+"?action="+encodeURIComponent(a.action)+encodeParams(a);
+  }
+  function fetchGetAction(a){
+    return fetch(buildUrl(a), {method:"GET", redirect:"follow", cache:"no-store"})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+      .then(parseJsonText)
+      .then(function(res){ if(res && res.ok===false) throw new Error(res.error||res.message||"API error"); return res; });
+  }
+  function jsonpGetAction(a){
+    return new Promise(function(resolve,reject){
+      var cb="MES_JSONP_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
+      var s=document.createElement("script");
+      var timer=setTimeout(function(){cleanup();reject(new Error("API timeout"));},20000);
+      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;} if(s&&s.parentNode)s.parentNode.removeChild(s);}
+      window[cb]=function(res){cleanup(); if(res && res.ok===false) reject(new Error(res.error||res.message||"API error")); else resolve(res);};
+      s.onerror=function(){cleanup();reject(new Error("JSONP 連線失敗"));};
+      s.src=buildUrl(a)+"&callback="+encodeURIComponent(cb)+"&_="+Date.now();
+      document.head.appendChild(s);
+    });
+  }
+  function getActionWithTransport(a){
+    // GitHub Pages 跨網域讀 Apps Script JSON 會被 CORS 擋住，改用 JSONP；Apps Script 內嵌仍用一般 GET。
+    if(window.MES_IS_GITHUB) return jsonpGetAction(a);
+    return fetchGetAction(a);
+  }
+  function callGet(name,args,ok,fail){
+    var a=getAction(name,args||[]);
+    var actions=[a.action].concat(a.fallback||[]);
+    var lastErr=null;
+    function tryOne(i){
+      if(i>=actions.length) throw (lastErr||new Error("API 連線失敗"));
+      var next=Object.assign({},a,{action:actions[i]});
+      return getActionWithTransport(next).catch(function(e){lastErr=e;console.warn("MES API GET retry",name,next.action,e);return tryOne(i+1);});
+    }
+    tryOne(0)
+      .then(function(res){ if(ok) ok(res); })
+      .catch(function(e){ console.error("MES API GET failed",name,e); if(fail) fail(e); else alert("API 連線失敗："+e.message); });
+  }
+  function callPost(name,args,ok,fail){
+    // GitHub Pages 不能穩定 POST 大量 Excel 到 Apps Script（CORS 限制）。
+    // 所有寫入動作改由 Apps Script 管理端執行；GitHub 僅查詢與顯示。
+    var e=new Error("GitHub 版不支援寫入，請使用 Apps Script 資料更新中心");
+    console.warn("MES API POST blocked on GitHub",name,e);
+    if(typeof openAdminUploadCenter==="function") openAdminUploadCenter();
+    if(fail) fail(e); else alert(e.message);
+  }
+  function makeRunner(){
+    var ok=null, fail=null;
+    var runner={
+      withSuccessHandler:function(fn){ ok=fn; return proxy; },
+      withFailureHandler:function(fn){ fail=fn; return proxy; }
+    };
+    var proxy=new Proxy(runner,{
+      get:function(target,prop){
+        if(prop in target) return target[prop];
+        return function(){
+          var args=[].slice.call(arguments);
+          var post={saveKeyin:1,saveTargetPlan:1,replaceSourceData:1,replaceProd5CData:1,replaceProd53Data:1,deleteTargetPlan:1};
+          if(post[prop]) callPost(prop,args,ok,fail); else callGet(prop,args,ok,fail);
+          ok=null; fail=null;
+          return proxy;
+        };
+      }
+    });
+    return proxy;
+  }
+  window.google={script:{run:makeRunner()}};
+})();
+
 var App={plans:[],source:[],prod5c:[],prod53:[],employees:[],autoLengthM:0,autoWidthMm:0,autoLengthSource:''};
 function el(id){return document.getElementById(id)}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
