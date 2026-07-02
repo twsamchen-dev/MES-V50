@@ -34,26 +34,9 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
       </div>
     </div>
 
-    <div class="card col12">
-      <h2>5-C 命令單別產出明細</h2>
-      <div class="sub">上傳 5-C 後，系統會依命令單號 / 製號補強產品編號、品名、厚寬長與換算㎡，Target 目標面積會優先使用 5-C 的寬度與長度計算。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file5c" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="upload5CFile()">上傳 5-C 資料</button>
-        <button class="btn ghost" type="button" onclick="loadProd5C()">讀取 5-C 資料</button>
-        <span class="pill" id="prod5cStatus">5-C 尚未讀取</span>
-      </div>
-    </div>
-
-    <div class="card col12">
-      <h2>5-3 生產日報／機台產出明細</h2>
-      <div class="sub">上傳 5-3 後，系統會依日報條碼 / 工單前 12 碼整合實際產出、機台、製程與閒置原因，用於 Target 目標 vs 實績比對。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file53" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="upload53File()">上傳 5-3 資料</button>
-        <button class="btn ghost" type="button" onclick="loadProd53()">讀取 5-3 資料</button>
-        <span class="pill" id="prod53Status">5-3 尚未讀取</span>
-      </div>
+    <div class="card col12" style="border-left:5px solid #16a34a;background:#f0fdf4">
+      <h2>資料來源說明</h2>
+      <div class="sub">5-C、5-3 資料請統一到 Apps Script 每日五份資料更新中心上傳；本頁只做幹部目標輸入與目標管理。</div>
     </div>
 
     <div class="card kpi blue col2"><div class="name">今日目標筆數</div><div class="num" id="kpiCount">0</div></div>
@@ -371,38 +354,6 @@ function normalize53Row(row){
     raw_json: JSON.stringify(row)
   };
 }
-async function upload53File(){
-  var f=el('file53')&&el('file53').files&&el('file53').files[0];
-  if(!f){toast('請先選擇 5-3.xlsx');return;}
-  if(!window.XLSX){toast('XLSX 套件未載入，請重新整理後再試');return;}
-  var data=await f.arrayBuffer();
-  var wb=XLSX.read(data,{type:'array'});
-  var out=[];
-  wb.SheetNames.forEach(function(name){
-    var ws=wb.Sheets[name];
-    var arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    if(!arr.length)return;
-    var headerRow=0,best=-1;
-    for(var i=0;i<Math.min(arr.length,30);i++){
-      var txt=arr[i].map(function(v){return normalize5CHeader(v)}).join('|');
-      var score=0;
-      ['生產日期','類別','班別','日報條碼','時間起','時間迄','料品編號','產出數','機台','製程說明'].forEach(function(k){if(txt.indexOf(normalize5CHeader(k))>=0)score++;});
-      if(score>best){best=score;headerRow=i;}
-    }
-    var json=XLSX.utils.sheet_to_json(ws,{defval:'',range:headerRow});
-    json.forEach(function(r){
-      var nr={};
-      Object.keys(r).forEach(function(k){nr[k]=r[k]; nr[normalize5CHeader(k)]=r[k];});
-      var o=normalize53Row(nr);
-      if(o.prod_date||o.daily_barcode||o.machine||o.process_name)out.push(o);
-    });
-  });
-  if(!out.length){toast('5-3 未讀到可用資料，請確認表頭');return;}
-  run('replaceProd53Data',[out],function(res){
-    toast('5-3 已上傳 '+((res&&res.count)||out.length)+' 筆');
-    loadProd53(function(){renderPlans();});
-  },'上傳 5-3 失敗');
-}
 function actual53ByWorkOrder(wo){
   var w=wo12(wo);
   if(!w)return 0;
@@ -478,38 +429,6 @@ function normalize5CRow(row){
     converted_m2:m2||'',
     raw_json:JSON.stringify(row)
   };
-}
-async function upload5CFile(){
-  var f=el('file5c')&&el('file5c').files&&el('file5c').files[0];
-  if(!f){toast('請先選擇 5-C.xlsx');return;}
-  if(!window.XLSX){toast('XLSX 套件未載入，請重新整理後再試');return;}
-  var data=await f.arrayBuffer();
-  var wb=XLSX.read(data,{type:'array'});
-  var out=[];
-  wb.SheetNames.forEach(function(name){
-    var ws=wb.Sheets[name];
-    var arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    if(!arr.length)return;
-    var headerRow=0,best=-1;
-    for(var i=0;i<Math.min(arr.length,30);i++){
-      var txt=arr[i].map(function(v){return normalize5CHeader(v)}).join('|');
-      var score=0;
-      ['命令單號','產品編號','品名','數量','日期','單號','部門','製號','寬mm','長'].forEach(function(k){if(txt.indexOf(normalize5CHeader(k))>=0)score++;});
-      if(score>best){best=score;headerRow=i;}
-    }
-    var json=XLSX.utils.sheet_to_json(ws,{defval:'',range:headerRow});
-    json.forEach(function(r){
-      var nr={};
-      Object.keys(r).forEach(function(k){nr[k]=r[k]; nr[normalize5CHeader(k)]=r[k];});
-      var o=normalize5CRow(nr);
-      if(o.command_no||o.batch_no||o.product_no)out.push(o);
-    });
-  });
-  if(!out.length){toast('5-C 未讀到可用資料，請確認表頭');return;}
-  run('replaceProd5CData',[out],function(res){
-    toast('5-C 已上傳 '+((res&&res.count)||out.length)+' 筆');
-    loadProd5C(function(){renderQuickOrders();lookupWO();});
-  },'上傳 5-C 失敗');
 }
 function find5CByWorkOrder(wo,batch){
   var w=wo12(wo), b=norm(batch).replace(/\s+/g,'');
