@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V58.0 Enterprise Performance｜幹部目標管理</title>
+<title>V58.3 Enterprise Performance｜幹部目標管理</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
@@ -19,7 +19,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 </head>
 <body>
 <header>
-  <h1>幹部目標管理｜V58.0 Enterprise Performance</h1>
+  <h1>幹部目標管理｜V58.3 Enterprise Performance</h1>
   <p>Target Planning：幹部每日目標排程、機台目標、工單目標、晨會追蹤資料來源。</p>
 </header>
 <div class="wrap">
@@ -36,57 +36,8 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 
 
 
-    <div class="card col4">
-      <h2>SL31A 訂單／規格／目標</h2>
-      <div class="sub">上傳 SL31A 後，系統會更新訂單、規格、目標數量，供 Dashboard / Key In 查詢。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="fileSL" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="uploadSourceFile('SL31A','fileSL','slStatus')">上傳 SL31A</button>
-        <span class="pill" id="slStatus">SL31A 尚未上傳</span>
-      </div>
-    </div>
-
-    <div class="card col4">
-      <h2>4-3 生產工單／排程</h2>
-      <div class="sub">上傳 4-3 後，系統會更新工單、批號、客戶、製程與排程資料。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file43" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="uploadSourceFile('4-3','file43','s43Status')">上傳 4-3</button>
-        <span class="pill" id="s43Status">4-3 尚未上傳</span>
-      </div>
-    </div>
-
-    <div class="card col4">
-      <h2>PD11B 部門日報／狀態</h2>
-      <div class="sub">上傳 PD11B 後，系統會更新工單狀態、機台、實績與日報資訊。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="filePD" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="uploadSourceFile('PD11B','filePD','pdStatus')">上傳 PD11B</button>
-        <span class="pill" id="pdStatus">PD11B 尚未上傳</span>
-      </div>
-    </div>
-
-    <div class="card col12">
-      <h2>5-C 命令單別產出明細</h2>
-      <div class="sub">上傳 5-C 後，系統會依命令單號 / 製號補強產品編號、品名、厚寬長與換算㎡，Target 目標面積會優先使用 5-C 的寬度與長度計算。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file5c" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="upload5CFile()">上傳 5-C 資料</button>
-        <button class="btn ghost" type="button" onclick="loadProd5C()">讀取 5-C 資料</button>
-        <span class="pill" id="prod5cStatus">5-C 尚未讀取</span>
-      </div>
-    </div>
-
-    <div class="card col12">
-      <h2>5-3 生產日報／機台產出明細</h2>
-      <div class="sub">上傳 5-3 後，系統會依日報條碼 / 工單前 12 碼整合實際產出、機台、製程與閒置原因，用於 Target 目標 vs 實績比對。</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="file53" accept=".xlsx,.xls,.csv" style="max-width:360px">
-        <button class="btn ok" type="button" onclick="upload53File()">上傳 5-3 資料</button>
-        <button class="btn ghost" type="button" onclick="loadProd53()">讀取 5-3 資料</button>
-        <span class="pill" id="prod53Status">5-3 尚未讀取</span>
-      </div>
-    </div>
+    <!-- GitHub 顯示版：已移除五份檔案上傳區。
+         檔案上傳與資料更新請回 Apps Script 管理端處理。 -->
 
     <div class="card kpi blue col2"><div class="name">今日目標筆數</div><div class="num" id="kpiCount">0</div></div>
     <div class="card kpi green col2"><div class="name">今日目標 R</div><div class="num" id="kpiRoll">0</div></div>
