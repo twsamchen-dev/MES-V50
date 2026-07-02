@@ -84,7 +84,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
   <button class="tab" data-view="command"><span class="ico">📺</span><span class="txt"><span class="main">廠長戰情室</span><span class="subtxt">Command</span></span></button>
   <button class="tab" data-view="datacenter"><span class="ico">🧠</span><span class="txt"><span class="main">資料中心</span><span class="subtxt">Data Center</span></span></button>
   <button class="tab" data-view="workorder"><span class="ico">🔎</span><span class="txt"><span class="main">工單搜尋</span><span class="subtxt">Work Order</span></span></button>
-  <button class="tab" data-view="setup"><span class="ico">①</span><span class="txt"><span class="main">每日更新</span><span class="subtxt">Upload Data</span></span></button>
   <button class="tab" data-view="keyin"><span class="ico">②</span><span class="txt"><span class="main">手機 Key In</span><span class="subtxt">บันทึกผลงาน</span></span></button>
   <button class="tab" data-view="overview"><span class="ico">③</span><span class="txt"><span class="main">生產總覽</span><span class="subtxt">Overview</span></span></button>
   <button class="tab" data-view="schedule"><span class="ico">④</span><span class="txt"><span class="main">甘特排程</span><span class="subtxt">Gantt</span></span></button>
@@ -821,7 +820,7 @@ header{margin-left:268px;background:linear-gradient(135deg,#081934,#123c8a 55%,#
 (function(){
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function navItems(){return[
-    ['dashboard','🏠','主頁面 Dashboard'],['workorder','🔎','工單搜尋 Work Order'],['setup','①','每日更新 Upload Data'],['keyin','②','手機 Key In'],['overview','③','生產總覽 Overview'],['schedule','④','甘特排程 Gantt'],['machine','⑤','機台地圖 Machine'],['alert','⑥','異常中心 Abnormal'],['warehouse','⑦','入庫追蹤 Warehouse'],['trend','⑧','趨勢分析 Trend'],['history','⑨','歷史資料 History'],['match','⑩','自動比對 Match'],['eff','⑪','人員效率 Efficiency']];}
+    ['dashboard','🏠','主頁面 Dashboard'],['workorder','🔎','工單搜尋 Work Order'],['keyin','②','手機 Key In'],['overview','③','生產總覽 Overview'],['schedule','④','甘特排程 Gantt'],['machine','⑤','機台地圖 Machine'],['alert','⑥','異常中心 Abnormal'],['warehouse','⑦','入庫追蹤 Warehouse'],['trend','⑧','趨勢分析 Trend'],['history','⑨','歷史資料 History'],['match','⑩','自動比對 Match'],['eff','⑪','人員效率 Efficiency']];}
   window.createEnterpriseSidebar=function(){
     if(document.getElementById('epSidebar')) return;
     var side=document.createElement('aside'); side.id='epSidebar'; side.className='epSidebar';
@@ -856,7 +855,7 @@ header{margin-left:268px;background:linear-gradient(135deg,#081934,#123c8a 55%,#
       '</div></div><div class="epPanel"><h2>人員效率 TOP 5（依 SL31A / Key In） <button class="sortBtn" onclick="switchView(\'eff\')">查看全部</button></h2>'+
       (emps.length?emps.map(function(e,i){var rate=Math.min(100,Math.round((e.actual||0)/(emps[0].actual||1)*100));return '<div class="epEffRow"><div class="epMedal">'+(i+1)+'</div><div class="epEffName"><b>'+esc(e.no||'-')+' '+esc(e.name||'')+'</b><div class="epEffBar"><div class="epEffFill" style="width:'+rate+'%"></div></div></div><b>'+Math.round(e.actual)+'</b></div>'}).join(''):'<div class="hint">尚無今日人員 Key In 資料</div>')+
       '<div class="hint">效率計算：先以 Key In 產出排序，後續可接 SL31A 標準工時。</div></div><div class="epPanel"><h2>製程工單分布</h2><div class="epChart">'+proc.map(function(x){var h=Math.max(8,Math.round(x[1]/maxP*200));return '<div title="'+esc(x[0])+' '+x[1]+'" style="--h:'+h+'px;height:'+h+'px"></div>'}).join('')+'</div><div class="hint">'+proc.map(function(x){return esc(x[0])}).join(' / ')+'</div></div></div><div class="epQuickGrid">'+
-      quick('workorder','🔎','工單搜尋','快速查工單、批號、客戶',0)+quick('setup','①','每日更新','更新 4-3、PD11B、SL31A',1)+quick('machine','⑤','機台地圖','機台 KPI 與異常展開',2)+quick('warehouse','⑦','入庫追蹤','待包裝、入庫、出貨',3)+quick('alert','⑥','異常中心','逾期、待料、未開工',4)+quick('eff','⑪','人員效率','依 SL31A 與 Key In 分析',5)+
+      quick('workorder','🔎','工單搜尋','快速查工單、批號、客戶',0)+quick('machine','⑤','機台地圖','機台 KPI 與異常展開',2)+quick('warehouse','⑦','入庫追蹤','待包裝、入庫、出貨',3)+quick('alert','⑥','異常中心','逾期、待料、未開工',4)+quick('eff','⑪','人員效率','依 SL31A 與 Key In 分析',5)+
       '</div><div class="epPanel"><h2>'+dateLabel+'目標戰情｜幹部目標 vs 人員 Key In</h2>'+targetFilterHtml(qDate)+'<div id="targetBattleBox"></div></div><div class="epPanel"><h2>TOP 風險工單</h2><div id="dashRiskBox"></div></div></div>';
     var targetRows=s.todayPlans.map(function(t){var done=actualByPlan(t,qDate),tg=targetValue(t),rate=tg?Math.round(done/tg*100):0,remain=tg-done;return[rateEmoji(rate),t.machine_code||'',t.work_order_no||'',(t.leader_role||'')+' '+(t.leader_name||''),t.product_spec||'',tg,done,remain,rate+'%',t.planned_finish||''];});
     makeTable('targetBattleBox',['狀態','機台','工單','幹部','規格','目標','完成','剩餘','達成率','預計完成'],targetRows);
