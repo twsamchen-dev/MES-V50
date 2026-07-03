@@ -3,175 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V57.4 MES 生產 Key In｜Formal UI Hybrid</title>
+<title>V58.0 Enterprise｜幹部目標管理</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}
-header{background:linear-gradient(135deg,#1d4ed8,#0f172a);color:#fff;padding:18px 20px}header h1{margin:0;font-size:26px}header p{margin:7px 0 0;color:#dbeafe;font-size:14px}
-.wrap{max-width:1400px;margin:0 auto;padding:14px}
-.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 18px;padding:12px;background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:22px;box-shadow:0 8px 24px rgba(15,23,42,.06);backdrop-filter:blur(8px)}
-.tab{border:1px solid #dbe4f0;background:linear-gradient(180deg,#ffffff,#f8fafc);border-radius:18px;padding:12px 13px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left;min-height:58px;box-shadow:0 2px 10px rgba(15,23,42,.045);transition:.18s ease}
-.tab:hover{transform:translateY(-1px);border-color:#bfdbfe;box-shadow:0 8px 20px rgba(37,99,235,.12)}
-.tab.active{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;border-color:#2563eb;box-shadow:0 10px 24px rgba(37,99,235,.25)}
-.tab .ico{width:32px;height:32px;border-radius:12px;display:grid;place-items:center;background:#eef2ff;color:#1d4ed8;flex:0 0 auto;font-size:17px}
-.tab.active .ico{background:rgba(255,255,255,.2);color:#fff}
-.tab .txt{display:flex;flex-direction:column;gap:2px;line-height:1.15}
-.tab .main{font-size:14px;white-space:nowrap}
-.tab .subtxt{font-size:11px;color:#64748b;font-weight:700;white-space:nowrap}
-.tab.active .subtxt{color:#dbeafe}
-@media(max-width:900px){.tabs{grid-template-columns:repeat(2,1fr);padding:8px}.tab{min-height:54px;padding:10px}.tab .main{font-size:13px}.tab .subtxt{font-size:10px}}
-.view{display:none}.view.active{display:block}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 3px 14px rgba(15,23,42,.05)}
-.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}.col2{grid-column:span 2}@media(max-width:900px){.col8,.col6,.col4,.col3,.col2{grid-column:span 12}}
-h2{font-size:20px;margin:0 0 10px}.sub,.hint{font-size:13px;color:var(--muted);line-height:1.5}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white}.btn.ok{background:var(--ok)}.btn.danger{background:var(--bad)}.btn.ghost{background:#eef2ff;color:#1e40af}.btn:disabled{opacity:.55}
-input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:12px;background:white;font-size:16px}label{display:block;margin:9px 0 5px;font-size:14px;font-weight:900;color:#334155}
-.kpiCard{color:white;border:0}.kpiCard .name{opacity:.88;font-size:13px}.kpiCard .num{font-size:34px;font-weight:900}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.cyan{background:linear-gradient(135deg,#0891b2,#164e63)}.violet{background:linear-gradient(135deg,#7c3aed,#3b0764)}.slate{background:linear-gradient(135deg,#64748b,#0f172a)}
-.scroll{max-height:500px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:white}.tableTools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}.tableTools input{max-width:360px;font-size:14px;padding:9px}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f8fafc;position:sticky;top:0;z-index:1;white-space:nowrap}
-.sortBtn{border:0;background:#e0e7ff;color:#1e40af;border-radius:7px;padding:3px 6px;margin-left:5px;font-weight:900;cursor:pointer}.filterInput{width:100%;font-size:12px;padding:5px;border-radius:8px;margin-top:5px}
-.status{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900}.sDone{background:#dcfce7;color:#166534}.sRun{background:#fef9c3;color:#854d0e}.sLate{background:#fee2e2;color:#991b1b}.sWait{background:#ffedd5;color:#9a3412}.sPick{background:#dbeafe;color:#1e40af}.sIdle{background:#f1f5f9;color:#475569}
-.found{border:1px solid #bfdbfe;background:#eff6ff;border-radius:14px;padding:12px;margin-top:10px}.notfound{background:#fff1f2;border-color:#fecaca}.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#eef2ff;color:#1d4ed8;font-weight:900;font-size:12px}.pill.ok{background:#dcfce7;color:#166534}
-.gantt{display:grid;grid-template-columns:220px 1fr 90px;gap:10px;align-items:center;margin:8px 0}.ganttLine{height:22px;background:#e2e8f0;border-radius:999px;overflow:hidden}.ganttFill{height:100%;border-radius:999px}
-.machineMap{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}@media(max-width:900px){.machineMap{grid-template-columns:repeat(2,1fr)}}.machineTile{border-radius:16px;padding:14px;color:white;min-height:105px;box-shadow:0 8px 22px rgba(15,23,42,.12);cursor:pointer}.machineTile b{font-size:21px}.tileRun{background:linear-gradient(135deg,#16a34a,#14532d)}.tileLate{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.tileWait{background:linear-gradient(135deg,#f59e0b,#92400e)}.tileIdle{background:linear-gradient(135deg,#64748b,#334155)}
-.chartBars{display:flex;align-items:flex-end;gap:8px;height:190px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px}.chartBar{flex:1;background:linear-gradient(180deg,#60a5fa,#1d4ed8);border-radius:8px 8px 0 0;min-height:5px;position:relative}.chartBar span{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:11px;color:#64748b;white-space:nowrap}.donut{width:190px;height:190px;border-radius:50%;background:conic-gradient(#16a34a 0deg,#16a34a var(--deg),#fee2e2 var(--deg),#fee2e2 360deg);display:grid;place-items:center;margin:auto}.donut div{width:118px;height:118px;border-radius:50%;background:white;display:grid;place-items:center;font-size:28px;font-weight:900}
-.toast{position:fixed;right:14px;bottom:14px;background:#0f172a;color:white;padding:12px 14px;border-radius:12px;display:none;z-index:99}.toast.show{display:block}
-#meeting{position:fixed;inset:0;background:#020617;color:white;z-index:999999;display:none;padding:24px;overflow:auto}.meetTop{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.meetTitle{font-size:34px;font-weight:900}.meetClock{color:#bfdbfe;margin-top:6px}.meetBtns button{padding:12px 16px;border:0;border-radius:12px;font-weight:900;cursor:pointer;margin-left:8px}.meetSlide{display:none}.meetSlide.active{display:block}.meetGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.meetCard{border-radius:22px;padding:22px;min-height:150px;color:white;box-shadow:0 12px 30px rgba(0,0,0,.25)}.meetCard h3{font-size:22px;margin:0}.meetNum{font-size:62px;font-weight:900;line-height:1.1;margin-top:10px}.meetSub{font-size:18px;color:#dbeafe;margin-top:8px}.meetTable{width:100%;border-collapse:collapse;color:white;font-size:21px}.meetTable th,.meetTable td{padding:12px;border-bottom:1px solid #334155;text-align:left}.meetBarWrap{height:20px;background:#334155;border-radius:999px;overflow:hidden;display:inline-block;width:68%;vertical-align:middle}.meetBar{height:100%;background:#38bdf8}@media(max-width:900px){.meetGrid{grid-template-columns:repeat(2,1fr)}.meetNum{font-size:38px}.meetTitle{font-size:24px}}
-
-#batch[readonly], input[readonly]{background:#f1f5f9;color:#334155;cursor:not-allowed}
-.lockHint{display:inline-block;margin-top:6px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#1e40af;font-size:12px;font-weight:900}
-
-.machineTile.activeMachine{outline:4px solid #2563eb;box-shadow:0 0 0 6px rgba(37,99,235,.18),0 14px 30px rgba(15,23,42,.22);transform:translateY(-2px) scale(1.01)}
-.machineDetailPanel{border-left:5px solid #2563eb;background:linear-gradient(180deg,#ffffff,#f8fbff)}
-.machineBreadcrumb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:#64748b;margin:6px 0 12px}
-.machineSummaryGrid{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-top:12px}
-.machineMiniKpi{border:1px solid var(--line);border-radius:14px;background:white;padding:12px;text-align:center}
-.machineMiniKpi .name{font-size:12px;color:#64748b;font-weight:900}.machineMiniKpi .num{font-size:24px;font-weight:900;margin-top:6px}
-@media(max-width:900px){.machineSummaryGrid{grid-template-columns:repeat(2,1fr)}}
-
-.commandHero{background:linear-gradient(135deg,#0f172a,#1d4ed8);color:white;border-radius:22px;padding:22px;box-shadow:0 12px 30px rgba(15,23,42,.18)}
-.commandHero h2{font-size:30px;margin:0 0 6px;color:white}.commandClock{color:#bfdbfe;font-weight:900}.commandKpiGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}@media(max-width:900px){.commandKpiGrid{grid-template-columns:repeat(2,1fr)}}
-.commandKpi{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:14px}.commandKpi .label{font-size:13px;color:#dbeafe}.commandKpi .value{font-size:34px;font-weight:900;margin-top:6px}.aiBox{border-left:5px solid #f59e0b;background:#fffbeb;border-radius:16px;padding:14px;line-height:1.7}.riskRed{color:#dc2626;font-weight:900}.riskGreen{color:#16a34a;font-weight:900}.riskWarn{color:#d97706;font-weight:900}
-
-/* V42 UX：效率排行榜與標準效率視覺化 */
-.effHero{background:linear-gradient(135deg,#0f172a,#2563eb);color:white;border-radius:22px;padding:20px;box-shadow:0 12px 28px rgba(15,23,42,.16)}
-.effHero h2{color:white;margin:0 0 8px;font-size:28px}.effHero .hint{color:#dbeafe}
-.effKpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}@media(max-width:900px){.effKpiGrid{grid-template-columns:repeat(2,1fr)}}
-.effKpi{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:13px}.effKpi .name{font-size:12px;color:#dbeafe;font-weight:900}.effKpi .num{font-size:30px;font-weight:900;margin-top:6px}
-.rankGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:900px){.rankGrid{grid-template-columns:1fr}}
-.rankCard{border:1px solid var(--line);border-radius:18px;background:white;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,.07)}
-.rankCard .medal{font-size:28px}.rankCard .person{font-size:20px;font-weight:900;margin-top:4px}.rankCard .meta{font-size:13px;color:#64748b;margin-top:4px;line-height:1.5}.rankCard .rate{font-size:34px;font-weight:900;margin-top:8px}.rateGood{color:#16a34a}.rateMid{color:#d97706}.rateBad{color:#dc2626}
-.effBar{height:12px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:9px}.effFill{height:100%;border-radius:999px;background:linear-gradient(90deg,#60a5fa,#2563eb)}
-.effList{display:flex;flex-direction:column;gap:10px}.effRow{display:grid;grid-template-columns:64px 1.4fr 1fr 90px;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px}@media(max-width:900px){.effRow{grid-template-columns:1fr}.effRow .effBar{margin-top:0}}
-.effBadge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;background:#eef2ff;color:#1d4ed8}.effNote{border-left:5px solid #2563eb;background:#eff6ff;border-radius:14px;padding:12px;color:#334155;line-height:1.6}
-.machineEffGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}@media(max-width:900px){.machineEffGrid{grid-template-columns:repeat(2,1fr)}}
-.machineEffCard{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px}.machineEffCard b{font-size:20px}.machineEffCard .big{font-size:30px;font-weight:900;margin-top:4px}
-
+header{background:linear-gradient(135deg,#1d4ed8,#0f172a);color:#fff;padding:24px 26px}header h1{margin:0;font-size:34px;letter-spacing:.5px}header p{margin:8px 0 0;color:#dbeafe;font-size:15px}
+.wrap{max-width:1500px;margin:0 auto;padding:18px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}.col2{grid-column:span 2}@media(max-width:980px){.col8,.col6,.col4,.col3,.col2{grid-column:span 12}}
+h2{font-size:22px;margin:0 0 12px}.sub,.hint{font-size:13px;color:var(--muted);line-height:1.6}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.hero{background:linear-gradient(135deg,#0f172a,#2563eb);color:#fff;border:0}.hero h2{font-size:30px;color:#fff}.hero .sub{color:#dbeafe}
+.kpi{color:#fff;border:0}.kpi .name{font-size:13px;opacity:.9}.kpi .num{font-size:36px;font-weight:900;margin-top:6px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}
+label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:14px;background:#fff;font-size:16px}textarea{min-height:76px}.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:900;cursor:pointer;background:var(--brand);color:white}.btn.ok{background:var(--ok)}.btn.ghost{background:var(--soft);color:#1e40af}.btn.warn{background:var(--warn)}.btn:disabled{opacity:.55;cursor:not-allowed}.pill{display:inline-block;border-radius:999px;padding:6px 10px;background:#eef2ff;color:#1d4ed8;font-size:12px;font-weight:900}.pill.ok{background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.warn{background:#fef3c7;color:#92400e}
+.scroll{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}th{background:#f8fafc;position:sticky;top:0;z-index:1;white-space:nowrap}.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.tools input,.tools select{max-width:260px;font-size:14px;padding:9px}.toast{position:fixed;right:18px;bottom:18px;background:#0f172a;color:white;padding:12px 16px;border-radius:14px;display:none;z-index:99}.toast.show{display:block}.quickCard{border:1px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;background:#fff}.quickCard:hover{border-color:#93c5fd;box-shadow:0 10px 24px rgba(37,99,235,.13);transform:translateY(-1px)}
+.calcHint{display:block;margin-top:6px;font-size:12px;color:#64748b;line-height:1.5}.calcHint.ok{color:#166534}.calcHint.warn{color:#92400e}.autoTag{display:inline-block;margin-left:6px;border-radius:999px;padding:3px 8px;background:#dcfce7;color:#166534;font-size:11px;font-weight:900}
 </style>
 </head>
 <body>
-<header><h1>生產 Key In / บันทึกผลงานผลิต｜V54.2 MES 生產 Key In LTS</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。</p></header>
+<header>
+  <h1>幹部目標管理｜V58.0 Enterprise</h1>
+  <p>Target Planning：幹部每日目標排程、機台目標、工單目標、晨會追蹤資料來源。</p>
+</header>
 <div class="wrap">
-<div class="tabs" id="adminTabs">
-  <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
-  <button class="tab" data-view="command"><span class="ico">📺</span><span class="txt"><span class="main">廠長戰情室</span><span class="subtxt">Command</span></span></button>
-  <button class="tab" data-view="datacenter"><span class="ico">🧠</span><span class="txt"><span class="main">資料中心</span><span class="subtxt">Data Center</span></span></button>
-  <button class="tab" data-view="workorder"><span class="ico">🔎</span><span class="txt"><span class="main">工單搜尋</span><span class="subtxt">Work Order</span></span></button>
-  <button class="tab" data-view="setup"><span class="ico">①</span><span class="txt"><span class="main">每日更新</span><span class="subtxt">Upload Data</span></span></button>
-  <button class="tab" data-view="keyin"><span class="ico">②</span><span class="txt"><span class="main">手機 Key In</span><span class="subtxt">บันทึกผลงาน</span></span></button>
-  <button class="tab" data-view="overview"><span class="ico">③</span><span class="txt"><span class="main">生產總覽</span><span class="subtxt">Overview</span></span></button>
-  <button class="tab" data-view="schedule"><span class="ico">④</span><span class="txt"><span class="main">甘特排程</span><span class="subtxt">Gantt</span></span></button>
-  <button class="tab" data-view="machine"><span class="ico">⑤</span><span class="txt"><span class="main">機台地圖</span><span class="subtxt">Machine Map</span></span></button>
-  <button class="tab" data-view="alert"><span class="ico">⑥</span><span class="txt"><span class="main">異常中心</span><span class="subtxt">Abnormal</span></span></button>
-  <button class="tab" data-view="warehouse"><span class="ico">⑦</span><span class="txt"><span class="main">入庫追蹤</span><span class="subtxt">Warehouse</span></span></button>
-  <button class="tab" data-view="trend"><span class="ico">⑧</span><span class="txt"><span class="main">趨勢分析</span><span class="subtxt">Trend</span></span></button>
-  <button class="tab" data-view="history"><span class="ico">⑨</span><span class="txt"><span class="main">歷史資料</span><span class="subtxt">History</span></span></button>
-  <button class="tab" data-view="match"><span class="ico">⑩</span><span class="txt"><span class="main">自動比對</span><span class="subtxt">Auto Match</span></span></button>
-  <button class="tab" data-view="eff"><span class="ico">⑪</span><span class="txt"><span class="main">人員效率</span><span class="subtxt">Efficiency</span></span></button>
-  <button class="tab" type="button" data-meeting="1"><span class="ico">📺</span><span class="txt"><span class="main">晨會模式</span><span class="subtxt">Meeting</span></span></button>
-</div>
-
-<section id="dashboard" class="view active"><div class="grid" id="dashboardGrid"></div></section>
-<section id="command" class="view"><div class="grid" id="commandGrid"></div></section>
-<section id="datacenter" class="view"><div class="grid"><div class="card col12"><h2>Data Center 資料中心</h2><div class="sub">所有分頁共用同一份整合資料；此頁用來確認資料來源、筆數、更新時間與整合狀態。</div></div><div class="grid col12" id="dataCenterGrid"></div><div class="card col12"><h2>資料來源明細</h2><div id="dataCenterTableBox"></div></div></div></section>
-<section id="workorder" class="view"><div class="grid"><div class="card col12"><h2>工單搜尋中心</h2><div class="row"><input id="woSearchInput" placeholder="輸入工單、客戶、料號、規格、機台、製程關鍵字"><button class="btn ok" id="woSearchBtn">搜尋</button><button class="btn ghost" id="woClearBtn">清除</button></div><div class="sub">可快速查詢：工單、客戶、規格、目前狀態、預交日、達成率、來源。</div></div><div class="card col12"><div id="woSearchResult"></div></div></div></section>
-
-<section id="setup" class="view">
   <div class="grid">
-    <div class="card col12"><h2>每日操作</h2><div class="sub">上傳 4-3、PD11B、SL31A 後，按「上傳到雲端資料庫」。人員端固定網址不需更換。</div></div>
-    <div class="card col4"><h2>上傳 4-3</h2><input type="file" id="file43" accept=".xlsx,.xls,.csv"><div id="stat43" class="hint">尚未選擇</div></div>
-    <div class="card col4"><h2>上傳 PD11B</h2><input type="file" id="filePD" accept=".xlsx,.xls,.csv"><div id="statPD" class="hint">尚未選擇</div></div>
-    <div class="card col4"><h2>上傳 SL31A</h2><input type="file" id="fileSL" accept=".xlsx,.xls,.csv"><div id="statSL" class="hint">尚未選擇</div></div>
-    <div class="card col12"><div class="row"><button class="btn ok" id="uploadBtn">上傳到雲端資料庫</button><button class="btn ghost" id="loadSourceBtn">讀取雲端工單</button><button class="btn ghost" id="loadKeyinBtn">讀取回報資料</button></div></div>
-    <div class="card col3"><div class="hint">4-3筆數</div><div id="kpi43" style="font-size:30px;font-weight:900">0</div></div>
-    <div class="card col3"><div class="hint">PD11B筆數</div><div id="kpiPD" style="font-size:30px;font-weight:900">0</div></div>
-    <div class="card col3"><div class="hint">SL31A筆數</div><div id="kpiSL" style="font-size:30px;font-weight:900">0</div></div>
-    <div class="card col3"><div class="hint">雲端工單索引</div><div id="kpiIdx" style="font-size:30px;font-weight:900">0</div></div>
-  </div>
-</section>
-
-<section id="keyin" class="view">
-  <div class="grid">
-    <div class="card col6"><h2>手機 / 電腦 Key In / บันทึกผลงานผ่านมือถือหรือคอมพิวเตอร์</h2>
-      <div class="row"><button class="btn ghost" id="loadSourceBtn2">讀取最新工單 / โหลดใบสั่งผลิตล่าสุด</button><button class="btn ghost" id="loadKeyinBtn2">讀取今日回報 / โหลดรายงานวันนี้</button></div>
-      <label>回報日期 / วันที่รายงาน</label><input id="reportDate" type="date">
-      <label>製程站點 / จุดผลิต</label><select id="processSite">
-        <option value="分條">分條 / ตัดแบ่งม้วน</option>
-        <option value="複捲">複捲 / กรอกลับ</option>
-        <option value="包裝">包裝 / บรรจุ</option>
-        <option value="上膠">上膠 / เคลือบกาว</option>
-        <option value="噴碼">噴碼 / พิมพ์รหัส</option>
-        <option value="裁切">裁切 / ตัด</option>
-        <option value="線軸">線軸 / แกน</option>
-        <option value="試機">試機 / ทดลองเครื่อง</option>
-        <option value="點斷">點斷 / ตัดขาด</option>
-        <option value="貼合">貼合 / ลามิเนต</option>
-        <option value="其他">其他 / อื่นๆ</option>
-      </select>
-      <label>工單號 / เลขที่ใบสั่งผลิต（12碼主工單）</label><input id="wo" maxlength="12" placeholder="例如 MM2605060026，超過12碼自動截斷">
-      <label>生產批號 / ล็อตการผลิต / Lot（系統帶入，不可手動修改）</label><input id="batch" readonly placeholder="由工單自動帶入 / ระบบเติมอัตโนมัติ">
-      <div id="lookupBox" class="found notfound">請先讀取最新工單 / กรุณาโหลดใบสั่งผลิตล่าสุดก่อน</div>
-      <div id="todayTargetBox" class="found" style="margin-top:12px">
-        <b>今日待辦工單 / งานผลิตวันนี้</b><br>
-        <span class="hint">依幹部目標產生待辦清單；可依機台篩選，點選工單後只需輸入本次產量。</span>
+    <div class="card hero col12">
+      <h2>🎯 今日幹部目標設定中心</h2>
+      <div class="sub">此頁只做「幹部目標管理」，不做人員 Key In。人員 Key In 請使用 index.html；生產戰情室請使用 Dashboard.html。</div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" onclick="loadAll()">重新讀取資料</button>
+        <button class="btn ghost" onclick="clearForm()">清空表單</button>
+        <span class="pill" id="lastLoad">尚未讀取</span>
       </div>
     </div>
-    <div class="card col6"><h2>人員與產出 / พนักงานและผลผลิต</h2>
-      <label>工號 / รหัสพนักงาน（可輸入多位，用逗號或空格分隔 / ใส่ได้หลายรหัส คั่นด้วย comma หรือ space）</label><input id="empNo" placeholder="例如 41420,41433 或 41420 41433">
-      <label>姓名 / ชื่อ（依工號自動帶入，可手動補充 / ระบบเติมชื่ออัตโนมัติ แก้ไขได้）</label><input id="empName" placeholder="輸入工號後自動帶入姓名">
-      <label>機台 / เครื่องจักร</label><input id="machineInput" placeholder="例如 P03 / T15 / S20">
-      <div class="row" style="margin:8px 0 6px">
-        <button class="btn ghost" type="button" id="filterTodoBtn">📋 我的待辦工單 / งานของฉัน</button>
-        <button class="btn ghost" type="button" id="nextTodoBtn">➡️ 下一張工單 / งานถัดไป</button>
-      </div>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:900"><input id="autoNextToggle" type="checkbox" checked style="width:auto">送出後自動跳下一張 / ไปงานถัดไปอัตโนมัติ</label>
-      <div id="quickSessionHint" class="hint">本班固定：工號、姓名、機台、製程會保留；批號由工單自動帶入不可修改，送出後只清空產量與備註。</div>
-      <label>實際產量 / จำนวนผลิตจริง</label><input id="actual" type="number" step="0.01">
-      <label>單位 / หน่วย</label><select id="unit"><option value="R">R / ม้วน</option><option value="M">M / เมตร</option><option value="M2">M2 / ตารางเมตร</option><option value="PCS">PCS / ชิ้น</option></select>
-      <label>備註 / หมายเหตุ</label><textarea id="note" rows="3"></textarea>
-      <button class="btn ok" id="submitBtn">送出回報 / ส่งรายงาน</button><div id="submitStatus" class="hint"></div>
+
+    <div class="card col12" style="border-left:5px solid #16a34a;background:#f0fdf4">
+      <h2>資料來源說明</h2>
+      <div class="sub">5-C、5-3 資料請統一到 Apps Script 每日五份資料更新中心上傳；本頁只做幹部目標輸入與目標管理。</div>
     </div>
-    <div class="card col12"><h2>Key In 回報資料 / ข้อมูลรายงานการผลิต</h2><div id="keyinTableBox"></div></div>
+
+    <div class="card kpi blue col2"><div class="name">今日目標筆數</div><div class="num" id="kpiCount">0</div></div>
+    <div class="card kpi green col2"><div class="name">今日目標 R</div><div class="num" id="kpiRoll">0</div></div>
+    <div class="card kpi orange col2"><div class="name">今日目標 ㎡</div><div class="num" id="kpiM2">0</div></div>
+    <div class="card kpi red col2"><div class="name">未完成目標</div><div class="num" id="kpiOpen">0</div></div>
+    <div class="card kpi blue col2"><div class="name">5-3 實際產出</div><div class="num" id="kpiActual53">0</div></div>
+    <div class="card kpi orange col2"><div class="name">5-3 閒置筆數</div><div class="num" id="kpiIdle53">0</div></div>
+
+    <div class="card col8">
+      <h2>新增 / 修改幹部目標</h2>
+      <div class="grid">
+        <div class="col3"><label>目標日期</label><input id="report_date" type="date"></div>
+        <div class="col3"><label>班別</label><select id="shift"><option>日班</option><option>夜班</option><option>早班</option><option>中班</option></select></div>
+        <div class="col3"><label>幹部工號</label><input id="leader_no" placeholder="例如 41420" oninput="fillLeader()"></div>
+        <div class="col3"><label>幹部姓名</label><input id="leader_name" placeholder="自動或手動輸入"></div>
+        <div class="col4"><label>角色</label><select id="leader_role"><option>班長</option><option>組長</option><option>副課長</option><option>課長</option><option>生管</option><option>幹部</option></select></div>
+        <div class="col4"><label>工單號 / 訂單號</label><input id="work_order_no" placeholder="例如 MM2605060026" oninput="lookupWO()"></div>
+        <div class="col4"><label>機台</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
+        <div class="col4"><label>訂單單號</label><input id="order_no"></div>
+        <div class="col4"><label>料號</label><input id="part_no"></div>
+        <div class="col4"><label>生產批號</label><input id="batch_no"></div>
+        <div class="col4"><label>客戶</label><input id="customer"></div>
+        <div class="col4"><label>製程站點</label><select id="process_site"><option>分條</option><option>複捲</option><option>包裝</option><option>上膠</option><option>覆卷</option><option>其他</option></select></div>
+        <div class="col4"><label>優先度</label><select id="priority"><option>一般</option><option>急件</option><option>高</option><option>低</option></select></div>
+        <div class="col6"><label>產品規格</label><input id="product_spec" placeholder="例：0.040mm*560mm*50M 或 560mm x 50M" oninput="calcTargetM2()"><span id="specCalcHint" class="calcHint">目標㎡會依寬度、長度與目標卷數自動計算。</span></div>
+        <div class="col3"><label>目標卷數 R</label><input id="target_roll" type="number" min="0" step="0.01" oninput="calcTargetM2()"></div>
+        <div class="col3"><label>目標面積 ㎡ <span class="autoTag">AUTO</span></label><input id="target_m2" type="number" min="0" step="0.01"><span id="m2CalcHint" class="calcHint">可自動計算，也可手動修正。</span></div>
+        <div class="col4"><label>預計開始</label><input id="planned_start" type="datetime-local"></div>
+        <div class="col4"><label>預計完成</label><input id="planned_finish" type="datetime-local"></div>
+        <div class="col4"><label>狀態</label><select id="status"><option>待排程</option><option>已排程</option><option>生產中</option><option>完成</option><option>暫停</option></select></div>
+        <div class="col12"><label>備註</label><textarea id="remark" placeholder="交期、異常、注意事項"></textarea></div>
+        <input id="plan_id" type="hidden">
+        <div class="col12 row"><button class="btn ok" onclick="savePlan()">儲存幹部目標</button><button class="btn ghost" onclick="clearForm()">新增下一筆</button><span id="lookupMsg" class="hint"></span></div>
+      </div>
+    </div>
+
+    <div class="card col4">
+      <h2>可快速帶入的工單</h2>
+      <div class="tools"><input id="woFilter" placeholder="搜尋工單/客戶/機台" oninput="renderQuickOrders()"></div>
+      <div id="quickOrders" style="display:grid;gap:10px;max-height:720px;overflow:auto"></div>
+    </div>
+
+    <div class="card col12">
+      <h2>幹部目標清單</h2>
+      <div class="tools"><input id="targetDate" type="date" onchange="renderPlans()"><input id="targetSearch" placeholder="搜尋工單/機台/幹部/客戶" oninput="renderPlans()"><select id="targetStatus" onchange="renderPlans()"><option value="">全部狀態</option><option>待排程</option><option>已排程</option><option>生產中</option><option>完成</option><option>暫停</option></select></div>
+      <div class="scroll"><table><thead><tr><th>操作</th><th>日期</th><th>班別</th><th>幹部</th><th>工單</th><th>機台</th><th>製程</th><th>客戶</th><th>規格</th><th>目標R</th><th>5-3實績</th><th>差異R</th><th>目標㎡</th><th>狀態</th><th>備註</th></tr></thead><tbody id="planRows"></tbody></table></div>
+    </div>
   </div>
-</section>
-
-<section id="overview" class="view"><div class="grid" id="overviewGrid"></div></section>
-<section id="schedule" class="view"><div class="grid"><div class="card col12"><h2>甘特排程中心</h2><div id="scheduleGantt"></div></div><div class="card col12"><h2>排程明細</h2><div id="scheduleTableBox"></div></div></div></section>
-<section id="machine" class="view"><div class="grid"><div class="card col12" id="machineMapCard"><h2>機台地圖 2.0</h2><div id="machineMap" class="machineMap"></div></div><div class="card col12 machineDetailPanel" id="machineDetailPanel" style="display:none"><div id="machineDetailHeader"></div></div><div class="card col12" id="machineDetailTableCard"><h2>機台明細</h2><div id="machineTableBox"></div></div></div></section>
-<section id="alert" class="view"><div class="grid"><div class="card col12"><h2>異常中心</h2><div id="alertTableBox"></div></div></div></section>
-<section id="warehouse" class="view"><div class="grid"><div class="card col12"><h2>入庫追蹤</h2><div id="warehouseTableBox"></div></div></div></section>
-<section id="trend" class="view"><div class="grid"><div class="card col6"><h2>每日趨勢</h2><div id="dailyTableBox"></div></div><div class="card col6"><h2>製程趨勢</h2><div id="processTableBox"></div></div></div></section>
-<section id="history" class="view"><div class="grid"><div class="card col12"><h2>歷史生產資料</h2><div id="historyTableBox"></div></div></div></section>
-<section id="match" class="view"><div class="grid"><div class="card col12"><h2>自動比對</h2><div id="matchTableBox"></div></div></div></section>
-<section id="eff" class="view"><div class="grid"><div class="card col12"><h2>人員效率</h2><div id="effTableBox"></div></div></div></section>
-</div>
-
-<div id="meeting">
-  <div class="meetTop"><div><div class="meetTitle">V42.0 MES Enterprise｜晨會戰情室</div><div id="meetClock" class="meetClock"></div></div><div class="meetBtns"><button id="meetStart" style="background:#16a34a;color:white">開始輪播</button><button id="meetStop" style="background:#dc2626;color:white">停止輪播</button><button id="meetClose">離開晨會</button></div></div>
-  <div id="slide1" class="meetSlide active"></div><div id="slide2" class="meetSlide"></div><div id="slide3" class="meetSlide"></div><div id="slide4" class="meetSlide"></div><div id="slide5" class="meetSlide"></div>
 </div>
 <div id="toast" class="toast"></div>
-
 <script>
 var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
 (function setupHybridApi(){
@@ -242,12 +158,50 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
       .catch(function(e){ console.error("MES API GET failed",name,e); if(fail) fail(e); else alert("API 連線失敗："+e.message); });
   }
   function callPost(name,args,ok,fail){
-    // GitHub Pages 不能穩定 POST 大量 Excel 到 Apps Script（CORS 限制）。
-    // 所有寫入動作改由 Apps Script 管理端執行；GitHub 僅查詢與顯示。
-    var e=new Error("GitHub 版不支援寫入，請使用 Apps Script 資料更新中心");
-    console.warn("MES API POST blocked on GitHub",name,e);
-    if(typeof openAdminUploadCenter==="function") openAdminUploadCenter();
-    if(fail) fail(e); else alert(e.message);
+    // V58.0：GitHub Pages 允許寫入 Apps Script。
+    // 因 Apps Script Web App 跨網域 POST 可能沒有 CORS 回應標頭，GitHub 模式採 no-cors 送出，
+    // 送出後由前端重新讀取清單確認資料；Apps Script 內嵌版仍會走 google.script.run。
+    args=args||[];
+    var low=String(name||"").toLowerCase();
+    var action=low;
+    var payload=args.length===1?args[0]:{args:args};
+    var url=API_URL+"?action="+encodeURIComponent(action)+"&_="+Date.now();
+    var body=JSON.stringify(payload);
+
+    function sendNoCors(){
+      return fetch(url,{
+        method:"POST",
+        mode:"no-cors",
+        redirect:"follow",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:body
+      }).then(function(){
+        if(ok) ok({ok:true,queued:true,message:"資料已送出至 Apps Script"});
+      });
+    }
+
+    function sendReadable(){
+      return fetch(url,{
+        method:"POST",
+        redirect:"follow",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:body
+      }).then(function(r){
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        return r.text();
+      }).then(parseJsonText).then(function(res){
+        if(res && res.ok===false) throw new Error(res.error||res.message||"API error");
+        if(ok) ok(res||{ok:true});
+      });
+    }
+
+    // GitHub Pages 優先用 no-cors，避免 CORS 造成「實際已寫入但畫面判定失敗」。
+    // 若不是 GitHub，使用可讀取回應的 POST。
+    var job=window.MES_IS_GITHUB ? sendNoCors() : sendReadable();
+    job.catch(function(e){
+      console.error("MES API POST failed",name,e);
+      if(fail) fail(e); else alert("API 寫入失敗："+e.message);
+    });
   }
   function makeRunner(){
     var ok=null, fail=null;
@@ -272,469 +226,378 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
   window.google={script:{run:makeRunner()}};
 })();
 
-var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-(function setupHybridApi(){
-  var hasGas = !!(window.google && google.script && google.script.run);
-  if(hasGas) return;
-  function encodeParams(obj){var q=[];Object.keys(obj||{}).forEach(function(k){if(k!=='action'&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(obj[k]));});return q.length?"&"+q.join("&"):"";}
-  function getAction(name,args){var low=String(name||'').toLowerCase();if(low==='getsourcedata')return{action:'source'};if(low==='listkeyin')return{action:'list'};if(low==='listemployees')return{action:'employees'};if(low==='listtargetplans')return{action:'targets',date:args&&args[0]};return{action:low};}
-  function callGet(name,args,ok,fail){var a=getAction(name,args||[]);fetch(API_URL+'?action='+encodeURIComponent(a.action)+encodeParams(a),{method:'GET',redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){console.error('MES API GET failed',name,e);fail&&fail(e);});}
-  function callPost(name,args,ok,fail){var action=String(name||'').toLowerCase();var body=args&&args.length===1?args[0]:{args:args||[]};fetch(API_URL+'?action='+encodeURIComponent(action),{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){console.error('MES API POST failed',name,e);fail&&fail(e);});}
-  function makeRunner(){var ok=null,fail=null;var runner={withSuccessHandler:function(fn){ok=fn;return proxy;},withFailureHandler:function(fn){fail=fn;return proxy;}};var proxy=new Proxy(runner,{get:function(target,prop){if(prop in target)return target[prop];return function(){var args=[].slice.call(arguments);var post={saveKeyin:1,replaceSourceData:1};if(post[prop])callPost(prop,args,ok,fail);else callGet(prop,args,ok,fail);ok=null;fail=null;return proxy;};}});return proxy;}
-  window.google={script:{run:makeRunner()}};
-})();
-var AppState={d43:[],pd:[],sl:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
-var EMP={};
-var EMP_ROWS=[];
-var AL={wo:["單號","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","work_order_no","WO","WorkOrder","訂單單號","訂單號","order_no"],order:["訂單單號","訂單號","客戶訂單","銷售單號","order_no"],part:["料號","料品編號","品號","產品料號","產品編號","part_no","item","產品名稱","品名"],batch:["生產批號","批號","製號","產出製號","投入製號","batch_no","Lot","LOT"],spec:["規格","產品規格","product_spec","長寬","尺寸","品名規格"],target:["預計產量","目標數量","工單目標","訂單數量","目標卷數","卷數","target_qty","數量","換算捲數","預計數量"],process:["製程","製程站點","站點","目前製程","process","站別","加工製程"],customer:["客戶","客戶別","customer","客戶名稱"],machine:["機台","機台編號","machine","機台代碼","設備","設備編號"],plan:["日期","工單開立日","開立日","建立日","開單日","製令日期","工單日期","date","plan_date"],due:["預交日","入庫日期","預計入庫日","預計完工日","交期","預定完成日","預計交貨日","due_date"],status:["狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態","status"],issue:["異常","異常狀態","問題","備註","原因","issue_status"],material:["待料","領料狀態","備料狀態","物料狀態","material_status"],warehouse:["入庫","入庫狀態","倉庫狀態","warehouse_status"],stockin:["實際入庫日","入庫完成日","入庫日期","stockin_date"],finish:["完工日","完成日","finish_date"],pick:["領料日","領料日期","pick_date"],priority:["優先","急件","priority"]};
+var App={plans:[],source:[],prod5c:[],prod53:[],employees:[],autoLengthM:0,autoWidthMm:0,autoLengthSource:''};
 function el(id){return document.getElementById(id)}
-function norm(v){return String(v==null?"":v).trim().replace(/\s+/g,"").toUpperCase()}
-function wo12(v){return norm(v).slice(0,12)}
-function enforceWO12Input(id){var x=el(id);if(!x)return;var v=wo12(x.value);if(x.value!==v)x.value=v;return v}
-function num(v){var n=parseFloat(String(v==null?"":v).replace(/,/g,""));return isNaN(n)?0:n}
-function today(){return new Date().toISOString().slice(0,10)}
-function targetDate(){return AppState.targetDate||today()}
-function yesterday(){var d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10)}
-function dateKey(v){var s=String(v==null?"":v).trim();if(!s)return"";s=s.replace(/\//g,"-");var m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0"):s.slice(0,10)}
-function daysBetween(a,b){var da=new Date(a),db=new Date(b);if(isNaN(da)||isNaN(db))return 0;return Math.round((db-da)/86400000)}
-function pick(r,k){var a=AL[k]||[];for(var i=0;i<a.length;i++){if(r[a[i]]!==undefined&&String(r[a[i]]).trim()!=="")return r[a[i]]}return""}
-function toast(s){var t=el("toast");if(!t)return;t.textContent=s;t.className="toast show";setTimeout(function(){t.className="toast"},2200)}
-function statusClass(s){return s==="已入庫"?"sDone":s==="逾期"?"sLate":s==="待料"?"sWait":s==="已領料"?"sPick":s==="生產中"?"sRun":"sIdle"}
-function statusColor(s){return s==="已入庫"?"#16a34a":s==="逾期"?"#dc2626":s==="待料"?"#f59e0b":s==="已領料"?"#0ea5e9":s==="生產中"?"#eab308":"#94a3b8"}
-function statusBadge(s){return'<span class="status '+statusClass(s)+'">'+s+'</span>'}
-
-function makeTable(boxId, heads, rows){
-  AppState.tables[boxId]={heads:heads,rows:rows,filters:new Array(heads.length).fill(""),sortCol:null,sortDir:1,global:""};
-  drawTable(boxId);
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function toast(s){var t=el('toast');t.textContent=s;t.className='toast show';setTimeout(function(){t.className='toast'},2200)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(v){var n=parseFloat(String(v||'').replace(/,/g,''));return isNaN(n)?0:n}
+function norm(v){return String(v||'').trim().toUpperCase()}
+function wo12(v){return norm(v).replace(/\s+/g,'').slice(0,12)}
+function setVal(id,v){if(el(id))el(id).value=v||''}
+function getVal(id){return el(id)?el(id).value:''}
+var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+function actionName(name){
+  var low=String(name||'').toLowerCase();
+  if(low==='getsourcedata')return 'source';
+  if(low==='listkeyin')return 'list';
+  if(low==='listemployees')return 'employees';
+  if(low==='listtargetplans')return 'targets';
+  if(low==='listprod5cdata')return 'prod5c';
+  if(low==='listprod53data')return 'prod53';
+  return low;
 }
-function drawTable(boxId){
-  var cfg=AppState.tables[boxId],box=el(boxId);if(!cfg||!box)return;
-  var rows=cfg.rows.slice(),global=(cfg.global||"").toLowerCase();
-  rows=rows.filter(function(r){if(global&&r.join(" ").toLowerCase().indexOf(global)<0)return false;for(var i=0;i<cfg.filters.length;i++){var f=(cfg.filters[i]||"").toLowerCase();if(f&&String(r[i]||"").replace(/<[^>]*>/g,"").toLowerCase().indexOf(f)<0)return false}return true});
-  if(cfg.sortCol!==null){var c=cfg.sortCol,d=cfg.sortDir;rows.sort(function(a,b){var aa=String(a[c]||"").replace(/<[^>]*>/g,""),bb=String(b[c]||"").replace(/<[^>]*>/g,""),na=parseFloat(aa.replace(/,/g,"")),nb=parseFloat(bb.replace(/,/g,""));if(!isNaN(na)&&!isNaN(nb))return(na-nb)*d;return aa.localeCompare(bb,"zh-Hant")*d})}
-  var html='<div class="tableTools"><input placeholder="全表搜尋 / Search" value="'+(cfg.global||"").replace(/"/g,"&quot;")+'" oninput="setGlobalFilter(\''+boxId+'\',this.value)"><button class="btn ghost" onclick="clearTableFilter(\''+boxId+'\')">清除篩選</button><button class="btn ghost" onclick="exportTableCSV(\''+boxId+'\')">匯出CSV</button><span class="hint">顯示 '+rows.length+' / '+cfg.rows.length+' 筆</span></div><div class="scroll"><table><thead><tr>';
-  cfg.heads.forEach(function(h,i){html+='<th>'+h+' <button class="sortBtn" onclick="sortTable(\''+boxId+'\','+i+')">↕</button><input class="filterInput" placeholder="篩選" value="'+(cfg.filters[i]||"").replace(/"/g,"&quot;")+'" oninput="setColFilter(\''+boxId+'\','+i+',this.value)"></th>'});
-  html+='</tr></thead><tbody>'+rows.map(function(r){return'<tr>'+r.map(function(c){return'<td>'+(c==null?"":c)+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table></div>';box.innerHTML=html;
+function run(name,args,ok,fail){
+  args=args||[];
+  try{
+    if(window.google&&google.script&&google.script.run){
+      var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){toast((fail||'執行失敗')+'：'+(e&&e.message?e.message:e));});
+      r[name].apply(r,args);
+      return;
+    }
+    var low=String(name||'').toLowerCase();
+    var post={savekeyin:1,savetargetplan:1,replacesourcedata:1,replaceprod5cdata:1,replaceprod53data:1,deletetargetplan:1};
+    var action=actionName(name);
+    var opt={method:post[low]?'POST':'GET',redirect:'follow'};
+    var url=API_URL+'?action='+encodeURIComponent(action);
+    if(!post[low]){
+      if(low==='listtargetplans'&&args[0])url+='&date='+encodeURIComponent(args[0]);
+      if((low==='listprod5cdata'||low==='listprod53data')&&args[0])url+='&date='+encodeURIComponent(args[0]);
+    }else{
+      opt.headers={'Content-Type':'text/plain;charset=utf-8'};
+      opt.body=JSON.stringify(args.length===1?args[0]:{args:args});
+    }
+    fetch(url,opt).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('API 回傳非 JSON：'+t.slice(0,80))}}).then(function(res){if(res&&res.ok===false)throw new Error(res.error||res.message||'API error');ok&&ok(res);}).catch(function(e){toast((fail||'API連線失敗')+'：'+e.message);});
+  }catch(e){toast('執行失敗：'+e.message)}
 }
-function setGlobalFilter(id,v){AppState.tables[id].global=v;drawTable(id)}
-function setColFilter(id,i,v){AppState.tables[id].filters[i]=v;drawTable(id)}
-function sortTable(id,i){var t=AppState.tables[id];if(t.sortCol===i)t.sortDir*=-1;else{t.sortCol=i;t.sortDir=1}drawTable(id)}
-function clearTableFilter(id){var t=AppState.tables[id];t.filters=new Array(t.heads.length).fill("");t.global="";t.sortCol=null;drawTable(id)}
-
-async function readFile(file){var data=await file.arrayBuffer(),wb=XLSX.read(data,{type:"array"}),out=[],keys=["單號","工單號","命令單","訂單單號","料品編號","生產批號","製程","站別","預計產量","規格","日期","預交日"];wb.SheetNames.forEach(function(name){var ws=wb.Sheets[name],arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});if(!arr.length)return;var hr=0,best=-1;for(var i=0;i<Math.min(arr.length,30);i++){var vals=arr[i].map(function(v){return String(v||"").trim()}),score=keys.reduce(function(n,k){return n+(vals.indexOf(k)>=0?1:0)},0);if(score>best){best=score;hr=i}}XLSX.utils.sheet_to_json(ws,{defval:"",range:hr}).forEach(function(r){r.__sheet=name;out.push(r)})});return out}
-function toSourceRows(src,rows){return rows.map(function(r){return{source:src,work_order_no:norm(pick(r,"wo")),order_no:pick(r,"order"),part_no:pick(r,"part"),batch_no:pick(r,"batch"),product_spec:pick(r,"spec"),target_qty:num(pick(r,"target"))||"",process:pick(r,"process"),customer:pick(r,"customer"),machine:pick(r,"machine"),plan_date:dateKey(pick(r,"plan")),due_date:dateKey(pick(r,"due")),status:pick(r,"status"),issue_status:pick(r,"issue"),material_status:pick(r,"material"),warehouse_status:pick(r,"warehouse"),stockin_date:dateKey(pick(r,"stockin")),finish_date:dateKey(pick(r,"finish")),pick_date:dateKey(pick(r,"pick")),priority:pick(r,"priority"),raw_json:""}}).filter(function(r){return r.work_order_no})}
-async function bindFile(id,key,stat,kpi){var f=el(id).files[0];if(!f)return;AppState[key]=await readFile(f);el(stat).textContent="已讀取："+f.name+"，"+AppState[key].length+" 筆";el(kpi).textContent=AppState[key].length;toast("已讀取 "+f.name)}
-function buildIndex(){AppState.idx={};AppState.source.forEach(function(r){var wo=wo12(r.work_order_no||r.order_no);if(!wo)return;var o=AppState.idx[wo]=AppState.idx[wo]||{wo:wo,from:{},target:0,actual:0};o.from[r.source||"source"]=true;o.order=o.order||r.order_no;o.part=o.part||r.part_no;o.batch=o.batch||r.batch_no;o.spec=o.spec||r.product_spec;o.customer=o.customer||r.customer;o.process=o.process||r.process;o.machine=o.machine||r.machine;o.plan=o.plan||r.plan_date;o.due=o.due||r.due_date;o.rawStatus=o.rawStatus||r.status;o.issueStatus=o.issueStatus||r.issue_status;o.materialStatus=o.materialStatus||r.material_status;o.warehouseStatus=o.warehouseStatus||r.warehouse_status;o.stockin=o.stockin||r.stockin_date;o.finish=o.finish||r.finish_date;o.pick=o.pick||r.pick_date;var tg=num(r.target_qty);if(tg&&!o.target)o.target=tg});calcActual();if(el("kpiIdx"))el("kpiIdx").textContent=Object.keys(AppState.idx).length}
-function calcActual(){Object.values(AppState.idx).forEach(function(o){o.actual=0});AppState.keyin.forEach(function(r){if(AppState.idx[r.wo])AppState.idx[r.wo].actual+=num(r.actual)})}
-function orderStatus(o){var all=String([o.rawStatus,o.issueStatus,o.materialStatus,o.warehouseStatus].join(" ")).toLowerCase();if(o.stockin||o.finish||all.indexOf("入庫")>=0||all.indexOf("完工")>=0||all.indexOf("結案")>=0)return"已入庫";if(num(o.target)&&num(o.actual)>=num(o.target))return"已入庫";if(all.indexOf("待料")>=0||all.indexOf("缺料")>=0)return"待料";if(o.pick||all.indexOf("領料")>=0)return"已領料";if(o.due&&o.due<today())return"逾期";if(num(o.actual)>0||all.indexOf("生產")>=0||all.indexOf("開工")>=0)return"生產中";return"未開工"}
-function getStats(){
-  var orders=Object.values(AppState.idx),c={生產中:0,已入庫:0,逾期:0,待料:0,已領料:0,未開工:0},target=0,actual=0;
-  orders.forEach(function(o){c[orderStatus(o)]++;target+=num(o.target);actual+=num(o.actual)});
-  var qDate=targetDate();
-  var todayK=AppState.keyin.filter(function(r){return dateKey(r.date)===qDate});
-  var todayPlans=AppState.targets.filter(function(r){return dateKey(r.report_date||'')===qDate});
-  var targetRoll=todayPlans.reduce(function(a,r){return a+num(r.target_roll)},0);
-  var targetM2=todayPlans.reduce(function(a,r){return a+num(r.target_m2)},0);
-  var actualRoll=todayK.reduce(function(a,r){return a+(String(r.unit||'').toUpperCase()==='M2'?0:num(r.actual))},0);
-  var actualM2=todayK.reduce(function(a,r){return a+(String(r.unit||'').toUpperCase()==='M2'?num(r.actual):0)},0);
-  var targetRate=targetRoll?Math.round(actualRoll/targetRoll*100):(targetM2?Math.round(actualM2/targetM2*100):0);
-  return{orders:orders,c:c,target:target,actual:actual,rate:target?Math.round(actual/target*100):0,todayKeyin:todayK.length,todayEmp:new Set(todayK.map(function(r){return r.empNo})).size,todayQty:todayK.reduce(function(a,r){return a+num(r.actual)},0),todayDue:orders.filter(function(o){return o.due===qDate}).length,queryDate:qDate,todayPlans:todayPlans,targetRoll:targetRoll,targetM2:targetM2,actualRoll:actualRoll,actualM2:actualM2,targetRate:targetRate};
+function loadAll(){
+  setVal('report_date',getVal('report_date')||today());
+  setVal('targetDate',getVal('targetDate')||today());
+  run('listEmployees',[],function(res){App.employees=(res&&res.rows)||res||[];fillLeader();},'讀取員工失敗');
+  run('getSourceData',[],function(res){App.source=(res&&res.rows)||[];renderQuickOrders();},'讀取工單失敗');
+  loadProd5C(function(){ renderQuickOrders(); calcTargetM2(); });
+  loadProd53(function(){ renderPlans(); });
+  run('listTargetPlans',[getVal('targetDate')||today()],function(res){App.plans=(res&&res.rows)||[];renderPlans();el('lastLoad').textContent='已讀取 '+new Date().toLocaleString();},'讀取目標失敗');
 }
-
-
-function loadEmployees(){
-  google.script.run
-    .withSuccessHandler(function(res){
-      var rows=(res&&res.rows)||[];
-      EMP={}; EMP_ROWS=rows;
-      rows.forEach(function(r){
-        var no=String(r.emp_no||'').trim();
-        if(no) EMP[no]=r.emp_name||'';
-      });
-      console.log('Employee loaded',rows.length);
-    })
-    .withFailureHandler(function(e){
-      console.warn('讀取Employee失敗',e);
-      toast('讀取員工資料失敗，暫用手動姓名');
-    })
-    .listEmployees();
+function normalizeRoleText(raw){
+  raw=String(raw||'').trim();
+  if(!raw)return '';
+  if(raw.indexOf('副課長')>=0 || raw.indexOf('副 課長')>=0 || raw.indexOf('副科長')>=0)return '副課長';
+  if(raw.indexOf('課長')>=0)return '課長';
+  if(raw.indexOf('生管')>=0)return '生管';
+  if(raw.indexOf('組長')>=0)return '組長';
+  if(raw.indexOf('班長')>=0)return '班長';
+  if(raw.indexOf('幹部')>=0||raw.indexOf('主管')>=0)return '幹部';
+  return raw;
 }
-
-function loadSource(){google.script.run.withSuccessHandler(function(res){AppState.source=(res&&res.rows)||[];buildIndex();toast("雲端工單："+AppState.source.length+" 筆");renderActive()}).withFailureHandler(function(e){alert("讀取雲端工單失敗："+(e.message||e))}).getSourceData()}
-function loadKeyin(){google.script.run.withSuccessHandler(function(res){AppState.keyin=((res&&res.rows)||[]).map(function(r){return{date:r.report_date||"",site:r.site||"",wo:wo12(r.work_order_no||r.order_no||""),batch:r.batch_no||"",part:r.part_no||"",spec:r.product_spec||"",target:num(r.target_qty),empNo:r.emp_no||"",empName:r.emp_name||"",machine:r.machine_code||"",actual:num(r.actual_output),unit:r.unit||"",note:r.process_note||"",createdAt:r.created_at||""}}).filter(function(r){return r.wo||r.actual||r.empNo});calcActual();toast("回報資料："+AppState.keyin.length+" 筆");renderActive()}).withFailureHandler(function(e){alert("讀取回報資料失敗："+(e.message||e))}).listKeyin()}
-function getTargetQueryDate(){
-  // 主管頁使用 targetQueryDate；Key In 頁使用 reportDate。
-  var d = el("targetQueryDate") || el("targetFilterDate") || el("reportDate");
-  return d && d.value ? d.value : targetDate();
-}
-
-function loadTargets(date){
-  var queryDate = date || getTargetQueryDate();
-  AppState.targetDate = dateKey(queryDate) || today();
-
-  google.script.run.withSuccessHandler(function(res){
-    AppState.targets = (res && res.rows) || [];
-    renderActive();
-  }).withFailureHandler(function(e){
-    console.warn("讀取目標失敗", e);
-    toast("讀取目標失敗");
-  }).listTargetPlans(queryDate);
-}
-function uploadCloud(){var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));if(!rows.length){alert("沒有資料，請先選三份檔案");return}el("uploadBtn").disabled=true;google.script.run.withSuccessHandler(function(res){el("uploadBtn").disabled=false;alert("✅ 已上傳："+(res.count||rows.length)+" 筆");loadSource()}).withFailureHandler(function(e){el("uploadBtn").disabled=false;alert("上傳失敗："+(e.message||e))}).replaceSourceData(rows)}
-function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";google.script.run.withSuccessHandler(function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}}).withFailureHandler(function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)}).saveKeyin(data)}
-function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
-function fillEmp(){
-  var raw=el("empNo").value.trim();
-  if(!raw)return;
-  var ids=raw.split(/[\s,，、/]+/).map(function(x){return x.trim()}).filter(Boolean);
-  if(!ids.length)return;
-  var names=ids.map(function(id){return EMP[id]||""}).filter(Boolean);
-  if(names.length){
-    el("empName").value=names.join("、");
+function roleFromEmployee(e){
+  if(!e)return '';
+  var raw=String((e.position||e.role||e.title||e.job_title||e.job||e.leader_role||e.emp_role||e['職稱']||e['職務']||e['職位']||e['角色']||e['職稱/角色']||'')||'').trim();
+  if(!raw && e.raw_json){
+    try{
+      var r=JSON.parse(e.raw_json);
+      raw=r.position||r.role||r.title||r.job_title||r['職稱']||r['職務']||r['職位']||r['角色']||r['職稱/角色']||'';
+    }catch(err){}
   }
+  return normalizeRoleText(raw);
 }
-
-function barChartHtml(rows){var max=Math.max.apply(null,rows.map(function(x){return x[1]}).concat([1]));return'<div class="chartBars">'+rows.map(function(x){var h=Math.max(5,Math.round(x[1]/max*170));return'<div class="chartBar" style="height:'+h+'px" title="'+x[0]+': '+x[1]+'"><span>'+x[0]+'</span></div>'}).join("")+'</div>'}
-
-function htmlEsc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
-function getKeyinDate(){return dateKey((el("reportDate")&&el("reportDate").value)||targetDate()||today())}
-function targetValue(t){return num(t.target_roll)||num(t.target_m2)||0}
-function targetUnit(t){return num(t.target_roll)?"R":"㎡"}
-function actualByPlan(t,qDate){
-  var wo=wo12(t.work_order_no||"");
-  return AppState.keyin.filter(function(k){return dateKey(k.date)===qDate && wo12(k.wo)===wo}).reduce(function(a,k){return a+num(k.actual)},0);
+function setSelectOption(id,value){
+  var x=el(id); if(!x||!value)return;
+  var found=false;
+  Array.prototype.forEach.call(x.options,function(o){ if(o.value===value||o.text===value)found=true; });
+  if(!found){ var op=document.createElement('option'); op.value=value; op.textContent=value; x.appendChild(op); }
+  x.value=value;
 }
-function rateEmoji(rate){return rate>=100?"🟢":rate>=80?"🟡":rate>=50?"🟠":"🔴"}
-function getKeyinMachineFilter(){return norm((el("machineInput")&&el("machineInput").value)||"")}
-function renderKeyinTargets(){
-  var box=el("todayTargetBox"); if(!box)return;
-  var qDate=getKeyinDate();
-  var machineFilter=getKeyinMachineFilter();
-  var plans=(AppState.targets||[]).filter(function(t){
-    if(dateKey(t.report_date||"")!==qDate)return false;
-    if(machineFilter && norm(t.machine_code||"")!==machineFilter)return false;
-    return true;
-  });
-  AppState.keyinTargetRows=plans;
-  if(!plans.length){
-    box.className="found notfound";
-    box.innerHTML='<b>今日待辦工單 / งานผลิตวันนี้</b><br><span class="hint">查無 '+htmlEsc(qDate)+' 待辦工單。若已輸入機台，請確認此機台當日是否有幹部目標。</span>';
+function findEmployeeByNo(no){
+  no=norm(no).replace(/\s+/g,'');
+  if(!no)return null;
+  return (App.employees||[]).find(function(x){
+    var eno=norm(x.emp_no||x.no||x.employee_no||x.staff_no||x.worker_no||x['工號']||x['員工工號']||'').replace(/\s+/g,'');
+    return eno===no || eno.replace(/^0+/,'')===no.replace(/^0+/,'');
+  })||null;
+}
+function applyLeaderFromEmployee(e){
+  if(!e)return false;
+  var name=e.emp_name||e.name||e.employee_name||e.staff_name||e['姓名']||'';
+  var role=roleFromEmployee(e);
+  var shift=e.shift||e['班別']||'';
+  if(name)setVal('leader_name',name);
+  if(role)setSelectOption('leader_role',role);
+  if(shift)setSelectOption('shift',shift);
+  return !!(name||role||shift);
+}
+function fillLeader(forceReload){
+  var no=norm(getVal('leader_no')).replace(/\s+/g,'');
+  if(!no)return;
+  var e=findEmployeeByNo(no);
+  if(e){
+    applyLeaderFromEmployee(e);
     return;
   }
-  var rows=plans.map(function(t,i){
-    var tg=targetValue(t), done=actualByPlan(t,qDate), rate=tg?Math.round(done/tg*100):0;
-    return '<tr onclick="useTargetPlan('+i+')" style="cursor:pointer">'+
-      '<td>'+rateEmoji(rate)+'</td><td>'+htmlEsc(t.machine_code||'')+'</td><td><b>'+htmlEsc(t.work_order_no||'')+'</b></td><td>'+htmlEsc(t.product_spec||'')+'</td><td>'+htmlEsc(tg+' '+targetUnit(t))+'</td><td>'+htmlEsc(done)+'</td><td>'+rate+'%</td></tr>';
-  }).join('');
-  var totalTarget=plans.reduce(function(a,t){return a+targetValue(t)},0);
-  var totalDone=plans.reduce(function(a,t){return a+actualByPlan(t,qDate)},0);
-  var totalRate=totalTarget?Math.round(totalDone/totalTarget*100):0;
-  box.className="found";
-  box.innerHTML='<b>今日待辦工單 / งานผลิตวันนี้</b> <span class="pill ok">'+htmlEsc(qDate)+'</span> '+
-    '<span class="pill">目標 '+Math.round(totalTarget)+'</span> <span class="pill">完成 '+Math.round(totalDone)+'</span> <span class="pill">達成 '+totalRate+'%</span>'+ 
-    '<div class="scroll" style="max-height:260px;margin-top:8px"><table><thead><tr><th>狀態</th><th>機台</th><th>工單</th><th>規格</th><th>目標</th><th>完成</th><th>達成</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+ 
-    '<div class="hint">點選任一列可自動帶入工單、機台、批號與規格；「我的待辦工單」會依目前工單或機台顯示待辦；送出後可用「下一張工單」快速切換。</div>';
-}
-function useTargetPlan(i){
-  var t=(AppState.keyinTargetRows||[])[i]; if(!t)return;
-  if(el("wo"))el("wo").value=wo12(t.work_order_no||"");
-  if(el("machineInput"))el("machineInput").value=t.machine_code||"";
-  if(el("batch"))el("batch").value=t.batch_no||"";
-  if(el("processSite")&&t.process_site){el("processSite").value=t.process_site;}
-  var box=el("lookupBox");
-  if(box){
-    var tg=targetValue(t), done=actualByPlan(t,getKeyinDate()), rate=tg?Math.round(done/tg*100):0;
-    box.className="found";
-    box.innerHTML='<span class="pill ok">已帶入幹部目標</span><table style="margin-top:8px"><tr><th>工單</th><td>'+htmlEsc(t.work_order_no||'')+'</td></tr><tr><th>機台</th><td>'+htmlEsc(t.machine_code||'')+'</td></tr><tr><th>規格</th><td>'+htmlEsc(t.product_spec||'')+'</td></tr><tr><th>目標</th><td>'+htmlEsc(tg+' '+targetUnit(t))+'</td></tr><tr><th>完成</th><td>'+htmlEsc(done+'，'+rate+'%')+'</td></tr></table>';
+  // 若 Employee 尚未載入或找不到此工號，再向 Apps Script 重新抓一次 Employee 分頁。
+  if(!forceReload && window.google&&google.script&&google.script.run){
+    run('listEmployees',[],function(res){
+      App.employees=(res&&res.rows)||res||[];
+      var emp=findEmployeeByNo(no);
+      if(applyLeaderFromEmployee(emp)){
+        toast('已由 Employee 分頁帶入幹部姓名與角色');
+      }else{
+        toast('Employee 分頁查無工號：'+no);
+      }
+    },'讀取 Employee 分頁失敗');
   }
-  toast('已帶入工單 '+(t.work_order_no||''));
 }
 
-function selectNextTodo(silent){
-  var rows=AppState.keyinTargetRows||[];
-  if(!rows.length){ if(!silent)toast('目前沒有待辦工單'); return; }
-  var qDate=getKeyinDate();
-  for(var i=0;i<rows.length;i++){
-    var t=rows[i], tg=targetValue(t), done=actualByPlan(t,qDate);
-    if(!tg || done < tg){ useTargetPlan(i); if(!silent)toast('已切到下一張工單'); return; }
+function loadProd5C(done){
+  run('listProd5CData',[],function(res){
+    App.prod5c=(res&&res.rows)||res||[];
+    if(el('prod5cStatus'))el('prod5cStatus').textContent='5-C 已讀取 '+App.prod5c.length+' 筆';
+    if(done)done();
+  },'讀取 5-C 失敗');
+}
+function loadProd53(done){
+  run('listProd53Data',[],function(res){
+    App.prod53=(res&&res.rows)||res||[];
+    if(el('prod53Status'))el('prod53Status').textContent='5-3 已讀取 '+App.prod53.length+' 筆';
+    if(done)done();
+  },'讀取 5-3 失敗');
+}
+function normalize53Row(row){
+  var barcode=pick5C(row,['日報條碼','daily_barcode','工單號','work_order_no']);
+  var wo=wo12(barcode || pick5C(row,['工單號','命令單號','work_order_no']));
+  var category=pick5C(row,['類別','category']);
+  var outQty=num(pick5C(row,['產出數','產出量','output_qty','qty']));
+  return {
+    prod_date: pick5C(row,['生產日期','日期','prod_date','date']),
+    category: category,
+    shift: pick5C(row,['班別','shift']),
+    daily_barcode: barcode,
+    start_time: pick5C(row,['時間起','開始時間','start_time']),
+    end_time: pick5C(row,['時間迄','結束時間','end_time']),
+    part_no: pick5C(row,['料品編號','產品編號','料號','part_no']),
+    output_qty: outQty,
+    machine: pick5C(row,['機台','machine']),
+    prod_unit: pick5C(row,['生產單位','prod_unit']),
+    department: pick5C(row,['單位名稱','部門','department']),
+    customer: pick5C(row,['客戶簡稱','客戶','customer']),
+    version: pick5C(row,['版別','version']),
+    product_name: pick5C(row,['品名','product_name']),
+    product_spec: pick5C(row,['規格','product_spec']),
+    process_no: pick5C(row,['製程編號','process_no']),
+    process_name: pick5C(row,['製程說明','製程','process_name']),
+    idle_reason: pick5C(row,['閒置原因','idle_reason']),
+    idle_reason_desc: pick5C(row,['閒置原因說明','idle_reason_desc']),
+    version_desc: pick5C(row,['版別說明','version_desc']),
+    work_order_no: wo,
+    raw_json: JSON.stringify(row)
+  };
+}
+function actual53ByWorkOrder(wo){
+  var w=wo12(wo);
+  if(!w)return 0;
+  return (App.prod53||[]).filter(function(x){
+    var xw=wo12(x.work_order_no||x.daily_barcode||'');
+    return xw===w && String(x.category||'').indexOf('閒置')<0;
+  }).reduce(function(a,x){return a+num(x.output_qty)},0);
+}
+function idle53Count(date){
+  var d=String(date||'').replace(/\//g,'-');
+  return (App.prod53||[]).filter(function(x){
+    var xd=String(x.prod_date||'').replace(/\//g,'-').slice(0,10);
+    return (!d || xd===d) && String(x.category||'').indexOf('閒置')>=0;
+  }).length;
+}
+function actual53Total(date){
+  var d=String(date||'').replace(/\//g,'-');
+  return (App.prod53||[]).filter(function(x){
+    var xd=String(x.prod_date||'').replace(/\//g,'-').slice(0,10);
+    return (!d || xd===d) && String(x.category||'').indexOf('閒置')<0;
+  }).reduce(function(a,x){return a+num(x.output_qty)},0);
+}
+
+function normalize5CHeader(h){
+  return String(h||'').trim().replace(/\s+/g,'').replace(/\(/g,'').replace(/\)/g,'').replace(/（/g,'').replace(/）/g,'');
+}
+function pick5C(row, aliases){
+  for(var i=0;i<aliases.length;i++){
+    var k=aliases[i];
+    if(row[k]!==undefined && String(row[k]).trim()!=='')return row[k];
+    var nk=normalize5CHeader(k);
+    if(row[nk]!==undefined && String(row[nk]).trim()!=='')return row[nk];
   }
-  useTargetPlan(0);
-  if(!silent)toast('全部已達標，已回到第一張');
+  return '';
 }
-
-function refreshTodoByMachine(){
-  AppState.targetDate=getKeyinDate();
-  renderKeyinTargets();
-  var m=getKeyinMachineFilter();
-  toast(m?'已依機台 '+m+' 篩選待辦':'已顯示全部待辦');
-}
-
-function setTargetDate(v){AppState.targetDate=v||today(); if(el("targetQueryDate")) el("targetQueryDate").value=AppState.targetDate; loadTargets();}
-function setTargetToday(){setTargetDate(today())}
-function setTargetYesterday(){setTargetDate(yesterday())}
-function targetFilterHtml(d){return `<div class="row" style="margin:10px 0 12px"><label style="margin:0;width:auto">查詢日期 / วันที่ค้นหา</label><input id="targetQueryDate" type="date" value="${d}" style="max-width:190px"><button id="targetSearchBtn" class="btn ok" onclick="setTargetDate(document.getElementById('targetQueryDate').value)">查詢 / ค้นหา</button><button id="targetTodayBtn" class="btn ghost" onclick="setTargetToday()">今天 / วันนี้</button><button id="targetYesterdayBtn" class="btn ghost" onclick="setTargetYesterday()">昨天 / เมื่อวาน</button></div>`}
-
-function renderDashboard(){
-  var s=getStats(),box=el("dashboardGrid"),orders=s.orders,late=s.c["逾期"],qDate=s.queryDate;
-  var dateLabel=qDate===today()?"今日":qDate;
-  var byProc={};orders.forEach(function(o){var p=o.process||"未指定";byProc[p]=(byProc[p]||0)+1});
-  var topProc=Object.keys(byProc).map(function(k){return[k,byProc[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
-  var risk=orders.filter(function(o){return["逾期","待料","未開工"].indexOf(orderStatus(o))>=0}).slice(0,10);
-  var targetRows=s.todayPlans.map(function(t){
-    var wo=norm(t.work_order_no),done=actualByPlan(t,qDate),tg=targetValue(t),rate=tg?Math.round(done/tg*100):0,remain=tg-done;
-    return[rateEmoji(rate),t.machine_code||'',t.work_order_no||'',t.leader_role+' '+t.leader_name,t.product_spec||'',tg,done,remain,rate+'%',t.planned_finish||''];
-  });
-  box.innerHTML='<div class="card col2 kpiCard blue"><div class="name">總工單</div><div class="num">'+orders.length+'</div></div>'+
-    '<div class="card col2 kpiCard orange"><div class="name">'+dateLabel+'目標R</div><div class="num">'+Math.round(s.targetRoll)+'</div></div>'+
-    '<div class="card col2 kpiCard green"><div class="name">'+dateLabel+'完成R</div><div class="num">'+Math.round(s.actualRoll)+'</div></div>'+
-    '<div class="card col2 kpiCard violet"><div class="name">'+dateLabel+'達成率</div><div class="num">'+s.targetRate+'%</div></div>'+
-    '<div class="card col2 kpiCard cyan"><div class="name">'+dateLabel+' KeyIn</div><div class="num">'+s.todayKeyin+'</div></div>'+
-    '<div class="card col2 kpiCard red"><div class="name">逾期</div><div class="num">'+late+'</div></div>'+
-    '<div class="card col4"><h2>'+dateLabel+'目標達成率</h2><div class="donut" style="--deg:'+(s.targetRate*3.6)+'deg"><div>'+s.targetRate+'%</div></div></div>'+
-    '<div class="card col4"><h2>製程工單分布</h2>'+barChartHtml(topProc)+'</div>'+
-    '<div class="card col4"><h2>主管重點</h2><table><tr><td>'+dateLabel+'目標R</td><td>'+Math.round(s.targetRoll)+'</td></tr><tr><td>'+dateLabel+'完成R</td><td>'+Math.round(s.actualRoll)+'</td></tr><tr><td>'+dateLabel+'剩餘R</td><td>'+Math.round(s.targetRoll-s.actualRoll)+'</td></tr><tr><td>目標筆數</td><td>'+s.todayPlans.length+'</td></tr><tr><td>'+dateLabel+'人員數</td><td>'+s.todayEmp+'</td></tr></table></div>'+
-    '<div class="card col12"><h2>今日目標戰情｜幹部目標 vs 人員 Key In</h2>'+targetFilterHtml(qDate)+'<div id="targetBattleBox"></div></div>'+
-    '<div class="card col12"><h2>TOP 風險工單</h2><div id="dashRiskBox"></div></div>';
-  makeTable("targetBattleBox",["狀態","機台","工單","幹部","規格","目標","完成","剩餘","達成率","預計完成"],targetRows);
-  makeTable("dashRiskBox",["狀態","工單","預交日","機台","製程","客戶","目標","實績"],risk.map(function(o){return[statusBadge(orderStatus(o)),o.wo,o.due||"",o.machine||"",o.process||"",o.customer||"",o.target||0,o.actual||0]}));
-}
-function renderSetup(){}
-function renderKeyin(){
-  renderKeyinTargets();
-  makeTable("keyinTableBox",["日期","站點","工單","批號","料號","規格","目標","工號","姓名","機台","實績","單位","備註"],AppState.keyin.slice().reverse().map(function(r){return[r.date,r.site,r.wo,r.batch,r.part,r.spec,r.target,r.empNo,r.empName,r.machine,r.actual,r.unit,r.note]}));
-}
-function renderOverview(){var s=getStats(),box=el("overviewGrid");box.innerHTML='<div class="card col2 kpiCard blue"><div class="name">總工單</div><div class="num">'+s.orders.length+'</div></div><div class="card col2 kpiCard orange"><div class="name">生產中</div><div class="num">'+s.c["生產中"]+'</div></div><div class="card col2 kpiCard green"><div class="name">已入庫</div><div class="num">'+s.c["已入庫"]+'</div></div><div class="card col2 kpiCard red"><div class="name">逾期</div><div class="num">'+s.c["逾期"]+'</div></div><div class="card col2 kpiCard cyan"><div class="name">未開工</div><div class="num">'+s.c["未開工"]+'</div></div><div class="card col2 kpiCard violet"><div class="name">完成率</div><div class="num">'+s.rate+'%</div></div><div class="card col12"><h2>排程甘特圖</h2>'+ganttHtml(s.orders.slice(0,90))+'</div>'}
-function ganttHtml(orders){return orders.slice().sort(function(a,b){return(a.due||"9999").localeCompare(b.due||"9999")}).map(function(o){var st=orderStatus(o),pct=o.target?Math.min(100,Math.round(o.actual/o.target*100)):(st==="未開工"?10:40),color=statusColor(st);return'<div class="gantt"><div><b>'+o.wo+'</b><br><span class="hint">'+(o.machine||"-")+'｜'+(o.process||"-")+'｜'+(o.due||"-")+'</span></div><div class="ganttLine"><div class="ganttFill" style="width:'+pct+'%;background:'+color+'"></div></div><div>'+statusBadge(st)+'</div></div>'}).join("")||'<div class="hint">尚無工單資料。</div>'}
-function renderSchedule(){var orders=Object.values(AppState.idx).map(function(o){var st=orderStatus(o),lead=(o.plan&&o.due)?daysBetween(o.plan,o.due):"",remain=o.due?daysBetween(today(),o.due):"";return[o.plan||"",o.due||"",remain,o.wo,o.machine||"",o.process||"",o.customer||"",o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+"%":"-",lead,statusBadge(st)]});el("scheduleGantt").innerHTML=ganttHtml(Object.values(AppState.idx).slice(0,120));makeTable("scheduleTableBox",["開立日","預交日","剩餘天","工單","機台","製程","客戶","目標","實績","達成","Lead Time","狀態"],orders)}
-function machineSafe(v){return String(v==null?'':v).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
-function scrollToEl(id){var x=el(id);if(x){setTimeout(function(){x.scrollIntoView({behavior:'smooth',block:'start'})},80)}}
-function renderMachine(){
-  var orders=Object.values(AppState.idx),box=el("machineMap");
-  var detail=el("machineDetailPanel"),head=el("machineDetailHeader");
-  if(detail)detail.style.display="none"; if(head)head.innerHTML="";
-  if(!orders.length){box.innerHTML='<div class="card col12"><h2>尚無機台資料</h2><div class="hint">請先上傳或讀取雲端工單。</div></div>';makeTable("machineTableBox",["機台","工單數"],[]);return}
-  var by={};
-  orders.forEach(function(o){var m=o.machine||"未指定";by[m]=by[m]||{m:m,orders:[],target:0,actual:0,late:0,wait:0,run:0,done:0,idle:0};var x=by[m],st=orderStatus(o);x.orders.push(o);x.target+=num(o.target);x.actual+=num(o.actual);if(st==="逾期")x.late++;if(st==="待料")x.wait++;if(st==="生產中")x.run++;if(st==="已入庫")x.done++;if(st==="未開工")x.idle++});
-  var machines=Object.values(by).sort(function(a,b){return b.orders.length-a.orders.length});AppState.machineGroups=by;AppState.selectedMachine="";
-  box.innerHTML=machines.slice(0,80).map(function(x){var cls=x.late?"tileLate":x.wait?"tileWait":x.run?"tileRun":"tileIdle",pct=x.target?Math.min(100,Math.round(x.actual/x.target*100)):0;return'<div class="machineTile '+cls+'" data-machine="'+htmlEsc(x.m)+'" onclick="openMachineDetail(\''+machineSafe(x.m)+'\')"><b>'+htmlEsc(x.m)+'</b><div>工單：'+x.orders.length+'</div><div>生產中：'+x.run+'　逾期：'+x.late+'</div><div>達成：'+pct+'%</div><div style="font-size:12px;margin-top:8px;opacity:.9">點選查看大綱 / Click for detail</div></div>'}).join("");
-  makeTable("machineTableBox",["機台","工單數","生產中","已入庫","逾期","待料","未開工","目標","實績","達成"],machines.map(function(x){return['<button class="btn ghost" onclick="openMachineDetail(\''+machineSafe(x.m)+'\')">查看</button> '+htmlEsc(x.m),x.orders.length,x.run,x.done,x.late,x.wait,x.idle,Math.round(x.target),Math.round(x.actual),x.target?Math.round(x.actual/x.target*100)+"%":"-"]}))
-}
-function backToMachineMap(){
-  renderMachine();
-  scrollToEl("machineMapCard");
-}
-function markActiveMachine(machine){
-  document.querySelectorAll('.machineTile').forEach(function(t){t.classList.remove('activeMachine');if(t.getAttribute('data-machine')===machine)t.classList.add('activeMachine')});
-}
-function openMachineDetail(machine){
-  var g=(AppState.machineGroups||{})[machine]; if(!g)return;
-  AppState.selectedMachine=machine; markActiveMachine(machine);
-  var pct=g.target?Math.round(g.actual/g.target*100):0, detail=el("machineDetailPanel"),head=el("machineDetailHeader");
-  if(detail)detail.style.display="block";
-  if(head){head.innerHTML='<div class="row" style="justify-content:space-between"><div><button class="btn ghost" onclick="backToMachineMap()">← 返回機台地圖</button><h2 style="margin-top:12px">🏭 機台：'+htmlEsc(machine)+'</h2><div class="machineBreadcrumb"><span>🏠 首頁</span><span>＞</span><span>🗺 機台地圖</span><span>＞</span><b>'+htmlEsc(machine)+'</b></div></div><div class="pill ok">達成 '+pct+'%</div></div><div class="machineSummaryGrid"><div class="machineMiniKpi"><div class="name">工單數</div><div class="num">'+g.orders.length+'</div></div><div class="machineMiniKpi"><div class="name">生產中</div><div class="num">'+g.run+'</div></div><div class="machineMiniKpi"><div class="name">已入庫</div><div class="num">'+g.done+'</div></div><div class="machineMiniKpi"><div class="name">逾期</div><div class="num">'+g.late+'</div></div><div class="machineMiniKpi"><div class="name">待料</div><div class="num">'+g.wait+'</div></div><div class="machineMiniKpi"><div class="name">未開工</div><div class="num">'+g.idle+'</div></div><div class="machineMiniKpi"><div class="name">目標</div><div class="num">'+Math.round(g.target)+'</div></div><div class="machineMiniKpi"><div class="name">實績</div><div class="num">'+Math.round(g.actual)+'</div></div></div>';}
-  makeTable("machineTableBox",["工單","批號","客戶","製程","目標","完成","尚差","達成","狀態","預交日"],g.orders.map(function(o){var st=orderStatus(o),p=o.target?Math.round(o.actual/o.target*100):0,remain=Math.round(num(o.target)-num(o.actual));return['<button class="btn ghost" onclick="openWorkOrderDetail(\''+machineSafe(o.wo)+'\',\''+machineSafe(machine)+'\')">'+htmlEsc(o.wo)+'</button>',htmlEsc(o.batch||''),htmlEsc(o.customer||''),htmlEsc(o.process||''),Math.round(num(o.target)),Math.round(num(o.actual)),remain,p+'%',statusBadge(st),htmlEsc(o.due||'')]}));
-  scrollToEl("machineDetailPanel");
-}
-function openWorkOrderDetail(wo,machine){
-  var o=AppState.idx[wo];if(!o)return;var pct=o.target?Math.round(o.actual/o.target*100):0,detail=el("machineDetailPanel"),head=el("machineDetailHeader");
-  if(detail)detail.style.display="block";
-  if(head){head.innerHTML='<div class="row" style="justify-content:space-between"><div><button class="btn ghost" onclick="openMachineDetail(\''+machineSafe(machine)+'\')">← 返回 '+htmlEsc(machine)+'</button><button class="btn ghost" onclick="backToMachineMap()" style="margin-left:8px">← 返回機台地圖</button><h2 style="margin-top:12px">📋 '+htmlEsc(wo)+' 工單明細</h2><div class="machineBreadcrumb"><span>🏠 首頁</span><span>＞</span><span>🗺 機台地圖</span><span>＞</span><span>'+htmlEsc(machine)+'</span><span>＞</span><b>'+htmlEsc(wo)+'</b></div></div><div class="pill ok">達成 '+pct+'%</div></div><div class="machineSummaryGrid"><div class="machineMiniKpi"><div class="name">批號</div><div class="num" style="font-size:18px">'+htmlEsc(o.batch||'-')+'</div></div><div class="machineMiniKpi"><div class="name">目標</div><div class="num">'+Math.round(num(o.target))+'</div></div><div class="machineMiniKpi"><div class="name">完成</div><div class="num">'+Math.round(num(o.actual))+'</div></div><div class="machineMiniKpi"><div class="name">尚差</div><div class="num">'+Math.round(num(o.target)-num(o.actual))+'</div></div><div class="machineMiniKpi"><div class="name">客戶</div><div class="num" style="font-size:18px">'+htmlEsc(o.customer||'-')+'</div></div><div class="machineMiniKpi"><div class="name">製程</div><div class="num" style="font-size:18px">'+htmlEsc(o.process||'-')+'</div></div><div class="machineMiniKpi"><div class="name">狀態</div><div class="num" style="font-size:18px">'+orderStatus(o)+'</div></div><div class="machineMiniKpi"><div class="name">達成</div><div class="num">'+pct+'%</div></div></div><table style="margin-top:12px"><tr><th>規格</th><td>'+htmlEsc(o.spec||'')+'</td></tr><tr><th>機台</th><td>'+htmlEsc(machine||'')+'</td></tr><tr><th>預交日</th><td>'+htmlEsc(o.due||'')+'</td></tr></table>';}
-  var q=targetDate();var rows=AppState.keyin.filter(function(r){return r.wo===wo&&dateKey(r.date)===q});
-  makeTable("machineTableBox",["時間","工號","姓名","產量","單位","備註"],rows.map(function(r){return[htmlEsc(r.createdAt||''),htmlEsc(r.empNo||''),htmlEsc(r.empName||''),r.actual||0,htmlEsc(r.unit||''),htmlEsc(r.note||'')]}));
-  scrollToEl("machineDetailPanel");
-}
-function renderAlert(){makeTable("alertTableBox",["狀態","工單","預交","機台","製程","客戶","目標","實績"],Object.values(AppState.idx).filter(function(o){return["逾期","待料","未開工"].indexOf(orderStatus(o))>=0}).map(function(o){return[statusBadge(orderStatus(o)),o.wo,o.due||"",o.machine||"",o.process||"",o.customer||"",o.target||0,o.actual||0]}))}
-function renderWarehouse(){makeTable("warehouseTableBox",["入庫分類","預交日","工單","機台","製程","客戶","目標","實績","達成","狀態"],Object.values(AppState.idx).filter(function(o){return o.due||orderStatus(o)==="已入庫"}).sort(function(a,b){return(a.due||"9999").localeCompare(b.due||"9999")}).map(function(o){var cls=o.due===today()?"今日應入庫":(o.due&&o.due<today()&&orderStatus(o)!=="已入庫")?"逾期未入庫":orderStatus(o)==="已入庫"?"已入庫":"未到期";return[cls,o.due||"",o.wo,o.machine||"",o.process||"",o.customer||"",o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+"%":"-",statusBadge(orderStatus(o))]}))}
-function renderTrend(){var daily={};AppState.keyin.forEach(function(r){var d=dateKey(r.date)||today();daily[d]=daily[d]||{d:d,qty:0,count:0,wos:new Set(),emps:new Set()};daily[d].qty+=num(r.actual);daily[d].count++;daily[d].wos.add(r.wo);daily[d].emps.add(r.empNo)});makeTable("dailyTableBox",["日期","筆數","工單","人員","產量"],Object.values(daily).sort(function(a,b){return b.d.localeCompare(a.d)}).map(function(x){return[x.d,x.count,x.wos.size,x.emps.size,x.qty]}));var proc={};AppState.keyin.forEach(function(r){var p=r.site||"未指定";proc[p]=proc[p]||{p:p,qty:0,count:0};proc[p].qty+=num(r.actual);proc[p].count++});makeTable("processTableBox",["製程","筆數","產量"],Object.values(proc).sort(function(a,b){return b.qty-a.qty}).map(function(x){return[x.p,x.count,x.qty]}))}
-function renderHistory(){makeTable("historyTableBox",["開立日","預交日","入庫/完工","工單","客戶","機台","製程","料號","規格","目標","實績","達成","來源","狀態"],Object.values(AppState.idx).sort(function(a,b){return(a.due||"9999").localeCompare(b.due||"9999")}).map(function(o){var st=orderStatus(o);return[o.plan||"",o.due||"",o.stockin||o.finish||"",o.wo,o.customer||"",o.machine||"",o.process||"",o.part||"",o.spec||"",o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+"%":"-",Object.keys(o.from||{}).join("/"),statusBadge(st)]}))}
-function renderMatch(){makeTable("matchTableBox",["工單","料號","規格","目標","實績","差異","達成率","狀態"],Object.values(AppState.idx).map(function(o){var st=orderStatus(o);return[o.wo,o.part||"",o.spec||"",o.target||0,o.actual||0,num(o.actual)-num(o.target),o.target?Math.round(o.actual/o.target*100)+"%":"-",statusBadge(st)]}))}
-function rateClass(rate){return rate>=100?'rateGood':rate>=80?'rateMid':'rateBad'}
-function barWidth(rate){return Math.max(3,Math.min(100,Math.round(rate)))}
-function renderEff(){
-  var box=el("effTableBox"); if(!box)return;
-  var q=targetDate();
-  var rows=AppState.keyin.filter(function(r){return dateKey(r.date)===q});
-  var scopeLabel='今日';
-  if(!rows.length){rows=AppState.keyin.slice();scopeLabel='全部';}
-  var woEmp={};
-  rows.forEach(function(r){var wo=r.wo||'';if(!wo)return;woEmp[wo]=woEmp[wo]||new Set();if(r.empNo||r.empName)woEmp[wo].add((r.empNo||'')+'|'+(r.empName||''));});
-  var empMap={}, empWoSeen={};
-  rows.forEach(function(r){
-    var key=(r.empNo||'')+'|'+(r.empName||'未填姓名');
-    empMap[key]=empMap[key]||{empNo:r.empNo||'',empName:r.empName||'未填姓名',actual:0,standard:0,count:0,wos:new Set(),machines:new Set(),processes:new Set()};
-    var e=empMap[key];
-    e.actual+=num(r.actual); e.count++; if(r.wo)e.wos.add(r.wo); if(r.machine)e.machines.add(r.machine); if(r.site)e.processes.add(r.site);
-    var base=AppState.idx[r.wo]||{};
-    var std=num(base.target||r.target||0);
-    var members=woEmp[r.wo]?Math.max(1,woEmp[r.wo].size):1;
-    var seenKey=key+'|'+(r.wo||'');
-    if(std&&!empWoSeen[seenKey]){e.standard+=std/members;empWoSeen[seenKey]=true;}
-  });
-  var emps=Object.values(empMap).map(function(e){e.rate=e.standard?Math.round(e.actual/e.standard*100):0;return e}).sort(function(a,b){return (b.rate-a.rate)||(b.actual-a.actual)});
-  var valid=emps.filter(function(e){return e.standard>0});
-  var avgRate=valid.length?Math.round(valid.reduce(function(a,e){return a+e.rate},0)/valid.length):0;
-  var topRate=valid.length?valid[0].rate:0;
-  var lowCount=valid.filter(function(e){return e.rate>0&&e.rate<80}).length;
-  var totalActual=emps.reduce(function(a,e){return a+e.actual},0);
-  var medals=['🥇','🥈','🥉'];
-  var topCards=emps.slice(0,3).map(function(e,i){var w=barWidth(e.rate||0);return '<div class="rankCard"><div class="medal">'+(medals[i]||'🏅')+'</div><div class="person">'+htmlEsc(e.empName||'-')+'</div><div class="meta">'+htmlEsc(e.empNo||'')+'｜工單 '+e.wos.size+'｜機台 '+Array.from(e.machines).slice(0,2).map(htmlEsc).join('、')+'</div><div class="rate '+rateClass(e.rate)+'">'+(e.standard?e.rate+'%':'未定標準')+'</div><div class="effBar"><div class="effFill" style="width:'+w+'%"></div></div><div class="meta">實績 '+Math.round(e.actual)+' / 標準 '+Math.round(e.standard||0)+'</div></div>'}).join('')||'<div class="hint">尚無人員回報資料。</div>';
-  var rankRows=emps.slice(0,12).map(function(e,i){var w=barWidth(e.rate||0);return '<div class="effRow"><div><b>#'+(i+1)+'</b></div><div><b>'+htmlEsc(e.empName||'-')+'</b><br><span class="hint">'+htmlEsc(e.empNo||'')+'｜'+e.wos.size+'張工單｜'+e.count+'筆回報</span></div><div><div class="effBar"><div class="effFill" style="width:'+w+'%"></div></div><span class="hint">實績 '+Math.round(e.actual)+' / 標準 '+Math.round(e.standard||0)+'</span></div><div class="'+rateClass(e.rate)+'" style="font-size:24px;font-weight:900">'+(e.standard?e.rate+'%':'-')+'</div></div>'}).join('')||'<div class="hint">尚無資料。</div>';
-  var mach={};
-  rows.forEach(function(r){var m=r.machine||((AppState.idx[r.wo]||{}).machine)||'未指定';mach[m]=mach[m]||{m:m,actual:0,standard:0,wos:new Set(),emps:new Set()};mach[m].actual+=num(r.actual);if(r.wo)mach[m].wos.add(r.wo);if(r.empNo||r.empName)mach[m].emps.add((r.empNo||'')+'|'+(r.empName||''));});
-  Object.values(mach).forEach(function(x){x.wos.forEach(function(wo){x.standard+=num((AppState.idx[wo]||{}).target||0)});x.rate=x.standard?Math.round(x.actual/x.standard*100):0;});
-  var machCards=Object.values(mach).sort(function(a,b){return (b.rate-a.rate)||(b.actual-a.actual)}).slice(0,8).map(function(x){var w=barWidth(x.rate||0);return '<div class="machineEffCard"><b>'+htmlEsc(x.m)+'</b><div class="big '+rateClass(x.rate)+'">'+(x.standard?x.rate+'%':'-')+'</div><div class="effBar"><div class="effFill" style="width:'+w+'%"></div></div><div class="hint">實績 '+Math.round(x.actual)+' / 標準 '+Math.round(x.standard||0)+'<br>工單 '+x.wos.size+'｜人員 '+x.emps.size+'</div></div>'}).join('')||'<div class="hint">尚無機台效率資料。</div>';
-  box.innerHTML='<div class="effHero"><h2>📊 標準效率分析中心</h2><div class="hint">以 '+scopeLabel+' 回報資料計算；標準暫以 source_data / SL31A 匯入的工單目標，並依同工單參與人員平均分攤。後續可接 Standard_Efficiency 做正式標準產能。</div><div class="effKpiGrid"><div class="effKpi"><div class="name">回報人數</div><div class="num">'+emps.length+'</div></div><div class="effKpi"><div class="name">平均效率</div><div class="num">'+avgRate+'%</div></div><div class="effKpi"><div class="name">最高效率</div><div class="num">'+topRate+'%</div></div><div class="effKpi"><div class="name">低於80%</div><div class="num">'+lowCount+'</div></div></div></div>'+ 
-    '<div class="card" style="margin-top:12px"><h2>🏆 今日效率 TOP 3</h2><div class="rankGrid">'+topCards+'</div></div>'+ 
-    '<div class="card" style="margin-top:12px"><h2>👥 人員效率排行榜</h2><div class="effList">'+rankRows+'</div></div>'+ 
-    '<div class="card" style="margin-top:12px"><h2>🏭 機台效率排行榜</h2><div class="machineEffGrid">'+machCards+'</div></div>'+ 
-    '<div class="effNote" style="margin-top:12px"><b>判讀方式：</b>100%以上代表高於標準，80%～99%為接近標準，低於80%建議檢查是否待料、換線、規格難度或人員熟練度問題。<br><b>資料來源：</b>Key In 實績 + source_data 工單目標（由 4-3 / PD11B / SL31A 匯入）。</div>'+ 
-    '<div class="card" style="margin-top:12px"><h2>效率明細表</h2><div id="effDetailTableBox"></div></div>';
-  makeTable("effDetailTableBox",["排名","工號","姓名","標準效率","實績","標準","工單數","機台","回報筆數"],emps.map(function(e,i){return[i+1,htmlEsc(e.empNo),htmlEsc(e.empName),e.standard?('<b class="'+rateClass(e.rate)+'">'+e.rate+'%</b>'):'-',Math.round(e.actual),Math.round(e.standard||0),e.wos.size,Array.from(e.machines).map(htmlEsc).join('、'),e.count]}));
-}
-
-function exportTableCSV(id){
-  var cfg=AppState.tables[id]; if(!cfg){toast("沒有可匯出資料");return;}
-  var lines=[];
-  lines.push(cfg.heads.map(csvCell).join(","));
-  cfg.rows.forEach(function(r){lines.push(r.map(function(c){return csvCell(String(c==null?"":c).replace(/<[^>]*>/g,""))}).join(","))});
-  var blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
-  var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=id+"_"+today()+".csv";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-function csvCell(v){return '"'+String(v).replace(/"/g,'""')+'"';}
-
-
-function renderCommandCenter(){
-  var s=getStats();
-  var orders=s.orders||[];
-  var late=orders.filter(function(o){return orderStatus(o)==="逾期"});
-  var running=orders.filter(function(o){return orderStatus(o)==="生產中"});
-  var wait=orders.filter(function(o){return orderStatus(o)==="待料"});
-  var unfinished=orders.filter(function(o){return ["未開工","生產中","待料","逾期"].indexOf(orderStatus(o))>=0});
-  var byMachine={};
-  orders.forEach(function(o){var m=o.machine||"未指定";byMachine[m]=byMachine[m]||{machine:m,count:0,late:0,run:0,target:0,actual:0,wait:0};byMachine[m].count++;byMachine[m].target+=num(o.target);byMachine[m].actual+=num(o.actual);var st=orderStatus(o);if(st==="逾期")byMachine[m].late++;if(st==="生產中")byMachine[m].run++;if(st==="待料")byMachine[m].wait++;});
-  var machines=Object.values(byMachine).map(function(x){x.rate=x.target?Math.round(x.actual/x.target*100):0;return x}).sort(function(a,b){return (b.late-a.late)||(a.rate-b.rate)||(b.count-a.count)});
-  var risk=unfinished.map(function(o){var st=orderStatus(o),rate=o.target?Math.round(o.actual/o.target*100):0,remain=num(o.target)-num(o.actual);return {st:st,wo:o.wo,machine:o.machine||"未指定",process:o.process||"",customer:o.customer||"",due:o.due||"",rate:rate,remain:remain,target:o.target||0,actual:o.actual||0};}).sort(function(a,b){var w=function(x){return x.st==="逾期"?3:x.st==="待料"?2:x.st==="生產中"?1:0};return w(b)-w(a)||a.rate-b.rate;}).slice(0,20);
-  var ai=[];
-  if(late.length) ai.push('🔴 目前有 <b>'+late.length+'</b> 張逾期工單，建議優先確認交期與可轉入庫項目。');
-  if(machines[0]) ai.push('⚠️ 風險機台：<b>'+machines[0].machine+'</b>，逾期 '+machines[0].late+' 張，達成 '+machines[0].rate+'%。');
-  if(wait.length) ai.push('🟡 待料工單 '+wait.length+' 張，建議先確認備料/領料狀態。');
-  if(!ai.length) ai.push('🟢 今日整體狀態正常，持續追蹤達成率與入庫進度。');
-  var box=el('commandGrid');
-  box.innerHTML='<div class="col12 commandHero"><div class="row" style="justify-content:space-between"><div><h2>📺 廠長戰情室 / Command Center</h2><div class="commandClock">'+new Date().toLocaleString()+'</div></div><button class="btn ghost" onclick="renderCommandCenter()">重新整理</button></div><div class="commandKpiGrid">'+
-    '<div class="commandKpi"><div class="label">今日目標 R</div><div class="value">'+Math.round(s.targetRoll||0)+'</div></div>'+ 
-    '<div class="commandKpi"><div class="label">今日完成 R</div><div class="value">'+Math.round(s.actualRoll||0)+'</div></div>'+ 
-    '<div class="commandKpi"><div class="label">達成率</div><div class="value">'+(s.targetRate||0)+'%</div></div>'+ 
-    '<div class="commandKpi"><div class="label">生產中</div><div class="value">'+s.c["生產中"]+'</div></div>'+ 
-    '<div class="commandKpi"><div class="label">逾期</div><div class="value">'+s.c["逾期"]+'</div></div>'+ 
-    '<div class="commandKpi"><div class="label">今日人員</div><div class="value">'+s.todayEmp+'</div></div>'+ 
-    '</div></div>'+ 
-    '<div class="card col12"><h2>🤖 AI 今日重點</h2><div class="aiBox">'+ai.join('<br>')+'</div></div>'+ 
-    '<div class="card col6"><h2>🔴 風險工單 TOP</h2><div id="commandRiskTable"></div></div>'+ 
-    '<div class="card col6"><h2>🏭 機台瓶頸排行</h2><div id="commandMachineTable"></div></div>'+ 
-    '<div class="card col12"><h2>📋 今日待追蹤工單</h2><div id="commandTodoTable"></div></div>';
-  makeTable('commandRiskTable',["狀態","工單","機台","製程","客戶","預交","目標","實績","尚差","達成"],risk.slice(0,10).map(function(x){return[statusBadge(x.st),x.wo,x.machine,x.process,x.customer,x.due,x.target,x.actual,x.remain,x.rate+'%']}));
-  makeTable('commandMachineTable',["機台","工單","生產中","逾期","待料","目標","實績","達成"],machines.slice(0,12).map(function(x){return[x.machine,x.count,x.run,x.late,x.wait,Math.round(x.target),Math.round(x.actual),x.rate+'%']}));
-  makeTable('commandTodoTable',["狀態","工單","機台","製程","客戶","批號","預交","目標","實績","達成"],unfinished.slice(0,80).map(function(o){return[statusBadge(orderStatus(o)),o.wo,o.machine||'',o.process||'',o.customer||'',o.batch||'',o.due||'',o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+'%':'-']}));
-}
-
-function renderDataCenter(){
-  var s=getStats();
-  var srcCount={};
-  AppState.source.forEach(function(r){srcCount[r.source||"未指定"]=(srcCount[r.source||"未指定"]||0)+1});
-  var keyinToday=AppState.keyin.filter(function(r){return dateKey(r.date)===today()});
-  var grid=el("dataCenterGrid");
-  grid.innerHTML=
-    '<div class="card col3 kpiCard blue"><div class="name">source_data</div><div class="num">'+AppState.source.length+'</div></div>'+
-    '<div class="card col3 kpiCard green"><div class="name">整合工單</div><div class="num">'+s.orders.length+'</div></div>'+
-    '<div class="card col3 kpiCard cyan"><div class="name">Key In總筆數</div><div class="num">'+AppState.keyin.length+'</div></div>'+
-    '<div class="card col3 kpiCard violet"><div class="name">今日Key In</div><div class="num">'+keyinToday.length+'</div></div>';
-  var rows=Object.keys(srcCount).map(function(k){return[k,srcCount[k]]});
-  rows.push(["keyin",AppState.keyin.length]);
-  rows.push(["今日KeyIn人員",new Set(keyinToday.map(function(r){return r.empNo})).size]);
-  makeTable("dataCenterTableBox",["資料來源","筆數"],rows);
-}
-
-function renderWorkOrderSearch(){
-  var q=(el("woSearchInput")&&el("woSearchInput").value||"").trim().toUpperCase();
-  var rows=Object.values(AppState.idx).filter(function(o){
-    if(!q)return true;
-    return [o.wo,o.customer,o.part,o.spec,o.machine,o.process,o.batch,o.due].join(" ").toUpperCase().indexOf(q)>=0;
-  }).slice(0,300).map(function(o){
-    var st=orderStatus(o);
-    return [o.wo,o.customer||"",o.part||"",o.batch||"",o.spec||"",o.machine||"",o.process||"",o.due||"",o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+"%":"-",Object.keys(o.from||{}).join("/"),statusBadge(st)];
-  });
-  makeTable("woSearchResult",["工單","客戶","料號","批號","規格","機台","製程","預交","目標","實績","達成","來源","狀態"],rows);
-}
-
-var R={dashboard:renderDashboard,command:renderCommandCenter,datacenter:renderDataCenter,workorder:renderWorkOrderSearch,setup:function(){},keyin:renderKeyin,overview:renderOverview,schedule:renderSchedule,machine:renderMachine,alert:renderAlert,warehouse:renderWarehouse,trend:renderTrend,history:renderHistory,match:renderMatch,eff:renderEff};
-function renderActive(){try{(R[AppState.activeView]||function(){})()}catch(e){console.error(e);toast("分頁錯誤："+(e.message||e))}}
-function switchView(v){AppState.activeView=v;document.querySelectorAll(".tab[data-view]").forEach(function(x){x.classList.remove("active")});document.querySelectorAll(".view").forEach(function(x){x.classList.remove("active")});var t=document.querySelector('.tab[data-view="'+v+'"]'),s=el(v);if(t)t.classList.add("active");if(s)s.classList.add("active");renderActive()}
-
-function meetCard(t,v,s,bg){return'<div class="meetCard" style="background:'+bg+'"><h3>'+t+'</h3><div class="meetNum">'+v+'</div><div class="meetSub">'+(s||"")+'</div></div>'}
-function meetTable(h,r){return'<table class="meetTable"><thead><tr>'+h.map(function(x){return'<th>'+x+'</th>'}).join("")+'</tr></thead><tbody>'+r.map(function(a){return'<tr>'+a.map(function(x){return'<td>'+x+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table>'}
-function renderMeeting(){var s=getStats();el("meetClock").textContent=new Date().toLocaleString();el("slide1").innerHTML='<div class="meetGrid">'+meetCard("總工單",s.orders.length,"雲端工單","linear-gradient(135deg,#2563eb,#172554)")+meetCard("生產中",s.c["生產中"],"有回報/開工","linear-gradient(135deg,#f59e0b,#78350f)")+meetCard("已入庫",s.c["已入庫"],"完成","linear-gradient(135deg,#16a34a,#14532d)")+meetCard("逾期",s.c["逾期"],"超過預交","linear-gradient(135deg,#dc2626,#7f1d1d)")+meetCard("今日KeyIn",s.todayKeyin,"回報筆數","linear-gradient(135deg,#0891b2,#164e63)")+meetCard("今日人員",s.todayEmp,"回報人員","linear-gradient(135deg,#64748b,#0f172a)")+meetCard("完成率",s.rate+"%","實績/目標","linear-gradient(135deg,#7c3aed,#3b0764)")+meetCard("總產量",Math.round(s.actual).toLocaleString(),"Key In","linear-gradient(135deg,#0f766e,#134e4a)")+'</div>';el("slide2").innerHTML='<h2 style="font-size:34px">甘特排程</h2>'+ganttHtml(s.orders.slice(0,25));el("slide3").innerHTML='<h2 style="font-size:34px">異常與風險 TOP</h2>'+meetTable(["狀態","工單","機台","製程","預交","客戶"],s.orders.filter(function(o){return["逾期","待料","未開工"].indexOf(orderStatus(o))>=0}).slice(0,18).map(function(o){return[orderStatus(o),o.wo,o.machine||"-",o.process||"-",o.due||"-",o.customer||"-"]}));var by={};s.orders.forEach(function(o){var m=o.machine||"未指定";by[m]=by[m]||{m:m,count:0,target:0,actual:0,late:0};by[m].count++;by[m].target+=num(o.target);by[m].actual+=num(o.actual);if(orderStatus(o)==="逾期")by[m].late++});el("slide4").innerHTML='<h2 style="font-size:34px">機台稼動</h2>'+meetTable(["機台","工單數","逾期","達成"],Object.values(by).sort(function(a,b){return b.count-a.count}).slice(0,18).map(function(x){var p=x.target?Math.min(100,Math.round(x.actual/x.target*100)):0;return[x.m,x.count,x.late,'<div class="meetBarWrap"><div class="meetBar" style="width:'+p+'%"></div></div> '+p+"%"]}));var emp={};AppState.keyin.forEach(function(r){var k=(r.empNo||"")+"|"+(r.empName||"");emp[k]=emp[k]||{empNo:r.empNo,empName:r.empName,actual:0,wos:new Set()};emp[k].actual+=num(r.actual);emp[k].wos.add(r.wo)});el("slide5").innerHTML='<h2 style="font-size:34px">人員效率排行</h2>'+meetTable(["排名","工號","姓名","工單","產量"],Object.values(emp).sort(function(a,b){return b.actual-a.actual}).slice(0,18).map(function(e,i){return[i+1,e.empNo||"-",e.empName||"-",e.wos.size,e.actual]}))}
-function openMeeting(){renderMeeting();el("meeting").style.display="block";document.querySelectorAll(".meetSlide").forEach(function(x,i){x.classList.toggle("active",i===0)});AppState.meetingIndex=0}
-function closeMeeting(){stopMeeting();el("meeting").style.display="none"}
-function startMeeting(){stopMeeting();AppState.meetingTimer=setInterval(function(){var slides=[...document.querySelectorAll(".meetSlide")];slides.forEach(function(x){x.classList.remove("active")});AppState.meetingIndex=(AppState.meetingIndex+1)%slides.length;slides[AppState.meetingIndex].classList.add("active");renderMeeting()},15000)}
-function stopMeeting(){if(AppState.meetingTimer){clearInterval(AppState.meetingTimer);AppState.meetingTimer=null}}
-
-function init(){
-  AppState.targetDate=today();
-  var isAdminMode = /[?&]mode=admin(&|$)/.test(location.search);
-  if(!isAdminMode){
-    AppState.activeView="keyin";
-    var tabs=el("adminTabs"); if(tabs) tabs.style.display="none";
-    document.querySelectorAll(".view").forEach(function(x){x.classList.remove("active")});
-    if(el("keyin")) el("keyin").classList.add("active");
+function normalize5CRow(row){
+  var command=wo12(pick5C(row,['命令單號','工單號','命令單','work_order_no','command_no']));
+  var width=num(pick5C(row,['寬mm','寬 mm','寬','width_mm','width']));
+  var length=num(pick5C(row,['長','長度','長M','length_m','length']));
+  var thickness=num(pick5C(row,['厚mm','厚 mm','厚','thickness_mm','thickness']));
+  var productName=pick5C(row,['品名','產品名稱','product_name','product_spec']);
+  var productNo=pick5C(row,['產品編號','料號','product_no','part_no']);
+  var batch=pick5C(row,['製號','生產批號','batch_no','lot_no']);
+  var roll= num(pick5C(row,['數量','卷數','roll_qty','qty']));
+  var m2 = num(pick5C(row,['換算庫存量','換算㎡','換算M2','converted_m2','convert_m2']));
+  var spec = productName || '';
+  if(width && length){
+    var prefix=thickness? (thickness+'mm*') : '';
+    spec = (spec?spec+' ':'') + prefix + width + 'mm*' + length + 'M';
+  }else if(width){
+    var prefix2=thickness? (thickness+'mm*') : '';
+    spec = (spec?spec+' ':'') + prefix2 + width + 'mm';
   }
-  if(el("reportDate"))el("reportDate").value=today();
-  el("file43").addEventListener("change",function(){bindFile("file43","d43","stat43","kpi43")});
-  el("filePD").addEventListener("change",function(){bindFile("filePD","pd","statPD","kpiPD")});
-  el("fileSL").addEventListener("change",function(){bindFile("fileSL","sl","statSL","kpiSL")});
-  el("uploadBtn").addEventListener("click",uploadCloud);
-  el("loadSourceBtn").addEventListener("click",loadSource);
-  el("loadKeyinBtn").addEventListener("click",loadKeyin);
-  el("loadSourceBtn2").addEventListener("click",loadSource);
-  el("loadKeyinBtn2").addEventListener("click",loadKeyin);
-  el("submitBtn").addEventListener("click",submitKeyin);
-  el("wo").addEventListener("input",lookupWO);
-  el("wo").addEventListener("keydown",function(e){if(e.key==="Enter"){lookupWO(); if(el("actual"))el("actual").focus();}});
-  el("empNo").addEventListener("input",fillEmp);
-  el("machineInput").addEventListener("change",refreshTodoByMachine);
-  if(el("filterTodoBtn"))el("filterTodoBtn").addEventListener("click",refreshTodoByMachine);
-  if(el("nextTodoBtn"))el("nextTodoBtn").addEventListener("click",function(){selectNextTodo(false)});
-  el("reportDate").addEventListener("change",function(){AppState.targetDate=el("reportDate").value||today();loadTargets(AppState.targetDate);renderKeyin();});
-  el("woSearchBtn").addEventListener("click",renderWorkOrderSearch);
-  el("woClearBtn").addEventListener("click",function(){el("woSearchInput").value="";renderWorkOrderSearch()});
-  el("woSearchInput").addEventListener("keydown",function(e){if(e.key==="Enter")renderWorkOrderSearch()});
-  document.querySelectorAll(".tab[data-view]").forEach(function(b){b.addEventListener("click",function(){switchView(b.dataset.view)})});
-  document.querySelector("[data-meeting]").addEventListener("click",openMeeting);
-  el("meetStart").addEventListener("click",startMeeting);
-  el("meetStop").addEventListener("click",stopMeeting);
-  el("meetClose").addEventListener("click",closeMeeting);
-
-  // ===== 目標戰情日期篩選：支援動態產生的查詢欄位與按鈕 =====
-  document.addEventListener("click", function(e){
-    var id = e.target && e.target.id;
-    if(id === "targetSearchBtn"){
-      setTargetDate(getTargetQueryDate());
-    }
-    if(id === "targetTodayBtn"){
-      setTargetToday();
-    }
-    if(id === "targetYesterdayBtn"){
-      setTargetYesterday();
-    }
-  });
-
-  loadEmployees();loadSource();loadKeyin();loadTargets();renderActive();
+  return {
+    command_no:command,
+    work_order_no:command,
+    product_no:productNo,
+    part_no:productNo,
+    product_name:productName,
+    product_spec:spec,
+    qty:pick5C(row,['數量','qty']),
+    unit:pick5C(row,['單位','unit']),
+    date:pick5C(row,['日期','date']),
+    doc_no:pick5C(row,['單號','doc_no']),
+    department:pick5C(row,['部門','department']),
+    version:pick5C(row,['版別','version']),
+    batch_no:batch,
+    thickness_mm:thickness||'',
+    width_mm:width||'',
+    length_m:length||'',
+    length_unit:'M',
+    roll_qty:roll||'',
+    converted_m2:m2||'',
+    raw_json:JSON.stringify(row)
+  };
 }
-window.onerror=function(msg){toast("系統錯誤："+msg)};
-document.addEventListener("DOMContentLoaded",init);
+function find5CByWorkOrder(wo,batch){
+  var w=wo12(wo), b=norm(batch).replace(/\s+/g,'');
+  if(!w&&!b)return null;
+  return (App.prod5c||[]).find(function(x){return w && wo12(x.command_no||x.work_order_no||'')===w;}) ||
+         (App.prod5c||[]).find(function(x){return b && norm(x.batch_no||'').replace(/\s+/g,'').indexOf(b)>=0;}) || null;
+}
+function enrichWith5C(o){
+  o=o||{};
+  var p=find5CByWorkOrder(o.work_order_no||o.order_no,o.batch_no);
+  if(!p)return o;
+  if(!o.part_no)o.part_no=p.product_no||p.part_no||'';
+  if(!o.batch_no)o.batch_no=p.batch_no||'';
+  if(!o.product_spec)o.product_spec=p.product_spec||p.product_name||'';
+  if(!o.target_roll && p.roll_qty)o.target_roll=p.roll_qty;
+  if(!o.target_m2 && p.converted_m2)o.target_m2=p.converted_m2;
+  o.width_mm=p.width_mm||o.width_mm||'';
+  o.length_m=p.length_m||o.length_m||'';
+  o.thickness_mm=p.thickness_mm||o.thickness_mm||'';
+  o.prod5c_hit=true;
+  return o;
+}
+function sourceObj(r){return enrichWith5C({work_order_no:r.work_order_no||r.order_no||'',order_no:r.order_no||'',part_no:r.part_no||'',batch_no:r.batch_no||'',customer:r.customer||'',product_spec:r.product_spec||'',process_site:r.process||'',machine_code:r.machine||'',target_roll:r.target_roll||'',target_m2:r.target_m2||r.target_qty||'',priority:r.priority||'一般'})}
+function extractWidthMm(spec){
+  var s=String(spec||'').replace(/×/g,'x').replace(/＊/g,'*');
+  var vals=[],m;
+  var re=/(\d+(?:\.\d+)?)\s*mm/ig;
+  while((m=re.exec(s))!==null){ vals.push(parseFloat(m[1])); }
+  if(!vals.length)return 0;
+  var candidates=vals.filter(function(v){return v>=10;});
+  return candidates.length?Math.max.apply(null,candidates):Math.max.apply(null,vals);
+}
+function extractLengthM(spec){
+  var s=String(spec||'').replace(/×/g,'x').replace(/＊/g,'*');
+  var m=s.match(/(\d+(?:\.\d+)?)\s*(?:M|米)(?!M)/i);
+  return m?parseFloat(m[1]):0;
+}
+function inferLengthM(widthMm,roll,m2){
+  if(!widthMm||!roll||!m2)return 0;
+  var v=m2/(widthMm/1000)/roll;
+  return isFinite(v)&&v>0?v:0;
+}
+function prepareAutoLengthFromSource(o){
+  App.autoLengthM=0; App.autoWidthMm=0; App.autoLengthSource='';
+  var spec=o&&o.product_spec?o.product_spec:getVal('product_spec');
+  var width=num(o&&o.width_mm)||extractWidthMm(spec);
+  var length=num(o&&o.length_m)||extractLengthM(spec);
+  var roll=num((o&&o.target_roll)||getVal('target_roll'));
+  var m2=num((o&&o.target_m2)||getVal('target_m2'));
+  if(width && length){
+    App.autoLengthM=length; App.autoWidthMm=width; App.autoLengthSource=(o&&o.prod5c_hit)?'5c':'spec';
+    return;
+  }
+  if(width && roll && m2){
+    App.autoLengthM=inferLengthM(width,roll,m2);
+    App.autoWidthMm=width; App.autoLengthSource=(o&&o.prod5c_hit)?'5c_m2':'source_m2';
+    return;
+  }
+  if(width){
+    App.autoLengthM=50; App.autoWidthMm=width; App.autoLengthSource='default50';
+  }
+}
+function calcTargetM2(){
+  var spec=getVal('product_spec'), roll=num(getVal('target_roll'));
+  var width=extractWidthMm(spec), length=extractLengthM(spec);
+  if(!width && App.autoWidthMm)width=App.autoWidthMm;
+  if(width && length){
+    App.autoLengthM=length; App.autoWidthMm=width; App.autoLengthSource='spec';
+  }
+  if(!length && App.autoLengthM && (!App.autoWidthMm || Math.abs(App.autoWidthMm-width)<0.001)){
+    length=App.autoLengthM;
+  }
+  if(!length && width && !App.autoLengthM){
+    prepareAutoLengthFromSource({product_spec:spec,target_roll:roll,target_m2:num(getVal('target_m2'))});
+    length=App.autoLengthM;
+  }
+  var hint=el('m2CalcHint'), sh=el('specCalcHint');
+  if(width && length && roll){
+    var m2=(width/1000)*length*roll;
+    setVal('target_m2',String(Math.round(m2*100)/100));
+    var sourceText=App.autoLengthSource==='5c'?'（寬度與長度來自 5-C）':(App.autoLengthSource==='5c_m2'?'（5-C換算㎡反推長度）':(App.autoLengthSource==='source_m2'?'（長度由來源目標㎡反推，之後會隨R重新計算）':(App.autoLengthSource==='default50'?'（規格無長度，暫以50M計算）':'')));
+    if(hint){hint.className='calcHint ok';hint.textContent='已自動計算：'+width+'mm × '+(Math.round(length*100)/100)+'m × '+roll+'R = '+(Math.round(m2*100)/100)+'㎡ '+sourceText;}
+    if(sh){sh.className='calcHint ok';sh.textContent='已抓到寬度 '+width+'mm、長度 '+(Math.round(length*100)/100)+'m。';}
+    return;
+  }
+  if(hint){hint.className='calcHint warn';hint.textContent='無法完整自動計算：請確認規格或 5-C 內有寬度 mm、長度 M，並輸入目標卷數 R。';}
+  if(sh){sh.className='calcHint warn';sh.textContent='目前抓到：寬度 '+(width?width+'mm':'未抓到')+'，長度 '+(length?length+'m':'未抓到')+'。';}
+}
+
+function lookupWO(){var w=wo12(getVal('work_order_no'));if(!w){el('lookupMsg').textContent='';return}var r=App.source.find(function(x){return wo12(x.work_order_no||x.order_no)===w});var o=r?sourceObj(r):enrichWith5C({work_order_no:w});if(!r && !o.prod5c_hit){el('lookupMsg').innerHTML='<span class="pill warn">查無工單 / 5-C</span>';return}applySourceObject(o);el('lookupMsg').innerHTML='<span class="pill ok">已帶入'+(o.prod5c_hit?' 5-C ':'')+'工單資料</span>'}
+function applySourceObject(o){o=enrichWith5C(o);Object.keys(o).forEach(function(k){if(el(k)&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')setVal(k,o[k])});prepareAutoLengthFromSource(o);calcTargetM2();}
+function renderQuickOrders(){
+  var q=norm(getVal('woFilter'));
+  var map={};
+  (App.source||[]).forEach(function(r){var o=sourceObj(r);var k=wo12(o.work_order_no||o.order_no);if(k)map[k]=o;});
+  (App.prod5c||[]).forEach(function(p){var k=wo12(p.command_no||p.work_order_no);if(k&&!map[k])map[k]=enrichWith5C({work_order_no:k});});
+  var list=Object.keys(map).map(function(k){return map[k];}).filter(function(o){
+    var s=norm([o.work_order_no,o.order_no,o.customer,o.machine_code,o.process_site,o.product_spec,o.part_no,o.batch_no].join(' '));
+    return !q||s.indexOf(q)>=0;
+  }).slice(0,60);
+  el('quickOrders').innerHTML=list.map(function(o){return '<div class="quickCard" onclick="applySource('+encodeURIComponent(JSON.stringify(o))+')"><b>'+esc(o.work_order_no||o.order_no)+'</b><div class="hint">'+esc(o.customer||'-')+'｜'+esc(o.machine_code||'-')+'｜'+esc(o.process_site||'-')+(o.prod5c_hit?'｜5-C':'')+'</div><div class="hint">'+esc(o.product_spec||'')+'</div></div>'}).join('')||'<div class="hint">尚無工單資料，請確認 source_data 或 5-C。</div>';
+}
+function applySource(encoded){var o=typeof encoded==='string'?JSON.parse(decodeURIComponent(encoded)):encoded;applySourceObject(o);toast('已帶入工單'+(o&&o.prod5c_hit?'（含5-C）':''))}
+function formData(){return {plan_id:getVal('plan_id'),report_date:getVal('report_date'),shift:getVal('shift'),leader_no:getVal('leader_no'),leader_role:getVal('leader_role'),leader_name:getVal('leader_name'),work_order_no:wo12(getVal('work_order_no')),order_no:getVal('order_no'),part_no:getVal('part_no'),batch_no:getVal('batch_no'),customer:getVal('customer'),product_spec:getVal('product_spec'),process_site:getVal('process_site'),machine_code:getVal('machine_code'),target_roll:getVal('target_roll'),target_m2:getVal('target_m2'),planned_start:getVal('planned_start'),planned_finish:getVal('planned_finish'),priority:getVal('priority'),remark:getVal('remark'),status:getVal('status')}}
+function savePlan(){var d=formData();if(!d.report_date){toast('請輸入目標日期');return}if(!d.work_order_no){toast('請輸入工單號');return}run('saveTargetPlan',[d],function(res){toast('幹部目標已儲存');clearForm(false);loadAll();},'儲存失敗')}
+function clearForm(resetDate){App.autoLengthM=0;App.autoWidthMm=0;App.autoLengthSource='';['plan_id','leader_no','leader_name','work_order_no','order_no','part_no','batch_no','customer','product_spec','machine_code','target_roll','target_m2','planned_start','planned_finish','remark'].forEach(function(id){setVal(id,'')});if(resetDate!==false)setVal('report_date',today());setVal('status','待排程');el('lookupMsg').textContent=''; if(el('m2CalcHint')){el('m2CalcHint').className='calcHint';el('m2CalcHint').textContent='可自動計算，也可手動修正。'} if(el('specCalcHint')){el('specCalcHint').className='calcHint';el('specCalcHint').textContent='目標㎡會依寬度、長度與目標卷數自動計算。'}}
+function editPlan(i){var p=App.plans[i];if(!p)return;['plan_id','report_date','shift','leader_no','leader_role','leader_name','work_order_no','order_no','part_no','batch_no','customer','product_spec','process_site','machine_code','target_roll','target_m2','planned_start','planned_finish','priority','remark','status'].forEach(function(k){if(el(k))setVal(k,p[k]||'')});calcTargetM2();window.scrollTo({top:0,behavior:'smooth'});toast('已載入目標，可修改後儲存')}
+function renderPlans(){
+  var d=getVal('targetDate')||today(),q=norm(getVal('targetSearch')),st=getVal('targetStatus');
+  var rows=App.plans.filter(function(p){
+    var okDate=!d||String(p.report_date||'').slice(0,10).replace(/\//g,'-')===d;
+    var okSt=!st||String(p.status||'')===st;
+    var okQ=!q||norm([p.work_order_no,p.machine_code,p.leader_name,p.leader_no,p.customer,p.product_spec].join(' ')).indexOf(q)>=0;
+    return okDate&&okSt&&okQ;
+  });
+  var actualTotal=actual53Total(d);
+  el('kpiCount').textContent=rows.length;
+  el('kpiRoll').textContent=Math.round(rows.reduce(function(a,p){return a+num(p.target_roll)},0));
+  el('kpiM2').textContent=Math.round(rows.reduce(function(a,p){return a+num(p.target_m2)},0));
+  el('kpiOpen').textContent=rows.filter(function(p){return p.status!=='完成'}).length;
+  if(el('kpiActual53'))el('kpiActual53').textContent=Math.round(actualTotal);
+  if(el('kpiIdle53'))el('kpiIdle53').textContent=idle53Count(d);
+  el('planRows').innerHTML=rows.map(function(p,i){
+    var idx=App.plans.indexOf(p);
+    var actual=actual53ByWorkOrder(p.work_order_no);
+    var diff=actual-num(p.target_roll);
+    var diffHtml=(actual||p.target_roll)?('<span class="pill '+(diff>=0?'ok':'bad')+'">'+(diff>=0?'+':'')+Math.round(diff*100)/100+'</span>'):'';
+    return '<tr><td><button class="btn ghost" onclick="editPlan('+idx+')">修改</button></td><td>'+esc(p.report_date)+'</td><td>'+esc(p.shift)+'</td><td>'+esc((p.leader_no||'')+' '+(p.leader_name||''))+'</td><td><b>'+esc(p.work_order_no)+'</b></td><td>'+esc(p.machine_code)+'</td><td>'+esc(p.process_site)+'</td><td>'+esc(p.customer)+'</td><td>'+esc(p.product_spec)+'</td><td>'+esc(p.target_roll)+'</td><td>'+esc(actual?Math.round(actual*100)/100:'')+'</td><td>'+diffHtml+'</td><td>'+esc(p.target_m2)+'</td><td><span class="pill">'+esc(p.status||'')+'</span></td><td>'+esc(p.remark)+'</td></tr>'
+  }).join('')||'<tr><td colspan="15" class="hint">目前沒有目標資料</td></tr>';
+}
+document.addEventListener('DOMContentLoaded',function(){setVal('report_date',today());setVal('targetDate',today());['target_roll','product_spec'].forEach(function(id){if(el(id))el(id).addEventListener('change',calcTargetM2)});if(el('leader_no'))el('leader_no').addEventListener('change',fillLeader);loadAll()});
 </script>
 </body>
 </html>
