@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.2 Enterprise Viewer｜幹部目標管理</title>
+<title>V58.0 Enterprise｜幹部目標管理</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1e3a8a;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--soft:#eef2ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}
@@ -18,7 +19,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 </head>
 <body>
 <header>
-  <h1>幹部目標管理｜V60.2 Enterprise Viewer</h1>
+  <h1>幹部目標管理｜V58.0 Enterprise</h1>
   <p>Target Planning：幹部每日目標排程、機台目標、工單目標、晨會追蹤資料來源。</p>
 </header>
 <div class="wrap">
@@ -33,9 +34,10 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
       </div>
     </div>
 
-
-    <!-- GitHub 顯示版：已移除五份檔案上傳區。
-         檔案上傳與資料更新請回 Apps Script 管理端處理。 -->
+    <div class="card col12" style="border-left:5px solid #16a34a;background:#f0fdf4">
+      <h2>資料來源說明</h2>
+      <div class="sub">5-C、5-3 資料請統一到 Apps Script 每日五份資料更新中心上傳；本頁只做幹部目標輸入與目標管理。</div>
+    </div>
 
     <div class="card kpi blue col2"><div class="name">今日目標筆數</div><div class="num" id="kpiCount">0</div></div>
     <div class="card kpi green col2"><div class="name">今日目標 R</div><div class="num" id="kpiRoll">0</div></div>
@@ -74,7 +76,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#334155}input,select
 
     <div class="card col4">
       <h2>可快速帶入的工單</h2>
-      <div class="tools"><input id="woFilter" placeholder="搜尋工單/客戶/機台，至少輸入4碼較順"></div>
+      <div class="tools"><input id="woFilter" placeholder="搜尋工單/客戶/機台" oninput="renderQuickOrders()"></div>
       <div id="quickOrders" style="display:grid;gap:10px;max-height:720px;overflow:auto"></div>
     </div>
 
@@ -156,51 +158,50 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
       .catch(function(e){ console.error("MES API GET failed",name,e); if(fail) fail(e); else alert("API 連線失敗："+e.message); });
   }
   function callPost(name,args,ok,fail){
+    // V58.0：GitHub Pages 允許寫入 Apps Script。
+    // 因 Apps Script Web App 跨網域 POST 可能沒有 CORS 回應標頭，GitHub 模式採 no-cors 送出，
+    // 送出後由前端重新讀取清單確認資料；Apps Script 內嵌版仍會走 google.script.run。
+    args=args||[];
     var low=String(name||"").toLowerCase();
+    var action=low;
+    var payload=args.length===1?args[0]:{args:args};
+    var url=API_URL+"?action="+encodeURIComponent(action)+"&_="+Date.now();
+    var body=JSON.stringify(payload);
 
-    // V60.1：GitHub 顯示版只開放「幹部目標」小資料寫入。
-    // 大量 Excel / source / 5-C / 5-3 上傳仍維持 Apps Script 管理端，避免跨網域與資料量造成失敗。
-    if(window.MES_IS_GITHUB){
-      var allow={savetargetplan:1,deletetargetplan:1};
-      if(!allow[low]){
-        var e=new Error("GitHub 版僅支援幹部目標新增/修改/刪除；大量資料請使用 Apps Script 資料更新中心");
-        console.warn("MES API POST blocked on GitHub",name,e);
-        if(typeof openAdminUploadCenter==="function") openAdminUploadCenter();
-        if(fail) fail(e); else alert(e.message);
-        return;
-      }
-
-      var payload=(args&&args.length===1)?args[0]:{args:args||[]};
-      // V60.2：GitHub 跨網域寫入改用 POST + no-cors。
-      // Apps Script 的 doPost 會收到 JSON；前端無法直接讀取 opaque response，
-      // 所以送出後交由 savePlan() 的 loadAll() 重新讀取 Target_Plan 來確認顯示。
-      fetch(API_URL+"?action="+encodeURIComponent(low)+"&_="+Date.now(), {
+    function sendNoCors(){
+      return fetch(url,{
         method:"POST",
         mode:"no-cors",
         redirect:"follow",
         headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify(payload)
-      })
-      .then(function(){
-        setTimeout(function(){ if(ok) ok({ok:true, mode:"github_post_nocors"}); }, 900);
-      })
-      .catch(function(e){
-        console.error("MES API WRITE failed",name,e);
-        if(fail) fail(e); else alert("儲存失敗："+e.message);
+        body:body
+      }).then(function(){
+        if(ok) ok({ok:true,queued:true,message:"資料已送出至 Apps Script"});
       });
-      return;
     }
 
-    fetch(API_URL+"?action="+encodeURIComponent(low), {
-      method:"POST",
-      redirect:"follow",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify((args&&args.length===1)?args[0]:{args:args||[]})
-    })
-    .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-    .then(parseJsonText)
-    .then(function(res){ if(res && res.ok===false) throw new Error(res.error||res.message||"API error"); if(ok) ok(res); })
-    .catch(function(e){ console.error("MES API POST failed",name,e); if(fail) fail(e); else alert("儲存失敗："+e.message); });
+    function sendReadable(){
+      return fetch(url,{
+        method:"POST",
+        redirect:"follow",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:body
+      }).then(function(r){
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        return r.text();
+      }).then(parseJsonText).then(function(res){
+        if(res && res.ok===false) throw new Error(res.error||res.message||"API error");
+        if(ok) ok(res||{ok:true});
+      });
+    }
+
+    // GitHub Pages 優先用 no-cors，避免 CORS 造成「實際已寫入但畫面判定失敗」。
+    // 若不是 GitHub，使用可讀取回應的 POST。
+    var job=window.MES_IS_GITHUB ? sendNoCors() : sendReadable();
+    job.catch(function(e){
+      console.error("MES API POST failed",name,e);
+      if(fail) fail(e); else alert("API 寫入失敗："+e.message);
+    });
   }
   function makeRunner(){
     var ok=null, fail=null;
@@ -225,7 +226,7 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
   window.google={script:{run:makeRunner()}};
 })();
 
-var App={plans:[],source:[],prod5c:[],prod53:[],employees:[],quickOrders:[],quickById:[],quickPrefixIndex:{},quickLastQ:null,quickLastHtml:'',sourceByWo:{},prod5cByWo:{},prod5cByBatch:{},quickTimer:null,quickCacheReady:false,prod5cIndexReady:false,sourceIndexReady:false,autoLengthM:0,autoWidthMm:0,autoLengthSource:''};
+var App={plans:[],source:[],prod5c:[],prod53:[],employees:[],autoLengthM:0,autoWidthMm:0,autoLengthSource:''};
 function el(id){return document.getElementById(id)}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function toast(s){var t=el('toast');t.textContent=s;t.className='toast show';setTimeout(function(){t.className='toast'},2200)}
@@ -255,7 +256,7 @@ function run(name,args,ok,fail){
       return;
     }
     var low=String(name||'').toLowerCase();
-    var post={savekeyin:1,savetargetplan:1,replacesourcedata:1,replacesourcepartdata:1,beginsourcepartdata:1,appendsourcepartdata:1,finishsourcepartdata:1,replaceprod5cdata:1,replaceprod53data:1,deletetargetplan:1};
+    var post={savekeyin:1,savetargetplan:1,replacesourcedata:1,replaceprod5cdata:1,replaceprod53data:1,deletetargetplan:1};
     var action=actionName(name);
     var opt={method:post[low]?'POST':'GET',redirect:'follow'};
     var url=API_URL+'?action='+encodeURIComponent(action);
@@ -273,8 +274,8 @@ function loadAll(){
   setVal('report_date',getVal('report_date')||today());
   setVal('targetDate',getVal('targetDate')||today());
   run('listEmployees',[],function(res){App.employees=(res&&res.rows)||res||[];fillLeader();},'讀取員工失敗');
-  run('getSourceData',[],function(res){App.source=(res&&res.rows)||[];App.sourceIndexReady=false;App.quickCacheReady=false;buildSourceIndex();buildQuickOrderCache();renderQuickOrders();},'讀取工單失敗');
-  loadProd5C(function(){ buildQuickOrderCache(); renderQuickOrders(); calcTargetM2(); });
+  run('getSourceData',[],function(res){App.source=(res&&res.rows)||[];renderQuickOrders();},'讀取工單失敗');
+  loadProd5C(function(){ renderQuickOrders(); calcTargetM2(); });
   loadProd53(function(){ renderPlans(); });
   run('listTargetPlans',[getVal('targetDate')||today()],function(res){App.plans=(res&&res.rows)||[];renderPlans();el('lastLoad').textContent='已讀取 '+new Date().toLocaleString();},'讀取目標失敗');
 }
@@ -350,7 +351,6 @@ function fillLeader(forceReload){
 function loadProd5C(done){
   run('listProd5CData',[],function(res){
     App.prod5c=(res&&res.rows)||res||[];
-    buildProd5CIndex();
     if(el('prod5cStatus'))el('prod5cStatus').textContent='5-C 已讀取 '+App.prod5c.length+' 筆';
     if(done)done();
   },'讀取 5-C 失敗');
@@ -362,8 +362,36 @@ function loadProd53(done){
     if(done)done();
   },'讀取 5-3 失敗');
 }
-
-
+function normalize53Row(row){
+  var barcode=pick5C(row,['日報條碼','daily_barcode','工單號','work_order_no']);
+  var wo=wo12(barcode || pick5C(row,['工單號','命令單號','work_order_no']));
+  var category=pick5C(row,['類別','category']);
+  var outQty=num(pick5C(row,['產出數','產出量','output_qty','qty']));
+  return {
+    prod_date: pick5C(row,['生產日期','日期','prod_date','date']),
+    category: category,
+    shift: pick5C(row,['班別','shift']),
+    daily_barcode: barcode,
+    start_time: pick5C(row,['時間起','開始時間','start_time']),
+    end_time: pick5C(row,['時間迄','結束時間','end_time']),
+    part_no: pick5C(row,['料品編號','產品編號','料號','part_no']),
+    output_qty: outQty,
+    machine: pick5C(row,['機台','machine']),
+    prod_unit: pick5C(row,['生產單位','prod_unit']),
+    department: pick5C(row,['單位名稱','部門','department']),
+    customer: pick5C(row,['客戶簡稱','客戶','customer']),
+    version: pick5C(row,['版別','version']),
+    product_name: pick5C(row,['品名','product_name']),
+    product_spec: pick5C(row,['規格','product_spec']),
+    process_no: pick5C(row,['製程編號','process_no']),
+    process_name: pick5C(row,['製程說明','製程','process_name']),
+    idle_reason: pick5C(row,['閒置原因','idle_reason']),
+    idle_reason_desc: pick5C(row,['閒置原因說明','idle_reason_desc']),
+    version_desc: pick5C(row,['版別說明','version_desc']),
+    work_order_no: wo,
+    raw_json: JSON.stringify(row)
+  };
+}
 function actual53ByWorkOrder(wo){
   var w=wo12(wo);
   if(!w)return 0;
@@ -387,118 +415,64 @@ function actual53Total(date){
   }).reduce(function(a,x){return a+num(x.output_qty)},0);
 }
 
-
-function buildSourceIndex(){
-  App.sourceByWo={};
-  (App.source||[]).forEach(function(r){
-    var k=wo12(r.work_order_no||r.order_no||'');
-    if(k && !App.sourceByWo[k]) App.sourceByWo[k]=r;
-  });
-  App.sourceIndexReady=true;
+function normalize5CHeader(h){
+  return String(h||'').trim().replace(/\s+/g,'').replace(/\(/g,'').replace(/\)/g,'').replace(/（/g,'').replace(/）/g,'');
 }
-function buildProd5CIndex(){
-  App.prod5cByWo={};
-  App.prod5cByBatch={};
-  (App.prod5c||[]).forEach(function(x){
-    var w=wo12(x.command_no||x.work_order_no||'');
-    var b=norm(x.batch_no||'').replace(/\s+/g,'');
-    if(w && !App.prod5cByWo[w]) App.prod5cByWo[w]=x;
-    if(b && !App.prod5cByBatch[b]) App.prod5cByBatch[b]=x;
-  });
-  App.prod5cIndexReady=true;
+function pick5C(row, aliases){
+  for(var i=0;i<aliases.length;i++){
+    var k=aliases[i];
+    if(row[k]!==undefined && String(row[k]).trim()!=='')return row[k];
+    var nk=normalize5CHeader(k);
+    if(row[nk]!==undefined && String(row[nk]).trim()!=='')return row[nk];
+  }
+  return '';
 }
-function quickSourceObj(r){
+function normalize5CRow(row){
+  var command=wo12(pick5C(row,['命令單號','工單號','命令單','work_order_no','command_no']));
+  var width=num(pick5C(row,['寬mm','寬 mm','寬','width_mm','width']));
+  var length=num(pick5C(row,['長','長度','長M','length_m','length']));
+  var thickness=num(pick5C(row,['厚mm','厚 mm','厚','thickness_mm','thickness']));
+  var productName=pick5C(row,['品名','產品名稱','product_name','product_spec']);
+  var productNo=pick5C(row,['產品編號','料號','product_no','part_no']);
+  var batch=pick5C(row,['製號','生產批號','batch_no','lot_no']);
+  var roll= num(pick5C(row,['數量','卷數','roll_qty','qty']));
+  var m2 = num(pick5C(row,['換算庫存量','換算㎡','換算M2','converted_m2','convert_m2']));
+  var spec = productName || '';
+  if(width && length){
+    var prefix=thickness? (thickness+'mm*') : '';
+    spec = (spec?spec+' ':'') + prefix + width + 'mm*' + length + 'M';
+  }else if(width){
+    var prefix2=thickness? (thickness+'mm*') : '';
+    spec = (spec?spec+' ':'') + prefix2 + width + 'mm';
+  }
   return {
-    work_order_no:r.work_order_no||r.order_no||'',
-    order_no:r.order_no||'',
-    part_no:r.part_no||'',
-    batch_no:r.batch_no||'',
-    customer:r.customer||'',
-    product_spec:r.product_spec||'',
-    process_site:r.process||'',
-    machine_code:r.machine||'',
-    target_roll:r.target_roll||'',
-    target_m2:r.target_m2||r.target_qty||'',
-    priority:r.priority||'一般'
+    command_no:command,
+    work_order_no:command,
+    product_no:productNo,
+    part_no:productNo,
+    product_name:productName,
+    product_spec:spec,
+    qty:pick5C(row,['數量','qty']),
+    unit:pick5C(row,['單位','unit']),
+    date:pick5C(row,['日期','date']),
+    doc_no:pick5C(row,['單號','doc_no']),
+    department:pick5C(row,['部門','department']),
+    version:pick5C(row,['版別','version']),
+    batch_no:batch,
+    thickness_mm:thickness||'',
+    width_mm:width||'',
+    length_m:length||'',
+    length_unit:'M',
+    roll_qty:roll||'',
+    converted_m2:m2||'',
+    raw_json:JSON.stringify(row)
   };
-}
-function addQuickPrefixIndex(o){
-  var w=wo12(o.work_order_no||o.order_no);
-  if(!w) return;
-  var max=Math.min(w.length,14);
-  for(var len=4;len<=max;len++){
-    var key=w.slice(0,len);
-    if(!App.quickPrefixIndex[key]) App.quickPrefixIndex[key]=[];
-    if(App.quickPrefixIndex[key].length<120) App.quickPrefixIndex[key].push(o._qid);
-  }
-}
-function buildQuickOrderCache(){
-  var map={};
-  App.quickOrders=[];
-  App.quickById=[];
-  App.quickPrefixIndex={};
-  App.quickLastQ=null;
-  App.quickLastHtml='';
-  if(!App.sourceIndexReady) buildSourceIndex();
-  if(!App.prod5cIndexReady) buildProd5CIndex();
-
-  // V58.2 Performance：快選清單只建立「顯示用輕量資料」，不要每筆都進 5-C 補強，避免大量資料時卡頓。
-  (App.source||[]).forEach(function(r){
-    var o=quickSourceObj(r);
-    var k=wo12(o.work_order_no||o.order_no);
-    if(k && !map[k]) map[k]=o;
-  });
-  (App.prod5c||[]).forEach(function(p){
-    var k=wo12(p.command_no||p.work_order_no);
-    if(k && !map[k]){
-      map[k]={
-        work_order_no:k,
-        order_no:'',
-        part_no:p.product_no||p.part_no||'',
-        batch_no:p.batch_no||'',
-        customer:'',
-        product_spec:p.product_spec||p.product_name||'',
-        process_site:'',
-        machine_code:'',
-        target_roll:p.roll_qty||'',
-        target_m2:p.converted_m2||'',
-        width_mm:p.width_mm||'',
-        length_m:p.length_m||'',
-        thickness_mm:p.thickness_mm||'',
-        prod5c_hit:true
-      };
-    }
-  });
-  var keys=Object.keys(map).sort();
-  for(var i=0;i<keys.length;i++){
-    var o=map[keys[i]];
-    o._qid=i;
-    o._woKey=wo12(o.work_order_no||o.order_no);
-    o._searchText=norm([o.work_order_no,o.order_no,o.customer,o.machine_code,o.process_site,o.product_spec,o.part_no,o.batch_no].join(' '));
-    App.quickOrders.push(o);
-    App.quickById[i]=o;
-    addQuickPrefixIndex(o);
-  }
-  App.quickCacheReady=true;
-}
-function debounceQuickOrders(){
-  if(App.quickTimer) clearTimeout(App.quickTimer);
-  App.quickTimer=setTimeout(function(){
-    if(window.requestAnimationFrame) requestAnimationFrame(renderQuickOrders);
-    else renderQuickOrders();
-  },380);
 }
 function find5CByWorkOrder(wo,batch){
   var w=wo12(wo), b=norm(batch).replace(/\s+/g,'');
   if(!w&&!b)return null;
-  if(!App.prod5cIndexReady) buildProd5CIndex();
-  if(w && App.prod5cByWo[w]) return App.prod5cByWo[w];
-  if(b && App.prod5cByBatch[b]) return App.prod5cByBatch[b];
-  if(b){
-    var keys=Object.keys(App.prod5cByBatch||{});
-    for(var i=0;i<keys.length;i++){ if(keys[i].indexOf(b)>=0) return App.prod5cByBatch[keys[i]]; }
-  }
-  return null;
+  return (App.prod5c||[]).find(function(x){return w && wo12(x.command_no||x.work_order_no||'')===w;}) ||
+         (App.prod5c||[]).find(function(x){return b && norm(x.batch_no||'').replace(/\s+/g,'').indexOf(b)>=0;}) || null;
 }
 function enrichWith5C(o){
   o=o||{};
@@ -582,50 +556,19 @@ function calcTargetM2(){
   if(sh){sh.className='calcHint warn';sh.textContent='目前抓到：寬度 '+(width?width+'mm':'未抓到')+'，長度 '+(length?length+'m':'未抓到')+'。';}
 }
 
-function lookupWO(){var w=wo12(getVal('work_order_no'));if(!w){el('lookupMsg').textContent='';return}if(!App.sourceIndexReady)buildSourceIndex();var r=App.sourceByWo[w];var o=r?sourceObj(r):enrichWith5C({work_order_no:w});if(!r && !o.prod5c_hit){el('lookupMsg').innerHTML='<span class="pill warn">查無工單 / 5-C</span>';return}applySourceObject(o);el('lookupMsg').innerHTML='<span class="pill ok">已帶入'+(o.prod5c_hit?' 5-C ':'')+'工單資料</span>'}
+function lookupWO(){var w=wo12(getVal('work_order_no'));if(!w){el('lookupMsg').textContent='';return}var r=App.source.find(function(x){return wo12(x.work_order_no||x.order_no)===w});var o=r?sourceObj(r):enrichWith5C({work_order_no:w});if(!r && !o.prod5c_hit){el('lookupMsg').innerHTML='<span class="pill warn">查無工單 / 5-C</span>';return}applySourceObject(o);el('lookupMsg').innerHTML='<span class="pill ok">已帶入'+(o.prod5c_hit?' 5-C ':'')+'工單資料</span>'}
 function applySourceObject(o){o=enrichWith5C(o);Object.keys(o).forEach(function(k){if(el(k)&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')setVal(k,o[k])});prepareAutoLengthFromSource(o);calcTargetM2();}
-function quickCardHtml(o){
-  return '<div class="quickCard" onclick="applyQuickOrder('+o._qid+')"><b>'+esc(o.work_order_no||o.order_no)+'</b><div class="hint">'+esc(o.customer||'-')+'｜'+esc(o.machine_code||'-')+'｜'+esc(o.process_site||'-')+(o.prod5c_hit?'｜5-C':'')+'</div><div class="hint">'+esc(o.product_spec||'')+'</div></div>';
-}
-function getQuickMatches(q){
-  var src=App.quickOrders||[], out=[], limit=35;
-  if(!q) return src.slice(0,limit);
-
-  // 工單號前綴搜尋走索引，不掃全部資料。例：MM2606、MM26070038。
-  if(App.quickPrefixIndex[q]){
-    var ids=App.quickPrefixIndex[q];
-    for(var i=0;i<ids.length && out.length<limit;i++){
-      var o=App.quickById[ids[i]];
-      if(o) out.push(o);
-    }
-    return out;
-  }
-
-  // 非工單前綴才做一般搜尋，找到足夠筆數就停止，不再 filter 全表。
-  for(var j=0;j<src.length && out.length<limit;j++){
-    if((src[j]._searchText||'').indexOf(q)>=0) out.push(src[j]);
-  }
-  return out;
-}
 function renderQuickOrders(){
-  var box=el('quickOrders');
   var q=norm(getVal('woFilter'));
-  if(!box) return;
-  if(!App.quickCacheReady) buildQuickOrderCache();
-  if(q===App.quickLastQ) return;
-  App.quickLastQ=q;
-  if(q && q.length<4){
-    box.innerHTML='<div class="hint">請至少輸入 4 碼再搜尋，避免大量資料即時掃描造成卡頓。</div>';
-    return;
-  }
-  var list=getQuickMatches(q);
-  var html=list.map(quickCardHtml).join('') || '<div class="hint">尚無工單資料，請確認 source_data 或 5-C。</div>';
-  if(html!==App.quickLastHtml){
-    box.innerHTML=html;
-    App.quickLastHtml=html;
-  }
+  var map={};
+  (App.source||[]).forEach(function(r){var o=sourceObj(r);var k=wo12(o.work_order_no||o.order_no);if(k)map[k]=o;});
+  (App.prod5c||[]).forEach(function(p){var k=wo12(p.command_no||p.work_order_no);if(k&&!map[k])map[k]=enrichWith5C({work_order_no:k});});
+  var list=Object.keys(map).map(function(k){return map[k];}).filter(function(o){
+    var s=norm([o.work_order_no,o.order_no,o.customer,o.machine_code,o.process_site,o.product_spec,o.part_no,o.batch_no].join(' '));
+    return !q||s.indexOf(q)>=0;
+  }).slice(0,60);
+  el('quickOrders').innerHTML=list.map(function(o){return '<div class="quickCard" onclick="applySource('+encodeURIComponent(JSON.stringify(o))+')"><b>'+esc(o.work_order_no||o.order_no)+'</b><div class="hint">'+esc(o.customer||'-')+'｜'+esc(o.machine_code||'-')+'｜'+esc(o.process_site||'-')+(o.prod5c_hit?'｜5-C':'')+'</div><div class="hint">'+esc(o.product_spec||'')+'</div></div>'}).join('')||'<div class="hint">尚無工單資料，請確認 source_data 或 5-C。</div>';
 }
-function applyQuickOrder(qid){var o=App.quickById&&App.quickById[qid];if(o)applySourceObject(o);toast('已帶入工單'+(o&&o.prod5c_hit?'（含5-C）':''))}
 function applySource(encoded){var o=typeof encoded==='string'?JSON.parse(decodeURIComponent(encoded)):encoded;applySourceObject(o);toast('已帶入工單'+(o&&o.prod5c_hit?'（含5-C）':''))}
 function formData(){return {plan_id:getVal('plan_id'),report_date:getVal('report_date'),shift:getVal('shift'),leader_no:getVal('leader_no'),leader_role:getVal('leader_role'),leader_name:getVal('leader_name'),work_order_no:wo12(getVal('work_order_no')),order_no:getVal('order_no'),part_no:getVal('part_no'),batch_no:getVal('batch_no'),customer:getVal('customer'),product_spec:getVal('product_spec'),process_site:getVal('process_site'),machine_code:getVal('machine_code'),target_roll:getVal('target_roll'),target_m2:getVal('target_m2'),planned_start:getVal('planned_start'),planned_finish:getVal('planned_finish'),priority:getVal('priority'),remark:getVal('remark'),status:getVal('status')}}
 function savePlan(){var d=formData();if(!d.report_date){toast('請輸入目標日期');return}if(!d.work_order_no){toast('請輸入工單號');return}run('saveTargetPlan',[d],function(res){toast('幹部目標已儲存');clearForm(false);loadAll();},'儲存失敗')}
@@ -654,7 +597,7 @@ function renderPlans(){
     return '<tr><td><button class="btn ghost" onclick="editPlan('+idx+')">修改</button></td><td>'+esc(p.report_date)+'</td><td>'+esc(p.shift)+'</td><td>'+esc((p.leader_no||'')+' '+(p.leader_name||''))+'</td><td><b>'+esc(p.work_order_no)+'</b></td><td>'+esc(p.machine_code)+'</td><td>'+esc(p.process_site)+'</td><td>'+esc(p.customer)+'</td><td>'+esc(p.product_spec)+'</td><td>'+esc(p.target_roll)+'</td><td>'+esc(actual?Math.round(actual*100)/100:'')+'</td><td>'+diffHtml+'</td><td>'+esc(p.target_m2)+'</td><td><span class="pill">'+esc(p.status||'')+'</span></td><td>'+esc(p.remark)+'</td></tr>'
   }).join('')||'<tr><td colspan="15" class="hint">目前沒有目標資料</td></tr>';
 }
-document.addEventListener('DOMContentLoaded',function(){setVal('report_date',today());setVal('targetDate',today());['target_roll','product_spec'].forEach(function(id){if(el(id))el(id).addEventListener('change',calcTargetM2)});if(el('leader_no'))el('leader_no').addEventListener('change',fillLeader);if(el('woFilter'))el('woFilter').addEventListener('input',debounceQuickOrders);loadAll()});
+document.addEventListener('DOMContentLoaded',function(){setVal('report_date',today());setVal('targetDate',today());['target_roll','product_spec'].forEach(function(id){if(el(id))el(id).addEventListener('change',calcTargetM2)});if(el('leader_no'))el('leader_no').addEventListener('change',fillLeader);loadAll()});
 </script>
 </body>
 </html>
