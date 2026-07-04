@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V63.0 MES Enterprise Speed Stable｜Hybrid</title>
+<title>V64.0 MES Enterprise Speed Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V63.1 DataHub AutoSheet Stable UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V63.1 AutoSheet DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V64.0 DailyUpload DataHub Stable UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V64.0 AutoSheet DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1861,7 +1861,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V63.1 AutoSheet Stable';
+  window.MES_VERSION='V64.0 AutoSheet Stable';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -2203,10 +2203,10 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V63.1 AutoSheet 正在讀取 Apps Script 資料...");
+    status("V64.0 AutoSheet 正在讀取 Apps Script 資料...");
     try{
       var d=ymd();
-      try{ await callLargest(["setupdatahub","setup","initdatahub"],{}); }catch(setupErr){ console.warn("V63.1 setup skipped", setupErr); }
+      try{ await callLargest(["setupdatahub","setup","initdatahub"],{}); }catch(setupErr){ console.warn("V64.0 setup skipped", setupErr); }
       var result=await Promise.allSettled([
         callLargest(["source_dashboard","sourcedashboard","getdashboarddata","dashboarddata","getSourceData","source","getsourcedata"],{}),
         callLargest(["listTargetPlans","targets","listtargetplans"],{date:d}),
@@ -2218,12 +2218,12 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       var sourceRes=result[0].status==="fulfilled"?result[0].value:null;
       var rawSource=sourceRes?rowsOf(sourceRes):[];
       if(sourceRes && sourceRes.summary && rawSource.length===0 && ((sourceRes.summary.source_data&&sourceRes.summary.source_data.count)||0)>0){
-        status("V63.1 偵測到舊 source_data，正在轉入 SL31A / 4-3 / PD11B 分頁...");
+        status("V64.0 偵測到舊 source_data，正在轉入 SL31A / 4-3 / PD11B 分頁...");
         try{
           await callLargest(["migratesource","migratesourcedata","migrate"],{});
           sourceRes=await callLargest(["source_dashboard","sourcedashboard","getdashboarddata","dashboarddata"],{});
           rawSource=sourceRes?rowsOf(sourceRes):[];
-        }catch(migErr){ console.warn("V63.1 migrate skipped", migErr); }
+        }catch(migErr){ console.warn("V64.0 migrate skipped", migErr); }
       }
       AppState.sourceSummary=(sourceRes&&sourceRes.summary)||AppState.sourceSummary||{};
       var rawTargets=result[1].status==="fulfilled"?rowsOf(result[1].value):[];
@@ -2241,8 +2241,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V63.1 AutoSheet 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
-      console.log("V63.1 AutoSheet OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+      status("V64.0 AutoSheet 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V64.0 AutoSheet OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
       status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
@@ -2302,7 +2302,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
 
 
-<!-- V63.0 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
+<!-- V64.0 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
 <script id="v614_4_3_force_source_data_fix">
 (function(){
   function safeStr(v){return String(v==null?"":v).trim();}
@@ -2361,10 +2361,10 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(box){
       var msg=String(box.innerHTML||"");
       msg=msg.replace(/4-3：\d+/g,"4-3："+f43).replace(/4-3\s*:\s*\d+/g,"4-3："+f43);
-      if(msg.indexOf("V63.1 自動建分頁")<0) msg += "｜V63.1 自動建分頁";
+      if(msg.indexOf("V64.0 自動建分頁")<0) msg += "｜V64.0 自動建分頁";
       box.innerHTML=msg;
     }
-    console.log("V63.0 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
+    console.log("V64.0 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
   }
   window.v614Fix43=fix43;
   document.addEventListener("DOMContentLoaded",function(){
