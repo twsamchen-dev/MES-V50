@@ -2,13 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V70.5 MES Target Enterprise</title>
+<title>V71 MES Target Enterprise</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:24px 28px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:30px}header p{margin:8px 0 0;color:#dbeafe}.wrap{max-width:1560px;margin:auto;padding:18px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 28px rgba(15,23,42,.08)}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:900px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:10px 0 5px;font-weight:900}input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px;background:white}.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:4px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpi{color:white;border-radius:18px;padding:18px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.9}.kpi .num{font-size:38px;font-weight:900;margin-top:8px}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:10px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:6px 10px;font-weight:900;font-size:13px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.subhead{font-size:14px;color:#475569;margin-top:5px}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:190px}.th{color:#334155;font-size:13px}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V70.5 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V70.5 Target 快取版；五份資料先建立快取，避免 targetorderlist 逾時。不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V71 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V71 Target 穩定快取版；五份資料建立快取後查詢，不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12">
@@ -90,6 +90,31 @@ function rangeName(){return currentRange==='today'?'今日':currentRange==='week
 function applyRange(){TARGETS=ALL_TARGETS.filter(r=>inRangeDate(r.report_date));$('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value;$('quickTitle').textContent=rangeName()+'五份資料工單';$('targetTitle').textContent=rangeName()+'目標清單 / 配對狀況';renderTargetsLoading();updateKpi();loadMatchList();loadOrderList()}
 function normalizeEmployees(rows){EMPLOYEES=rows||[];EMPIDX={};EMPLOYEES.forEach(e=>{let no=norm(e.emp_no||e['工號']||e.employee_no||'');if(no)EMPIDX[no]=e})}
 function fillEmp(){let no=norm($('emp_no').value);let e=EMPIDX[no];if(!e)return;let name=e.emp_name||e['姓名']||e.name||'';let role=e.role||e['角色']||e['職務']||'';if(name)$('leader_name').value=name;if(role){let sel=$('leader_role');for(let i=0;i<sel.options.length;i++){if(sel.options[i].text.includes(role)||role.includes(sel.options[i].text.split('/')[0].trim())){sel.selectedIndex=i;break}}}}
+
+async function rebuildOrderCache(){
+  const btn=$('cacheBtn');
+  try{
+    btn.disabled=true;
+    btn.textContent='重建中...';
+    $('loadMsg').textContent='正在建立五份資料快取，請稍候...';
+    const res=await apiGet('rebuildtargetcache',{_:Date.now()});
+    if(res&&res.ok){
+      $('loadMsg').textContent='五份資料快取完成：'+(res.count||0)+' 筆，時間 '+(res.time||'');
+      toast('五份資料快取完成：'+(res.count||0)+' 筆');
+      await loadOrderList();
+      await loadMatchList();
+    }else{
+      throw new Error((res&&res.message)||'重建快取失敗');
+    }
+  }catch(e){
+    alert('重建五份資料快取失敗：'+e.message);
+    $('loadMsg').textContent='重建快取失敗：'+e.message;
+  }finally{
+    btn.disabled=false;
+    btn.textContent='重建五份資料快取';
+  }
+}
+
 function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value}
 async function loadBootstrap(){try{$('loadBtn').textContent='讀取中...';$('loadMsg').textContent='讀取 Target_Plan + Employee + 五份資料清單...';const b=await apiGet('targetbootstrap');ALL_TARGETS=b.targets||b.rows||[];normalizeEmployees(b.employees||[]);applyRange();$('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆';toast('目標/人員讀取完成')}catch(e){alert('讀取失敗：'+e.message)}finally{$('loadBtn').textContent='重新讀取目標/人員'}}
 function debouncedLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(lookupOrder,500)}
@@ -102,6 +127,11 @@ async function loadOrderList(){
   try{
     $('quickList').innerHTML='讀取五份資料中 / กำลังโหลด...';
     const res=await apiGet('targetorderlist',{start:$('rangeStart').value,end:$('rangeEnd').value,q:$('search').value||'',limit:300});
+    if(res && res.cache_exists===false){
+      ORDER_LIST=[];
+      $('quickList').innerHTML='<span class="status-wait">尚未建立五份資料快取，請先按「重建五份資料快取」。</span>';
+      return;
+    }
     ORDER_LIST=res.rows||[];
     renderQuickList();
   }catch(e){
