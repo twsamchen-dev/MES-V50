@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.8 MES 幹部目標</title>
+<title>V60.9 MES 幹部目標</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js?v=605"></script>
 
@@ -81,7 +81,7 @@ header .nav {
 
 .target-grid {
   display: grid;
-  grid-template-columns: minmax(880px, 2fr) minmax(420px, 0.9fr);
+  grid-template-columns: minmax(880px, 2fr) minmax(460px, 0.9fr);
   gap: 18px;
   align-items: stretch;
 }
@@ -217,7 +217,7 @@ header .nav {
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.8 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.9 MES Enterprise</h1>
   <p>加工課戰情中心 · 幹部目標 · GitHub + Apps Script 正式版</p>
 
   <div class="nav" style="display:none!important;">
@@ -231,7 +231,7 @@ header .nav {
 
   <div class="hero-target">
     <h2>🎯 今日幹部目標設定中心</h2>
-    <div class="sub">此頁只做「幹部目標管理」，人員 Key In 請使用 index.html；生產戰情室請使用 Dashboard.html。</div>
+    <div class="sub">此頁只做「幹部目標管理」。右側快速帶入工單讀取每日上傳資料 source_data，下方清單讀取幹部目標 Target_Plan。</div>
     <div class="row" style="margin-top:14px;">
       <button class="btn" onclick="refreshAllTargetData()">重新讀取資料</button>
       <button class="btn ghost" onclick="clearTargetForm()">清空表單</button>
@@ -241,7 +241,10 @@ header .nav {
 
   <div class="info-box">
     <h2 style="margin-top:0;">資料來源說明</h2>
-    <div class="mini">幹部目標資料來源：Apps Script → Target_Plan。右側「可快速帶入工單」已改用幹部目標清單資料，不再依賴 source_data。</div>
+    <div class="mini">
+      可快速帶入工單：Apps Script → source_data，每日上傳工單資料。<br>
+      幹部目標清單：Apps Script → Target_Plan，幹部輸入後的目標資料。
+    </div>
   </div>
 
   <div class="kpi-grid">
@@ -414,12 +417,12 @@ header .nav {
 
     <div class="card">
       <h2>可快速帶入工單</h2>
-      <p class="mini">V60.8：此區直接讀取幹部目標清單資料，可點選帶入左側表單。</p>
+      <p class="mini">V60.9：此區讀取每日上傳的 source_data，用於幹部快速搜尋並帶入工單。</p>
       <div class="tools">
         <input id="quickSearch" placeholder="搜尋工單 / 料號 / 規格 / 客戶 / 製程" oninput="renderQuickList()">
       </div>
       <div id="quickList" class="quick-list">
-        尚未讀取幹部目標資料。
+        尚未讀取每日工單資料。
       </div>
     </div>
 
@@ -475,6 +478,7 @@ header .nav {
 
 <script>
 const TargetApp = {
+  source: [],
   plans: [],
   renderedPlans: [],
   quickRows: []
@@ -500,16 +504,38 @@ async function refreshAllTargetData() {
   setHeroStatus('讀取中...');
 
   try {
+    await loadSourceData();
     await loadTargetPlans();
 
-    setStatus('已重新讀取資料。幹部目標去重後 ' + TargetApp.plans.length + ' 筆。');
-    setHeroStatus('已讀取 ' + TargetApp.plans.length + ' 筆');
+    setStatus(
+      '已重新讀取資料。工單來源 source_data ' +
+      TargetApp.source.length +
+      ' 筆；幹部目標 Target_Plan ' +
+      TargetApp.plans.length +
+      ' 筆。'
+    );
+
+    setHeroStatus('source_data ' + TargetApp.source.length + ' 筆 / Target_Plan ' + TargetApp.plans.length + ' 筆');
     toast2('已重新讀取資料');
 
   } catch (e) {
     setStatus('重新讀取失敗：' + e.message);
     setHeroStatus('讀取失敗');
     alert('重新讀取失敗：' + e.message);
+  }
+}
+
+async function loadSourceData() {
+  try {
+    const r = await MES.get('getSourceData');
+    const rows = extractRows(r);
+
+    TargetApp.source = rows;
+    renderQuickList();
+
+  } catch (e) {
+    TargetApp.source = [];
+    document.getElementById('quickList').innerHTML = '讀取 source_data 失敗：' + esc2(e.message);
   }
 }
 
@@ -566,14 +592,13 @@ async function loadTargetPlans() {
     TargetApp.plans = Array.from(map.values());
 
     setDebug(
-      'API 已讀取原始 ' + rows.length +
+      'API 已讀取 Target_Plan 原始 ' + rows.length +
       ' 筆，去重後 ' + TargetApp.plans.length +
       ' 筆。查詢日期：' + ymd +
-      '<br>V60.8：快速帶入工單與上方 KPI 卡片已改讀 Target_Plan。'
+      '<br>source_data 工單來源：' + TargetApp.source.length + ' 筆。'
     );
 
     renderTargetTable();
-    renderQuickList();
     renderKpi();
 
   } catch (e) {
@@ -604,10 +629,7 @@ function renderKpi() {
   const count = todayRows.length;
   const targetR = sumNum(todayRows.map(getTargetR));
   const targetM2 = sumNum(todayRows.map(getTargetM2));
-  const unfinished = todayRows.filter(p => {
-    const s = getStatus(p);
-    return s !== '已完成';
-  }).length;
+  const unfinished = todayRows.filter(p => getStatus(p) !== '已完成').length;
 
   setText('kpiCount', count);
   setText('kpiTargetR', formatNum(targetR));
@@ -626,27 +648,14 @@ function renderTargetTable() {
     const pd = getPlanDate(p);
 
     if (dateText && pd !== dateText) return false;
-
     if (status && getStatus(p) !== status) return false;
 
     if (keyword) {
       const pool = [
-        getPlanDate(p),
-        getShift(p),
-        getLeaderRole(p),
-        getLeaderName(p),
-        getWO(p),
-        getOrderNo(p),
-        getPartNo(p),
-        getBatchNo(p),
-        getCustomer(p),
-        getProductSpec(p),
-        getProcess(p),
-        getMachine(p),
-        getTargetR(p),
-        getTargetM2(p),
-        getStatus(p),
-        getNote(p)
+        getPlanDate(p), getShift(p), getLeaderRole(p), getLeaderName(p),
+        getWO(p), getOrderNo(p), getPartNo(p), getBatchNo(p),
+        getCustomer(p), getProductSpec(p), getProcess(p), getMachine(p),
+        getTargetR(p), getTargetM2(p), getStatus(p), getNote(p)
       ].join(' ');
 
       if (!norm2(pool).includes(keyword)) return false;
@@ -688,33 +697,34 @@ function renderTargetTable() {
   `).join('');
 }
 
+/* V60.9：右側快速帶入工單，恢復讀 source_data */
 function renderQuickList() {
   const q = norm2(getVal2('quickSearch'));
   const box = document.getElementById('quickList');
 
-  let rows = Array.isArray(TargetApp.plans) ? TargetApp.plans : [];
+  let rows = Array.isArray(TargetApp.source) ? TargetApp.source : [];
 
   rows = rows.filter(r => {
     if (!q) return true;
 
     const pool = [
-      getWO(r),
-      getOrderNo(r),
-      getPartNo(r),
-      getBatchNo(r),
-      getProductSpec(r),
-      getCustomer(r),
-      getProcess(r),
-      getMachine(r),
-      getLeaderName(r),
-      getStatus(r)
+      srcWO(r),
+      srcOrderNo(r),
+      srcPartNo(r),
+      srcBatchNo(r),
+      srcProductSpec(r),
+      srcCustomer(r),
+      srcProcess(r),
+      srcMachine(r)
     ].join(' ');
 
     return norm2(pool).includes(q);
-  }).slice(0, 120);
+  }).slice(0, 150);
 
   if (!rows.length) {
-    box.innerHTML = '沒有可快速帶入的工單。請先按「讀取歷史資料」或確認幹部目標清單日期。';
+    box.innerHTML =
+      '沒有可快速帶入的工單。<br>' +
+      '請確認 Apps Script 的 getSourceData 是否有讀到 source_data。';
     TargetApp.quickRows = [];
     return;
   }
@@ -722,32 +732,39 @@ function renderQuickList() {
   TargetApp.quickRows = rows;
 
   box.innerHTML = rows.map((r, idx) => {
-    const wo = getWO(r) || '未填工單';
-    const spec = getProductSpec(r);
-    const customer = getCustomer(r);
-    const process = getProcess(r);
-    const date = getPlanDate(r);
-    const targetR = getTargetR(r);
-    const targetM2 = getTargetM2(r);
-    const status = getStatus(r);
-    const part = getPartNo(r);
+    const wo = srcWO(r) || '未填工單';
+    const spec = srcProductSpec(r);
+    const customer = srcCustomer(r);
+    const process = srcProcess(r);
+    const part = srcPartNo(r);
+    const machine = srcMachine(r);
+    const batch = srcBatchNo(r);
 
     return `
-      <div class="quick-item" onclick="fillFromQuickPlan(${idx})">
+      <div class="quick-item" onclick="fillFromSource(${idx})">
         <b>${esc2(wo)}</b>
-        <div class="mini">${esc2(date)}｜${esc2(process)}｜${esc2(customer)}</div>
-        <div class="mini">料號：${esc2(part)}</div>
+        <div class="mini">${esc2(process)}｜${esc2(customer)}｜${esc2(machine)}</div>
+        <div class="mini">料號：${esc2(part)}　批號：${esc2(batch)}</div>
         <div class="mini">規格：${esc2(spec)}</div>
-        <div class="mini">目標R：${esc2(targetR)}　目標㎡：${esc2(targetM2)}　狀態：${esc2(status)}</div>
       </div>
     `;
   }).join('');
 }
 
-function fillFromQuickPlan(idx) {
-  const p = TargetApp.quickRows && TargetApp.quickRows[idx];
-  if (!p) return;
-  loadPlanToForm(p);
+function fillFromSource(idx) {
+  const r = TargetApp.quickRows && TargetApp.quickRows[idx];
+  if (!r) return;
+
+  setVal2('work_order_no', srcWO(r));
+  setVal2('order_no', srcOrderNo(r));
+  setVal2('part_no', srcPartNo(r));
+  setVal2('batch_no', srcBatchNo(r));
+  setVal2('customer', srcCustomer(r));
+  setVal2('product_spec', srcProductSpec(r));
+  setVal2('machine_code', srcMachine(r));
+  setVal2('process_site', srcProcess(r) || '分條');
+
+  toast2('已從每日工單資料帶入');
 }
 
 function loadPlanToFormFromRendered(idx) {
@@ -811,12 +828,7 @@ async function saveTargetPlan() {
 }
 
 async function tryPostTarget(data) {
-  const actions = [
-    'saveTargetPlan',
-    'saveTarget',
-    'upsertTargetPlan'
-  ];
-
+  const actions = ['saveTargetPlan', 'saveTarget', 'upsertTargetPlan'];
   let lastErr = null;
 
   for (const action of actions) {
@@ -855,24 +867,15 @@ function collectTargetData() {
     plan_end: getVal2('plan_end'),
     status: getVal2('status'),
     note: getVal2('note'),
-    input_source: 'github_target_v60_8'
+    input_source: 'github_target_v60_9'
   };
 }
 
 function clearTargetForm() {
   [
-    'work_order_no',
-    'order_no',
-    'part_no',
-    'batch_no',
-    'customer',
-    'product_spec',
-    'machine_code',
-    'target_r',
-    'target_m2',
-    'plan_start',
-    'plan_end',
-    'note'
+    'work_order_no','order_no','part_no','batch_no','customer',
+    'product_spec','machine_code','target_r','target_m2',
+    'plan_start','plan_end','note'
   ].forEach(id => setVal2(id, ''));
 
   setVal2('status', '待排程');
@@ -880,89 +883,40 @@ function clearTargetForm() {
   toast2('已清空，可新增下一筆');
 }
 
-/* ===== 欄位對應：支援 Target_Plan 既有欄位 ===== */
+/* ===== Target_Plan 欄位對應 ===== */
+function getPlanDate(p) { return normalizeDateText(p.report_date || p.date || p.plan_date || p.target_date || p.created_at || ''); }
+function getShift(p) { return p.shift || p.班別 || ''; }
+function getLeaderRole(p) { return p.leader_role || p.幹部角色 || p.role || p.角色 || ''; }
+function getLeaderName(p) { return p.leader_name || p.幹部姓名 || p.leader || p.幹部 || ''; }
+function getWO(p) { return p.work_order_no || p.work_order || p.工單 || p.order_no || ''; }
+function getOrderNo(p) { return p.order_no || p.訂單號 || ''; }
+function getPartNo(p) { return p.part_no || p.料號 || ''; }
+function getBatchNo(p) { return p.batch_no || p.生產批號 || ''; }
+function getProductSpec(p) { return p.product_spec || p.產品規格 || p.規格 || ''; }
+function getProcess(p) { return p.process_site || p.site || p.process || p.製程站點 || p.製程 || ''; }
+function getMachine(p) { return p.machine_code || p.machine || p.機台 || ''; }
+function getCustomer(p) { return p.customer || p.客戶 || ''; }
+function getPriority(p) { return p.priority || p.優先 || ''; }
+function getTargetR(p) { return p.target_r || p.target_roll || p.target_qty || p.目標R || ''; }
+function getTargetM2(p) { return p.target_m2 || p.target_m || p['目標㎡'] || p['目標m2'] || ''; }
+function getPlanStart(p) { return p.plan_start || p.planned_start || p.start_time || p.預計開始 || ''; }
+function getPlanEnd(p) { return p.plan_end || p.planned_finish || p.end_time || p.預計完成 || ''; }
+function getStatus(p) { return p.status || p.狀態 || ''; }
+function getNote(p) { return p.note || p.remark || p.備註 || ''; }
 
-function getPlanDate(p) {
-  return normalizeDateText(p.report_date || p.date || p.plan_date || p.target_date || p.created_at || '');
-}
-
-function getShift(p) {
-  return p.shift || p.班別 || '';
-}
-
-function getLeaderRole(p) {
-  return p.leader_role || p.幹部角色 || p.role || p.角色 || '';
-}
-
-function getLeaderName(p) {
-  return p.leader_name || p.幹部姓名 || p.leader || p.幹部 || '';
-}
-
-function getWO(p) {
-  return p.work_order_no || p.work_order || p.工單 || p.order_no || '';
-}
-
-function getOrderNo(p) {
-  return p.order_no || p.訂單號 || '';
-}
-
-function getPartNo(p) {
-  return p.part_no || p.料號 || '';
-}
-
-function getBatchNo(p) {
-  return p.batch_no || p.生產批號 || '';
-}
-
-function getProductSpec(p) {
-  return p.product_spec || p.產品規格 || p.規格 || '';
-}
-
-function getProcess(p) {
-  return p.process_site || p.site || p.process || p.製程站點 || p.製程 || '';
-}
-
-function getMachine(p) {
-  return p.machine_code || p.machine || p.機台 || '';
-}
-
-function getCustomer(p) {
-  return p.customer || p.客戶 || '';
-}
-
-function getPriority(p) {
-  return p.priority || p.優先 || '';
-}
-
-function getTargetR(p) {
-  return p.target_r || p.target_roll || p.target_qty || p.目標R || '';
-}
-
-function getTargetM2(p) {
-  return p.target_m2 || p.target_m || p['目標㎡'] || p['目標m2'] || '';
-}
-
-function getPlanStart(p) {
-  return p.plan_start || p.planned_start || p.start_time || p.預計開始 || '';
-}
-
-function getPlanEnd(p) {
-  return p.plan_end || p.planned_finish || p.end_time || p.預計完成 || '';
-}
-
-function getStatus(p) {
-  return p.status || p.狀態 || '';
-}
-
-function getNote(p) {
-  return p.note || p.remark || p.備註 || '';
-}
+/* ===== source_data 欄位對應 ===== */
+function srcWO(r) { return r.work_order_no || r.work_order || r.工單 || r.order_no || r.訂單單號 || ''; }
+function srcOrderNo(r) { return r.order_no || r.訂單單號 || r.order || ''; }
+function srcPartNo(r) { return r.part_no || r.料號 || r.item_no || ''; }
+function srcBatchNo(r) { return r.batch_no || r.生產批號 || r.lot || ''; }
+function srcProductSpec(r) { return r.product_spec || r.產品規格 || r.規格 || ''; }
+function srcProcess(r) { return r.process_site || r.process || r.site || r.製程站點 || r.製程 || ''; }
+function srcMachine(r) { return r.machine_code || r.machine || r.機台 || ''; }
+function srcCustomer(r) { return r.customer || r.客戶 || r.customer_name || ''; }
 
 /* ===== 共用 ===== */
-
 function normalizeDateText(v) {
   if (!v) return '';
-
   let s = String(v).trim();
 
   if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
