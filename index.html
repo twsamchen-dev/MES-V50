@@ -3,22 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.1 MES 生產 Key In</title>
+<title>V60.2 MES 生產 Key In</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 
 <style>
-/* V60.1 隱藏上方三個導覽按鈕：Key In / 幹部目標 / 戰情室 */
+/* V60.2：隱藏上方三個導覽按鈕 Key In / 幹部目標 / 戰情室 */
 header .nav {
   display: none !important;
+}
+
+.plan-switch {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.plan-list {
+  max-height: 220px;
+  overflow: auto;
+  line-height: 1.8;
 }
 </style>
 </head>
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.1 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.2 MES Enterprise</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
+
   <div class="nav" style="display:none!important;">
     <a href="index.html">Key In</a>
     <a href="target.html">幹部目標</a>
@@ -43,7 +58,7 @@ header .nav {
       <h2>工單資料</h2>
 
       <label>回報日期</label>
-      <input id="report_date" type="date">
+      <input id="report_date" type="date" onchange="renderPlansHint('today')">
 
       <label>製程站點</label>
       <select id="site">
@@ -63,8 +78,14 @@ header .nav {
       <div id="woMsg" class="alert">請先讀取最新工單，再輸入工單號。</div>
 
       <div class="okbox">
-        <b>今日待辦工單</b>
-        <div class="hint" id="todayPlans">尚未讀取。</div>
+        <b id="plansTitle">今日待辦工單</b>
+
+        <div class="plan-switch">
+          <button class="btn ghost" type="button" onclick="renderPlansHint('today')">今日</button>
+          <button class="btn ghost" type="button" onclick="renderPlansHint('week')">一週</button>
+        </div>
+
+        <div class="hint plan-list" id="todayPlans">尚未讀取。</div>
       </div>
     </div>
 
@@ -164,9 +185,9 @@ function sourceObj(r) {
     batch_no: r.batch_no || '',
     customer: r.customer || '',
     product_spec: r.product_spec || '',
-    machine_code: r.machine || '',
+    machine_code: r.machine || r.machine_code || '',
     target_qty: r.target_qty || '',
-    process: r.process || ''
+    process: r.process || r.process_site || ''
   };
 }
 
@@ -177,7 +198,7 @@ async function loadAll() {
     const [s, e, p] = await Promise.all([
       MES.get('getSourceData'),
       MES.get('listEmployees'),
-      MES.get('listTargetPlans', [], { date: getVal('report_date') || isoDate() })
+      MES.get('listTargetPlans')
     ]);
 
     App.source = (s && s.rows) || [];
@@ -186,7 +207,7 @@ async function loadAll() {
 
     document.getElementById('loadStatus').textContent = '已讀取 ' + App.source.length + ' 筆工單';
 
-    renderPlansHint();
+    renderPlansHint('today');
     await loadKeyin(false);
 
   } catch (err) {
@@ -245,27 +266,86 @@ function fillName() {
   }
 }
 
-function renderPlansHint() {
-  const d = isoDate();
+function ymdToDate(ymd) {
+  const s = String(ymd || '').replaceAll('/', '-').slice(0, 10);
+  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
 
-  const list = App.plans.filter(p =>
-    String(p.report_date || '').replaceAll('/', '-').slice(0, 10) === d
-  );
+function dateToYmd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(d, days) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
+}
+
+function getPlanDate(p) {
+  return String(
+    p.report_date ||
+    p.date ||
+    p.plan_date ||
+    p.target_date ||
+    ''
+  ).replaceAll('/', '-').slice(0, 10);
+}
+
+function renderPlansHint(mode = 'today') {
+  const baseText = getVal('report_date') || isoDate();
+  const baseDate = ymdToDate(baseText);
+
+  if (!baseDate) {
+    document.getElementById('todayPlans').innerHTML = '日期格式錯誤，請重新選擇回報日期。';
+    return;
+  }
+
+  const startYmd = dateToYmd(baseDate);
+  const endDate = addDays(baseDate, 6);
+  const endYmd = dateToYmd(endDate);
+
+  let list = [];
+
+  if (mode === 'week') {
+    list = App.plans.filter(p => {
+      const pd = getPlanDate(p);
+      return pd >= startYmd && pd <= endYmd;
+    });
+
+    document.getElementById('plansTitle').textContent = `一週待辦工單（${startYmd} ~ ${endYmd}）`;
+
+  } else {
+    list = App.plans.filter(p => {
+      const pd = getPlanDate(p);
+      return pd === startYmd;
+    });
+
+    document.getElementById('plansTitle').textContent = `今日待辦工單（${startYmd}）`;
+  }
 
   document.getElementById('todayPlans').innerHTML = list.length
-    ? list.slice(0, 8).map(p =>
+    ? `<div style="margin-bottom:6px;">共 ${list.length} 張工單</div>` +
+      list.slice(0, 80).map(p =>
         '<div>' +
-        esc(p.work_order_no) + '｜' +
-        esc(p.machine_code) + '｜' +
-        esc(p.process_site || '') +
+          esc(getPlanDate(p)) + '｜' +
+          esc(p.work_order_no || p.order_no || '') + '｜' +
+          esc(p.machine_code || p.machine || '') + '｜' +
+          esc(p.process_site || p.site || p.process || '') +
         '</div>'
       ).join('')
-    : '查無今日待辦工單。';
+    : mode === 'week'
+      ? '查無一週待辦工單。'
+      : '查無今日待辦工單。';
 }
 
 function showMyPlans() {
-  renderPlansHint();
-  MES.toast('已顯示今日待辦工單');
+  renderPlansHint('week');
+  MES.toast('已顯示一週待辦工單');
 }
 
 function nextOrder() {
