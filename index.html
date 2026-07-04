@@ -1,24 +1,94 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V60.0 MES 生產 Key In</title><link rel="stylesheet" href="style.css"><script src="api.js"></script></head><body>
-<header><h1>生產 Key In / บันทึกผลงานผลิต｜V60.0 MES Enterprise</h1><p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p><div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div></header>
-<div class="wrap"><div class="grid">
-<div class="card hero col12"><h2>手機 / 電腦 Key In</h2><div class="sub">讀取工單使用 JSONP，送出回報使用 Apps Script POST。若資料較大，首次讀取最多等待 60 秒並自動重試。</div><div class="row" style="margin-top:12px"><button class="btn" onclick="loadAll()">讀取最新工單</button><button class="btn ghost" onclick="loadKeyin()">讀取今日回報</button><span id="loadStatus" class="pill">尚未讀取</span></div></div>
-<div class="card col6"><h2>工單資料</h2><label>回報日期</label><input id="report_date" type="date"><label>製程站點</label><select id="site"><option value="分條">分條 / ตัดแบ่งม้วน</option><option value="複捲">複捲 / กรอกลับ</option><option value="包裝">包裝 / บรรจุ</option><option value="上膠">上膠 / เคลือบกาว</option><option value="覆卷">覆卷 / ม้วนซ้ำ</option></select><label>工單號（12碼主工單）</label><input id="work_order_no" placeholder="例如 MM2605060026" oninput="lookupWO()"><label>生產批號 / Lot</label><input id="batch_no" disabled placeholder="由工單自動帶入"><div id="woMsg" class="alert">請先讀取最新工單，再輸入工單號。</div><div class="okbox"><b>今日待辦工單</b><div class="hint" id="todayPlans">尚未讀取。</div></div></div>
-<div class="card col6"><h2>人員與產出</h2><label>工號（可輸入多位，用逗號或空白分隔）</label><input id="emp_no" placeholder="例如 41420,41433" oninput="fillName()"><label>姓名</label><input id="emp_name" placeholder="依工號自動帶入，可手動補充"><label>機台</label><input id="machine_code" placeholder="例如 1S03 / 1B02"><div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單</button><button class="btn ghost" onclick="nextOrder()">下一張工單</button></div><label><input id="autoNext" type="checkbox" checked style="width:auto"> 送出後自動跳下一張</label><label>實際產量</label><input id="actual_output" type="number" step="0.01"><label>單位</label><select id="unit"><option>R / ม้วน</option><option>㎡</option><option>KG</option><option>M</option></select><label>備註</label><textarea id="process_note"></textarea><button class="btn ok" id="submitBtn" onclick="submitKeyin()">送出回報</button></div>
-<div class="card col12"><h2>Key In 回報資料</h2><div class="tools"><input id="search" placeholder="全表搜尋" oninput="renderKeyin()"><button class="btn ghost" onclick="exportCSV()">匯出 CSV</button><span id="count" class="hint"></span></div><div class="scroll"><table><thead><tr><th>時間</th><th>日期</th><th>站點</th><th>工單</th><th>批號</th><th>機台</th><th>工號</th><th>姓名</th><th>產量</th><th>單位</th><th>備註</th></tr></thead><tbody id="rows"></tbody></table></div></div>
-</div></div><div id="toast" class="toast"></div>
+<!-- V60.1 隱藏上方三個導覽按鈕：Key In / 幹部目標 / 戰情室 -->
+<style>
+/* 隱藏標題下方的三個導覽按鈕區，不影響頁面功能 */
+.header-tabs,
+.top-tabs,
+.nav-tabs,
+.menu-tabs,
+.menu-buttons,
+.tab-buttons,
+.page-tabs,
+.view-tabs,
+.mode-tabs,
+.toolbar-tabs,
+.header-actions,
+.hero-actions {
+  display: none !important;
+}
+
+/* 針對常見按鈕屬性再保險 */
+button[data-tab="keyin"],
+button[data-tab="target"],
+button[data-tab="dashboard"],
+button[data-view="keyin"],
+button[data-view="target"],
+button[data-view="dashboard"],
+button[data-page="keyin"],
+button[data-page="target"],
+button[data-page="dashboard"] {
+  display: none !important;
+}
+
+/* 只隱藏頂部區塊內的按鈕，避免影響下面表單按鈕 */
+header > button,
+header .btn,
+header .button,
+.header > button,
+.header .btn,
+.header .button,
+.hero > button,
+.hero .btn,
+.hero .button {
+  display: none !important;
+}
+
+/* 若按鈕外層還佔高度，順便壓縮 */
+header .header-tabs,
+header .top-tabs,
+header .nav-tabs,
+header .menu-buttons,
+header .tab-buttons,
+.header .header-tabs,
+.header .top-tabs,
+.header .nav-tabs,
+.header .menu-buttons,
+.header .tab-buttons {
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+</style>
+
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],idx:-1};
-function isoDate(){return today().replaceAll('/','-')}
-function sourceObj(r){return {work_order_no:r.work_order_no||r.order_no||'',order_no:r.order_no||'',part_no:r.part_no||'',batch_no:r.batch_no||'',customer:r.customer||'',product_spec:r.product_spec||'',machine_code:r.machine||'',target_qty:r.target_qty||'',process:r.process||''}}
-async function loadAll(){document.getElementById('loadStatus').textContent='讀取中...';try{const [s,e,p]=await Promise.all([MES.get('getSourceData'),MES.get('listEmployees'),MES.get('listTargetPlans',[],{date:getVal('report_date')||isoDate()})]);App.source=(s&&s.rows)||[];App.employees=(e&&e.rows)||[];App.plans=(p&&p.rows)||[];document.getElementById('loadStatus').textContent='已讀取 '+App.source.length+' 筆工單';renderPlansHint();await loadKeyin(false)}catch(err){alert('讀取雲端工單失敗：'+err.message)}}
-async function loadKeyin(show=true){try{const r=await MES.get('listKeyin');App.keyin=(r&&r.rows)||[];renderKeyin();if(show)MES.toast('已讀取今日回報')}catch(e){MES.toast('讀取回報失敗：'+e.message)}}
-function lookupWO(){const w=wo12(getVal('work_order_no'));if(!w){return}const r=App.source.find(x=>wo12(x.work_order_no||x.order_no)===w);const box=document.getElementById('woMsg');if(!r){box.className='alert';box.innerHTML='查無工單，請確認是否已上傳每日資料。';return}const o=sourceObj(r);setVal('batch_no',o.batch_no);if(!getVal('machine_code'))setVal('machine_code',o.machine_code);box.className='okbox';box.innerHTML='<b>已帶入工單</b><br>'+esc([o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))}
-function fillName(){const nos=getVal('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>norm(x.emp_no)===norm(no));return e?e.emp_name:''}).filter(Boolean);if(names.length)setVal('emp_name',names.join(','))}
-function renderPlansHint(){const d=isoDate();const list=App.plans.filter(p=>String(p.report_date||'').replaceAll('/','-').slice(0,10)===d);document.getElementById('todayPlans').innerHTML=list.length?list.slice(0,8).map(p=>'<div>'+esc(p.work_order_no)+'｜'+esc(p.machine_code)+'｜'+esc(p.process_site||'')+'</div>').join(''):'查無今日待辦工單。'}
-function showMyPlans(){renderPlansHint();MES.toast('已顯示今日待辦工單')}
-function nextOrder(){const list=App.plans.length?App.plans:App.source;if(!list.length){MES.toast('沒有可跳轉工單');return}App.idx=(App.idx+1)%list.length;const p=list[App.idx];setVal('work_order_no',wo12(p.work_order_no||p.order_no));lookupWO()}
-async function submitKeyin(){const btn=document.getElementById('submitBtn');const w=wo12(getVal('work_order_no'));if(!w){MES.toast('請輸入工單號');return}if(!getVal('actual_output')){MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const data={site:getVal('site'),report_date:getVal('report_date'),work_order_no:w,order_no:w,batch_no:getVal('batch_no'),machine_code:getVal('machine_code'),actual_output:getVal('actual_output'),unit:getVal('unit'),emp_no:getVal('emp_no'),emp_name:getVal('emp_name'),process_note:getVal('process_note'),input_source:'github_v60_keyin'};try{await MES.post('saveKeyin',data);MES.toast('已送出回報');setVal('actual_output','');setVal('process_note','');setTimeout(()=>loadKeyin(false),1800);if(document.getElementById('autoNext').checked)nextOrder()}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報'}}
-function renderKeyin(){const q=norm(getVal('search'));const rows=App.keyin.filter(r=>!q||norm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();document.getElementById('count').textContent='顯示 '+rows.length+' / '+App.keyin.length+' 筆';document.getElementById('rows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.created_at)+'</td><td>'+esc(r.report_date)+'</td><td>'+esc(r.site)+'</td><td><b>'+esc(r.work_order_no)+'</b></td><td>'+esc(r.batch_no)+'</td><td>'+esc(r.machine_code)+'</td><td>'+esc(r.emp_no)+'</td><td>'+esc(r.emp_name)+'</td><td>'+esc(r.actual_output)+'</td><td>'+esc(r.unit)+'</td><td>'+esc(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="11" class="hint">尚無資料</td></tr>'}
-function exportCSV(){const headers=['created_at','report_date','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(r[h]||'').replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v60.csv';a.click()}
-document.addEventListener('DOMContentLoaded',()=>{setVal('report_date',isoDate());loadAll()});
-</script></body></html>
+/* V60.1：依文字內容強制隱藏 Key In / 幹部目標 / 戰情室 三個按鈕 */
+document.addEventListener("DOMContentLoaded", function () {
+  const hideTexts = ["Key In", "幹部目標", "戰情室"];
+
+  document.querySelectorAll("button, a, .btn, .tab, .nav-btn").forEach(function (el) {
+    const text = (el.innerText || el.textContent || "").trim();
+
+    if (hideTexts.includes(text)) {
+      el.style.display = "none";
+    }
+  });
+
+  /* 如果三個按鈕的父層已經沒有其他內容，也一起隱藏，避免空白高度 */
+  document.querySelectorAll("div, nav, section").forEach(function (box) {
+    const visibleChildren = Array.from(box.children).filter(function (child) {
+      const style = window.getComputedStyle(child);
+      return style.display !== "none" && child.innerText.trim() !== "";
+    });
+
+    const boxText = (box.innerText || "").trim();
+
+    if (
+      visibleChildren.length === 0 &&
+      hideTexts.some(function (t) { return boxText.includes(t); })
+    ) {
+      box.style.display = "none";
+    }
+  });
+});
+</script>
