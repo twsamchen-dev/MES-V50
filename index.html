@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.2 MES 生產 Key In</title>
+<title>V60.3 MES 生產 Key In</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 
 <style>
-/* V60.2：隱藏上方三個導覽按鈕 Key In / 幹部目標 / 戰情室 */
+/* V60.3：隱藏上方三個導覽按鈕 Key In / 幹部目標 / 戰情室 */
 header .nav {
   display: none !important;
 }
@@ -22,7 +22,7 @@ header .nav {
 }
 
 .plan-list {
-  max-height: 220px;
+  max-height: 240px;
   overflow: auto;
   line-height: 1.8;
 }
@@ -31,7 +31,7 @@ header .nav {
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.2 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.3 MES Enterprise</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
 
   <div class="nav" style="display:none!important;">
@@ -58,7 +58,7 @@ header .nav {
       <h2>工單資料</h2>
 
       <label>回報日期</label>
-      <input id="report_date" type="date" onchange="renderPlansHint('today')">
+      <input id="report_date" type="date" onchange="reloadPlansAndRender('week')">
 
       <label>製程站點</label>
       <select id="site">
@@ -81,8 +81,8 @@ header .nav {
         <b id="plansTitle">今日待辦工單</b>
 
         <div class="plan-switch">
-          <button class="btn ghost" type="button" onclick="renderPlansHint('today')">今日</button>
-          <button class="btn ghost" type="button" onclick="renderPlansHint('week')">一週</button>
+          <button class="btn ghost" type="button" onclick="reloadPlansAndRender('today')">今日</button>
+          <button class="btn ghost" type="button" onclick="reloadPlansAndRender('week')">本週</button>
         </div>
 
         <div class="hint plan-list" id="todayPlans">尚未讀取。</div>
@@ -195,19 +195,17 @@ async function loadAll() {
   document.getElementById('loadStatus').textContent = '讀取中...';
 
   try {
-    const [s, e, p] = await Promise.all([
+    const [s, e] = await Promise.all([
       MES.get('getSourceData'),
-      MES.get('listEmployees'),
-      MES.get('listTargetPlans')
+      MES.get('listEmployees')
     ]);
 
     App.source = (s && s.rows) || [];
     App.employees = (e && e.rows) || [];
-    App.plans = (p && p.rows) || [];
 
     document.getElementById('loadStatus').textContent = '已讀取 ' + App.source.length + ' 筆工單';
 
-    renderPlansHint('today');
+    await reloadPlansAndRender('week');
     await loadKeyin(false);
 
   } catch (err) {
@@ -286,14 +284,95 @@ function addDays(d, days) {
   return x;
 }
 
+function getWeekStartMonday(d) {
+  const x = new Date(d);
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  return x;
+}
+
+function normalizePlanDateText(v) {
+  if (!v) return '';
+
+  let s = String(v).trim();
+
+  if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
+    s = s.replaceAll('/', '-').slice(0, 10);
+  }
+
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+    const parts = s.slice(0, 10).split('-');
+    return parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
+  }
+
+  return '';
+}
+
 function getPlanDate(p) {
-  return String(
+  return normalizePlanDateText(
     p.report_date ||
     p.date ||
     p.plan_date ||
     p.target_date ||
+    p.created_at ||
     ''
-  ).replaceAll('/', '-').slice(0, 10);
+  );
+}
+
+async function reloadPlansAndRender(mode = 'week') {
+  const baseText = getVal('report_date') || isoDate();
+  const baseDate = ymdToDate(baseText);
+
+  if (!baseDate) {
+    document.getElementById('todayPlans').innerHTML = '日期格式錯誤，請重新選擇回報日期。';
+    return;
+  }
+
+  const weekStart = getWeekStartMonday(baseDate);
+  const days = [];
+
+  for (let i = 0; i < 7; i++) {
+    days.push(dateToYmd(addDays(weekStart, i)));
+  }
+
+  try {
+    document.getElementById('todayPlans').innerHTML = '讀取待辦工單中...';
+
+    const results = await Promise.all(
+      days.map(d => MES.get('listTargetPlans', [], { date: d }))
+    );
+
+    const all = [];
+
+    results.forEach(r => {
+      if (r && Array.isArray(r.rows)) {
+        all.push(...r.rows);
+      }
+    });
+
+    const map = new Map();
+
+    all.forEach(p => {
+      const key = [
+        getPlanDate(p),
+        p.work_order_no || p.order_no || '',
+        p.machine_code || p.machine || '',
+        p.process_site || p.site || p.process || ''
+      ].join('|');
+
+      if (!map.has(key)) {
+        map.set(key, p);
+      }
+    });
+
+    App.plans = Array.from(map.values());
+
+    renderPlansHint(mode);
+
+  } catch (e) {
+    document.getElementById('todayPlans').innerHTML = '讀取待辦工單失敗：' + esc(e.message);
+  }
 }
 
 function renderPlansHint(mode = 'today') {
@@ -305,9 +384,11 @@ function renderPlansHint(mode = 'today') {
     return;
   }
 
-  const startYmd = dateToYmd(baseDate);
-  const endDate = addDays(baseDate, 6);
-  const endYmd = dateToYmd(endDate);
+  const todayYmd = dateToYmd(baseDate);
+  const weekStart = getWeekStartMonday(baseDate);
+  const weekEnd = addDays(weekStart, 6);
+  const startYmd = dateToYmd(weekStart);
+  const endYmd = dateToYmd(weekEnd);
 
   let list = [];
 
@@ -317,21 +398,21 @@ function renderPlansHint(mode = 'today') {
       return pd >= startYmd && pd <= endYmd;
     });
 
-    document.getElementById('plansTitle').textContent = `一週待辦工單（${startYmd} ~ ${endYmd}）`;
+    document.getElementById('plansTitle').textContent = `本週待辦工單（${startYmd} ~ ${endYmd}）`;
 
   } else {
     list = App.plans.filter(p => {
       const pd = getPlanDate(p);
-      return pd === startYmd;
+      return pd === todayYmd;
     });
 
-    document.getElementById('plansTitle').textContent = `今日待辦工單（${startYmd}）`;
+    document.getElementById('plansTitle').textContent = `今日待辦工單（${todayYmd}）`;
   }
 
   document.getElementById('todayPlans').innerHTML = list.length
     ? `<div style="margin-bottom:6px;">共 ${list.length} 張工單</div>` +
-      list.slice(0, 80).map(p =>
-        '<div>' +
+      list.slice(0, 100).map(p =>
+        '<div style="padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06);">' +
           esc(getPlanDate(p)) + '｜' +
           esc(p.work_order_no || p.order_no || '') + '｜' +
           esc(p.machine_code || p.machine || '') + '｜' +
@@ -339,13 +420,13 @@ function renderPlansHint(mode = 'today') {
         '</div>'
       ).join('')
     : mode === 'week'
-      ? '查無一週待辦工單。'
+      ? '查無本週待辦工單。'
       : '查無今日待辦工單。';
 }
 
 function showMyPlans() {
-  renderPlansHint('week');
-  MES.toast('已顯示一週待辦工單');
+  reloadPlansAndRender('week');
+  MES.toast('已顯示本週待辦工單');
 }
 
 function nextOrder() {
