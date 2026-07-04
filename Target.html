@@ -1,94 +1,46 @@
-<!-- V60.1 隱藏上方三個導覽按鈕：Key In / 幹部目標 / 戰情室 -->
-<style>
-/* 隱藏標題下方的三個導覽按鈕區，不影響頁面功能 */
-.header-tabs,
-.top-tabs,
-.nav-tabs,
-.menu-tabs,
-.menu-buttons,
-.tab-buttons,
-.page-tabs,
-.view-tabs,
-.mode-tabs,
-.toolbar-tabs,
-.header-actions,
-.hero-actions {
-  display: none !important;
-}
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>生產 Key In｜V60.1 MES Enterprise</title>
 
-/* 針對常見按鈕屬性再保險 */
-button[data-tab="keyin"],
-button[data-tab="target"],
-button[data-tab="dashboard"],
-button[data-view="keyin"],
-button[data-view="target"],
-button[data-view="dashboard"],
-button[data-page="keyin"],
-button[data-page="target"],
-button[data-page="dashboard"] {
-  display: none !important;
-}
-
-/* 只隱藏頂部區塊內的按鈕，避免影響下面表單按鈕 */
-header > button,
-header .btn,
-header .button,
-.header > button,
-.header .btn,
-.header .button,
-.hero > button,
-.hero .btn,
-.hero .button {
-  display: none !important;
-}
-
-/* 若按鈕外層還佔高度，順便壓縮 */
-header .header-tabs,
-header .top-tabs,
-header .nav-tabs,
-header .menu-buttons,
-header .tab-buttons,
-.header .header-tabs,
-.header .top-tabs,
-.header .nav-tabs,
-.header .menu-buttons,
-.header .tab-buttons {
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-</style>
-
-<script>
-/* V60.1：依文字內容強制隱藏 Key In / 幹部目標 / 戰情室 三個按鈕 */
-document.addEventListener("DOMContentLoaded", function () {
-  const hideTexts = ["Key In", "幹部目標", "戰情室"];
-
-  document.querySelectorAll("button, a, .btn, .tab, .nav-btn").forEach(function (el) {
-    const text = (el.innerText || el.textContent || "").trim();
-
-    if (hideTexts.includes(text)) {
-      el.style.display = "none";
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #f4f7fb;
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
     }
-  });
 
-  /* 如果三個按鈕的父層已經沒有其他內容，也一起隱藏，避免空白高度 */
-  document.querySelectorAll("div, nav, section").forEach(function (box) {
-    const visibleChildren = Array.from(box.children).filter(function (child) {
-      const style = window.getComputedStyle(child);
-      return style.display !== "none" && child.innerText.trim() !== "";
-    });
-
-    const boxText = (box.innerText || "").trim();
-
-    if (
-      visibleChildren.length === 0 &&
-      hideTexts.some(function (t) { return boxText.includes(t); })
-    ) {
-      box.style.display = "none";
+    .loading {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1e3a8a;
+      font-size: 20px;
+      font-weight: 700;
     }
-  });
-});
-</script>
+  </style>
+</head>
+
+<body>
+  <div class="loading">正在載入 MES V60.1...</div>
+
+  <script>
+    /*
+      V60.1 Target.html 救援版
+      功能：
+      1. 避免 Target.html 白畫面
+      2. 自動導回正式首頁 index.html
+      3. 加上版本參數，避免快取
+    */
+
+    window.location.replace("./index.html?v=601");
+  </script>
+</body>
+</html>
