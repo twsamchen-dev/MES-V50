@@ -2407,6 +2407,37 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   document.addEventListener("DOMContentLoaded",function(){setTimeout(reload,1500);});
 })();
 </script>
+<script>
+/* V65.1 修正右下角狀態列顯示 0 */
+(function(){
+  function getHubCount(label){
+    const cards=[...document.querySelectorAll("*")].filter(x=>x.innerText && x.innerText.includes(label));
+    for(const c of cards){
+      const t=c.innerText.replace(/,/g,"");
+      const m=t.match(new RegExp(label+"[\\s\\S]*?(\\d{1,8})"));
+      if(m) return Number(m[1]).toLocaleString();
+    }
+    return "0";
+  }
 
+  function fixBottomStatus(){
+    const sl=getHubCount("SL31A");
+    const d43=getHubCount("4-3");
+    const pd=getHubCount("PD11B");
+    const c5=getHubCount("5-C");
+    const p53=getHubCount("5-3");
+
+    const msg=`V65.1 已讀取 | SL31A：${sl} | 4-3：${d43} | PD11B：${pd} | 5-C：${c5} | 5-3：${p53}`;
+
+    const boxes=[...document.querySelectorAll("div")]
+      .filter(x=>x.innerText && x.innerText.includes("V65.0 已讀取"));
+
+    boxes.forEach(x=>x.innerText=msg);
+  }
+
+  setInterval(fixBottomStatus,1000);
+  setTimeout(fixBottomStatus,1500);
+})();
+</script>
 </body>
 </html>
