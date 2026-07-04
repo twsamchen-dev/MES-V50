@@ -3817,5 +3817,77 @@ V60.9.3 Dashboard API Patch
   }
 })();
 </script>
+<!-- V60.9.9 Hide Old Wrong API Status Box -->
+<script id="v6099_hide_old_wrong_status">
+(function(){
+  function hideOldWrongStatus(){
+    var boxes = Array.from(document.querySelectorAll("body *")).filter(function(el){
+      var t = String(el.textContent || "");
+      return t.indexOf("API 已讀取完成") >= 0 &&
+             t.indexOf("source_data：0") >= 0 &&
+             t.indexOf("Target_Plan：0") >= 0;
+    });
+
+    boxes.forEach(function(el){
+      el.style.display = "none";
+    });
+
+    var correct = document.getElementById("v6099Status");
+    if (!correct) {
+      correct = document.createElement("div");
+      correct.id = "v6099Status";
+      correct.style.cssText = [
+        "position:fixed",
+        "right:18px",
+        "bottom:18px",
+        "z-index:999999",
+        "background:#0f172a",
+        "color:#e5e7eb",
+        "border:1px solid #334155",
+        "border-radius:12px",
+        "padding:10px 14px",
+        "font-size:13px",
+        "box-shadow:0 8px 22px rgba(0,0,0,.25)",
+        "max-width:720px",
+        "line-height:1.5"
+      ].join(";");
+
+      document.body.appendChild(correct);
+    }
+
+    var source = window.AppState && Array.isArray(AppState.source) ? AppState.source : [];
+    var keyin = window.AppState && Array.isArray(AppState.keyin) ? AppState.keyin : [];
+    var targets = window.AppState && Array.isArray(AppState.targets) ? AppState.targets : [];
+
+    var sl31a = source.filter(function(r){
+      return String(r.source || "").toUpperCase().indexOf("SL31") >= 0;
+    }).length;
+
+    var f43 = source.filter(function(r){
+      return String(r.source || "").indexOf("4-3") >= 0;
+    }).length;
+
+    var pd11b = source.filter(function(r){
+      return String(r.source || "").toUpperCase().indexOf("PD11") >= 0;
+    }).length;
+
+    correct.innerHTML =
+      "主系統資料已讀取｜SL31A：" + sl31a +
+      "｜4-3：" + f43 +
+      "｜PD11B：" + pd11b +
+      "｜source_data：" + source.length +
+      "｜Target_Plan：" + targets.length +
+      "｜keyin：" + keyin.length;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(hideOldWrongStatus, 1500);
+    setTimeout(hideOldWrongStatus, 3500);
+    setTimeout(hideOldWrongStatus, 6000);
+  });
+
+  window.hideOldWrongStatus = hideOldWrongStatus;
+})();
+</script>
 </body>
 </html>
