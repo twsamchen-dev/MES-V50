@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V61.3 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.3 Clean DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V61.4 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.4 Clean DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -2140,7 +2140,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V61.3 Clean 正在讀取 Apps Script 資料...");
+    status("V61.4 Clean 正在讀取 Apps Script 資料...");
     try{
       var d=ymd();
       var result=await Promise.allSettled([
@@ -2167,8 +2167,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V61.3 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
-      console.log("V61.3 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+      status("V61.4 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V61.4 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
       status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
@@ -2223,6 +2223,81 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   }
   window.v611FixSourceLabels=fix;
   document.addEventListener("DOMContentLoaded",function(){setTimeout(fix,3000);setTimeout(fix,8000);});
+})();
+</script>
+
+
+
+<!-- V61.4 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
+<script id="v614_4_3_force_source_data_fix">
+(function(){
+  function safeStr(v){return String(v==null?"":v).trim();}
+  function upper(v){return safeStr(v).toUpperCase().replace(/[‐‑‒–—−－]/g,"-").replace(/\s+/g,"");}
+  function pickAny(r,keys){
+    r=r||{};
+    for(var i=0;i<keys.length;i++){
+      var k=keys[i];
+      if(r[k]!==undefined && r[k]!==null && safeStr(r[k])!=="") return r[k];
+    }
+    return "";
+  }
+  function canonical(v){
+    var s=upper(v);
+    if(/^4[-_]?3$/.test(s) || s.indexOf("4-3")>=0 || s.indexOf("4_3")>=0) return "4-3";
+    if(s.indexOf("SL31")>=0) return "SL31A";
+    if(s.indexOf("PD11")>=0) return "PD11B";
+    if(s.indexOf("5-C")>=0 || s.indexOf("5C")>=0) return "5-C";
+    if(s.indexOf("5-3")>=0 || s==="53") return "5-3";
+    return safeStr(v);
+  }
+  function hasWo(r){
+    return !!pickAny(r,["work_order_no","work_order","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","order_no","訂單號","訂單單號","單號","WO","WorkOrder","wo"]);
+  }
+  function looksLikeOtherSource(r){
+    var txt="";
+    try{txt=JSON.stringify(r||{}).toUpperCase().replace(/[‐‑‒–—−－]/g,"-");}catch(e){txt="";}
+    return txt.indexOf("SL31")>=0 || txt.indexOf("PD11")>=0 || txt.indexOf("5-C")>=0 || txt.indexOf("5C")>=0 || txt.indexOf("5-3")>=0;
+  }
+  function classifyRow(r){
+    var srcRaw=pickAny(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"]);
+    var src=canonical(srcRaw);
+    if(src==="4-3" || src==="SL31A" || src==="PD11B" || src==="5-C" || src==="5-3") return src;
+
+    // 目前 Apps Script 回來的 4-3 常只標成 source_data，且沒有保留原始分頁名稱。
+    // 只要不是 SL31A / PD11B / 5-C / 5-3，且此列有工單號，就歸為 4-3。
+    var raw=upper(srcRaw || r.source || "");
+    if((raw==="" || raw==="SOURCE" || raw==="SOURCE_DATA" || raw==="SOURCEDATA") && hasWo(r) && !looksLikeOtherSource(r)) return "4-3";
+    if(hasWo(r) && !looksLikeOtherSource(r)) return "4-3";
+    return src || "source_data";
+  }
+  function fix43(){
+    if(!window.AppState || !Array.isArray(AppState.source)) return;
+    var changed=0;
+    AppState.source.forEach(function(r){
+      if(!r) return;
+      var next=classifyRow(r);
+      if(next && r.source!==next){r.source=next; changed++;}
+    });
+    try{ if(typeof buildIndex==="function") buildIndex(); }catch(e){console.warn("V61.4 buildIndex failed",e);}
+    try{ if(typeof calcActual==="function") calcActual(); }catch(e){}
+    try{ if(typeof renderActive==="function") renderActive(); }catch(e){console.warn("V61.4 renderActive failed",e);}
+    try{ if(typeof v541RenderDataHub==="function") v541RenderDataHub(); }catch(e){console.warn("V61.4 DataHub failed",e);}
+    var f43=AppState.source.filter(function(r){return canonical(r&&r.source)==="4-3";}).length;
+    var box=document.getElementById("v610CleanStatus");
+    if(box){
+      var msg=String(box.innerHTML||"");
+      msg=msg.replace(/4-3：\d+/g,"4-3："+f43).replace(/4-3\s*:\s*\d+/g,"4-3："+f43);
+      if(msg.indexOf("V61.4 4-3修正")<0) msg += "｜V61.4 4-3修正";
+      box.innerHTML=msg;
+    }
+    console.log("V61.4 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
+  }
+  window.v614Fix43=fix43;
+  document.addEventListener("DOMContentLoaded",function(){
+    setTimeout(fix43,3500);
+    setTimeout(fix43,6500);
+    setTimeout(fix43,10000);
+  });
 })();
 </script>
 
