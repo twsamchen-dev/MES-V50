@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V61.2 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.2 Clean DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V61.3 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.3 Fix 4-3 DataHub。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1831,7 +1831,15 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     var source=(window.AppState&&AppState.source)||[];
     var sl=bySource('SL31A'), f43=bySource('4-3'), pd=bySource('PD11B');
     if(!sl && source.length) sl=source.filter(function(r){return /SL31|訂單/.test(String(r.source||''));}).length;
-    if(!f43 && source.length) f43=source.filter(function(r){return /4-3|工單/.test(String(r.source||''));}).length;
+    if(!pd && source.length) pd=source.filter(function(r){return /PD11/i.test(String(r.source||''));}).length;
+    if(!f43 && source.length) {
+      f43=source.filter(function(r){
+        var txt=String(r.source||r.來源||r.__sheet||'')+' '+String(r.work_order_no||r.order_no||r.batch_no||r.process||'');
+        txt=txt.toUpperCase().replace(/[‐‑‒–—−－]/g,'-').replace(/\s+/g,'');
+        return txt.indexOf('4-3')>=0 || txt.indexOf('4_3')>=0;
+      }).length;
+    }
+    if(!f43 && source.length && sl && pd) f43=Math.max(0, source.length - sl - pd);
     if(!pd && source.length) pd=source.filter(function(r){return /PD11/i.test(String(r.source||''));}).length;
     return [
       {k:'SL31A',name:'SL31A',sub:'訂單 / 規格 / 目標',count:sl,time:updatedAt(source.filter(function(r){return /SL31/i.test(String(r.source||''));}))},
@@ -2078,7 +2086,16 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
   function countSource(key){
     key=normalizeSourceLabel(key);
-    return (AppState.source||[]).filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
+    var rows=AppState.source||[];
+    var direct=rows.filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
+    if(direct>0) return direct;
+    if(key==="4-3" && rows.length){
+      var sl=rows.filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")==="SL31A";}).length;
+      var pd=rows.filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")==="PD11B";}).length;
+      var guess=Math.max(0, rows.length - sl - pd);
+      return guess;
+    }
+    return 0;
   }
 
   function status(msg,bad){
@@ -2115,7 +2132,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V61.2 Clean 正在讀取 Apps Script 資料...");
+    status("V61.3 Clean 正在讀取 Apps Script 資料...");
     try{
       var d=ymd();
       var result=await Promise.allSettled([
@@ -2142,11 +2159,11 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V61.2 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
-      console.log("V61.2 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+      status("V61.3 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V61.3 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
-      status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
+      status("V61.3 Clean API 讀取失敗："+(e.message||e),true);
     }finally{
       loading=false;
     }
@@ -2198,6 +2215,47 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   }
   window.v611FixSourceLabels=fix;
   document.addEventListener("DOMContentLoaded",function(){setTimeout(fix,3000);setTimeout(fix,8000);});
+})();
+</script>
+
+
+<!-- V61.3 Fix 4-3 display fallback: source_data = SL31A + 4-3 + PD11B -->
+<script id="v613_fix43_fallback">
+(function(){
+  function n(v){return String(v==null?'':v).trim().toUpperCase().replace(/[‐‑‒–—−－]/g,'-').replace(/\s+/g,'');}
+  function srcCount(name){
+    var rows=(window.AppState&&AppState.source)||[];
+    var key=n(name);
+    var c=rows.filter(function(r){return n(r.source||r.來源||r.__sheet||'')===key || n(r.source||r.來源||r.__sheet||'').indexOf(key)>=0;}).length;
+    if(c>0) return c;
+    if(key==='4-3' && rows.length){
+      var sl=srcCount('SL31A');
+      var pd=srcCount('PD11B');
+      return Math.max(0, rows.length-sl-pd);
+    }
+    return 0;
+  }
+  function patch(){
+    var rows=(window.AppState&&AppState.source)||[];
+    if(!rows.length) return;
+    var vals={'SL31A':srcCount('SL31A'),'4-3':srcCount('4-3'),'PD11B':srcCount('PD11B'),'5-C':(AppState.prod5c||[]).length,'5-3':(AppState.prod53||[]).length};
+    Array.from(document.querySelectorAll('.v541-source')).forEach(function(card){
+      var name=(card.querySelector('.name')||{}).textContent||'';
+      Object.keys(vals).forEach(function(k){
+        if(name.indexOf(k)>=0){
+          var num=card.querySelector('.num'); if(num) num.textContent=Number(vals[k]||0).toLocaleString();
+          card.classList.remove('v541-empty','v541-warn'); if(vals[k]>0) card.classList.add('v541-ok');
+        }
+      });
+    });
+    var ok=Object.keys(vals).filter(function(k){return vals[k]>0;}).length;
+    var badge=document.querySelector('#v541DataHub .v541-badge'); if(badge) badge.textContent='完整度 '+ok+'/5｜'+Math.round(ok/5*100)+'%';
+    var fill=document.querySelector('#v541DataHub .v541-fill'); if(fill) fill.style.width=Math.round(ok/5*100)+'%';
+    var box=document.getElementById('v610CleanStatus');
+    if(box) box.innerHTML='V61.3 Clean 主系統資料已讀取｜SL31A：'+vals['SL31A']+'｜4-3：'+vals['4-3']+'｜PD11B：'+vals['PD11B']+'｜source_data：'+rows.length+'｜Target_Plan：'+((AppState.targets||[]).length)+'｜keyin：'+((AppState.keyin||[]).length)+'｜Employee：'+((window.EMP_ROWS||[]).length)+'｜5-C：'+vals['5-C']+'｜5-3：'+vals['5-3']+'｜工單索引：'+Object.keys(AppState.idx||{}).length;
+  }
+  window.v613Fix43=patch;
+  document.addEventListener('DOMContentLoaded',function(){setInterval(patch,1500);});
 })();
 </script>
 
