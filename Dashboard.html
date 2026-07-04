@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V61.4 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.4 Clean DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V61.5 Speed Stable Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.5 Speed DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -412,28 +412,82 @@ function gasCall(name,args){
     }catch(e){reject(e)}
   });
 }
-function uploadCloud(){
+function collectRawHeaders(rows){
+  var set={};
+  (rows||[]).forEach(function(r){Object.keys(r||{}).forEach(function(k){if(String(k||'').trim())set[k]=true;});});
+  var h=Object.keys(set);
+  return h.length?h:['value'];
+}
+function setUploadProgress(msg){
+  var s=el('submitStatus') || el('stat43') || null;
+  if(s) s.textContent=msg;
+  var btn=el('uploadBtn');
+  if(btn) btn.textContent=msg;
+  console.log('MES upload:',msg);
+}
+function gasCall(name,args){
+  return new Promise(function(resolve,reject){
+    try{
+      var runner=google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+      runner[name].apply(runner,args||[]);
+    }catch(e){reject(e)}
+  });
+}
+async function uploadChunksSource(rows,chunkSize){
+  rows=rows||[];
+  if(!rows.length)return {ok:true,count:0};
+  await gasCall('startSourceUpload',[]);
+  var total=0;
+  for(var i=0;i<rows.length;i+=chunkSize){
+    var chunk=rows.slice(i,i+chunkSize);
+    var res=await gasCall('appendSourceDataChunk',[chunk]);
+    total+=chunk.length;
+    setUploadProgress('上傳 source_data '+Math.min(total,rows.length)+' / '+rows.length);
+    await new Promise(function(r){setTimeout(r,30);});
+  }
+  return gasCall('finishSourceUpload',[]);
+}
+async function uploadChunksRaw(sheetName,rows,chunkSize){
+  rows=rows||[];
+  if(!rows.length)return {ok:true,count:0};
+  var headers=collectRawHeaders(rows);
+  await gasCall('startRawUpload',[sheetName,headers]);
+  var total=0;
+  for(var i=0;i<rows.length;i+=chunkSize){
+    var chunk=rows.slice(i,i+chunkSize);
+    await gasCall('appendRawSheetChunk',[sheetName,headers,chunk]);
+    total+=chunk.length;
+    setUploadProgress('上傳 '+sheetName+' '+Math.min(total,rows.length)+' / '+rows.length);
+    await new Promise(function(r){setTimeout(r,30);});
+  }
+  return gasCall('finishRawUpload',[sheetName]);
+}
+async function uploadCloud(){
   if(window.MES_IS_GITHUB){
-    alert("GitHub 版不支援 Excel 上傳，請改用 Apps Script 資料更新中心。");
+    alert('GitHub 版不支援 Excel 上傳，請改用 Apps Script 資料更新中心。');
     openAdminUploadCenter();
     return;
   }
-  var rows=[].concat(toSourceRows("4-3",AppState.d43),toSourceRows("PD11B",AppState.pd),toSourceRows("SL31A",AppState.sl));
-  if(!rows.length && !AppState.prod5cRaw.length && !AppState.prod53Raw.length){alert("沒有資料，請先選五份檔案");return}
-  var btn=el("uploadBtn"); if(btn)btn.disabled=true;
-  var jobs=[];
-  if(rows.length) jobs.push(gasCall("replaceSourceData",[rows]));
-  if(AppState.prod5cRaw.length) jobs.push(gasCall("replaceProd5CData",[AppState.prod5cRaw]));
-  if(AppState.prod53Raw.length) jobs.push(gasCall("replaceProd53Data",[AppState.prod53Raw]));
-  Promise.all(jobs).then(function(res){
-    if(btn)btn.disabled=false;
-    var msg=res.map(function(x){return (x&&x.count)||0}).join(" / ");
-    alert("✅ 五份資料已更新完成："+msg+" 筆");
-    loadSource(); if(typeof v541ReloadAll==="function") setTimeout(v541ReloadAll,600);
-  }).catch(function(e){
-    if(btn)btn.disabled=false;
-    alert("上傳失敗："+((e&&e.message)||e));
-  });
+  var rows=[].concat(toSourceRows('4-3',AppState.d43),toSourceRows('PD11B',AppState.pd),toSourceRows('SL31A',AppState.sl));
+  if(!rows.length && !AppState.prod5cRaw.length && !AppState.prod53Raw.length){alert('沒有資料，請先選五份檔案');return}
+  var btn=el('uploadBtn');
+  var oldText=btn?btn.textContent:'';
+  if(btn)btn.disabled=true;
+  try{
+    setUploadProgress('開始分批上傳，請不要關閉視窗...');
+    var chunk=900;
+    await uploadChunksSource(rows,chunk);
+    await uploadChunksRaw('5-C',AppState.prod5cRaw,chunk);
+    await uploadChunksRaw('5-3',AppState.prod53Raw,chunk);
+    setUploadProgress('✅ 上傳完成，正在快速讀取...');
+    alert('✅ 五份資料已分批更新完成。讀取速度已改為快速模式。');
+    if(typeof v541ReloadAll==='function')setTimeout(v541ReloadAll,500);
+  }catch(e){
+    console.error(e);
+    alert('上傳失敗：'+((e&&e.message)||e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=oldText||'上傳五份資料到雲端';}
+  }
 }
 function submitKeyin(){var wo=enforceWO12Input("wo"),actual=num(el("actual").value);if(!wo){toast("請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต");return}if(wo.length<12){toast("工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก");return}if(!actual){toast("請輸入實際產量 / กรุณากรอกจำนวนผลิตจริง");return}var base=AppState.idx[wo]||{};var data={site:el("processSite").value,report_date:el("reportDate").value||today(),order_no:base.order||"",part_no:base.part||"",batch_no:el("batch").value||base.batch||"",work_order_no:wo,machine_code:el("machineInput").value,product_spec:base.spec||"",target_qty:base.target||0,actual_output:actual,unit:el("unit").value,convert_m2:"",emp_no:el("empNo").value,emp_name:el("empName").value,process_note:el("note").value,achievement_rate:base.target?Math.round(actual/num(base.target)*100)+"%":"",input_source:"mobile_keyin"};el("submitBtn").disabled=true;el("submitStatus").textContent="傳送中...";google.script.run.withSuccessHandler(function(){el("submitBtn").disabled=false;el("submitStatus").textContent="✅ 回報成功 / บันทึกสำเร็จ";AppState.keyin.push({date:data.report_date,site:data.site,wo:data.work_order_no,batch:data.batch_no,part:data.part_no,spec:data.product_spec,target:data.target_qty,empNo:data.emp_no,empName:data.emp_name,machine:data.machine_code,actual:data.actual_output,unit:data.unit,note:data.process_note});el("actual").value="";el("note").value="";calcActual();renderActive();if(el("autoNextToggle")&&el("autoNextToggle").checked){setTimeout(function(){selectNextTodo(true)},150)}}).withFailureHandler(function(e){el("submitBtn").disabled=false;el("submitStatus").textContent="❌ 回報失敗 / บันทึกไม่สำเร็จ";alert(e.message||e)}).saveKeyin(data)}
 function lookupWO(){var wo=enforceWO12Input("wo"),box=el("lookupBox");if(!wo){box.className="found notfound";box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";return}if(wo.length<12){box.className="found notfound";box.innerHTML="工單號需輸入12碼 / กรุณากรอกเลขที่ใบสั่งผลิต 12 หลัก";return}var o=AppState.idx[wo];if(!o){box.className="found notfound";box.innerHTML="查無工單：<b>"+wo+"</b>";return}el("batch").value=o.batch||"";box.className="found";box.innerHTML='<span class="pill ok">已找到</span> '+Object.keys(o.from||{}).map(function(x){return'<span class="pill">'+x+'</span>'}).join(" ")+'<table style="margin-top:8px"><tr><th>料號</th><td>'+(o.part||"-")+'</td></tr><tr><th>規格</th><td>'+(o.spec||"-")+'</td></tr><tr><th>客戶</th><td>'+(o.customer||"-")+'</td></tr><tr><th>預交</th><td>'+(o.due||"-")+'</td></tr><tr><th>目標</th><td>'+(o.target||0)+'</td></tr></table>'}
@@ -1805,7 +1859,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V55.1.0';
+  window.MES_VERSION='V61.5 Speed Stable';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -1822,9 +1876,14 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function bySource(name){
     var rows=(window.AppState&&AppState.source)||[];
     var key=normalizeSourceLabel(name);
+    var sum=(window.AppState&&AppState.sourceSummary)||{};
+    if(sum[key] && typeof sum[key].count==='number') return sum[key].count;
     return rows.filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
   }
-  function updatedAt(rows){
+  function updatedAt(rows,key){
+    var sum=(window.AppState&&AppState.sourceSummary)||{};
+    var nk=key?normalizeSourceLabel(key):'';
+    if(nk && sum[nk] && sum[nk].updated_at)return sum[nk].updated_at;
     rows=rows||[];var m='';rows.forEach(function(r){var u=r.updated_at||r.created_at||r.prod_date||r.report_date||r.plan_date||'';if(String(u)>String(m))m=u;});return m||'-';
   }
   function hubSources(){
@@ -1834,9 +1893,9 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(!f43 && source.length) f43=source.filter(function(r){return /4-3|工單/.test(String(r.source||''));}).length;
     if(!pd && source.length) pd=source.filter(function(r){return /PD11/i.test(String(r.source||''));}).length;
     return [
-      {k:'SL31A',name:'SL31A',sub:'訂單 / 規格 / 目標',count:sl,time:updatedAt(source.filter(function(r){return /SL31/i.test(String(r.source||''));}))},
-      {k:'4-3',name:'4-3',sub:'工單 / 排程',count:f43,time:updatedAt(source.filter(function(r){return normalizeSourceLabel(r.source||'')==='4-3';}))},
-      {k:'PD11B',name:'PD11B',sub:'日報 / 狀態',count:pd,time:updatedAt(source.filter(function(r){return /PD11/i.test(String(r.source||''));}))},
+      {k:'SL31A',name:'SL31A',sub:'訂單 / 規格 / 目標',count:sl,time:updatedAt(source.filter(function(r){return /SL31/i.test(String(r.source||''));}),'SL31A')},
+      {k:'4-3',name:'4-3',sub:'工單 / 排程',count:f43,time:updatedAt(source.filter(function(r){return normalizeSourceLabel(r.source||'')==='4-3';}),'4-3')},
+      {k:'PD11B',name:'PD11B',sub:'日報 / 狀態',count:pd,time:updatedAt(source.filter(function(r){return /PD11/i.test(String(r.source||''));}),'PD11B')},
       {k:'5-C',name:'5-C',sub:'命令單 / 製號 / 尺寸',count:safeCount(AppState.prod5c),time:updatedAt(AppState.prod5c)},
       {k:'5-3',name:'5-3',sub:'製程 / 機台 / 實績',count:safeCount(AppState.prod53),time:updatedAt(AppState.prod53)}
     ];
@@ -2103,6 +2162,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
   function countSource(key){
     key=normalizeSourceLabel(key);
+    var sum=(AppState&&AppState.sourceSummary)||{};
+    if(sum[key] && typeof sum[key].count==='number') return sum[key].count;
     return (AppState.source||[]).filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
   }
 
@@ -2140,18 +2201,20 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V61.4 Clean 正在讀取 Apps Script 資料...");
+    status("V61.5 Speed 正在讀取 Apps Script 資料...");
     try{
       var d=ymd();
       var result=await Promise.allSettled([
-        callLargest(["getSourceData","source","getsourcedata"],{}),
+        callLargest(["source_dashboard","sourcedashboard","getdashboarddata","dashboarddata","getSourceData","source","getsourcedata"],{}),
         callLargest(["listTargetPlans","targets","listtargetplans"],{date:d}),
         callLargest(["listKeyin","list","listkeyin"],{date:d}),
         callLargest(["listEmployees","employees","listemployees"],{}),
         callLargest(["listProd5CData","prod5c","listprod5cdata"],{}),
         callLargest(["listProd53Data","prod53","listprod53data"],{})
       ]);
-      var rawSource=result[0].status==="fulfilled"?rowsOf(result[0].value):[];
+      var sourceRes=result[0].status==="fulfilled"?result[0].value:null;
+      var rawSource=sourceRes?rowsOf(sourceRes):[];
+      AppState.sourceSummary=(sourceRes&&sourceRes.summary)||AppState.sourceSummary||{};
       var rawTargets=result[1].status==="fulfilled"?rowsOf(result[1].value):[];
       var rawKeyin=result[2].status==="fulfilled"?rowsOf(result[2].value):[];
       var rawEmp=result[3].status==="fulfilled"?rowsOf(result[3].value):[];
@@ -2167,8 +2230,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V61.4 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
-      console.log("V61.4 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+      status("V61.5 Speed 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V61.5 Speed OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
       status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
@@ -2228,7 +2291,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
 
 
-<!-- V61.4 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
+<!-- V61.5 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
 <script id="v614_4_3_force_source_data_fix">
 (function(){
   function safeStr(v){return String(v==null?"":v).trim();}
@@ -2287,10 +2350,10 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(box){
       var msg=String(box.innerHTML||"");
       msg=msg.replace(/4-3：\d+/g,"4-3："+f43).replace(/4-3\s*:\s*\d+/g,"4-3："+f43);
-      if(msg.indexOf("V61.4 4-3修正")<0) msg += "｜V61.4 4-3修正";
+      if(msg.indexOf("V61.5 4-3修正")<0) msg += "｜V61.5 4-3修正";
       box.innerHTML=msg;
     }
-    console.log("V61.4 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
+    console.log("V61.5 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
   }
   window.v614Fix43=fix43;
   document.addEventListener("DOMContentLoaded",function(){
