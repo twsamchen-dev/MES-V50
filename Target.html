@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.7 MES 幹部目標</title>
+<title>V60.8 MES 幹部目標</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js?v=605"></script>
 
@@ -12,13 +12,72 @@ header .nav {
   display: none !important;
 }
 
-/* V60.7：版面加寬，不再縮在中間 */
 .target-wrap {
   width: 100%;
   max-width: 1760px;
   margin: 22px auto;
   padding: 0 28px 48px;
 }
+
+.hero-target {
+  background: linear-gradient(135deg, #0f2147, #2563eb);
+  color: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+
+.hero-target h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.hero-target .sub {
+  opacity: .9;
+  font-size: 14px;
+}
+
+.info-box {
+  background: #ecfdf5;
+  border-left: 5px solid #16a34a;
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  color: #0f172a;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.kpi-card {
+  border-radius: 16px;
+  padding: 16px 18px;
+  color: #fff;
+  min-height: 84px;
+}
+
+.kpi-card .label {
+  font-size: 13px;
+  opacity: .9;
+  margin-bottom: 8px;
+}
+
+.kpi-card .num {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.kpi-blue { background: #1e40af; }
+.kpi-green { background: #15803d; }
+.kpi-orange { background: #c2750a; }
+.kpi-red { background: #b91c1c; }
+.kpi-indigo { background: #1e3a8a; }
+.kpi-brown { background: #b36b0a; }
 
 .target-grid {
   display: grid;
@@ -86,6 +145,7 @@ header .nav {
   margin-bottom: 10px;
   background: #fff;
   cursor: pointer;
+  color: #0f172a;
 }
 
 .quick-item:hover {
@@ -96,6 +156,7 @@ header .nav {
   display: block;
   font-size: 16px;
   margin-bottom: 4px;
+  color: #0f172a;
 }
 
 .mini {
@@ -122,6 +183,12 @@ header .nav {
   line-height: 1.6;
 }
 
+@media(max-width: 1400px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media(max-width: 1200px) {
   .target-grid {
     grid-template-columns: 1fr;
@@ -140,13 +207,17 @@ header .nav {
   .target-form-grid {
     grid-template-columns: 1fr;
   }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 </head>
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.7 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.8 MES Enterprise</h1>
   <p>加工課戰情中心 · 幹部目標 · GitHub + Apps Script 正式版</p>
 
   <div class="nav" style="display:none!important;">
@@ -158,15 +229,57 @@ header .nav {
 
 <div class="target-wrap">
 
+  <div class="hero-target">
+    <h2>🎯 今日幹部目標設定中心</h2>
+    <div class="sub">此頁只做「幹部目標管理」，人員 Key In 請使用 index.html；生產戰情室請使用 Dashboard.html。</div>
+    <div class="row" style="margin-top:14px;">
+      <button class="btn" onclick="refreshAllTargetData()">重新讀取資料</button>
+      <button class="btn ghost" onclick="clearTargetForm()">清空表單</button>
+      <span id="heroStatus" class="pill">尚未讀取</span>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <h2 style="margin-top:0;">資料來源說明</h2>
+    <div class="mini">幹部目標資料來源：Apps Script → Target_Plan。右側「可快速帶入工單」已改用幹部目標清單資料，不再依賴 source_data。</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-blue">
+      <div class="label">今日目標筆數</div>
+      <div class="num" id="kpiCount">0</div>
+    </div>
+    <div class="kpi-card kpi-green">
+      <div class="label">今日目標 R</div>
+      <div class="num" id="kpiTargetR">0</div>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <div class="label">今日目標 ㎡</div>
+      <div class="num" id="kpiTargetM2">0</div>
+    </div>
+    <div class="kpi-card kpi-red">
+      <div class="label">未完成目標</div>
+      <div class="num" id="kpiUnfinished">0</div>
+    </div>
+    <div class="kpi-card kpi-indigo">
+      <div class="label">5-3 實際產出</div>
+      <div class="num" id="kpiActual">0</div>
+    </div>
+    <div class="kpi-card kpi-brown">
+      <div class="label">5-3 開機筆數</div>
+      <div class="num" id="kpiMachineRows">0</div>
+    </div>
+  </div>
+
   <div class="grid target-grid">
 
     <div class="card">
-      <h2>幹部目標 Key In</h2>
+      <h2>新增 / 修改幹部目標</h2>
 
       <div class="target-form-grid">
 
         <div>
-          <label>日期</label>
+          <label>目標日期</label>
           <input id="report_date" type="date">
         </div>
 
@@ -196,12 +309,17 @@ header .nav {
         </div>
 
         <div>
-          <label>工單</label>
-          <input id="work_order_no" placeholder="例如 MM2606120041">
+          <label>工單號 / 訂單號</label>
+          <input id="work_order_no" placeholder="例如 MM2605060026">
         </div>
 
         <div>
-          <label>訂單號</label>
+          <label>機台</label>
+          <input id="machine_code" placeholder="例如 1S03 / 1B02">
+        </div>
+
+        <div>
+          <label>訂單單號</label>
           <input id="order_no" placeholder="可空白">
         </div>
 
@@ -239,11 +357,6 @@ header .nav {
             <option value="急件">急件</option>
             <option value="特急">特急</option>
           </select>
-        </div>
-
-        <div>
-          <label>機台</label>
-          <input id="machine_code" placeholder="例如 1S03 / 1B02">
         </div>
 
         <div>
@@ -301,7 +414,7 @@ header .nav {
 
     <div class="card">
       <h2>可快速帶入工單</h2>
-      <p class="mini">V60.7：此區改讀幹部目標清單資料，不再依賴 source_data。</p>
+      <p class="mini">V60.8：此區直接讀取幹部目標清單資料，可點選帶入左側表單。</p>
       <div class="tools">
         <input id="quickSearch" placeholder="搜尋工單 / 料號 / 規格 / 客戶 / 製程" oninput="renderQuickList()">
       </div>
@@ -362,7 +475,6 @@ header .nav {
 
 <script>
 const TargetApp = {
-  source: [],
   plans: [],
   renderedPlans: [],
   quickRows: []
@@ -385,28 +497,20 @@ async function loadInitial() {
 
 async function refreshAllTargetData() {
   setDebug('重新讀取資料中...');
+  setHeroStatus('讀取中...');
 
   try {
     await loadTargetPlans();
 
-    setStatus(
-      '已重新讀取資料。幹部目標去重後 ' +
-      TargetApp.plans.length +
-      ' 筆。'
-    );
-
+    setStatus('已重新讀取資料。幹部目標去重後 ' + TargetApp.plans.length + ' 筆。');
+    setHeroStatus('已讀取 ' + TargetApp.plans.length + ' 筆');
     toast2('已重新讀取資料');
 
   } catch (e) {
     setStatus('重新讀取失敗：' + e.message);
+    setHeroStatus('讀取失敗');
     alert('重新讀取失敗：' + e.message);
   }
-}
-
-/* V60.7：保留函式，但不再使用 source_data */
-async function loadSourceData() {
-  TargetApp.source = [];
-  renderQuickList();
 }
 
 async function loadTargetPlans() {
@@ -447,10 +551,10 @@ async function loadTargetPlans() {
 
     rows.forEach(p => {
       const key = [
-        normalizeDateText(getPlanDateRaw(p)),
-        p.work_order_no || p.order_no || '',
-        p.machine_code || p.machine || '',
-        p.process_site || p.site || p.process || '',
+        getPlanDate(p),
+        getWO(p),
+        getMachine(p),
+        getProcess(p),
         p.created_at || ''
       ].join('|');
 
@@ -465,11 +569,12 @@ async function loadTargetPlans() {
       'API 已讀取原始 ' + rows.length +
       ' 筆，去重後 ' + TargetApp.plans.length +
       ' 筆。查詢日期：' + ymd +
-      '<br>V60.7：右側快速帶入工單已改讀幹部目標清單資料。'
+      '<br>V60.8：快速帶入工單與上方 KPI 卡片已改讀 Target_Plan。'
     );
 
     renderTargetTable();
     renderQuickList();
+    renderKpi();
 
   } catch (e) {
     document.getElementById('targetRows').innerHTML =
@@ -488,39 +593,60 @@ function extractRows(r) {
   return [];
 }
 
+function renderKpi() {
+  const dateText = normalizeDateText(getVal2('listDate'));
+
+  const todayRows = TargetApp.plans.filter(p => {
+    const pd = getPlanDate(p);
+    return !dateText || pd === dateText;
+  });
+
+  const count = todayRows.length;
+  const targetR = sumNum(todayRows.map(getTargetR));
+  const targetM2 = sumNum(todayRows.map(getTargetM2));
+  const unfinished = todayRows.filter(p => {
+    const s = getStatus(p);
+    return s !== '已完成';
+  }).length;
+
+  setText('kpiCount', count);
+  setText('kpiTargetR', formatNum(targetR));
+  setText('kpiTargetM2', formatNum(targetM2));
+  setText('kpiUnfinished', unfinished);
+  setText('kpiActual', 0);
+  setText('kpiMachineRows', 0);
+}
+
 function renderTargetTable() {
   const dateText = normalizeDateText(getVal2('listDate'));
   const keyword = norm2(getVal2('listSearch'));
   const status = getVal2('listStatus');
 
   let rows = TargetApp.plans.filter(p => {
-    const pd = normalizeDateText(getPlanDateRaw(p));
+    const pd = getPlanDate(p);
 
     if (dateText && pd !== dateText) return false;
 
-    if (status && String(p.status || '') !== status) return false;
+    if (status && getStatus(p) !== status) return false;
 
     if (keyword) {
       const pool = [
-        p.report_date,
-        p.shift,
-        p.leader_role,
-        p.leader_name,
-        p.work_order_no,
-        p.order_no,
-        p.part_no,
-        p.batch_no,
-        p.customer,
-        p.product_spec,
-        p.process_site,
-        p.machine_code,
-        p.target_r,
-        p.target_roll,
-        p.target_m2,
-        p.target_m,
-        p.status,
-        p.note,
-        p.remark
+        getPlanDate(p),
+        getShift(p),
+        getLeaderRole(p),
+        getLeaderName(p),
+        getWO(p),
+        getOrderNo(p),
+        getPartNo(p),
+        getBatchNo(p),
+        getCustomer(p),
+        getProductSpec(p),
+        getProcess(p),
+        getMachine(p),
+        getTargetR(p),
+        getTargetM2(p),
+        getStatus(p),
+        getNote(p)
       ].join(' ');
 
       if (!norm2(pool).includes(keyword)) return false;
@@ -529,11 +655,7 @@ function renderTargetTable() {
     return true;
   });
 
-  rows.sort((a, b) => {
-    const da = normalizeDateText(getPlanDateRaw(a));
-    const db = normalizeDateText(getPlanDateRaw(b));
-    return db.localeCompare(da);
-  });
+  rows.sort((a, b) => getPlanDate(b).localeCompare(getPlanDate(a)));
 
   TargetApp.renderedPlans = rows;
 
@@ -550,23 +672,22 @@ function renderTargetTable() {
   body.innerHTML = rows.map((p, idx) => `
     <tr>
       <td><button class="btn ghost" onclick="loadPlanToFormFromRendered(${idx})">帶入</button></td>
-      <td>${esc2(normalizeDateText(getPlanDateRaw(p)))}</td>
-      <td>${esc2(p.shift || '')}</td>
-      <td>${esc2((p.leader_role || '') + ' ' + (p.leader_name || ''))}</td>
-      <td><b>${esc2(p.work_order_no || p.order_no || '')}</b></td>
-      <td>${esc2(p.machine_code || p.machine || '')}</td>
-      <td>${esc2(p.process_site || p.site || p.process || '')}</td>
-      <td>${esc2(p.customer || '')}</td>
-      <td>${esc2(p.product_spec || '')}</td>
-      <td>${esc2(p.target_r || p.target_roll || p.target_qty || '')}</td>
-      <td>${esc2(p.target_m2 || p.target_m || '')}</td>
-      <td>${esc2(p.status || '')}</td>
-      <td>${esc2(p.note || p.remark || '')}</td>
+      <td>${esc2(getPlanDate(p))}</td>
+      <td>${esc2(getShift(p))}</td>
+      <td>${esc2(getLeaderRole(p) + ' ' + getLeaderName(p))}</td>
+      <td><b>${esc2(getWO(p))}</b></td>
+      <td>${esc2(getMachine(p))}</td>
+      <td>${esc2(getProcess(p))}</td>
+      <td>${esc2(getCustomer(p))}</td>
+      <td>${esc2(getProductSpec(p))}</td>
+      <td>${esc2(getTargetR(p))}</td>
+      <td>${esc2(getTargetM2(p))}</td>
+      <td>${esc2(getStatus(p))}</td>
+      <td>${esc2(getNote(p))}</td>
     </tr>
   `).join('');
 }
 
-/* V60.7：右側快速帶入改吃 TargetApp.plans */
 function renderQuickList() {
   const q = norm2(getVal2('quickSearch'));
   const box = document.getElementById('quickList');
@@ -577,16 +698,16 @@ function renderQuickList() {
     if (!q) return true;
 
     const pool = [
-      r.work_order_no,
-      r.order_no,
-      r.part_no,
-      r.batch_no,
-      r.product_spec,
-      r.customer,
-      r.process_site,
-      r.machine_code,
-      r.leader_name,
-      r.status
+      getWO(r),
+      getOrderNo(r),
+      getPartNo(r),
+      getBatchNo(r),
+      getProductSpec(r),
+      getCustomer(r),
+      getProcess(r),
+      getMachine(r),
+      getLeaderName(r),
+      getStatus(r)
     ].join(' ');
 
     return norm2(pool).includes(q);
@@ -601,20 +722,22 @@ function renderQuickList() {
   TargetApp.quickRows = rows;
 
   box.innerHTML = rows.map((r, idx) => {
-    const wo = r.work_order_no || r.order_no || '';
-    const spec = r.product_spec || '';
-    const customer = r.customer || '';
-    const process = r.process_site || r.site || r.process || '';
-    const date = normalizeDateText(getPlanDateRaw(r));
-    const targetR = r.target_r || r.target_roll || r.target_qty || '';
-    const targetM2 = r.target_m2 || r.target_m || '';
-    const status = r.status || '';
+    const wo = getWO(r) || '未填工單';
+    const spec = getProductSpec(r);
+    const customer = getCustomer(r);
+    const process = getProcess(r);
+    const date = getPlanDate(r);
+    const targetR = getTargetR(r);
+    const targetM2 = getTargetM2(r);
+    const status = getStatus(r);
+    const part = getPartNo(r);
 
     return `
       <div class="quick-item" onclick="fillFromQuickPlan(${idx})">
-        <b>${esc2(wo || '未填工單')}</b>
+        <b>${esc2(wo)}</b>
         <div class="mini">${esc2(date)}｜${esc2(process)}｜${esc2(customer)}</div>
-        <div class="mini">${esc2(spec)}</div>
+        <div class="mini">料號：${esc2(part)}</div>
+        <div class="mini">規格：${esc2(spec)}</div>
         <div class="mini">目標R：${esc2(targetR)}　目標㎡：${esc2(targetM2)}　狀態：${esc2(status)}</div>
       </div>
     `;
@@ -624,37 +747,35 @@ function renderQuickList() {
 function fillFromQuickPlan(idx) {
   const p = TargetApp.quickRows && TargetApp.quickRows[idx];
   if (!p) return;
-
   loadPlanToForm(p);
 }
 
 function loadPlanToFormFromRendered(idx) {
   const p = TargetApp.renderedPlans && TargetApp.renderedPlans[idx];
   if (!p) return;
-
   loadPlanToForm(p);
 }
 
 function loadPlanToForm(p) {
-  setVal2('report_date', normalizeDateText(getPlanDateRaw(p)));
-  setVal2('shift', p.shift || '早班');
-  setVal2('leader_role', p.leader_role || '課長');
-  setVal2('leader_name', p.leader_name || '');
-  setVal2('work_order_no', p.work_order_no || p.order_no || '');
-  setVal2('order_no', p.order_no || '');
-  setVal2('part_no', p.part_no || '');
-  setVal2('batch_no', p.batch_no || '');
-  setVal2('customer', p.customer || '');
-  setVal2('process_site', p.process_site || p.site || p.process || '分條');
-  setVal2('priority', p.priority || '一般');
-  setVal2('machine_code', p.machine_code || p.machine || '');
-  setVal2('product_spec', p.product_spec || '');
-  setVal2('target_r', p.target_r || p.target_roll || p.target_qty || '');
-  setVal2('target_m2', p.target_m2 || p.target_m || '');
-  setVal2('plan_start', toDateTimeLocal(p.plan_start || p.planned_start || p.start_time || ''));
-  setVal2('plan_end', toDateTimeLocal(p.plan_end || p.planned_finish || p.end_time || ''));
-  setVal2('status', p.status || '待排程');
-  setVal2('note', p.note || p.remark || '');
+  setVal2('report_date', getPlanDate(p));
+  setVal2('shift', getShift(p) || '早班');
+  setVal2('leader_role', getLeaderRole(p) || '課長');
+  setVal2('leader_name', getLeaderName(p));
+  setVal2('work_order_no', getWO(p));
+  setVal2('order_no', getOrderNo(p));
+  setVal2('part_no', getPartNo(p));
+  setVal2('batch_no', getBatchNo(p));
+  setVal2('customer', getCustomer(p));
+  setVal2('process_site', getProcess(p) || '分條');
+  setVal2('priority', getPriority(p) || '一般');
+  setVal2('machine_code', getMachine(p));
+  setVal2('product_spec', getProductSpec(p));
+  setVal2('target_r', getTargetR(p));
+  setVal2('target_m2', getTargetM2(p));
+  setVal2('plan_start', toDateTimeLocal(getPlanStart(p)));
+  setVal2('plan_end', toDateTimeLocal(getPlanEnd(p)));
+  setVal2('status', getStatus(p) || '待排程');
+  setVal2('note', getNote(p));
 
   toast2('已帶入幹部目標資料');
 }
@@ -734,7 +855,7 @@ function collectTargetData() {
     plan_end: getVal2('plan_end'),
     status: getVal2('status'),
     note: getVal2('note'),
-    input_source: 'github_target_v60_7'
+    input_source: 'github_target_v60_8'
   };
 }
 
@@ -759,9 +880,85 @@ function clearTargetForm() {
   toast2('已清空，可新增下一筆');
 }
 
-function getPlanDateRaw(p) {
-  return p.report_date || p.date || p.plan_date || p.target_date || p.created_at || '';
+/* ===== 欄位對應：支援 Target_Plan 既有欄位 ===== */
+
+function getPlanDate(p) {
+  return normalizeDateText(p.report_date || p.date || p.plan_date || p.target_date || p.created_at || '');
 }
+
+function getShift(p) {
+  return p.shift || p.班別 || '';
+}
+
+function getLeaderRole(p) {
+  return p.leader_role || p.幹部角色 || p.role || p.角色 || '';
+}
+
+function getLeaderName(p) {
+  return p.leader_name || p.幹部姓名 || p.leader || p.幹部 || '';
+}
+
+function getWO(p) {
+  return p.work_order_no || p.work_order || p.工單 || p.order_no || '';
+}
+
+function getOrderNo(p) {
+  return p.order_no || p.訂單號 || '';
+}
+
+function getPartNo(p) {
+  return p.part_no || p.料號 || '';
+}
+
+function getBatchNo(p) {
+  return p.batch_no || p.生產批號 || '';
+}
+
+function getProductSpec(p) {
+  return p.product_spec || p.產品規格 || p.規格 || '';
+}
+
+function getProcess(p) {
+  return p.process_site || p.site || p.process || p.製程站點 || p.製程 || '';
+}
+
+function getMachine(p) {
+  return p.machine_code || p.machine || p.機台 || '';
+}
+
+function getCustomer(p) {
+  return p.customer || p.客戶 || '';
+}
+
+function getPriority(p) {
+  return p.priority || p.優先 || '';
+}
+
+function getTargetR(p) {
+  return p.target_r || p.target_roll || p.target_qty || p.目標R || '';
+}
+
+function getTargetM2(p) {
+  return p.target_m2 || p.target_m || p['目標㎡'] || p['目標m2'] || '';
+}
+
+function getPlanStart(p) {
+  return p.plan_start || p.planned_start || p.start_time || p.預計開始 || '';
+}
+
+function getPlanEnd(p) {
+  return p.plan_end || p.planned_finish || p.end_time || p.預計完成 || '';
+}
+
+function getStatus(p) {
+  return p.status || p.狀態 || '';
+}
+
+function getNote(p) {
+  return p.note || p.remark || p.備註 || '';
+}
+
+/* ===== 共用 ===== */
 
 function normalizeDateText(v) {
   if (!v) return '';
@@ -804,6 +1001,19 @@ function toDateTimeLocal(v) {
   return '';
 }
 
+function sumNum(values) {
+  return values.reduce((sum, v) => {
+    const n = Number(String(v || '').replace(/,/g, ''));
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+}
+
+function formatNum(n) {
+  if (!n) return 0;
+  if (Number.isInteger(n)) return String(n);
+  return String(Math.round(n * 100) / 100);
+}
+
 function getVal2(id) {
   const el = document.getElementById(id);
   return el ? String(el.value || '').trim() : '';
@@ -812,6 +1022,11 @@ function getVal2(id) {
 function setVal2(id, value) {
   const el = document.getElementById(id);
   if (el) el.value = value == null ? '' : value;
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value == null ? '' : value;
 }
 
 function norm2(v) {
@@ -830,6 +1045,11 @@ function esc2(v) {
 
 function setStatus(msg) {
   const box = document.getElementById('saveStatus');
+  if (box) box.textContent = msg;
+}
+
+function setHeroStatus(msg) {
+  const box = document.getElementById('heroStatus');
   if (box) box.textContent = msg;
 }
 
