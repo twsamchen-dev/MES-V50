@@ -2436,5 +2436,1138 @@ V60.9.3 Dashboard API Patch
   };
 })();
 </script>
+<!-- V60.9.6 Dashboard API Patch｜GitHub Pages JSONP 讀取 Apps Script -->
+<script id="v6096_dashboard_api_patch">
+(function(){
+  "use strict";
+
+  const API_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  const PATCH = {
+    source: [],
+    targets: [],
+    keyin: [],
+    employees: [],
+    sourceLoaded: false,
+    targetLoaded: false,
+    keyinLoaded: false,
+    employeeLoaded: false
+  };
+
+  window.MES_DASH_API_PATCH = {
+    reload: reloadAll,
+    data: PATCH
+  };
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(reloadAll, 800);
+  });
+
+  async function reloadAll(){
+    showStatus("MES API 讀取中...");
+
+    try{
+      const today = ymd();
+
+      const sourceRes = await callApi(["getSourceData", "source", "getsourcedata"]);
+      const targetRes = await callApi(["listTargetPlans", "targets", "listtargetplans"], { date: today });
+      const keyinRes = await callApi(["listKeyin", "list", "listkeyin"], { date: today });
+      const empRes = await callApi(["listEmployees", "employees", "listemployees"]);
+
+      PATCH.source = rowsOf(sourceRes);
+      PATCH.targets = rowsOf(targetRes);
+      PATCH.keyin = rowsOf(keyinRes);
+      PATCH.employees = rowsOf(empRes);
+
+      PATCH.sourceLoaded = true;
+      PATCH.targetLoaded = true;
+      PATCH.keyinLoaded = true;
+      PATCH.employeeLoaded = true;
+
+      saveLocal();
+      bridgeToOldDashboard();
+      updateCards();
+      renderPatchPanel();
+
+      showStatus(
+        "✅ MES API 已讀取完成｜source_data " + PATCH.source.length +
+        " 筆｜Target_Plan " + PATCH.targets.length +
+        " 筆｜keyin " + PATCH.keyin.length +
+        " 筆｜Employee " + PATCH.employees.length + " 筆"
+      );
+    }catch(err){
+      console.error("MES API Patch error:", err);
+      showStatus("❌ MES API 讀取失敗：" + err.message);
+      renderPatchPanel();
+    }
+  }
+
+  async function callApi(actions, params){
+    let lastErr = null;
+
+    for(const action of actions){
+      try{
+        const res = await jsonp(action, params || {});
+        const rows = rowsOf(res);
+
+        if(rows.length > 0 || res && res.ok !== false){
+          return res;
+        }
+      }catch(err){
+        lastErr = err;
+        console.warn("API action failed:", action, err);
+      }
+    }
+
+    throw lastErr || new Error(actions.join("/") + " 讀取失敗");
+  }
+
+  function jsonp(action, params){
+    return new Promise(function(resolve, reject){
+      const cb = "__MES_DASH_CB_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
+      const url = new URL(API_URL);
+
+      url.searchParams.set("action", action);
+      url.searchParams.set("callback", cb);
+      url.searchParams.set("_", Date.now());
+
+      Object.keys(params || {}).forEach(function(k){
+        if(params[k] !== undefined && params[k] !== null && params[k] !== ""){
+          url.searchParams.set(k, params[k]);
+        }
+      });
+
+      const script = document.createElement("script");
+      const timer = setTimeout(function(){
+        cleanup();
+        reject(new Error(action + " 讀取逾時"));
+      }, 60000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+        if(script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cb] = function(data){
+        cleanup();
+
+        if(data && data.ok === false){
+          reject(new Error(data.error || data.message || action + " 回傳失敗"));
+          return;
+        }
+
+        resolve(data);
+      };
+
+      script.onerror = function(){
+        cleanup();
+        reject(new Error(action + " JSONP 連線失敗"));
+      };
+
+      script.src = url.toString();
+      document.body.appendChild(script);
+    });
+  }
+
+  function rowsOf(res){
+    if(!res) return [];
+    if(Array.isArray(res)) return res;
+    if(Array.isArray(res.rows)) return res.rows;
+    if(Array.isArray(res.data)) return res.data;
+    if(res.result && Array.isArray(res.result.rows)) return res.result.rows;
+    if(res.result && Array.isArray(res.result.data)) return res.result.data;
+    return [];
+  }
+
+  function saveLocal(){
+    try{
+      localStorage.setItem("MES_source_data", JSON.stringify(PATCH.source));
+      localStorage.setItem("MES_target_plan", JSON.stringify(PATCH.targets));
+      localStorage.setItem("MES_keyin", JSON.stringify(PATCH.keyin));
+      localStorage.setItem("MES_employee", JSON.stringify(PATCH.employees));
+    }catch(e){
+      console.warn("localStorage save failed", e);
+    }
+  }
+
+  function bridgeToOldDashboard(){
+    if(!window.AppState) return;
+
+    try{
+      AppState.source = PATCH.source.map(normalizeSourceRow);
+      AppState.targets = PATCH.targets.map(normalizeTargetRow);
+      AppState.keyin = PATCH.keyin.map(normalizeKeyinRow);
+      AppState.employees = PATCH.employees;
+
+      if(typeof buildIndex === "function"){
+        buildIndex();
+      }
+
+      if(typeof renderActive === "function"){
+        renderActive();
+      }else if(typeof renderDashboard === "function"){
+        renderDashboard();
+      }
+    }catch(e){
+      console.warn("bridgeToOldDashboard failed", e);
+    }
+  }
+
+  function normalizeSourceRow(r){
+    return {
+      source: val(r, ["source", "來源"], "source_data"),
+      work_order_no: wo12(val(r, ["work_order_no", "work_order", "工單", "工單號", "order_no", "訂單號"])),
+      order_no: val(r, ["order_no", "訂單號", "訂單單號"]),
+      part_no: val(r, ["part_no", "part", "料號", "品號", "料品編號"]),
+      batch_no: val(r, ["batch_no", "batch", "lot", "生產批號", "批號", "製號"]),
+      product_spec: val(r, ["product_spec", "spec", "產品規格", "規格", "品名", "raw_json"]),
+      target_qty: toNum(val(r, ["target_qty", "target", "target_r", "target_m2", "目標數量", "目標R", "目標㎡"])),
+      process: val(r, ["process", "process_site", "site", "製程", "製程站點", "站點"]),
+      customer: val(r, ["customer", "customer_name", "客戶", "客戶名稱"]),
+      machine: val(r, ["machine", "machine_code", "機台", "設備"]),
+      plan_date: dateOnly(val(r, ["plan_date", "report_date", "日期", "工單日期"])),
+      due_date: dateOnly(val(r, ["due_date", "預交日", "交期"])),
+      status: val(r, ["status", "狀態", "工單狀態"]),
+      issue_status: val(r, ["issue_status", "異常", "異常狀態"]),
+      material_status: val(r, ["material_status", "待料", "物料狀態"]),
+      warehouse_status: val(r, ["warehouse_status", "入庫狀態"]),
+      stockin_date: dateOnly(val(r, ["stockin_date", "入庫日期"])),
+      finish_date: dateOnly(val(r, ["finish_date", "完工日", "完成日"])),
+      pick_date: dateOnly(val(r, ["pick_date", "領料日"])),
+      priority: val(r, ["priority", "優先"])
+    };
+  }
+
+  function normalizeTargetRow(r){
+    return {
+      report_date: dateOnly(val(r, ["report_date", "date", "目標日期", "日期"])),
+      shift: val(r, ["shift", "班別"]),
+      leader_role: val(r, ["leader_role", "幹部角色", "角色"]),
+      leader_name: val(r, ["leader_name", "leader", "幹部姓名", "姓名"]),
+      work_order_no: wo12(val(r, ["work_order_no", "order_no", "工單號", "工單", "訂單號"])),
+      order_no: val(r, ["order_no", "訂單號"]),
+      batch_no: val(r, ["batch_no", "batch", "生產批號", "批號"]),
+      customer: val(r, ["customer", "客戶"]),
+      process_site: val(r, ["process_site", "process", "製程站點", "製程"]),
+      machine_code: val(r, ["machine_code", "machine", "機台"]),
+      product_spec: val(r, ["product_spec", "spec", "產品規格", "規格"]),
+      target_roll: toNum(val(r, ["target_roll", "target_r", "目標卷數", "目標R", "target_qty"])),
+      target_m2: toNum(val(r, ["target_m2", "target_m", "目標㎡", "目標面積"])),
+      planned_finish: val(r, ["planned_finish", "預計完成"]),
+      status: val(r, ["status", "狀態"])
+    };
+  }
+
+  function normalizeKeyinRow(r){
+    return {
+      date: dateOnly(val(r, ["report_date", "date", "日期"])),
+      site: val(r, ["site", "process_site", "製程站點", "站點"]),
+      wo: wo12(val(r, ["work_order_no", "order_no", "工單號", "工單", "訂單號"])),
+      batch: val(r, ["batch_no", "batch", "生產批號", "批號"]),
+      part: val(r, ["part_no", "料號", "品號"]),
+      spec: val(r, ["product_spec", "spec", "產品規格", "規格"]),
+      target: toNum(val(r, ["target_qty", "target", "目標"])),
+      empNo: val(r, ["emp_no", "工號"]),
+      empName: val(r, ["emp_name", "姓名"]),
+      machine: val(r, ["machine_code", "machine", "機台"]),
+      actual: toNum(val(r, ["actual_output", "actual", "output", "實際產量", "產量"])),
+      unit: val(r, ["unit", "單位"]),
+      note: val(r, ["process_note", "note", "備註"]),
+      createdAt: val(r, ["created_at", "時間"])
+    };
+  }
+
+  function updateCards(){
+    const sourceCount = PATCH.source.length;
+    const targetCount = PATCH.targets.length;
+    const keyinCount = PATCH.keyin.length;
+    const empCount = PATCH.employees.length;
+
+    const sourceByName = countBy(PATCH.source, function(r){
+      return String(val(r, ["source", "來源"], "source_data")).toUpperCase();
+    });
+
+    setCard("SL31A", sourceByName["SL31A"] || 0);
+    setCard("4-3", sourceByName["4-3"] || sourceByName["43"] || 0);
+    setCard("PD11B", sourceByName["PD11B"] || 0);
+    setCard("5-C", sourceByName["5-C"] || sourceByName["5C"] || 0);
+    setCard("5-3", sourceByName["5-3"] || sourceByName["53"] || 0);
+
+    setCard("總工單", sourceCount);
+    setCard("總工單數", sourceCount);
+    setCard("雲端工單", sourceCount);
+
+    setCard("已設目標", targetCount);
+    setCard("今日目標筆數", targetCount);
+    setCard("今日 KeyIn", keyinCount);
+    setCard("今日 KeyIn 數", keyinCount);
+    setCard("今日 Key In 數", keyinCount);
+    setCard("今日人員", uniqueEmpCount(PATCH.keyin));
+    setCard("今日人員數", uniqueEmpCount(PATCH.keyin) || empCount);
+
+    setCard("總產量", sumOutput(PATCH.keyin));
+    setCard("未完成目標", Math.max(0, targetCount - keyinCount));
+  }
+
+  function setCard(title, value){
+    const all = Array.from(document.querySelectorAll("body *"));
+    const titleNodes = all.filter(function(el){
+      const t = String(el.textContent || "").trim();
+      if(!t) return false;
+      return t === title || t.indexOf(title) >= 0;
+    });
+
+    for(const node of titleNodes){
+      const card = findCard(node);
+      if(!card) continue;
+
+      const nums = Array.from(card.querySelectorAll("*")).filter(function(el){
+        const t = String(el.textContent || "").trim();
+        return t === "0" || /^-?\d+(\.\d+)?%?$/.test(t);
+      });
+
+      if(nums.length){
+        nums[0].textContent = value;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function findCard(node){
+    let cur = node;
+
+    for(let i = 0; i < 8 && cur; i++){
+      const cls = String(cur.className || "").toLowerCase();
+
+      if(
+        cls.indexOf("card") >= 0 ||
+        cls.indexOf("kpi") >= 0 ||
+        cls.indexOf("stat") >= 0 ||
+        cls.indexOf("metric") >= 0 ||
+        cls.indexOf("source") >= 0 ||
+        cls.indexOf("hub") >= 0
+      ){
+        return cur;
+      }
+
+      cur = cur.parentElement;
+    }
+
+    return node.parentElement;
+  }
+
+  function renderPatchPanel(){
+    let panel = document.getElementById("mesApiPatchPanel");
+
+    if(!panel){
+      panel = document.createElement("section");
+      panel.id = "mesApiPatchPanel";
+      panel.style.cssText = [
+        "margin:18px",
+        "padding:16px",
+        "border-radius:16px",
+        "border:1px solid #1e40af",
+        "background:#0b2347",
+        "color:#eaf2ff",
+        "box-shadow:0 8px 22px rgba(0,0,0,.18)"
+      ].join(";");
+
+      const root =
+        document.querySelector("main") ||
+        document.querySelector(".wrap") ||
+        document.querySelector("#dashboardGrid") ||
+        document.body;
+
+      root.appendChild(panel);
+    }
+
+    panel.innerHTML = `
+      <h2 style="margin:0 0 10px;color:#fff">V60.9.6 API 讀取確認</h2>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+        ${mini("source_data", PATCH.source.length)}
+        ${mini("Target_Plan", PATCH.targets.length)}
+        ${mini("keyin", PATCH.keyin.length)}
+        ${mini("Employee", PATCH.employees.length)}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button onclick="MES_DASH_API_PATCH.reload()" style="${btnCss()}">重新讀取 API</button>
+      </div>
+      ${tableHtml("source_data 前 50 筆", PATCH.source.slice(0,50), ["source","work_order_no","order_no","part_no","batch_no","process","customer","machine","product_spec"])}
+      ${tableHtml("Target_Plan 前 50 筆", PATCH.targets.slice(0,50), ["report_date","shift","leader_name","work_order_no","process_site","machine_code","customer","target_roll","target_m2","status"])}
+      ${tableHtml("keyin 前 50 筆", PATCH.keyin.slice(-50).reverse(), ["created_at","report_date","site","work_order_no","batch_no","machine_code","emp_no","emp_name","actual_output","unit"])}
+    `;
+  }
+
+  function mini(name, count){
+    return `
+      <div style="background:#102b55;border:1px solid #244b75;border-radius:12px;padding:12px">
+        <div style="font-size:13px;color:#bfdbfe">${esc(name)}</div>
+        <div style="font-size:30px;font-weight:900;color:#fff">${count}</div>
+      </div>
+    `;
+  }
+
+  function tableHtml(title, rows, keys){
+    return `
+      <h3 style="margin:14px 0 8px;color:#dbeafe">${esc(title)}</h3>
+      <div style="overflow:auto;border:1px solid #244b75;border-radius:12px">
+        <table style="width:100%;min-width:980px;border-collapse:collapse;background:#071a36">
+          <thead>
+            <tr>
+              ${keys.map(k => `<th style="${thCss()}">${esc(k)}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+              ? rows.map(r => `
+                <tr>
+                  ${keys.map(k => `<td style="${tdCss()}">${esc(val(r,[k]))}</td>`).join("")}
+                </tr>
+              `).join("")
+              : `<tr><td colspan="${keys.length}" style="${tdCss()}">無資料</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function showStatus(msg){
+    let box = document.getElementById("mesApiPatchStatus");
+
+    if(!box){
+      box = document.createElement("div");
+      box.id = "mesApiPatchStatus";
+      box.style.cssText = [
+        "position:fixed",
+        "right:18px",
+        "bottom:18px",
+        "z-index:999999",
+        "max-width:720px",
+        "background:#0f172a",
+        "color:#e5e7eb",
+        "border:1px solid #334155",
+        "border-radius:12px",
+        "padding:10px 14px",
+        "font-size:13px",
+        "line-height:1.5",
+        "box-shadow:0 8px 22px rgba(0,0,0,.25)"
+      ].join(";");
+
+      document.body.appendChild(box);
+    }
+
+    box.textContent = msg;
+  }
+
+  function countBy(rows, fn){
+    const out = {};
+
+    rows.forEach(function(r){
+      const k = fn(r) || "";
+      if(!k) return;
+      out[k] = (out[k] || 0) + 1;
+    });
+
+    return out;
+  }
+
+  function uniqueEmpCount(rows){
+    const s = new Set();
+
+    rows.forEach(function(r){
+      const no = val(r, ["emp_no", "工號"]);
+      const name = val(r, ["emp_name", "姓名"]);
+
+      if(no || name) s.add(no + "|" + name);
+    });
+
+    return s.size;
+  }
+
+  function sumOutput(rows){
+    let sum = 0;
+
+    rows.forEach(function(r){
+      sum += toNum(val(r, ["actual_output", "actual", "output", "實際產量", "產量"]));
+    });
+
+    if(!sum) return 0;
+    return Math.round(sum * 100) / 100;
+  }
+
+  function val(obj, keys, fallback){
+    for(const k of keys){
+      if(obj && obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== ""){
+        return obj[k];
+      }
+    }
+
+    return fallback || "";
+  }
+
+  function toNum(v){
+    const n = Number(String(v == null ? "" : v).replace(/,/g, "").trim());
+    return isNaN(n) ? 0 : n;
+  }
+
+  function wo12(v){
+    return String(v == null ? "" : v).trim().replace(/\s+/g, "").toUpperCase().slice(0,12);
+  }
+
+  function dateOnly(v){
+    const s = String(v == null ? "" : v).trim();
+    if(!s) return "";
+
+    let m = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if(m){
+      return m[1] + "-" + m[2].padStart(2,"0") + "-" + m[3].padStart(2,"0");
+    }
+
+    return s.slice(0,10);
+  }
+
+  function ymd(){
+    const d = new Date();
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function(c){
+      return {
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
+      }[c];
+    });
+  }
+
+  function btnCss(){
+    return [
+      "border:0",
+      "border-radius:10px",
+      "padding:10px 14px",
+      "font-weight:900",
+      "cursor:pointer",
+      "background:#2563eb",
+      "color:white"
+    ].join(";");
+  }
+
+  function thCss(){
+    return [
+      "background:#102b55",
+      "color:#dbeafe",
+      "border-bottom:1px solid #244b75",
+      "padding:9px",
+      "text-align:left",
+      "white-space:nowrap",
+      "font-size:12px"
+    ].join(";");
+  }
+
+  function tdCss(){
+    return [
+      "color:#eaf2ff",
+      "border-bottom:1px solid #244b75",
+      "padding:9px",
+      "text-align:left",
+      "white-space:nowrap",
+      "font-size:12px"
+    ].join(";");
+  }
+})();
+</script>
+</script>
+<!-- V60.9.7 Dashboard API Patch｜GitHub Pages JSONP 讀取 Apps Script -->
+<script id="v6097_dashboard_api_patch">
+(function(){
+  const MES_API_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  const STATE = {
+    source: [],
+    targets: [],
+    keyin: [],
+    employees: [],
+    loading: false
+  };
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(initV6097DashboardApiPatch, 800);
+  });
+
+  async function initV6097DashboardApiPatch(){
+    createStatusBox();
+    status("V60.9.7 API Patch 啟動中...");
+    await reloadV6097();
+  }
+
+  async function reloadV6097(){
+    if (STATE.loading) return;
+    STATE.loading = true;
+
+    try {
+      status("API 讀取中...");
+
+      const today = todayYmd();
+
+      const sourceRes = await jsonpFallback([
+        { action: "source" },
+        { action: "getSourceData" },
+        { action: "getsourcedata" }
+      ]);
+
+      const targetRes = await jsonpFallback([
+        { action: "targets", date: today },
+        { action: "listTargetPlans", date: today },
+        { action: "listtargetplans", date: today }
+      ]);
+
+      const keyinRes = await jsonpFallback([
+        { action: "list", date: today },
+        { action: "listKeyin", date: today },
+        { action: "listkeyin", date: today }
+      ]);
+
+      const empRes = await jsonpFallback([
+        { action: "employees" },
+        { action: "listEmployees" },
+        { action: "listemployees" }
+      ]);
+
+      STATE.source = rowsOf(sourceRes);
+      STATE.targets = rowsOf(targetRes);
+      STATE.keyin = rowsOf(keyinRes);
+      STATE.employees = rowsOf(empRes);
+
+      syncToOriginalAppState();
+      updateOriginalCards();
+      renderApiResultPanel();
+
+      status(
+        "API 已讀取完成｜source_data：" + STATE.source.length +
+        " 筆｜Target_Plan：" + STATE.targets.length +
+        " 筆｜keyin：" + STATE.keyin.length +
+        " 筆｜Employee：" + STATE.employees.length + " 筆"
+      );
+
+    } catch (err) {
+      console.error(err);
+      status("API 讀取失敗：" + (err && err.message ? err.message : err));
+    } finally {
+      STATE.loading = false;
+    }
+  }
+
+  function jsonpFallback(list){
+    let i = 0;
+
+    function next(lastErr){
+      if (i >= list.length) {
+        throw lastErr || new Error("全部 action 讀取失敗");
+      }
+
+      const item = list[i++];
+      return jsonp(item.action, item).then(function(res){
+        const rows = rowsOf(res);
+        if (rows.length || res && res.ok !== false) return res;
+        return res;
+      }).catch(function(err){
+        console.warn("API action 失敗，改試下一個：", item.action, err);
+        return next(err);
+      });
+    }
+
+    return next();
+  }
+
+  function jsonp(action, params){
+    return new Promise(function(resolve, reject){
+      const cb = "__mes_v6097_cb_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
+      const url = new URL(MES_API_URL);
+
+      url.searchParams.set("action", action);
+      url.searchParams.set("callback", cb);
+      url.searchParams.set("_", Date.now());
+
+      Object.keys(params || {}).forEach(function(k){
+        if (k === "action") return;
+        if (params[k] !== undefined && params[k] !== null && params[k] !== "") {
+          url.searchParams.set(k, params[k]);
+        }
+      });
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+
+      const timer = setTimeout(function(){
+        cleanup();
+        reject(new Error(action + " 讀取逾時"));
+      }, 60000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cb] = function(data){
+        cleanup();
+        resolve(data);
+      };
+
+      script.onerror = function(){
+        cleanup();
+        reject(new Error(action + " JSONP 連線失敗"));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  function rowsOf(res){
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.rows)) return res.rows;
+    if (Array.isArray(res.data)) return res.data;
+    if (res.result && Array.isArray(res.result.rows)) return res.result.rows;
+    if (res.result && Array.isArray(res.result.data)) return res.result.data;
+    return [];
+  }
+
+  function syncToOriginalAppState(){
+    if (!window.AppState) return;
+
+    AppState.source = STATE.source.map(function(r){
+      return normalizeSourceRow(r);
+    });
+
+    AppState.targets = STATE.targets.map(function(r){
+      return normalizeTargetRow(r);
+    });
+
+    AppState.keyin = STATE.keyin.map(function(r){
+      return normalizeKeyinRow(r);
+    });
+
+    if (!window.EMP) window.EMP = {};
+    if (!window.EMP_ROWS) window.EMP_ROWS = [];
+
+    window.EMP = {};
+    window.EMP_ROWS = STATE.employees;
+
+    STATE.employees.forEach(function(r){
+      const no = String(r.emp_no || r.工號 || r.employee_no || "").trim();
+      const name = String(r.emp_name || r.姓名 || r.employee_name || "").trim();
+      if (no) window.EMP[no] = name;
+    });
+
+    try {
+      if (typeof buildIndex === "function") buildIndex();
+      if (typeof calcActual === "function") calcActual();
+      if (typeof renderActive === "function") renderActive();
+      if (typeof v541RenderDataHub === "function") v541RenderDataHub();
+    } catch(e) {
+      console.warn("同步原本 Dashboard 畫面時發生錯誤：", e);
+    }
+  }
+
+  function normalizeSourceRow(r){
+    return {
+      source: pick(r, ["source","來源"]) || "source_data",
+      work_order_no: wo12Local(pick(r, ["work_order_no","work_order","工單","工單號","命令單","命令單號","order_no","訂單號"])),
+      order_no: pick(r, ["order_no","訂單號","訂單單號"]),
+      part_no: pick(r, ["part_no","料號","品號","料品編號"]),
+      batch_no: pick(r, ["batch_no","生產批號","批號","lot","Lot","LOT"]),
+      product_spec: pick(r, ["product_spec","產品規格","規格","品名","品名規格"]),
+      target_qty: toNum(pick(r, ["target_qty","目標數量","預計產量","訂單數量","數量","目標R","target_r","target_roll"])),
+      process: pick(r, ["process_site","process","製程站點","製程","站點"]),
+      customer: pick(r, ["customer","customer_name","客戶","客戶名稱","客戶別"]),
+      machine: pick(r, ["machine_code","machine","機台","機台代碼"]),
+      plan_date: dateOnly(pick(r, ["plan_date","report_date","日期","工單日期","開立日"])),
+      due_date: dateOnly(pick(r, ["due_date","預交日","交期","預計完成日","預計入庫日"])),
+      status: pick(r, ["status","狀態","工單狀態","生產狀態"]),
+      issue_status: pick(r, ["issue_status","異常","異常狀態","問題"]),
+      material_status: pick(r, ["material_status","待料","領料狀態","物料狀態"]),
+      warehouse_status: pick(r, ["warehouse_status","入庫狀態","倉庫狀態"]),
+      stockin_date: dateOnly(pick(r, ["stockin_date","實際入庫日","入庫日期"])),
+      finish_date: dateOnly(pick(r, ["finish_date","完工日","完成日"])),
+      pick_date: dateOnly(pick(r, ["pick_date","領料日","領料日期"])),
+      priority: pick(r, ["priority","優先","急件"]),
+      raw_json: pick(r, ["raw_json"]) || ""
+    };
+  }
+
+  function normalizeTargetRow(r){
+    return {
+      report_date: dateOnly(pick(r, ["report_date","目標日期","日期"])),
+      shift: pick(r, ["shift","班別"]),
+      leader_role: pick(r, ["leader_role","幹部角色","角色"]),
+      leader_name: pick(r, ["leader_name","幹部姓名","姓名"]),
+      work_order_no: wo12Local(pick(r, ["work_order_no","order_no","工單號","工單","訂單號"])),
+      order_no: pick(r, ["order_no","訂單號","訂單單號"]),
+      process_site: pick(r, ["process_site","製程站點","process","製程"]),
+      machine_code: pick(r, ["machine_code","machine","機台"]),
+      customer: pick(r, ["customer","客戶","客戶別"]),
+      product_spec: pick(r, ["product_spec","產品規格","規格","品名"]),
+      target_roll: toNum(pick(r, ["target_roll","target_r","目標R","目標卷數R","目標卷數"])),
+      target_m2: toNum(pick(r, ["target_m2","target_m","目標㎡","目標m2"])),
+      planned_finish: pick(r, ["planned_finish","預計完成","預計完成時間"]),
+      status: pick(r, ["status","狀態"])
+    };
+  }
+
+  function normalizeKeyinRow(r){
+    return {
+      date: dateOnly(pick(r, ["report_date","日期"])),
+      site: pick(r, ["site","process_site","製程站點","站點"]),
+      wo: wo12Local(pick(r, ["work_order_no","order_no","工單號","工單","訂單號"])),
+      batch: pick(r, ["batch_no","生產批號","批號"]),
+      part: pick(r, ["part_no","料號","品號"]),
+      spec: pick(r, ["product_spec","產品規格","規格"]),
+      target: toNum(pick(r, ["target_qty","目標數量","target_roll","target_m2"])),
+      empNo: pick(r, ["emp_no","工號"]),
+      empName: pick(r, ["emp_name","姓名"]),
+      machine: pick(r, ["machine_code","machine","機台"]),
+      actual: toNum(pick(r, ["actual_output","actual","實際產量","產量","output"])),
+      unit: pick(r, ["unit","單位"]),
+      note: pick(r, ["process_note","note","備註"]),
+      createdAt: pick(r, ["created_at","建立時間","時間"])
+    };
+  }
+
+  function updateOriginalCards(){
+    const sourceByName = {};
+
+    STATE.source.forEach(function(r){
+      const s = String(pick(r, ["source","來源"]) || "source_data").trim();
+      sourceByName[s] = (sourceByName[s] || 0) + 1;
+    });
+
+    setCardNumber("SL31A", sourceByName["SL31A"] || 0);
+    setCardNumber("4-3", sourceByName["4-3"] || sourceByName["43"] || 0);
+    setCardNumber("PD11B", sourceByName["PD11B"] || 0);
+    setCardNumber("5-C", sourceByName["5-C"] || sourceByName["5C"] || 0);
+    setCardNumber("5-3", sourceByName["5-3"] || sourceByName["53"] || 0);
+
+    setCardNumber("總工單", STATE.source.length);
+    setCardNumber("總工單數", STATE.source.length);
+    setCardNumber("今日 KeyIn 數", STATE.keyin.length);
+    setCardNumber("今日 Key In 數", STATE.keyin.length);
+    setCardNumber("已設目標", STATE.targets.length);
+    setCardNumber("今日目標", STATE.targets.length);
+
+    const empSet = new Set();
+    let output = 0;
+
+    STATE.keyin.forEach(function(r){
+      const emp = pick(r, ["emp_no","工號"]);
+      if (emp) empSet.add(emp);
+      output += toNum(pick(r, ["actual_output","actual","實際產量","產量","output"]));
+    });
+
+    setCardNumber("今日人員數", empSet.size);
+    setCardNumber("總產量", Math.round(output * 100) / 100);
+  }
+
+  function setCardNumber(title, value){
+    const all = Array.from(document.querySelectorAll("body *"));
+
+    for (const node of all) {
+      const text = String(node.textContent || "").trim();
+      if (!text) continue;
+
+      if (text === title || text.includes(title)) {
+        const card = findCard(node);
+        if (!card) continue;
+
+        const nums = Array.from(card.querySelectorAll("*")).filter(function(el){
+          const t = String(el.textContent || "").trim();
+          return t === "0" || /^-?\d+(\.\d+)?%?$/.test(t);
+        });
+
+        if (nums.length) {
+          nums[0].textContent = value;
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  function findCard(el){
+    let cur = el;
+
+    for (let i = 0; i < 8 && cur; i++) {
+      const cls = String(cur.className || "").toLowerCase();
+      if (
+        cls.includes("card") ||
+        cls.includes("kpi") ||
+        cls.includes("hub") ||
+        cls.includes("metric") ||
+        cls.includes("stat") ||
+        cls.includes("source")
+      ) {
+        return cur;
+      }
+      cur = cur.parentElement;
+    }
+
+    return el.parentElement;
+  }
+
+  function renderApiResultPanel(){
+    let panel = document.getElementById("v6097ApiResultPanel");
+
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "v6097ApiResultPanel";
+      panel.style.cssText = [
+        "margin:18px 0",
+        "background:#071a36",
+        "border:1px solid #244b75",
+        "border-radius:16px",
+        "padding:14px",
+        "color:#eaf2ff",
+        "box-shadow:0 6px 18px rgba(0,0,0,.18)"
+      ].join(";");
+
+      const root = document.querySelector("#dashboardGrid") ||
+                   document.querySelector("main") ||
+                   document.querySelector(".wrap") ||
+                   document.body;
+
+      root.appendChild(panel);
+    }
+
+    const sourceRows = STATE.source.slice(0, 80);
+    const targetRows = STATE.targets.slice(0, 80);
+    const keyinRows = STATE.keyin.slice(-80).reverse();
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <h2 style="margin:0;font-size:20px;color:#eaf2ff">V60.9.7 API 讀取結果</h2>
+        <button onclick="window.MES_DASH_API_PATCH.reload()" style="border:0;border-radius:10px;padding:9px 12px;background:#2563eb;color:white;font-weight:900;cursor:pointer">重新讀取 API</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0">
+        ${miniKpi("source_data", STATE.source.length)}
+        ${miniKpi("Target_Plan", STATE.targets.length)}
+        ${miniKpi("keyin", STATE.keyin.length)}
+        ${miniKpi("Employee", STATE.employees.length)}
+      </div>
+
+      <h3 style="color:#dbeafe;margin:14px 0 8px">source_data 工單資料</h3>
+      ${tableHtml(
+        ["來源","日期","工單","料號","批號","製程","客戶","機台","規格"],
+        sourceRows.map(function(r){
+          return [
+            pick(r, ["source","來源"]),
+            dateOnly(pick(r, ["report_date","plan_date","due_date","updated_at","created_at","日期"])),
+            pick(r, ["work_order_no","work_order","工單","工單號","order_no"]),
+            pick(r, ["part_no","料號","品號"]),
+            pick(r, ["batch_no","生產批號","批號"]),
+            pick(r, ["process_site","process","製程站點","製程"]),
+            pick(r, ["customer","客戶","客戶別"]),
+            pick(r, ["machine_code","machine","機台"]),
+            pick(r, ["product_spec","產品規格","規格","品名"])
+          ];
+        })
+      )}
+
+      <h3 style="color:#dbeafe;margin:14px 0 8px">Target_Plan 幹部目標</h3>
+      ${tableHtml(
+        ["日期","幹部","工單","製程","機台","客戶","目標R","目標㎡","狀態"],
+        targetRows.map(function(r){
+          return [
+            pick(r, ["report_date","日期"]),
+            (pick(r, ["leader_role","角色"]) + " " + pick(r, ["leader_name","姓名"])).trim(),
+            pick(r, ["work_order_no","order_no","工單號","工單"]),
+            pick(r, ["process_site","process","製程站點","製程"]),
+            pick(r, ["machine_code","machine","機台"]),
+            pick(r, ["customer","客戶"]),
+            pick(r, ["target_roll","target_r","目標R","目標卷數"]),
+            pick(r, ["target_m2","target_m","目標㎡"]),
+            pick(r, ["status","狀態"])
+          ];
+        })
+      )}
+
+      <h3 style="color:#dbeafe;margin:14px 0 8px">keyin 今日人員回報</h3>
+      ${tableHtml(
+        ["時間","日期","站點","工單","批號","機台","工號","姓名","產量","單位"],
+        keyinRows.map(function(r){
+          return [
+            pick(r, ["created_at","時間"]),
+            pick(r, ["report_date","日期"]),
+            pick(r, ["site","process_site","製程站點"]),
+            pick(r, ["work_order_no","order_no","工單號","工單"]),
+            pick(r, ["batch_no","批號"]),
+            pick(r, ["machine_code","machine","機台"]),
+            pick(r, ["emp_no","工號"]),
+            pick(r, ["emp_name","姓名"]),
+            pick(r, ["actual_output","actual","實際產量","產量"]),
+            pick(r, ["unit","單位"])
+          ];
+        })
+      )}
+    `;
+  }
+
+  function miniKpi(name, value){
+    return `
+      <div style="background:#102b55;border:1px solid #244b75;border-radius:12px;padding:12px">
+        <div style="color:#bfdbfe;font-size:13px;font-weight:900">${esc(name)}</div>
+        <div style="font-size:30px;font-weight:900;color:#fff;margin-top:6px">${esc(value)}</div>
+      </div>
+    `;
+  }
+
+  function tableHtml(heads, rows){
+    return `
+      <div style="overflow:auto;border:1px solid #244b75;border-radius:12px">
+        <table style="width:100%;min-width:980px;border-collapse:collapse;background:#071a36">
+          <thead>
+            <tr>
+              ${heads.map(function(h){
+                return `<th style="${thStyle()}">${esc(h)}</th>`;
+              }).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+              ? rows.map(function(r){
+                return `<tr>${r.map(function(c){
+                  return `<td style="${tdStyle()}">${esc(c)}</td>`;
+                }).join("")}</tr>`;
+              }).join("")
+              : `<tr><td style="${tdStyle()}" colspan="${heads.length}">目前沒有資料</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function thStyle(){
+    return [
+      "background:#102b55",
+      "color:#dbeafe",
+      "border-bottom:1px solid #244b75",
+      "padding:9px",
+      "text-align:left",
+      "white-space:nowrap",
+      "font-size:13px"
+    ].join(";");
+  }
+
+  function tdStyle(){
+    return [
+      "color:#eaf2ff",
+      "border-bottom:1px solid #244b75",
+      "padding:9px",
+      "text-align:left",
+      "white-space:nowrap",
+      "font-size:13px"
+    ].join(";");
+  }
+
+  function createStatusBox(){
+    if (document.getElementById("v6097ApiStatus")) return;
+
+    const box = document.createElement("div");
+    box.id = "v6097ApiStatus";
+    box.style.cssText = [
+      "position:fixed",
+      "right:18px",
+      "bottom:18px",
+      "z-index:999999",
+      "background:#0f172a",
+      "color:#e5e7eb",
+      "border:1px solid #334155",
+      "border-radius:12px",
+      "padding:10px 14px",
+      "font-size:13px",
+      "box-shadow:0 8px 22px rgba(0,0,0,.25)",
+      "max-width:680px",
+      "line-height:1.5"
+    ].join(";");
+
+    box.textContent = "V60.9.7 API Patch 尚未啟動";
+    document.body.appendChild(box);
+  }
+
+  function status(msg){
+    const box = document.getElementById("v6097ApiStatus");
+    if (box) box.innerHTML = esc(msg);
+  }
+
+  function pick(obj, keys){
+    if (!obj) return "";
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== "") {
+        return obj[k];
+      }
+    }
+    return "";
+  }
+
+  function toNum(v){
+    const n = Number(String(v || "").replace(/,/g, "").trim());
+    return isNaN(n) ? 0 : n;
+  }
+
+  function wo12Local(v){
+    return String(v || "").trim().replace(/\s+/g, "").toUpperCase().slice(0, 12);
+  }
+
+  function todayYmd(){
+    const d = new Date();
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  function dateOnly(v){
+    if (!v) return "";
+    const s = String(v).trim();
+
+    let m = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (m) {
+      return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
+    }
+
+    return s.slice(0, 10);
+  }
+
+  function esc(v){
+    return String(v ?? "").replace(/[&<>"']/g, function(s){
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[s];
+    });
+  }
+
+  window.MES_DASH_API_PATCH = {
+    reload: reloadV6097,
+    data: STATE
+  };
+})();
+</script>
 </body>
 </html>
