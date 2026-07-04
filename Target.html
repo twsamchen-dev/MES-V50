@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.5 MES 幹部目標</title>
+<title>V60.6 MES 幹部目標</title>
 <link rel="stylesheet" href="style.css">
-<script src="api.js"></script>
+<script src="api.js?v=605"></script>
 
 <style>
 header .nav {
@@ -133,7 +133,7 @@ header .nav {
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.5 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.6 MES Enterprise</h1>
   <p>加工課戰情中心 · 幹部目標 · GitHub + Apps Script 正式版</p>
 
   <div class="nav" style="display:none!important;">
@@ -511,9 +511,12 @@ function renderTargetTable() {
         p.process_site,
         p.machine_code,
         p.target_r,
+        p.target_roll,
         p.target_m2,
+        p.target_m,
         p.status,
-        p.note
+        p.note,
+        p.remark
       ].join(' ');
 
       if (!norm2(pool).includes(keyword)) return false;
@@ -551,8 +554,8 @@ function renderTargetTable() {
       <td>${esc2(p.process_site || p.site || p.process || '')}</td>
       <td>${esc2(p.customer || '')}</td>
       <td>${esc2(p.product_spec || '')}</td>
-      <td>${esc2(p.target_r || p.target_qty || '')}</td>
-      <td>${esc2(p.target_m2 || '')}</td>
+      <td>${esc2(p.target_r || p.target_roll || p.target_qty || '')}</td>
+      <td>${esc2(p.target_m2 || p.target_m || '')}</td>
       <td>${esc2(p.status || '')}</td>
       <td>${esc2(p.note || p.remark || '')}</td>
     </tr>
@@ -576,10 +579,10 @@ function loadPlanToForm(idx) {
   setVal2('priority', p.priority || '一般');
   setVal2('machine_code', p.machine_code || p.machine || '');
   setVal2('product_spec', p.product_spec || '');
-  setVal2('target_r', p.target_r || p.target_qty || '');
-  setVal2('target_m2', p.target_m2 || '');
-  setVal2('plan_start', toDateTimeLocal(p.plan_start || p.start_time || ''));
-  setVal2('plan_end', toDateTimeLocal(p.plan_end || p.end_time || ''));
+  setVal2('target_r', p.target_r || p.target_roll || p.target_qty || '');
+  setVal2('target_m2', p.target_m2 || p.target_m || '');
+  setVal2('plan_start', toDateTimeLocal(p.plan_start || p.planned_start || p.start_time || ''));
+  setVal2('plan_end', toDateTimeLocal(p.plan_end || p.planned_finish || p.end_time || ''));
   setVal2('status', p.status || '待排程');
   setVal2('note', p.note || p.remark || '');
 
@@ -711,7 +714,7 @@ function collectTargetData() {
     plan_end: getVal2('plan_end'),
     status: getVal2('status'),
     note: getVal2('note'),
-    input_source: 'github_target_v60_5'
+    input_source: 'github_target_v60_6'
   };
 }
 
