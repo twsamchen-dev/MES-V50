@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V61.2 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.2 Clean DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V61.3 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.3 Clean DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1963,20 +1963,45 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   }
 
   function detectSource(r){
-    var s=String(pick(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"])).trim();
-    if(s){
-      var ns=normalizeSourceLabel(s);
+    // V61.3 Fix：4-3 在 Google Sheet 有時會被讀成 source/source_data 或連字號變形，
+    // 這裡改成「多欄位 + 內容特徵」判斷，避免 4-3 筆數永遠顯示 0。
+    var candidates=[
+      pick(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"]),
+      r && r.source, r && r["來源"], r && r.__sheet
+    ];
+
+    for(var i=0;i<candidates.length;i++){
+      var ns=normalizeSourceLabel(candidates[i]);
       if(ns==="4-3"||ns==="SL31A"||ns==="PD11B"||ns==="5-C"||ns==="5-3") return ns;
-      return s;
     }
+
     var all="";
-    try{all=JSON.stringify(r||{}).toUpperCase().replace(/[\u2010\u2011\u2012\u2013\u2014\u2212\uFF0D]/g,"-");}catch(e){all="";}
+    try{
+      all=JSON.stringify(r||{}).toUpperCase()
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212\uFF0D]/g,"-")
+        .replace(/\s+/g,"");
+    }catch(e){all="";}
+
     if(all.indexOf("SL31")>=0)return "SL31A";
     if(all.indexOf("PD11")>=0)return "PD11B";
     if(all.indexOf("4-3")>=0 || all.indexOf("4_3")>=0)return "4-3";
     if(all.indexOf("5-C")>=0 || all.indexOf("5C")>=0)return "5-C";
     if(all.indexOf("5-3")>=0)return "5-3";
-    return "source_data";
+
+    // 4-3 的資料列特徵：有工單/訂單/批號/製程/機台/日期欄位。
+    // 若來源標籤被讀成 source 或空白，仍強制歸類為 4-3。
+    var wo = pick(r,["work_order_no","work_order","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","order_no","訂單號","訂單單號","單號","WO","WorkOrder"]);
+    var proc = pick(r,["process_site","process","製程站點","製程","站點","目前製程","站別","加工製程","排程"]);
+    var mach = pick(r,["machine_code","machine","機台","機台代碼","設備","設備編號"]);
+    var due = pick(r,["due_date","預交日","交期","預計完成日","預計入庫日","預定完成日","預計交貨日","入庫日期"]);
+    var status = pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態"]);
+    var srcText = String(pick(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"])).trim().toLowerCase();
+    if((srcText==="" || srcText==="source" || srcText==="source_data") && wo && (proc || mach || due || status)){
+      return "4-3";
+    }
+
+    var raw=String(candidates[0]||"").trim();
+    return raw || "source_data";
   }
 
   function normalizeSource(rows){
@@ -2115,7 +2140,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V61.2 Clean 正在讀取 Apps Script 資料...");
+    status("V61.3 Clean 正在讀取 Apps Script 資料...");
     try{
       var d=ymd();
       var result=await Promise.allSettled([
@@ -2142,8 +2167,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V61.2 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
-      console.log("V61.2 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+      status("V61.3 Clean 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V61.3 Clean OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
       status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
