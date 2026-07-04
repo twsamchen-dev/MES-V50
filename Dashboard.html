@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V66.0 MES Enterprise DataHub Stable｜Hybrid</title>
+<title>V65.2 MES Enterprise Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V66.0 DataHub Stable UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V66.0 DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V65.2 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V65.2 Stable DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1861,7 +1861,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V65.0 Emergency Stable';
+  window.MES_VERSION='V65.2 Stable';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -1934,8 +1934,451 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){v541ReloadAll(); if((AppState.activeView||'dashboard')==='dashboard')v541RenderDataHub();},1200);});
 })();
 </script>
-<!-- V66.0 Stable DataHub Engine｜單一資料讀取核心：4-3/PD11B/SL31A伺服端整合，避免前端重複 Loader 覆蓋 -->
-<script id="v660_stable_datahub_engine">
+<!-- V61.0 Clean Dashboard Loader｜完整乾淨版：只保留一套 API 讀取邏輯 -->
+<script id="v610_clean_dashboard_loader">
+(function(){
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var loading = false;
+
+  function ymd(){
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function norm(v){return String(v == null ? "" : v).trim().replace(/\s+/g,"").toUpperCase();}
+  function wo12(v){return norm(v).slice(0,12);}
+  function num(v){var n=parseFloat(String(v == null ? "" : v).replace(/,/g,""));return isNaN(n)?0:n;}
+  function esc(v){return String(v == null ? "" : v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+  function dateKey(v){
+    var s=String(v == null ? "" : v).trim();
+    if(!s)return "";
+    s=s.replace(/\//g,"-");
+    var m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    return m ? m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0") : s.slice(0,10);
+  }
+  function pick(r, names){
+    if(!r)return "";
+    for(var i=0;i<names.length;i++){
+      var k=names[i];
+      if(r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== "") return r[k];
+    }
+    return "";
+  }
+  function rowsOf(res){
+    if(!res)return [];
+    if(Array.isArray(res))return res;
+    if(Array.isArray(res.rows))return res.rows;
+    if(Array.isArray(res.data))return res.data;
+    if(res.result && Array.isArray(res.result.rows))return res.result.rows;
+    if(res.result && Array.isArray(res.result.data))return res.result.data;
+    return [];
+  }
+
+  function normalizeSourceLabel(v){
+    var s=String(v==null?"":v).trim().toUpperCase();
+    s=s.replace(/[‐‑‒–—−－]/g,"-").replace(/\s+/g,"");
+    if(/^4[-_]?3$/.test(s) || /(^|[^0-9A-Z])4[-_]?3([^0-9A-Z]|$)/.test(s) || s.indexOf("4-3")>=0 || s.indexOf("4_3")>=0) return "4-3";
+    if(s.indexOf("SL31")>=0) return "SL31A";
+    if(s.indexOf("PD11")>=0) return "PD11B";
+    if(s.indexOf("5-C")>=0 || s.indexOf("5C")>=0) return "5-C";
+    if(s.indexOf("5-3")>=0 || s==="53") return "5-3";
+    return String(v==null?"":v).trim();
+  }
+
+  function jsonp(action, params){
+    return new Promise(function(resolve,reject){
+      var cb="MES_V610_CB_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
+      var url=new URL(API_URL);
+      url.searchParams.set("action", action);
+      url.searchParams.set("callback", cb);
+      url.searchParams.set("_", Date.now());
+      Object.keys(params||{}).forEach(function(k){
+        if(params[k] !== undefined && params[k] !== null && params[k] !== "") url.searchParams.set(k, params[k]);
+      });
+      var s=document.createElement("script");
+      var timer=setTimeout(function(){cleanup();reject(new Error(action+" 讀取逾時"));},45000);
+      function cleanup(){
+        clearTimeout(timer);
+        try{delete window[cb];}catch(e){window[cb]=undefined;}
+        if(s.parentNode)s.parentNode.removeChild(s);
+      }
+      window[cb]=function(data){cleanup();resolve(data);};
+      s.onerror=function(){cleanup();reject(new Error(action+" JSONP 連線失敗"));};
+      s.src=url.toString();
+      document.body.appendChild(s);
+    });
+  }
+
+  async function callLargest(actions, params){
+    var best=null, bestRows=[], errors=[];
+    for(var i=0;i<actions.length;i++){
+      try{
+        var res=await jsonp(actions[i], params || {});
+        if(res && res.ok === false) throw new Error(res.error || res.message || "API error");
+        var rows=rowsOf(res);
+        if(rows.length > bestRows.length){best=res;bestRows=rows;}
+      }catch(e){errors.push(actions[i]+":"+(e.message||e));console.warn("V61.0 API retry",actions[i],e);}
+    }
+    if(best)return best;
+    console.warn("V61.0 API all failed", actions, errors);
+    return {ok:false, rows:[]};
+  }
+
+  function detectSource(r){
+    // V61.3 Fix：4-3 在 Google Sheet 有時會被讀成 source/source_data 或連字號變形，
+    // 這裡改成「多欄位 + 內容特徵」判斷，避免 4-3 筆數永遠顯示 0。
+    var candidates=[
+      pick(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"]),
+      r && r.source, r && r["來源"], r && r.__sheet
+    ];
+
+    for(var i=0;i<candidates.length;i++){
+      var ns=normalizeSourceLabel(candidates[i]);
+      if(ns==="4-3"||ns==="SL31A"||ns==="PD11B"||ns==="5-C"||ns==="5-3") return ns;
+    }
+
+    var all="";
+    try{
+      all=JSON.stringify(r||{}).toUpperCase()
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212\uFF0D]/g,"-")
+        .replace(/\s+/g,"");
+    }catch(e){all="";}
+
+    if(all.indexOf("SL31")>=0)return "SL31A";
+    if(all.indexOf("PD11")>=0)return "PD11B";
+    if(all.indexOf("4-3")>=0 || all.indexOf("4_3")>=0)return "4-3";
+    if(all.indexOf("5-C")>=0 || all.indexOf("5C")>=0)return "5-C";
+    if(all.indexOf("5-3")>=0)return "5-3";
+
+    // 4-3 的資料列特徵：有工單/訂單/批號/製程/機台/日期欄位。
+    // 若來源標籤被讀成 source 或空白，仍強制歸類為 4-3。
+    var wo = pick(r,["work_order_no","work_order","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","order_no","訂單號","訂單單號","單號","WO","WorkOrder"]);
+    var proc = pick(r,["process_site","process","製程站點","製程","站點","目前製程","站別","加工製程","排程"]);
+    var mach = pick(r,["machine_code","machine","機台","機台代碼","設備","設備編號"]);
+    var due = pick(r,["due_date","預交日","交期","預計完成日","預計入庫日","預定完成日","預計交貨日","入庫日期"]);
+    var status = pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態"]);
+    var srcText = String(pick(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"])).trim().toLowerCase();
+    if((srcText==="" || srcText==="source" || srcText==="source_data") && wo && (proc || mach || due || status)){
+      return "4-3";
+    }
+
+    var raw=String(candidates[0]||"").trim();
+    return raw || "source_data";
+  }
+
+  function normalizeSource(rows){
+    return (rows||[]).map(function(r){
+      var src=detectSource(r);
+      var wo=wo12(pick(r,["work_order_no","work_order","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","order_no","訂單號","訂單單號","單號","WO","WorkOrder"]));
+      var order=pick(r,["order_no","訂單號","訂單單號","客戶訂單","銷售單號","單號"]);
+      return {
+        source:src,
+        work_order_no:wo,
+        order_no:order,
+        part_no:pick(r,["part_no","料號","品號","料品編號","產品料號","產品編號","item","產品名稱","品名"]),
+        batch_no:pick(r,["batch_no","生產批號","批號","製號","產出製號","投入製號","Lot","LOT","lot"]),
+        product_spec:pick(r,["product_spec","產品規格","規格","品名規格","長寬","尺寸","品名"]),
+        target_qty:num(pick(r,["target_qty","目標數量","預計產量","工單目標","訂單數量","數量","換算捲數","目標R","目標卷數","target_roll","target_r","target_m2"])),
+        process:pick(r,["process_site","process","製程站點","製程","站點","目前製程","站別","加工製程","排程"]),
+        customer:pick(r,["customer","customer_name","客戶","客戶名稱","客戶別"]),
+        machine:pick(r,["machine_code","machine","機台","機台代碼","設備","設備編號"]),
+        plan_date:dateKey(pick(r,["plan_date","report_date","日期","工單日期","開立日","建立日","開單日","製令日期"])),
+        due_date:dateKey(pick(r,["due_date","預交日","交期","預計完成日","預計入庫日","預定完成日","預計交貨日","入庫日期"])),
+        status:pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態"]),
+        issue_status:pick(r,["issue_status","異常","異常狀態","問題","備註","原因"]),
+        material_status:pick(r,["material_status","待料","領料狀態","備料狀態","物料狀態"]),
+        warehouse_status:pick(r,["warehouse_status","入庫","入庫狀態","倉庫狀態"]),
+        stockin_date:dateKey(pick(r,["stockin_date","實際入庫日","入庫完成日","入庫日期"])),
+        finish_date:dateKey(pick(r,["finish_date","完工日","完成日"])),
+        pick_date:dateKey(pick(r,["pick_date","領料日","領料日期"])),
+        priority:pick(r,["priority","優先","急件"]),
+        raw_json:r.raw_json || ""
+      };
+    });
+  }
+
+  function normalizeKeyin(rows){
+    return (rows||[]).map(function(r){
+      return {
+        date:dateKey(pick(r,["report_date","date","日期"])),
+        site:pick(r,["site","process_site","站點","製程站點"]),
+        wo:wo12(pick(r,["work_order_no","order_no","工單","工單號","訂單號","訂單單號"])),
+        batch:pick(r,["batch_no","生產批號","批號"]),
+        part:pick(r,["part_no","料號","品號"]),
+        spec:pick(r,["product_spec","產品規格","規格"]),
+        target:num(pick(r,["target_qty","目標","目標數量","target_roll","target_m2"])),
+        empNo:pick(r,["emp_no","工號"]),
+        empName:pick(r,["emp_name","姓名"]),
+        machine:pick(r,["machine_code","machine","機台"]),
+        actual:num(pick(r,["actual_output","actual","實際產量","產量","output"])),
+        unit:pick(r,["unit","單位"]),
+        note:pick(r,["process_note","note","備註"]),
+        createdAt:pick(r,["created_at","建立時間","時間"])
+      };
+    }).filter(function(r){return r.wo || r.actual || r.empNo;});
+  }
+
+  function normalizeTargets(rows){
+    return (rows||[]).map(function(r){
+      return {
+        report_date:dateKey(pick(r,["report_date","日期","目標日期"])),
+        shift:pick(r,["shift","班別"]),
+        leader_role:pick(r,["leader_role","幹部角色","角色"]),
+        leader_name:pick(r,["leader_name","幹部姓名","姓名"]),
+        work_order_no:wo12(pick(r,["work_order_no","order_no","工單號","工單","訂單號","訂單單號"])),
+        order_no:pick(r,["order_no","訂單號","訂單單號"]),
+        process_site:pick(r,["process_site","process","製程站點","製程"]),
+        machine_code:pick(r,["machine_code","machine","機台"]),
+        customer:pick(r,["customer","客戶","客戶別"]),
+        product_spec:pick(r,["product_spec","產品規格","規格","品名"]),
+        target_roll:num(pick(r,["target_roll","target_r","目標R","目標卷數","目標卷數R"])),
+        target_m2:num(pick(r,["target_m2","target_m","目標㎡","目標m2"])),
+        planned_finish:pick(r,["planned_finish","預計完成","預計完成時間"]),
+        status:pick(r,["status","狀態"])
+      };
+    }).filter(function(r){return r.work_order_no || r.machine_code || r.leader_name;});
+  }
+
+  function normalizeEmployees(rows){
+    var emp={}, list=[];
+    (rows||[]).forEach(function(r){
+      var no=String(pick(r,["emp_no","工號","employee_no","員工編號"])).trim();
+      var name=String(pick(r,["emp_name","姓名","employee_name","員工姓名"])).trim();
+      if(no){emp[no]=name;list.push({emp_no:no,emp_name:name,raw:r});}
+    });
+    window.EMP=emp;
+    window.EMP_ROWS=list;
+    return list;
+  }
+
+  function ensure(){
+    if(!window.AppState)window.AppState={};
+    AppState.source=AppState.source||[];
+    AppState.keyin=AppState.keyin||[];
+    AppState.targets=AppState.targets||[];
+    AppState.prod5c=AppState.prod5c||[];
+    AppState.prod53=AppState.prod53||[];
+    AppState.idx=AppState.idx||{};
+    AppState.tables=AppState.tables||{};
+    AppState.apiHealth=AppState.apiHealth||{};
+  }
+
+  function countSource(key){
+    key=normalizeSourceLabel(key);
+    var sum=(AppState&&AppState.sourceSummary)||{};
+    if(sum[key] && typeof sum[key].count==='number') return sum[key].count;
+    return (AppState.source||[]).filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
+  }
+
+  function status(msg,bad){
+    hideOldStatus();
+    var box=document.getElementById("v610CleanStatus");
+    if(!box){
+      box=document.createElement("div");
+      box.id="v610CleanStatus";
+      box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:99999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:900px;line-height:1.5";
+      document.body.appendChild(box);
+    }
+    box.style.borderColor=bad?"#dc2626":"#22c55e";
+    box.innerHTML=esc(msg);
+  }
+
+  function hideOldStatus(){
+    ["mesApiPatchStatus","v6097ApiStatus","v6098ApiStatus","v6099Status","v60911Status","v60912Status"].forEach(function(id){
+      var x=document.getElementById(id);if(x)x.style.display="none";
+    });
+    Array.from(document.querySelectorAll("body *")).forEach(function(x){
+      var t=String(x.textContent||"");
+      if(t.indexOf("API 已讀取完成")>=0 && t.indexOf("source_data：0")>=0)x.style.display="none";
+    });
+  }
+
+  function renderAll(){
+    try{if(typeof buildIndex==="function")buildIndex();}catch(e){console.warn("buildIndex failed",e);}
+    try{if(typeof calcActual==="function")calcActual();}catch(e){console.warn("calcActual failed",e);}
+    try{if(typeof renderActive==="function")renderActive();}catch(e){console.warn("renderActive failed",e);}
+    try{if(typeof v541RenderDataHub==="function")v541RenderDataHub();}catch(e){console.warn("v541RenderDataHub failed",e);}
+  }
+
+  async function v610CleanReload(){
+    if(loading)return;
+    loading=true;
+    ensure();
+    status("V65.0 Emergency 正在讀取 Apps Script 資料...");
+    try{
+      var d=ymd();
+      try{ await callLargest(["setupdatahub","setup","initdatahub"],{}); }catch(setupErr){ console.warn("V65.0 setup skipped", setupErr); }
+      var result=await Promise.allSettled([
+        callLargest(["source_dashboard","sourcedashboard","getdashboarddata","dashboarddata","getSourceData","source","getsourcedata"],{}),
+        callLargest(["listTargetPlans","targets","listtargetplans"],{date:d}),
+        callLargest(["listKeyin","list","listkeyin"],{date:d}),
+        callLargest(["listEmployees","employees","listemployees"],{}),
+        callLargest(["listProd5CData","prod5c","listprod5cdata"],{}),
+        callLargest(["listProd53Data","prod53","listprod53data"],{})
+      ]);
+      var sourceRes=result[0].status==="fulfilled"?result[0].value:null;
+      var rawSource=sourceRes?rowsOf(sourceRes):[];
+      if(sourceRes && sourceRes.summary && rawSource.length===0 && ((sourceRes.summary.source_data&&sourceRes.summary.source_data.count)||0)>0){
+        status("V65.0 偵測到舊 source_data，正在轉入 SL31A / 4-3 / PD11B 分頁...");
+        try{
+          await callLargest(["migratesource","migratesourcedata","migrate"],{});
+          sourceRes=await callLargest(["source_dashboard","sourcedashboard","getdashboarddata","dashboarddata"],{});
+          rawSource=sourceRes?rowsOf(sourceRes):[];
+        }catch(migErr){ console.warn("V65.0 migrate skipped", migErr); }
+      }
+      AppState.sourceSummary=(sourceRes&&sourceRes.summary)||AppState.sourceSummary||{};
+      var rawTargets=result[1].status==="fulfilled"?rowsOf(result[1].value):[];
+      var rawKeyin=result[2].status==="fulfilled"?rowsOf(result[2].value):[];
+      var rawEmp=result[3].status==="fulfilled"?rowsOf(result[3].value):[];
+      var raw5c=result[4].status==="fulfilled"?rowsOf(result[4].value):[];
+      var raw53=result[5].status==="fulfilled"?rowsOf(result[5].value):[];
+
+      AppState.source=normalizeSource(rawSource);
+      AppState.targets=normalizeTargets(rawTargets);
+      AppState.keyin=normalizeKeyin(rawKeyin);
+      AppState.prod5c=raw5c;
+      AppState.prod53=raw53;
+      var empRows=normalizeEmployees(rawEmp);
+      AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
+      renderAll();
+
+      status("V65.0 Emergency 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V65.0 Emergency OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+    }catch(e){
+      console.error("V61.0 Clean failed",e);
+      status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
+    }finally{
+      loading=false;
+    }
+  }
+
+  window.v610CleanReload=v610CleanReload;
+  window.v541ReloadAll=v610CleanReload;
+  window.loadSource=function(){v610CleanReload();};
+  window.loadKeyin=function(){v610CleanReload();};
+  window.loadTargets=function(){v610CleanReload();};
+  window.loadEmployees=function(){v610CleanReload();};
+
+  document.addEventListener("DOMContentLoaded",function(){
+    setTimeout(v610CleanReload,1800);
+    setTimeout(v610CleanReload,5200);
+    setTimeout(hideOldStatus,8000);
+  });
+})();
+</script>
+
+
+<!-- V61.1 4-3 Source Label Fix｜修正 4-3 因連字號/空白造成前端統計為 0 -->
+<script id="v611_4_3_source_label_fix">
+(function(){
+  function canonical(v){
+    var s=String(v==null?"":v).trim().toUpperCase();
+    s=s.replace(/[‐‑‒–—−－]/g,"-").replace(/\s+/g,"");
+    if(/^4[-_]?3$/.test(s) || /4[-_]?3/.test(s)) return "4-3";
+    if(/SL31/.test(s)) return "SL31A";
+    if(/PD11/.test(s)) return "PD11B";
+    if(/5[-_]?C/.test(s)) return "5-C";
+    if(/5[-_]?3/.test(s)) return "5-3";
+    return String(v==null?"":v).trim();
+  }
+  function fix(){
+    if(!window.AppState || !Array.isArray(AppState.source)) return;
+    AppState.source.forEach(function(r){ if(r) r.source=canonical(r.source||r.來源||r.__sheet||r.sheet||""); });
+    try{ if(typeof buildIndex==="function") buildIndex(); }catch(e){}
+    try{ if(typeof calcActual==="function") calcActual(); }catch(e){}
+    try{ if(typeof renderActive==="function") renderActive(); }catch(e){}
+    try{ if(typeof v541RenderDataHub==="function") v541RenderDataHub(); }catch(e){}
+    var f43=AppState.source.filter(function(r){return canonical(r&&r.source)==="4-3";}).length;
+    if(f43>0){
+      var box=document.getElementById("v610CleanStatus");
+      if(box){
+        box.innerHTML=String(box.innerHTML).replace(/4-3：0/g,"4-3："+f43).replace(/4-3\s*:\s*0/g,"4-3："+f43);
+      }
+    }
+  }
+  window.v611FixSourceLabels=fix;
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(fix,3000);setTimeout(fix,8000);});
+})();
+</script>
+
+
+
+<!-- V65.0 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
+<script id="v614_4_3_force_source_data_fix">
+(function(){
+  function safeStr(v){return String(v==null?"":v).trim();}
+  function upper(v){return safeStr(v).toUpperCase().replace(/[‐‑‒–—−－]/g,"-").replace(/\s+/g,"");}
+  function pickAny(r,keys){
+    r=r||{};
+    for(var i=0;i<keys.length;i++){
+      var k=keys[i];
+      if(r[k]!==undefined && r[k]!==null && safeStr(r[k])!=="") return r[k];
+    }
+    return "";
+  }
+  function canonical(v){
+    var s=upper(v);
+    if(/^4[-_]?3$/.test(s) || s.indexOf("4-3")>=0 || s.indexOf("4_3")>=0) return "4-3";
+    if(s.indexOf("SL31")>=0) return "SL31A";
+    if(s.indexOf("PD11")>=0) return "PD11B";
+    if(s.indexOf("5-C")>=0 || s.indexOf("5C")>=0) return "5-C";
+    if(s.indexOf("5-3")>=0 || s==="53") return "5-3";
+    return safeStr(v);
+  }
+  function hasWo(r){
+    return !!pickAny(r,["work_order_no","work_order","工單號","工單","工單編號","工令單號","工令號","製令單號","製令","命令單","命令單號","order_no","訂單號","訂單單號","單號","WO","WorkOrder","wo"]);
+  }
+  function looksLikeOtherSource(r){
+    var txt="";
+    try{txt=JSON.stringify(r||{}).toUpperCase().replace(/[‐‑‒–—−－]/g,"-");}catch(e){txt="";}
+    return txt.indexOf("SL31")>=0 || txt.indexOf("PD11")>=0 || txt.indexOf("5-C")>=0 || txt.indexOf("5C")>=0 || txt.indexOf("5-3")>=0;
+  }
+  function classifyRow(r){
+    var srcRaw=pickAny(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"]);
+    var src=canonical(srcRaw);
+    if(src==="4-3" || src==="SL31A" || src==="PD11B" || src==="5-C" || src==="5-3") return src;
+
+    // 目前 Apps Script 回來的 4-3 常只標成 source_data，且沒有保留原始分頁名稱。
+    // 只要不是 SL31A / PD11B / 5-C / 5-3，且此列有工單號，就歸為 4-3。
+    var raw=upper(srcRaw || r.source || "");
+    if((raw==="" || raw==="SOURCE" || raw==="SOURCE_DATA" || raw==="SOURCEDATA") && hasWo(r) && !looksLikeOtherSource(r)) return "4-3";
+    if(hasWo(r) && !looksLikeOtherSource(r)) return "4-3";
+    return src || "source_data";
+  }
+  function fix43(){
+    if(!window.AppState || !Array.isArray(AppState.source)) return;
+    var changed=0;
+    AppState.source.forEach(function(r){
+      if(!r) return;
+      var next=classifyRow(r);
+      if(next && r.source!==next){r.source=next; changed++;}
+    });
+    try{ if(typeof buildIndex==="function") buildIndex(); }catch(e){console.warn("V61.4 buildIndex failed",e);}
+    try{ if(typeof calcActual==="function") calcActual(); }catch(e){}
+    try{ if(typeof renderActive==="function") renderActive(); }catch(e){console.warn("V61.4 renderActive failed",e);}
+    try{ if(typeof v541RenderDataHub==="function") v541RenderDataHub(); }catch(e){console.warn("V61.4 DataHub failed",e);}
+    var f43=AppState.source.filter(function(r){return canonical(r&&r.source)==="4-3";}).length;
+    var box=document.getElementById("v610CleanStatus");
+    if(box){
+      var msg=String(box.innerHTML||"");
+      msg=msg.replace(/4-3：\d+/g,"4-3："+f43).replace(/4-3\s*:\s*\d+/g,"4-3："+f43);
+      if(msg.indexOf("V65.0 緊急穩定")<0) msg += "｜V65.0 緊急穩定";
+      box.innerHTML=msg;
+    }
+    console.log("V65.0 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
+  }
+  window.v614Fix43=fix43;
+  document.addEventListener("DOMContentLoaded",function(){
+    setTimeout(fix43,3500);
+    setTimeout(fix43,6500);
+    setTimeout(fix43,10000);
+  });
+})();
+</script>
+
+
+
+<!-- V65.0 Emergency Stable Loader｜直接讀獨立分頁摘要，不再讀 source_data 大表 -->
+<script id="v650_emergency_loader">
 (function(){
   var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
   var loading=false;
@@ -1943,25 +2386,292 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function norm(v){return s(v).replace(/\s+/g,"").toUpperCase();}
   function wo12(v){return norm(v).slice(0,12);}
   function num(v){var n=parseFloat(s(v).replace(/,/g,""));return isNaN(n)?0:n;}
-  function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  function ymd(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
   function dateKey(v){var x=s(v).replace(/\//g,"-");var m=x.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0"):x.slice(0,10);}
   function esc(v){return s(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
   function pick(r,ks){r=r||{};for(var i=0;i<ks.length;i++){var k=ks[i];if(r[k]!==undefined&&r[k]!==null&&s(r[k])!=="")return r[k];}return "";}
-  function rowsOf(res){if(!res)return[];if(Array.isArray(res))return res;if(Array.isArray(res.rows))return res.rows;if(Array.isArray(res.data))return res.data;if(res.result&&Array.isArray(res.result.rows))return res.result.rows;return[];}
   function canon(v){var x=norm(v).replace(/[‐‑‒–—−－]/g,"-");if(x.indexOf("SL31")>=0)return"SL31A";if(x.indexOf("PD11")>=0)return"PD11B";if(x.indexOf("4-3")>=0||x.indexOf("4_3")>=0||/^4[-_]?3$/.test(x))return"4-3";if(x.indexOf("5-C")>=0||x.indexOf("5C")>=0)return"5-C";if(x.indexOf("5-3")>=0||x==="53")return"5-3";return s(v);}
-  function jsonp(action,params){return new Promise(function(resolve,reject){var cb="MES_V66_"+Date.now()+"_"+Math.floor(Math.random()*999999);var url=new URL(API_URL);url.searchParams.set("action",action);url.searchParams.set("callback",cb);url.searchParams.set("_",Date.now());Object.keys(params||{}).forEach(function(k){if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")url.searchParams.set(k,params[k]);});var tag=document.createElement("script");var timer=setTimeout(function(){cleanup();reject(new Error(action+" timeout"));},90000);function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;}if(tag.parentNode)tag.parentNode.removeChild(tag);}window[cb]=function(data){cleanup();resolve(data||{});};tag.onerror=function(){cleanup();reject(new Error(action+" jsonp failed"));};tag.src=url.toString();document.body.appendChild(tag);});}
-  function normalizeSource(arr){return (arr||[]).map(function(r){var src=canon(pick(r,["source","來源","__sheet","sheet","sheet_name"]));return {source:src||"4-3",work_order_no:wo12(pick(r,["work_order_no","work_order","工單號","工單","命令單","製令單號","order_no","訂單號","訂單單號","單號"])),order_no:pick(r,["order_no","訂單號","訂單單號","單號"]),part_no:pick(r,["part_no","料號","品號","料品編號","產品料號","產品編號","產品名稱","品名"]),batch_no:pick(r,["batch_no","生產批號","批號","製號","產出製號","投入製號","Lot","LOT","lot"]),product_spec:pick(r,["product_spec","產品規格","規格","品名規格","長寬","尺寸","品名"]),target_qty:num(pick(r,["target_qty","預計產量","目標數量","工單目標","訂單數量","數量","換算捲數","預計數量","target_roll","target_m2"])),process:pick(r,["process","process_site","製程","製程站點","站點","目前製程","站別","加工製程","排程"]),customer:pick(r,["customer","customer_name","客戶","客戶別","客戶名稱"]),machine:pick(r,["machine","machine_code","機台","機台編號","機台代碼","設備","設備編號"]),plan_date:dateKey(pick(r,["plan_date","日期","工單開立日","開立日","建立日","開單日","製令日期","工單日期","report_date"])),due_date:dateKey(pick(r,["due_date","預交日","入庫日期","預計入庫日","預計完工日","交期","預定完成日","預計交貨日"])),status:pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態"]),issue_status:pick(r,["issue_status","異常","異常狀態","問題","備註","原因"]),material_status:pick(r,["material_status","待料","領料狀態","備料狀態","物料狀態"]),warehouse_status:pick(r,["warehouse_status","入庫","入庫狀態","倉庫狀態"]),stockin_date:dateKey(pick(r,["stockin_date","實際入庫日","入庫完成日","入庫日期"])),finish_date:dateKey(pick(r,["finish_date","完工日","完成日"])),pick_date:dateKey(pick(r,["pick_date","領料日","領料日期"])),priority:pick(r,["priority","優先","急件"]),updated_at:pick(r,["updated_at","created_at","更新時間"]),raw_json:r.raw_json||""};}).filter(function(r){return r.work_order_no||r.order_no;});}
-  function normalizeKeyin(arr){return (arr||[]).map(function(r){return {date:dateKey(pick(r,["report_date","date","日期"])),site:pick(r,["site","process_site","站點","製程站點"]),wo:wo12(pick(r,["work_order_no","order_no","工單","工單號","訂單號","訂單單號"])),batch:pick(r,["batch_no","生產批號","批號"]),part:pick(r,["part_no","料號","品號"]),spec:pick(r,["product_spec","產品規格","規格"]),target:num(pick(r,["target_qty","目標","目標數量","target_roll","target_m2"])),empNo:pick(r,["emp_no","工號"]),empName:pick(r,["emp_name","姓名"]),machine:pick(r,["machine_code","machine","機台"]),actual:num(pick(r,["actual_output","actual","實際產量","產量","output"])),unit:pick(r,["unit","單位"]),note:pick(r,["process_note","note","備註"]),createdAt:pick(r,["created_at","建立時間","時間"])};}).filter(function(r){return r.wo||r.actual||r.empNo;});}
-  function normalizeTargets(arr){return (arr||[]).map(function(r){return {report_date:dateKey(pick(r,["report_date","日期","目標日期"])),shift:pick(r,["shift","班別"]),leader_role:pick(r,["leader_role","幹部角色","角色"]),leader_name:pick(r,["leader_name","幹部姓名","姓名"]),work_order_no:wo12(pick(r,["work_order_no","order_no","工單號","工單","訂單號","訂單單號"])),order_no:pick(r,["order_no","訂單號","訂單單號"]),process_site:pick(r,["process_site","process","製程站點","製程"]),machine_code:pick(r,["machine_code","machine","機台"]),customer:pick(r,["customer","客戶","客戶別"]),product_spec:pick(r,["product_spec","產品規格","規格","品名"]),target_roll:num(pick(r,["target_roll","target_r","目標R","目標卷數","目標卷數R"])),target_m2:num(pick(r,["target_m2","target_m","目標㎡","目標m2"])),planned_finish:pick(r,["planned_finish","預計完成","預計完成時間"]),status:pick(r,["status","狀態"])};}).filter(function(r){return r.work_order_no||r.machine_code||r.leader_name;});}
-  function normalizeEmployees(arr){var emp={},list=[];(arr||[]).forEach(function(r){var no=s(pick(r,["emp_no","工號","employee_no","員工編號"]));var name=s(pick(r,["emp_name","姓名","employee_name","員工姓名"]));if(no){emp[no]=name;list.push({emp_no:no,emp_name:name,raw:r});}});window.EMP=emp;window.EMP_ROWS=list;return list;}
-  function ensure(){window.AppState=window.AppState||{};AppState.source=AppState.source||[];AppState.keyin=AppState.keyin||[];AppState.targets=AppState.targets||[];AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.idx=AppState.idx||{};AppState.tables=AppState.tables||{};AppState.apiHealth=AppState.apiHealth||{};}
-  function status(msg,bad){var box=document.getElementById("v660Status");if(!box){box=document.createElement("div");box.id="v660Status";box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:980px;line-height:1.5";document.body.appendChild(box);}box.style.borderColor=bad?"#dc2626":"#22c55e";box.innerHTML=esc(msg);}
-  function hideOldStatus(){["v650Status","v610CleanStatus","mesApiPatchStatus","v6097ApiStatus","v6098ApiStatus","v6099Status","v60911Status","v60912Status"].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display="none";});}
-  function countSummary(k){var s=(AppState&&AppState.sourceSummary)||{};return s[k]&&typeof s[k].count==="number"?s[k].count:0;}
-  function renderAll(){try{if(typeof buildIndex==="function")buildIndex();}catch(e){console.warn("buildIndex failed",e);}try{if(typeof calcActual==="function")calcActual();}catch(e){}try{if(typeof renderActive==="function")renderActive();}catch(e){console.warn("renderActive failed",e);}try{if(typeof v541RenderDataHub==="function")v541RenderDataHub();}catch(e){console.warn("DataHub failed",e);}}
-  async function reload(){if(loading)return;loading=true;ensure();hideOldStatus();status("V66.0 正在讀取資料，SL31A 由 Apps Script 伺服端整合規格，不下載 4 萬筆明細...");try{var d=(AppState.targetDate||today());var res=await Promise.allSettled([jsonp("v66dashboard",{}),jsonp("listtargetplans",{date:d}),jsonp("listkeyin",{date:d}),jsonp("listemployees",{}),jsonp("listprod5cdata",{}),jsonp("listprod53data",{})]);var dash=res[0].status==="fulfilled"?res[0].value:{};if(dash&&dash.ok===false)throw new Error(dash.message||dash.error||"v66dashboard failed");AppState.source=normalizeSource(rowsOf(dash));AppState.sourceSummary=dash.summary||dash.counts||{};AppState.targets=normalizeTargets(res[1].status==="fulfilled"?rowsOf(res[1].value):[]);AppState.keyin=normalizeKeyin(res[2].status==="fulfilled"?rowsOf(res[2].value):[]);var empRows=normalizeEmployees(res[3].status==="fulfilled"?rowsOf(res[3].value):[]);AppState.prod5c=res[4].status==="fulfilled"?rowsOf(res[4].value):[];AppState.prod53=res[5].status==="fulfilled"?rowsOf(res[5].value):[];AppState.apiHealth={source:AppState.source.length>0,targets:true,keyin:true,employees:empRows.length>0,prod5c:AppState.prod5c.length>0,prod53:AppState.prod53.length>0};renderAll();status("V66.0 已讀取｜SL31A："+countSummary("SL31A").toLocaleString()+"｜4-3："+countSummary("4-3").toLocaleString()+"｜PD11B："+countSummary("PD11B").toLocaleString()+"｜5-C："+AppState.prod5c.length.toLocaleString()+"｜5-3："+AppState.prod53.length.toLocaleString()+"｜Dashboard列："+AppState.source.length.toLocaleString()+"｜工單索引："+Object.keys(AppState.idx||{}).length.toLocaleString());}catch(e){console.error("V66 reload failed",e);status("V66.0 讀取失敗："+(e.message||e),true);}finally{loading=false;}}
-  window.v660ReloadAll=reload;window.v541ReloadAll=reload;window.v610CleanReload=reload;window.v650ReloadAll=reload;window.loadSource=reload;window.loadKeyin=reload;window.loadTargets=reload;window.loadEmployees=reload;
-  document.addEventListener("DOMContentLoaded",function(){setTimeout(reload,1200);});
+  function jsonp(action,params){return new Promise(function(resolve,reject){var cb="MES_V65_"+Date.now()+"_"+Math.floor(Math.random()*999999);var url=new URL(API_URL);url.searchParams.set("action",action);url.searchParams.set("callback",cb);url.searchParams.set("_",Date.now());Object.keys(params||{}).forEach(function(k){if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")url.searchParams.set(k,params[k]);});var tag=document.createElement("script");var timer=setTimeout(function(){cleanup();reject(new Error(action+" timeout"));},60000);function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;}if(tag.parentNode)tag.parentNode.removeChild(tag);}window[cb]=function(data){cleanup();resolve(data||{});};tag.onerror=function(){cleanup();reject(new Error(action+" jsonp failed"));};tag.src=url.toString();document.body.appendChild(tag);});}
+  function rows(res){if(!res)return[];if(Array.isArray(res))return res;if(Array.isArray(res.rows))return res.rows;if(Array.isArray(res.data))return res.data;if(res.result&&Array.isArray(res.result.rows))return res.result.rows;return[];}
+  function normalizeSource(arr){return (arr||[]).map(function(r){var src=canon(pick(r,["source","來源","__sheet","sheet","sheet_name"]));if(!src)src="4-3";return {source:src,work_order_no:wo12(pick(r,["work_order_no","工單號","工單","命令單","製令單號","order_no","訂單號","單號"])),order_no:pick(r,["order_no","訂單號","訂單單號","單號"]),part_no:pick(r,["part_no","料號","品號","料品編號","產品名稱","品名"]),batch_no:pick(r,["batch_no","生產批號","批號","製號"]),product_spec:pick(r,["product_spec","產品規格","規格","品名規格","尺寸","品名"]),target_qty:num(pick(r,["target_qty","預計產量","目標數量","工單目標","訂單數量","數量","預計數量"])),process:pick(r,["process","製程","製程站點","站點","目前製程","站別","排程"]),customer:pick(r,["customer","客戶","客戶別","客戶名稱"]),machine:pick(r,["machine","machine_code","機台","機台編號","設備"]),plan_date:dateKey(pick(r,["plan_date","日期","工單開立日","開立日","製令日期","工單日期"])),due_date:dateKey(pick(r,["due_date","預交日","預計完工日","交期","預定完成日"])),status:pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態"]),updated_at:pick(r,["updated_at","更新時間"]),raw:r};}).filter(function(r){return r.work_order_no||r.order_no;});}
+  function normalizeKeyin(arr){return (arr||[]).map(function(r){return {date:dateKey(pick(r,["report_date","date","日期"])),site:pick(r,["site","製程站點"]),wo:wo12(pick(r,["work_order_no","order_no","工單號","訂單號"])),batch:pick(r,["batch_no","批號","生產批號"]),part:pick(r,["part_no","料號","品號"]),spec:pick(r,["product_spec","規格","產品規格"]),target:num(pick(r,["target_qty","目標"])),empNo:pick(r,["emp_no","工號"]),empName:pick(r,["emp_name","姓名"]),machine:pick(r,["machine_code","machine","機台"]),actual:num(pick(r,["actual_output","actual","實際產量"])),unit:pick(r,["unit","單位"]),note:pick(r,["process_note","note","備註"])};}).filter(function(r){return r.wo||r.actual||r.empNo;});}
+  function normalizeTargets(arr){return (arr||[]).map(function(r){return {report_date:dateKey(pick(r,["report_date","日期"])),shift:pick(r,["shift","班別"]),leader_role:pick(r,["leader_role","角色"]),leader_name:pick(r,["leader_name","姓名"]),work_order_no:wo12(pick(r,["work_order_no","order_no","工單號","訂單號"])),order_no:pick(r,["order_no","訂單號"]),process_site:pick(r,["process_site","process","製程站點","製程"]),machine_code:pick(r,["machine_code","machine","機台"]),customer:pick(r,["customer","客戶"]),product_spec:pick(r,["product_spec","規格"]),target_roll:num(pick(r,["target_roll","目標卷數"])),target_m2:num(pick(r,["target_m2","目標㎡"])),status:pick(r,["status","狀態"])};}).filter(function(r){return r.work_order_no||r.machine_code||r.leader_name;});}
+  function normalizeEmployees(arr){var emp={},list=[];(arr||[]).forEach(function(r){var no=s(pick(r,["emp_no","工號","employee_no"]));var name=s(pick(r,["emp_name","姓名","employee_name"]));if(no){emp[no]=name;list.push({emp_no:no,emp_name:name,raw:r});}});window.EMP=emp;window.EMP_ROWS=list;return list;}
+  function status(msg,bad){var box=document.getElementById("v650Status");if(!box){box=document.createElement("div");box.id="v650Status";box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:920px;line-height:1.5";document.body.appendChild(box);}box.style.borderColor=bad?"#dc2626":"#22c55e";box.innerHTML=esc(msg);}
+  function applySummary(summary){window.AppState=window.AppState||{};AppState.sourceSummary=summary||{};}
+  function renderAll(){try{if(typeof buildIndex==="function")buildIndex();}catch(e){}try{if(typeof calcActual==="function")calcActual();}catch(e){}try{if(typeof renderActive==="function")renderActive();}catch(e){}try{if(typeof v541RenderDataHub==="function")v541RenderDataHub();}catch(e){}}
+  async function reload(){if(loading)return;loading=true;status("V65.0 正在讀取獨立分頁資料...");try{window.AppState=window.AppState||{};var d=ymd();var all=await Promise.allSettled([jsonp("v65dashboard",{}),jsonp("listtargetplans",{date:d}),jsonp("listkeyin",{date:d}),jsonp("listemployees",{}),jsonp("listprod5cdata",{}),jsonp("listprod53data",{})]);var src=all[0].status==="fulfilled"?all[0].value:{};var rawSource=rows(src);AppState.source=normalizeSource(rawSource);applySummary(src.summary||src.counts||{});AppState.targets=normalizeTargets(all[1].status==="fulfilled"?rows(all[1].value):[]);AppState.keyin=normalizeKeyin(all[2].status==="fulfilled"?rows(all[2].value):[]);var empRows=normalizeEmployees(all[3].status==="fulfilled"?rows(all[3].value):[]);AppState.prod5c=all[4].status==="fulfilled"?rows(all[4].value):[];AppState.prod53=all[5].status==="fulfilled"?rows(all[5].value):[];AppState.apiHealth={source:AppState.source.length>0,targets:AppState.targets.length>0,keyin:true,employees:empRows.length>0,prod5c:AppState.prod5c.length>0,prod53:AppState.prod53.length>0};renderAll();var sum=AppState.sourceSummary||{};function c(k){return sum[k]&&typeof sum[k].count==="number"?sum[k].count:0;}status("V65.0 已讀取｜SL31A："+c("SL31A")+"｜4-3："+c("4-3")+"｜PD11B："+c("PD11B")+"｜5-C："+AppState.prod5c.length+"｜5-3："+AppState.prod53.length+"｜Dashboard列："+AppState.source.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);}catch(e){console.error(e);status("V65.0 讀取失敗："+(e.message||e),true);}finally{loading=false;}}
+  window.v650ReloadAll=reload;
+  window.v541ReloadAll=reload;
+  window.v610CleanReload=reload;
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(reload,1500);});
+})();
+</script>
+
+<!-- V65.2 Stable Unified DataHub Loader｜單一讀取邏輯，修正卡片與右下角狀態列 -->
+<script id="v652_stable_unified_loader">
+(function(){
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var loading = false;
+
+  function s(v){ return String(v == null ? "" : v).trim(); }
+  function n(v){ var x = parseFloat(s(v).replace(/,/g,"")); return isNaN(x) ? 0 : x; }
+  function esc(v){ return s(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];}); }
+  function ymd(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function norm(v){ return s(v).replace(/\s+/g,"").toUpperCase(); }
+  function wo12(v){ return norm(v).slice(0,12); }
+  function rowsOf(res){
+    if(!res) return [];
+    if(Array.isArray(res)) return res;
+    if(Array.isArray(res.rows)) return res.rows;
+    if(Array.isArray(res.data)) return res.data;
+    if(res.result && Array.isArray(res.result.rows)) return res.result.rows;
+    if(res.result && Array.isArray(res.result.data)) return res.result.data;
+    return [];
+  }
+  function jsonp(action, params){
+    params = params || {};
+    return new Promise(function(resolve,reject){
+      var cb = "MES_V652_" + Date.now() + "_" + Math.floor(Math.random()*999999);
+      var script = document.createElement("script");
+      var timer = setTimeout(function(){
+        cleanup();
+        reject(new Error(action + " timeout"));
+      }, 45000);
+      function cleanup(){
+        clearTimeout(timer);
+        try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+        if(script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function(res){
+        cleanup();
+        if(res && res.ok === false) reject(new Error(res.message || res.error || action + " failed"));
+        else resolve(res || {});
+      };
+      script.onerror = function(){
+        cleanup();
+        reject(new Error(action + " JSONP failed"));
+      };
+      var q = Object.keys(params).map(function(k){
+        return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+      }).join("&");
+      script.src = API_URL + "?action=" + encodeURIComponent(action) + (q ? "&"+q : "") + "&callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
+      document.head.appendChild(script);
+    });
+  }
+  function pick(r, keys){
+    r = r || {};
+    for(var i=0;i<keys.length;i++){
+      var k = keys[i];
+      if(r[k] !== undefined && r[k] !== null && s(r[k]) !== "") return r[k];
+    }
+    return "";
+  }
+  function dateKey(v){
+    var x=s(v).replace(/\//g,"-");
+    var m=x.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    return m ? m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0") : x.slice(0,10);
+  }
+  function normalizeSourceRow(r, sourceName){
+    r = r || {};
+    return {
+      source: sourceName,
+      work_order_no: wo12(pick(r,["work_order_no","工單號","工單","命令單","命令單號","訂單單號","訂單號","單號","order_no"])),
+      order_no: pick(r,["order_no","訂單單號","訂單號","客戶訂單","銷售單號","單號"]),
+      part_no: pick(r,["part_no","料號","品號","料品編號","產品料號","產品編號","產品名稱","品名"]),
+      batch_no: pick(r,["batch_no","生產批號","批號","製號","產出製號","投入製號","Lot","LOT"]),
+      product_spec: pick(r,["product_spec","產品規格","規格","品名規格","長寬","尺寸","品名"]),
+      target_qty: n(pick(r,["target_qty","預計產量","目標數量","工單目標","訂單數量","目標卷數","卷數","數量","換算捲數","預計數量"])),
+      process: pick(r,["process","process_site","製程","製程站點","站點","目前製程","站別","加工製程","排程"]),
+      customer: pick(r,["customer","customer_name","客戶","客戶別","客戶名稱"]),
+      machine: pick(r,["machine","machine_code","機台","機台編號","機台代碼","設備","設備編號"]),
+      plan_date: dateKey(pick(r,["plan_date","日期","工單開立日","開立日","建立日","開單日","製令日期","工單日期","date"])),
+      due_date: dateKey(pick(r,["due_date","預交日","入庫日期","預計入庫日","預計完工日","交期","預定完成日","預計交貨日"])),
+      status: pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態"]),
+      issue_status: pick(r,["issue_status","異常","異常狀態","問題","備註","原因"]),
+      material_status: pick(r,["material_status","待料","領料狀態","備料狀態","物料狀態"]),
+      warehouse_status: pick(r,["warehouse_status","入庫","入庫狀態","倉庫狀態"]),
+      stockin_date: dateKey(pick(r,["stockin_date","實際入庫日","入庫完成日","入庫日期"])),
+      finish_date: dateKey(pick(r,["finish_date","完工日","完成日"])),
+      pick_date: dateKey(pick(r,["pick_date","領料日","領料日期"])),
+      priority: pick(r,["priority","優先","急件"]),
+      updated_at: pick(r,["updated_at","created_at","資料日期","最後資料","日期"]) || ""
+    };
+  }
+  function normalizeKeyin(rows){
+    return (rows||[]).map(function(r){
+      return {
+        date: r.report_date || "",
+        site: r.site || "",
+        wo: wo12(r.work_order_no || r.order_no || ""),
+        batch: r.batch_no || "",
+        part: r.part_no || "",
+        spec: r.product_spec || "",
+        target: n(r.target_qty),
+        empNo: r.emp_no || "",
+        empName: r.emp_name || "",
+        machine: r.machine_code || "",
+        actual: n(r.actual_output),
+        unit: r.unit || "",
+        note: r.process_note || "",
+        createdAt: r.created_at || ""
+      };
+    }).filter(function(r){ return r.wo || r.actual || r.empNo; });
+  }
+  function normalizeEmployees(rows){
+    var emp = {}, list = [];
+    (rows||[]).forEach(function(r){
+      var no = s(pick(r,["emp_no","工號","employee_no"]));
+      var name = s(pick(r,["emp_name","姓名","employee_name"]));
+      if(no){ emp[no]=name; list.push({emp_no:no, emp_name:name, raw:r}); }
+    });
+    window.EMP = emp;
+    window.EMP_ROWS = list;
+    return list;
+  }
+  function setStatus(msg, bad){
+    var box = document.getElementById("v650Status") || document.getElementById("v652Status");
+    if(!box){
+      box = document.createElement("div");
+      box.id = "v652Status";
+      box.style.cssText = "position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:920px;line-height:1.5";
+      document.body.appendChild(box);
+    }
+    box.style.borderColor = bad ? "#dc2626" : "#22c55e";
+    box.innerHTML = esc(msg);
+  }
+  function sourceCard(x){
+    var cls = x.count > 0 ? "v541-ok" : "v541-empty";
+    var icon = x.count > 0 ? "🟢" : "🟡";
+    return '<div class="v541-source '+cls+'"><div class="name">'+icon+' '+esc(x.name)+'</div><div class="sub">'+esc(x.sub)+'</div><div class="num">'+Number(x.count||0).toLocaleString()+'</div><div class="time">最後資料：'+esc(x.time||"-")+'</div></div>';
+  }
+  function latest(rows){
+    var m = "";
+    (rows||[]).forEach(function(r){
+      var u = r.updated_at || r.created_at || r.report_date || r.plan_date || r.due_date || "";
+      if(String(u) > String(m)) m = String(u);
+    });
+    return m || "-";
+  }
+  function renderHub(){
+    var grid = document.getElementById("dashboardGrid");
+    if(!grid || !window.AppState) return;
+    var old = document.getElementById("v541DataHub");
+    if(old) old.remove();
+
+    var list = [
+      {name:"SL31A", sub:"訂單 / 規格 / 目標", count:(AppState.sl||[]).length, time:latest(AppState.sl)},
+      {name:"4-3", sub:"工單 / 排程", count:(AppState.d43||[]).length, time:latest(AppState.d43)},
+      {name:"PD11B", sub:"日報 / 狀態", count:(AppState.pd||[]).length, time:latest(AppState.pd)},
+      {name:"5-C", sub:"命令單 / 製號 / 尺寸", count:(AppState.prod5c||[]).length, time:latest(AppState.prod5c)},
+      {name:"5-3", sub:"製程 / 機台 / 實績", count:(AppState.prod53||[]).length, time:latest(AppState.prod53)}
+    ];
+    var ok = list.filter(function(x){return x.count > 0;}).length;
+    var pct = Math.round(ok / list.length * 100);
+
+    var h = document.createElement("div");
+    h.id = "v541DataHub";
+    h.className = "v541-hub";
+    h.innerHTML =
+      '<div class="v541-hubTop"><div><h2>📁 五份資料更新中心｜Data Hub</h2><div class="meta">每日更新：SL31A、4-3、PD11B、5-C、5-3；Dashboard / Target / Key In / 晨會共用同一份資料。</div></div>' +
+      '<div class="v541-actions"><span class="v541-badge">完整度 '+ok+'/'+list.length+'｜'+pct+'%</span><button class="v541-btn" onclick="v541ReloadAll()">↻ 重新讀取五份資料</button><button class="v541-btn" onclick="switchView&&switchView(\'datacenter\')">資料中心</button></div></div>' +
+      '<div class="v541-sourceGrid">'+list.map(sourceCard).join("")+'</div><div class="v541-bar"><div class="v541-fill" style="width:'+pct+'%"></div></div>';
+    grid.insertBefore(h, grid.firstChild);
+  }
+  function renderAll(){
+    try{ if(typeof buildIndex === "function") buildIndex(); }catch(e){ console.warn("buildIndex",e); }
+    try{ if(typeof calcActual === "function") calcActual(); }catch(e){}
+    try{ if(typeof renderActive === "function") renderActive(); }catch(e){ console.warn("renderActive",e); }
+    renderHub();
+  }
+
+  async function reloadV652(){
+    if(loading) return;
+    loading = true;
+    setStatus("V65.2 正在讀取五份資料...");
+    try{
+      window.AppState = window.AppState || {};
+      var d = ymd();
+
+      var all = await Promise.allSettled([
+        jsonp("listsl31a",{}),
+        jsonp("list43",{}),
+        jsonp("listpd11b",{}),
+        jsonp("5-c",{}),
+        jsonp("5-3",{}),
+        jsonp("listtargetplans",{date:d}),
+        jsonp("listkeyin",{date:d}),
+        jsonp("listemployees",{})
+      ]);
+
+      var SL = all[0].status === "fulfilled" ? rowsOf(all[0].value) : [];
+      var D43 = all[1].status === "fulfilled" ? rowsOf(all[1].value) : [];
+      var PD = all[2].status === "fulfilled" ? rowsOf(all[2].value) : [];
+      var C5 = all[3].status === "fulfilled" ? rowsOf(all[3].value) : [];
+      var P53 = all[4].status === "fulfilled" ? rowsOf(all[4].value) : [];
+      var TP = all[5].status === "fulfilled" ? rowsOf(all[5].value) : [];
+      var KI = all[6].status === "fulfilled" ? rowsOf(all[6].value) : [];
+      var EM = all[7].status === "fulfilled" ? rowsOf(all[7].value) : [];
+
+      AppState.sl = SL.map(function(r){ return normalizeSourceRow(r,"SL31A"); });
+      AppState.d43 = D43.map(function(r){ return normalizeSourceRow(r,"4-3"); });
+      AppState.pd = PD.map(function(r){ return normalizeSourceRow(r,"PD11B"); });
+      AppState.prod5c = C5;
+      AppState.prod53 = P53;
+      AppState.source = [].concat(AppState.sl, AppState.d43, AppState.pd);
+      AppState.targets = TP;
+      AppState.keyin = normalizeKeyin(KI);
+      var empRows = normalizeEmployees(EM);
+
+      AppState.sourceSummary = {
+        "SL31A": {count: AppState.sl.length, updated_at: latest(AppState.sl)},
+        "4-3": {count: AppState.d43.length, updated_at: latest(AppState.d43)},
+        "PD11B": {count: AppState.pd.length, updated_at: latest(AppState.pd)},
+        "5-C": {count: AppState.prod5c.length, updated_at: latest(AppState.prod5c)},
+        "5-3": {count: AppState.prod53.length, updated_at: latest(AppState.prod53)}
+      };
+      AppState.apiHealth = {
+        source: AppState.source.length > 0,
+        targets: TP.length > 0,
+        keyin: true,
+        employees: empRows.length > 0,
+        prod5c: C5.length > 0,
+        prod53: P53.length > 0
+      };
+
+      renderAll();
+
+      setStatus(
+        "V65.2 已讀取｜SL31A："+AppState.sl.length.toLocaleString()+
+        "｜4-3："+AppState.d43.length.toLocaleString()+
+        "｜PD11B："+AppState.pd.length.toLocaleString()+
+        "｜5-C："+AppState.prod5c.length.toLocaleString()+
+        "｜5-3："+AppState.prod53.length.toLocaleString()+
+        "｜Dashboard列："+AppState.source.length.toLocaleString()+
+        "｜工單索引："+Object.keys(AppState.idx||{}).length.toLocaleString()
+      );
+      console.log("V65.2 Stable OK", AppState.sourceSummary);
+    }catch(e){
+      console.error("V65.2 reload failed",e);
+      setStatus("V65.2 讀取失敗："+(e.message||e), true);
+    }finally{
+      loading = false;
+    }
+  }
+
+  window.v541RenderDataHub = renderHub;
+  window.v541ReloadAll = reloadV652;
+  window.v650ReloadAll = reloadV652;
+  window.v610CleanReload = reloadV652;
+  window.loadSource = reloadV652;
+  window.loadKeyin = reloadV652;
+  window.loadTargets = reloadV652;
+  window.loadEmployees = reloadV652;
+  window.reloadV652 = reloadV652;
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(reloadV652, 2200);
+  });
 })();
 </script>
 
