@@ -8,7 +8,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V71 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V71 Target 穩定快取版；五份資料建立快取後查詢，不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V72 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V71 Target 穩定快取版；五份資料建立快取後查詢，不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12">
@@ -82,7 +82,7 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function num(v){let n=parseFloat(String(v??'').replace(/,/g,''));return isNaN(n)?0:n}
 function dateKey(v){let s=String(v||'').replace(/\//g,'-');let m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):s.slice(0,10)}
 function isoWeek(d){let x=new Date(dateKey(d)+'T00:00:00');if(isNaN(x))return '';x.setHours(0,0,0,0);x.setDate(x.getDate()+3-((x.getDay()+6)%7));let w1=new Date(x.getFullYear(),0,4);let week=1+Math.round(((x-w1)/86400000-3+((w1.getDay()+6)%7))/7);return x.getFullYear()+'-W'+String(week).padStart(2,'0')}
-function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V70_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},30000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
+function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V72_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},30000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
 async function apiPost(action,body){await fetch(API_URL+'?action='+encodeURIComponent(action)+'&_='+Date.now(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body||{})});return {ok:true}}
 function setRangeMode(mode,updateDates=true){currentRange=mode;let d=today();if(updateDates){if(mode==='today'){$('rangeStart').value=d;$('rangeEnd').value=d}else if(mode==='week'){$('rangeStart').value=d;$('rangeEnd').value=addDays(d,6)}else if(mode==='month'){$('rangeStart').value=firstMonth(d);$('rangeEnd').value=lastMonth(d)}}['Today','Week','Month','Custom'].forEach(x=>{$('btn'+x).className='btn ghost'});const map={today:'Today',week:'Week',month:'Month',custom:'Custom'};$('btn'+map[mode]).className='btn active';applyRange()}
 function inRangeDate(v){const d=dateKey(v);return d&&d>=dateKey($('rangeStart').value)&&d<=dateKey($('rangeEnd').value)}
@@ -93,22 +93,39 @@ function fillEmp(){let no=norm($('emp_no').value);let e=EMPIDX[no];if(!e)return;
 
 async function rebuildOrderCache(){
   const btn=$('cacheBtn');
+  const sheets=['4-3','PD11B','SL31A','5-C','5-3'];
   try{
     btn.disabled=true;
-    btn.textContent='重建中...';
-    $('loadMsg').textContent='正在建立五份資料快取，請稍候...';
-    const res=await apiGet('rebuildtargetcache',{_:Date.now()});
-    if(res&&res.ok){
-      $('loadMsg').textContent='五份資料快取完成：'+(res.count||0)+' 筆，時間 '+(res.time||'');
-      toast('五份資料快取完成：'+(res.count||0)+' 筆');
-      await loadOrderList();
-      await loadMatchList();
-    }else{
-      throw new Error((res&&res.message)||'重建快取失敗');
+    btn.textContent='建立中...';
+    $('loadMsg').textContent='初始化五份資料快取...';
+    const start=await apiGet('targetcachebuildstart',{_:Date.now()});
+    const info=start.sheets||sheets.map(s=>({sheet:s,count:0}));
+    let totalWritten=0;
+    for(const item of info){
+      let sheet=item.sheet;
+      let total=Number(item.count||0);
+      let offset=0;
+      if(total<=0){
+        $('loadMsg').textContent='略過 '+sheet+'：0 筆';
+        continue;
+      }
+      while(offset<total){
+        btn.textContent='建立 '+sheet+' '+offset+'/'+total;
+        $('loadMsg').textContent='建立五份資料快取：'+sheet+' '+offset+' / '+total+'，請勿關閉頁面';
+        const res=await apiGet('targetcachebuildchunk',{sheet:sheet,offset:offset,limit:250,_:Date.now()});
+        totalWritten+=Number(res.written||0);
+        offset=Number(res.next_offset||total);
+        if(res.done) break;
+        await new Promise(r=>setTimeout(r,120));
+      }
     }
+    $('loadMsg').textContent='五份資料快取完成：'+totalWritten+' 筆。正在重新讀取...';
+    toast('五份資料快取完成：'+totalWritten+' 筆');
+    await loadOrderList();
+    await loadMatchList();
   }catch(e){
-    alert('重建五份資料快取失敗：'+e.message);
-    $('loadMsg').textContent='重建快取失敗：'+e.message;
+    alert('建立五份資料快取失敗：'+e.message);
+    $('loadMsg').textContent='建立快取失敗：'+e.message;
   }finally{
     btn.disabled=false;
     btn.textContent='重建五份資料快取';
