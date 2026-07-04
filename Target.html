@@ -3,31 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.6 MES 幹部目標</title>
-<link rel="stylesheet" href="style.css">
+<title>V60.7 MES 幹部目標</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js?v=605"></script>
+
 <style>
 header .nav {
   display: none !important;
 }
 
+/* V60.7：版面加寬，不再縮在中間 */
 .target-wrap {
-  max-width: 1500px;
+  width: 100%;
+  max-width: 1760px;
   margin: 22px auto;
-  padding: 0 20px 40px;
+  padding: 0 28px 48px;
 }
 
 .target-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
+  grid-template-columns: minmax(880px, 2fr) minmax(420px, 0.9fr);
+  gap: 18px;
+  align-items: stretch;
 }
 
 .target-form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 14px;
 }
 
 .target-form-grid .full {
@@ -39,12 +42,12 @@ header .nav {
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .target-tools input,
 .target-tools select {
-  max-width: 260px;
+  max-width: 300px;
 }
 
 .target-table-wrap {
@@ -54,7 +57,7 @@ header .nav {
 .target-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1200px;
+  min-width: 1250px;
 }
 
 .target-table th,
@@ -72,7 +75,7 @@ header .nav {
 }
 
 .quick-list {
-  max-height: 430px;
+  max-height: 620px;
   overflow: auto;
 }
 
@@ -119,9 +122,19 @@ header .nav {
   line-height: 1.6;
 }
 
-@media(max-width: 1000px) {
+@media(max-width: 1200px) {
   .target-grid {
     grid-template-columns: 1fr;
+  }
+
+  .target-form-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media(max-width: 760px) {
+  .target-wrap {
+    padding: 0 14px 36px;
   }
 
   .target-form-grid {
@@ -133,7 +146,7 @@ header .nav {
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.6 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.7 MES Enterprise</h1>
   <p>加工課戰情中心 · 幹部目標 · GitHub + Apps Script 正式版</p>
 
   <div class="nav" style="display:none!important;">
@@ -288,17 +301,18 @@ header .nav {
 
     <div class="card">
       <h2>可快速帶入工單</h2>
+      <p class="mini">V60.7：此區改讀幹部目標清單資料，不再依賴 source_data。</p>
       <div class="tools">
-        <input id="quickSearch" placeholder="搜尋工單 / 料號 / 規格" oninput="renderQuickList()">
+        <input id="quickSearch" placeholder="搜尋工單 / 料號 / 規格 / 客戶 / 製程" oninput="renderQuickList()">
       </div>
       <div id="quickList" class="quick-list">
-        尚未讀取工單。
+        尚未讀取幹部目標資料。
       </div>
     </div>
 
   </div>
 
-  <div class="card" style="margin-top:16px;">
+  <div class="card" style="margin-top:18px;">
     <h2>幹部目標清單</h2>
 
     <div class="target-tools">
@@ -373,13 +387,10 @@ async function refreshAllTargetData() {
   setDebug('重新讀取資料中...');
 
   try {
-    await loadSourceData();
     await loadTargetPlans();
 
     setStatus(
-      '已重新讀取資料。工單來源 ' +
-      TargetApp.source.length +
-      ' 筆；幹部目標去重後 ' +
+      '已重新讀取資料。幹部目標去重後 ' +
       TargetApp.plans.length +
       ' 筆。'
     );
@@ -392,18 +403,10 @@ async function refreshAllTargetData() {
   }
 }
 
+/* V60.7：保留函式，但不再使用 source_data */
 async function loadSourceData() {
-  try {
-    const r = await MES.get('getSourceData');
-    const rows = extractRows(r);
-
-    TargetApp.source = rows;
-    renderQuickList();
-
-  } catch (e) {
-    TargetApp.source = [];
-    document.getElementById('quickList').innerHTML = '讀取工單失敗：' + esc2(e.message);
-  }
+  TargetApp.source = [];
+  renderQuickList();
 }
 
 async function loadTargetPlans() {
@@ -462,10 +465,11 @@ async function loadTargetPlans() {
       'API 已讀取原始 ' + rows.length +
       ' 筆，去重後 ' + TargetApp.plans.length +
       ' 筆。查詢日期：' + ymd +
-      '<br>如果這裡是 0 筆，代表 Apps Script 沒有從 Target_Plan 回傳資料。'
+      '<br>V60.7：右側快速帶入工單已改讀幹部目標清單資料。'
     );
 
     renderTargetTable();
+    renderQuickList();
 
   } catch (e) {
     document.getElementById('targetRows').innerHTML =
@@ -545,7 +549,7 @@ function renderTargetTable() {
 
   body.innerHTML = rows.map((p, idx) => `
     <tr>
-      <td><button class="btn ghost" onclick="loadPlanToForm(${idx})">帶入</button></td>
+      <td><button class="btn ghost" onclick="loadPlanToFormFromRendered(${idx})">帶入</button></td>
       <td>${esc2(normalizeDateText(getPlanDateRaw(p)))}</td>
       <td>${esc2(p.shift || '')}</td>
       <td>${esc2((p.leader_role || '') + ' ' + (p.leader_name || ''))}</td>
@@ -562,10 +566,76 @@ function renderTargetTable() {
   `).join('');
 }
 
-function loadPlanToForm(idx) {
+/* V60.7：右側快速帶入改吃 TargetApp.plans */
+function renderQuickList() {
+  const q = norm2(getVal2('quickSearch'));
+  const box = document.getElementById('quickList');
+
+  let rows = Array.isArray(TargetApp.plans) ? TargetApp.plans : [];
+
+  rows = rows.filter(r => {
+    if (!q) return true;
+
+    const pool = [
+      r.work_order_no,
+      r.order_no,
+      r.part_no,
+      r.batch_no,
+      r.product_spec,
+      r.customer,
+      r.process_site,
+      r.machine_code,
+      r.leader_name,
+      r.status
+    ].join(' ');
+
+    return norm2(pool).includes(q);
+  }).slice(0, 120);
+
+  if (!rows.length) {
+    box.innerHTML = '沒有可快速帶入的工單。請先按「讀取歷史資料」或確認幹部目標清單日期。';
+    TargetApp.quickRows = [];
+    return;
+  }
+
+  TargetApp.quickRows = rows;
+
+  box.innerHTML = rows.map((r, idx) => {
+    const wo = r.work_order_no || r.order_no || '';
+    const spec = r.product_spec || '';
+    const customer = r.customer || '';
+    const process = r.process_site || r.site || r.process || '';
+    const date = normalizeDateText(getPlanDateRaw(r));
+    const targetR = r.target_r || r.target_roll || r.target_qty || '';
+    const targetM2 = r.target_m2 || r.target_m || '';
+    const status = r.status || '';
+
+    return `
+      <div class="quick-item" onclick="fillFromQuickPlan(${idx})">
+        <b>${esc2(wo || '未填工單')}</b>
+        <div class="mini">${esc2(date)}｜${esc2(process)}｜${esc2(customer)}</div>
+        <div class="mini">${esc2(spec)}</div>
+        <div class="mini">目標R：${esc2(targetR)}　目標㎡：${esc2(targetM2)}　狀態：${esc2(status)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function fillFromQuickPlan(idx) {
+  const p = TargetApp.quickRows && TargetApp.quickRows[idx];
+  if (!p) return;
+
+  loadPlanToForm(p);
+}
+
+function loadPlanToFormFromRendered(idx) {
   const p = TargetApp.renderedPlans && TargetApp.renderedPlans[idx];
   if (!p) return;
 
+  loadPlanToForm(p);
+}
+
+function loadPlanToForm(p) {
   setVal2('report_date', normalizeDateText(getPlanDateRaw(p)));
   setVal2('shift', p.shift || '早班');
   setVal2('leader_role', p.leader_role || '課長');
@@ -587,56 +657,6 @@ function loadPlanToForm(idx) {
   setVal2('note', p.note || p.remark || '');
 
   toast2('已帶入幹部目標資料');
-}
-
-function renderQuickList() {
-  const q = norm2(getVal2('quickSearch'));
-  const box = document.getElementById('quickList');
-
-  let rows = Array.isArray(TargetApp.source) ? TargetApp.source : [];
-
-  rows = rows.filter(r => {
-    if (!q) return true;
-    return norm2(Object.values(r).join(' ')).includes(q);
-  }).slice(0, 80);
-
-  if (!rows.length) {
-    box.innerHTML = '沒有可快速帶入的工單。';
-    TargetApp.quickRows = [];
-    return;
-  }
-
-  TargetApp.quickRows = rows;
-
-  box.innerHTML = rows.map((r, idx) => {
-    const wo = r.work_order_no || r.order_no || '';
-    const spec = r.product_spec || '';
-    const customer = r.customer || '';
-    const process = r.process || r.process_site || '';
-    return `
-      <div class="quick-item" onclick="fillFromSource(${idx})">
-        <b>${esc2(wo)}</b>
-        <div class="mini">${esc2(customer)}｜${esc2(process)}</div>
-        <div class="mini">${esc2(spec)}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-function fillFromSource(idx) {
-  const r = TargetApp.quickRows && TargetApp.quickRows[idx];
-  if (!r) return;
-
-  setVal2('work_order_no', r.work_order_no || r.order_no || '');
-  setVal2('order_no', r.order_no || '');
-  setVal2('part_no', r.part_no || '');
-  setVal2('batch_no', r.batch_no || '');
-  setVal2('customer', r.customer || '');
-  setVal2('product_spec', r.product_spec || '');
-  setVal2('machine_code', r.machine_code || r.machine || '');
-  setVal2('process_site', r.process_site || r.process || getVal2('process_site'));
-
-  toast2('已帶入工單資料');
 }
 
 async function saveTargetPlan() {
@@ -714,7 +734,7 @@ function collectTargetData() {
     plan_end: getVal2('plan_end'),
     status: getVal2('status'),
     note: getVal2('note'),
-    input_source: 'github_target_v60_6'
+    input_source: 'github_target_v60_7'
   };
 }
 
@@ -772,12 +792,15 @@ function getTodayYmd() {
 function toDateTimeLocal(v) {
   if (!v) return '';
   const s = String(v).trim();
+
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 16);
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) return s.replace(' ', 'T').slice(0, 16);
+
   if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
     const d = normalizeDateText(s);
     return d ? d + 'T00:00' : '';
   }
+
   return '';
 }
 
