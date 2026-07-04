@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V65.0 MES Enterprise Speed Stable｜Hybrid</title>
+<title>V65.2 MES Enterprise Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V65.0 Emergency DataHub Stable UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V65.0 Emergency DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V65.2 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V65.2 Stable DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1861,7 +1861,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V65.0 Emergency Stable';
+  window.MES_VERSION='V65.2 Stable';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -2407,37 +2407,273 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   document.addEventListener("DOMContentLoaded",function(){setTimeout(reload,1500);});
 })();
 </script>
-<script>
-/* V65.1 修正右下角狀態列顯示 0 */
+
+<!-- V65.2 Stable Unified DataHub Loader｜單一讀取邏輯，修正卡片與右下角狀態列 -->
+<script id="v652_stable_unified_loader">
 (function(){
-  function getHubCount(label){
-    const cards=[...document.querySelectorAll("*")].filter(x=>x.innerText && x.innerText.includes(label));
-    for(const c of cards){
-      const t=c.innerText.replace(/,/g,"");
-      const m=t.match(new RegExp(label+"[\\s\\S]*?(\\d{1,8})"));
-      if(m) return Number(m[1]).toLocaleString();
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var loading = false;
+
+  function s(v){ return String(v == null ? "" : v).trim(); }
+  function n(v){ var x = parseFloat(s(v).replace(/,/g,"")); return isNaN(x) ? 0 : x; }
+  function esc(v){ return s(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];}); }
+  function ymd(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function norm(v){ return s(v).replace(/\s+/g,"").toUpperCase(); }
+  function wo12(v){ return norm(v).slice(0,12); }
+  function rowsOf(res){
+    if(!res) return [];
+    if(Array.isArray(res)) return res;
+    if(Array.isArray(res.rows)) return res.rows;
+    if(Array.isArray(res.data)) return res.data;
+    if(res.result && Array.isArray(res.result.rows)) return res.result.rows;
+    if(res.result && Array.isArray(res.result.data)) return res.result.data;
+    return [];
+  }
+  function jsonp(action, params){
+    params = params || {};
+    return new Promise(function(resolve,reject){
+      var cb = "MES_V652_" + Date.now() + "_" + Math.floor(Math.random()*999999);
+      var script = document.createElement("script");
+      var timer = setTimeout(function(){
+        cleanup();
+        reject(new Error(action + " timeout"));
+      }, 45000);
+      function cleanup(){
+        clearTimeout(timer);
+        try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+        if(script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function(res){
+        cleanup();
+        if(res && res.ok === false) reject(new Error(res.message || res.error || action + " failed"));
+        else resolve(res || {});
+      };
+      script.onerror = function(){
+        cleanup();
+        reject(new Error(action + " JSONP failed"));
+      };
+      var q = Object.keys(params).map(function(k){
+        return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+      }).join("&");
+      script.src = API_URL + "?action=" + encodeURIComponent(action) + (q ? "&"+q : "") + "&callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
+      document.head.appendChild(script);
+    });
+  }
+  function pick(r, keys){
+    r = r || {};
+    for(var i=0;i<keys.length;i++){
+      var k = keys[i];
+      if(r[k] !== undefined && r[k] !== null && s(r[k]) !== "") return r[k];
     }
-    return "0";
+    return "";
+  }
+  function dateKey(v){
+    var x=s(v).replace(/\//g,"-");
+    var m=x.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    return m ? m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0") : x.slice(0,10);
+  }
+  function normalizeSourceRow(r, sourceName){
+    r = r || {};
+    return {
+      source: sourceName,
+      work_order_no: wo12(pick(r,["work_order_no","工單號","工單","命令單","命令單號","訂單單號","訂單號","單號","order_no"])),
+      order_no: pick(r,["order_no","訂單單號","訂單號","客戶訂單","銷售單號","單號"]),
+      part_no: pick(r,["part_no","料號","品號","料品編號","產品料號","產品編號","產品名稱","品名"]),
+      batch_no: pick(r,["batch_no","生產批號","批號","製號","產出製號","投入製號","Lot","LOT"]),
+      product_spec: pick(r,["product_spec","產品規格","規格","品名規格","長寬","尺寸","品名"]),
+      target_qty: n(pick(r,["target_qty","預計產量","目標數量","工單目標","訂單數量","目標卷數","卷數","數量","換算捲數","預計數量"])),
+      process: pick(r,["process","process_site","製程","製程站點","站點","目前製程","站別","加工製程","排程"]),
+      customer: pick(r,["customer","customer_name","客戶","客戶別","客戶名稱"]),
+      machine: pick(r,["machine","machine_code","機台","機台編號","機台代碼","設備","設備編號"]),
+      plan_date: dateKey(pick(r,["plan_date","日期","工單開立日","開立日","建立日","開單日","製令日期","工單日期","date"])),
+      due_date: dateKey(pick(r,["due_date","預交日","入庫日期","預計入庫日","預計完工日","交期","預定完成日","預計交貨日"])),
+      status: pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態","結案狀態"]),
+      issue_status: pick(r,["issue_status","異常","異常狀態","問題","備註","原因"]),
+      material_status: pick(r,["material_status","待料","領料狀態","備料狀態","物料狀態"]),
+      warehouse_status: pick(r,["warehouse_status","入庫","入庫狀態","倉庫狀態"]),
+      stockin_date: dateKey(pick(r,["stockin_date","實際入庫日","入庫完成日","入庫日期"])),
+      finish_date: dateKey(pick(r,["finish_date","完工日","完成日"])),
+      pick_date: dateKey(pick(r,["pick_date","領料日","領料日期"])),
+      priority: pick(r,["priority","優先","急件"]),
+      updated_at: pick(r,["updated_at","created_at","資料日期","最後資料","日期"]) || ""
+    };
+  }
+  function normalizeKeyin(rows){
+    return (rows||[]).map(function(r){
+      return {
+        date: r.report_date || "",
+        site: r.site || "",
+        wo: wo12(r.work_order_no || r.order_no || ""),
+        batch: r.batch_no || "",
+        part: r.part_no || "",
+        spec: r.product_spec || "",
+        target: n(r.target_qty),
+        empNo: r.emp_no || "",
+        empName: r.emp_name || "",
+        machine: r.machine_code || "",
+        actual: n(r.actual_output),
+        unit: r.unit || "",
+        note: r.process_note || "",
+        createdAt: r.created_at || ""
+      };
+    }).filter(function(r){ return r.wo || r.actual || r.empNo; });
+  }
+  function normalizeEmployees(rows){
+    var emp = {}, list = [];
+    (rows||[]).forEach(function(r){
+      var no = s(pick(r,["emp_no","工號","employee_no"]));
+      var name = s(pick(r,["emp_name","姓名","employee_name"]));
+      if(no){ emp[no]=name; list.push({emp_no:no, emp_name:name, raw:r}); }
+    });
+    window.EMP = emp;
+    window.EMP_ROWS = list;
+    return list;
+  }
+  function setStatus(msg, bad){
+    var box = document.getElementById("v650Status") || document.getElementById("v652Status");
+    if(!box){
+      box = document.createElement("div");
+      box.id = "v652Status";
+      box.style.cssText = "position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:920px;line-height:1.5";
+      document.body.appendChild(box);
+    }
+    box.style.borderColor = bad ? "#dc2626" : "#22c55e";
+    box.innerHTML = esc(msg);
+  }
+  function sourceCard(x){
+    var cls = x.count > 0 ? "v541-ok" : "v541-empty";
+    var icon = x.count > 0 ? "🟢" : "🟡";
+    return '<div class="v541-source '+cls+'"><div class="name">'+icon+' '+esc(x.name)+'</div><div class="sub">'+esc(x.sub)+'</div><div class="num">'+Number(x.count||0).toLocaleString()+'</div><div class="time">最後資料：'+esc(x.time||"-")+'</div></div>';
+  }
+  function latest(rows){
+    var m = "";
+    (rows||[]).forEach(function(r){
+      var u = r.updated_at || r.created_at || r.report_date || r.plan_date || r.due_date || "";
+      if(String(u) > String(m)) m = String(u);
+    });
+    return m || "-";
+  }
+  function renderHub(){
+    var grid = document.getElementById("dashboardGrid");
+    if(!grid || !window.AppState) return;
+    var old = document.getElementById("v541DataHub");
+    if(old) old.remove();
+
+    var list = [
+      {name:"SL31A", sub:"訂單 / 規格 / 目標", count:(AppState.sl||[]).length, time:latest(AppState.sl)},
+      {name:"4-3", sub:"工單 / 排程", count:(AppState.d43||[]).length, time:latest(AppState.d43)},
+      {name:"PD11B", sub:"日報 / 狀態", count:(AppState.pd||[]).length, time:latest(AppState.pd)},
+      {name:"5-C", sub:"命令單 / 製號 / 尺寸", count:(AppState.prod5c||[]).length, time:latest(AppState.prod5c)},
+      {name:"5-3", sub:"製程 / 機台 / 實績", count:(AppState.prod53||[]).length, time:latest(AppState.prod53)}
+    ];
+    var ok = list.filter(function(x){return x.count > 0;}).length;
+    var pct = Math.round(ok / list.length * 100);
+
+    var h = document.createElement("div");
+    h.id = "v541DataHub";
+    h.className = "v541-hub";
+    h.innerHTML =
+      '<div class="v541-hubTop"><div><h2>📁 五份資料更新中心｜Data Hub</h2><div class="meta">每日更新：SL31A、4-3、PD11B、5-C、5-3；Dashboard / Target / Key In / 晨會共用同一份資料。</div></div>' +
+      '<div class="v541-actions"><span class="v541-badge">完整度 '+ok+'/'+list.length+'｜'+pct+'%</span><button class="v541-btn" onclick="v541ReloadAll()">↻ 重新讀取五份資料</button><button class="v541-btn" onclick="switchView&&switchView(\'datacenter\')">資料中心</button></div></div>' +
+      '<div class="v541-sourceGrid">'+list.map(sourceCard).join("")+'</div><div class="v541-bar"><div class="v541-fill" style="width:'+pct+'%"></div></div>';
+    grid.insertBefore(h, grid.firstChild);
+  }
+  function renderAll(){
+    try{ if(typeof buildIndex === "function") buildIndex(); }catch(e){ console.warn("buildIndex",e); }
+    try{ if(typeof calcActual === "function") calcActual(); }catch(e){}
+    try{ if(typeof renderActive === "function") renderActive(); }catch(e){ console.warn("renderActive",e); }
+    renderHub();
   }
 
-  function fixBottomStatus(){
-    const sl=getHubCount("SL31A");
-    const d43=getHubCount("4-3");
-    const pd=getHubCount("PD11B");
-    const c5=getHubCount("5-C");
-    const p53=getHubCount("5-3");
+  async function reloadV652(){
+    if(loading) return;
+    loading = true;
+    setStatus("V65.2 正在讀取五份資料...");
+    try{
+      window.AppState = window.AppState || {};
+      var d = ymd();
 
-    const msg=`V65.1 已讀取 | SL31A：${sl} | 4-3：${d43} | PD11B：${pd} | 5-C：${c5} | 5-3：${p53}`;
+      var all = await Promise.allSettled([
+        jsonp("listsl31a",{}),
+        jsonp("list43",{}),
+        jsonp("listpd11b",{}),
+        jsonp("5-c",{}),
+        jsonp("5-3",{}),
+        jsonp("listtargetplans",{date:d}),
+        jsonp("listkeyin",{date:d}),
+        jsonp("listemployees",{})
+      ]);
 
-    const boxes=[...document.querySelectorAll("div")]
-      .filter(x=>x.innerText && x.innerText.includes("V65.0 已讀取"));
+      var SL = all[0].status === "fulfilled" ? rowsOf(all[0].value) : [];
+      var D43 = all[1].status === "fulfilled" ? rowsOf(all[1].value) : [];
+      var PD = all[2].status === "fulfilled" ? rowsOf(all[2].value) : [];
+      var C5 = all[3].status === "fulfilled" ? rowsOf(all[3].value) : [];
+      var P53 = all[4].status === "fulfilled" ? rowsOf(all[4].value) : [];
+      var TP = all[5].status === "fulfilled" ? rowsOf(all[5].value) : [];
+      var KI = all[6].status === "fulfilled" ? rowsOf(all[6].value) : [];
+      var EM = all[7].status === "fulfilled" ? rowsOf(all[7].value) : [];
 
-    boxes.forEach(x=>x.innerText=msg);
+      AppState.sl = SL.map(function(r){ return normalizeSourceRow(r,"SL31A"); });
+      AppState.d43 = D43.map(function(r){ return normalizeSourceRow(r,"4-3"); });
+      AppState.pd = PD.map(function(r){ return normalizeSourceRow(r,"PD11B"); });
+      AppState.prod5c = C5;
+      AppState.prod53 = P53;
+      AppState.source = [].concat(AppState.sl, AppState.d43, AppState.pd);
+      AppState.targets = TP;
+      AppState.keyin = normalizeKeyin(KI);
+      var empRows = normalizeEmployees(EM);
+
+      AppState.sourceSummary = {
+        "SL31A": {count: AppState.sl.length, updated_at: latest(AppState.sl)},
+        "4-3": {count: AppState.d43.length, updated_at: latest(AppState.d43)},
+        "PD11B": {count: AppState.pd.length, updated_at: latest(AppState.pd)},
+        "5-C": {count: AppState.prod5c.length, updated_at: latest(AppState.prod5c)},
+        "5-3": {count: AppState.prod53.length, updated_at: latest(AppState.prod53)}
+      };
+      AppState.apiHealth = {
+        source: AppState.source.length > 0,
+        targets: TP.length > 0,
+        keyin: true,
+        employees: empRows.length > 0,
+        prod5c: C5.length > 0,
+        prod53: P53.length > 0
+      };
+
+      renderAll();
+
+      setStatus(
+        "V65.2 已讀取｜SL31A："+AppState.sl.length.toLocaleString()+
+        "｜4-3："+AppState.d43.length.toLocaleString()+
+        "｜PD11B："+AppState.pd.length.toLocaleString()+
+        "｜5-C："+AppState.prod5c.length.toLocaleString()+
+        "｜5-3："+AppState.prod53.length.toLocaleString()+
+        "｜Dashboard列："+AppState.source.length.toLocaleString()+
+        "｜工單索引："+Object.keys(AppState.idx||{}).length.toLocaleString()
+      );
+      console.log("V65.2 Stable OK", AppState.sourceSummary);
+    }catch(e){
+      console.error("V65.2 reload failed",e);
+      setStatus("V65.2 讀取失敗："+(e.message||e), true);
+    }finally{
+      loading = false;
+    }
   }
 
-  setInterval(fixBottomStatus,1000);
-  setTimeout(fixBottomStatus,1500);
+  window.v541RenderDataHub = renderHub;
+  window.v541ReloadAll = reloadV652;
+  window.v650ReloadAll = reloadV652;
+  window.v610CleanReload = reloadV652;
+  window.loadSource = reloadV652;
+  window.loadKeyin = reloadV652;
+  window.loadTargets = reloadV652;
+  window.loadEmployees = reloadV652;
+  window.reloadV652 = reloadV652;
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(reloadV652, 2200);
+  });
 })();
 </script>
+
 </body>
 </html>
