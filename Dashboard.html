@@ -3569,5 +3569,253 @@ V60.9.3 Dashboard API Patch
   };
 })();
 </script>
+<!-- V60.9.8 Dashboard Sync Fix｜以原本 AppState 為主，修正主畫面 KPI 仍為 0 -->
+<script id="v6098_dashboard_sync_fix">
+(function(){
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(v6098SyncDashboard, 1800);
+    setTimeout(v6098SyncDashboard, 3500);
+    setTimeout(v6098SyncDashboard, 6000);
+  });
+
+  window.v6098SyncDashboard = v6098SyncDashboard;
+
+  function v6098SyncDashboard(){
+    try {
+      var source = (window.AppState && Array.isArray(AppState.source)) ? AppState.source : [];
+      var keyin = (window.AppState && Array.isArray(AppState.keyin)) ? AppState.keyin : [];
+      var targets = (window.AppState && Array.isArray(AppState.targets)) ? AppState.targets : [];
+
+      var sourceCount = source.length;
+      var keyinCount = keyin.length;
+      var targetCount = targets.length;
+
+      var empSet = new Set();
+      var totalOutput = 0;
+
+      keyin.forEach(function(r){
+        var emp = r.empNo || r.emp_no || r.empName || r.emp_name || "";
+        if (emp) empSet.add(String(emp));
+
+        var qty = Number(String(
+          r.actual ||
+          r.actual_output ||
+          r.output ||
+          r.實際產量 ||
+          0
+        ).replace(/,/g, ""));
+
+        if (!isNaN(qty)) totalOutput += qty;
+      });
+
+      var doneCount = 0;
+      var runningCount = 0;
+      var lateCount = 0;
+      var waitCount = 0;
+
+      if (source.length && typeof orderStatus === "function") {
+        source.forEach(function(r){
+          var st = "";
+
+          try {
+            var wo = wo12Local(r.work_order_no || r.order_no || r.工單號 || r.工單 || "");
+            var obj = null;
+
+            if (window.AppState && AppState.idx && wo && AppState.idx[wo]) {
+              obj = AppState.idx[wo];
+            }
+
+            st = obj ? orderStatus(obj) : "";
+          } catch(e) {}
+
+          if (st === "已入庫") doneCount++;
+          else if (st === "生產中") runningCount++;
+          else if (st === "逾期") lateCount++;
+          else if (st === "待料") waitCount++;
+        });
+      }
+
+      // 如果狀態判斷抓不到，就至少不要顯示錯誤資料
+      if (!doneCount && !runningCount && !lateCount && sourceCount) {
+        runningCount = keyinCount > 0 ? keyinCount : 0;
+      }
+
+      setNumberNearTitle(["總工單數","總工單","雲端工單"], sourceCount);
+      setNumberNearTitle(["已完成工單","完成","已入庫"], doneCount);
+      setNumberNearTitle(["逾期未完成","逾期工單","逾期"], lateCount);
+      setNumberNearTitle(["待確認/待料","待料","待確認"], waitCount);
+      setNumberNearTitle(["今日 KeyIn 數","今日 Key In 數","今日 KeyIn","KeyIn"], keyinCount);
+      setNumberNearTitle(["今日人員數","今日人員"], empSet.size);
+      setNumberNearTitle(["已設目標","今日目標","幹部目標"], targetCount);
+      setNumberNearTitle(["總產量","產量"], Math.round(totalOutput * 100) / 100);
+
+      updatePatchStatus(sourceCount, targetCount, keyinCount, empSet.size);
+      renderSmallDebugPanel(source, targets, keyin);
+
+      console.log("V60.9.8 Sync OK", {
+        source: sourceCount,
+        targets: targetCount,
+        keyin: keyinCount,
+        employees: empSet.size
+      });
+
+    } catch(err) {
+      console.error("V60.9.8 Sync failed", err);
+      updatePatchStatus(0, 0, 0, 0, "同步失敗：" + err.message);
+    }
+  }
+
+  function setNumberNearTitle(titles, value){
+    var all = Array.from(document.querySelectorAll("body *"));
+
+    for (var i = 0; i < all.length; i++) {
+      var node = all[i];
+      var text = clean(node.textContent);
+
+      if (!text) continue;
+
+      var hit = titles.some(function(t){
+        return text === t || text.indexOf(t) >= 0;
+      });
+
+      if (!hit) continue;
+
+      var card = findCard(node);
+      if (!card) continue;
+
+      var nums = Array.from(card.querySelectorAll("*")).filter(function(el){
+        var t = clean(el.textContent);
+        return t === "0" || /^-?\d+(\.\d+)?%?$/.test(t);
+      });
+
+      if (nums.length) {
+        nums[0].textContent = value;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function findCard(el){
+    var cur = el;
+
+    for (var i = 0; i < 9 && cur; i++) {
+      var cls = String(cur.className || "").toLowerCase();
+
+      if (
+        cls.indexOf("card") >= 0 ||
+        cls.indexOf("kpi") >= 0 ||
+        cls.indexOf("source") >= 0 ||
+        cls.indexOf("metric") >= 0 ||
+        cls.indexOf("stat") >= 0 ||
+        cls.indexOf("v456") >= 0 ||
+        cls.indexOf("v455") >= 0
+      ) {
+        return cur;
+      }
+
+      cur = cur.parentElement;
+    }
+
+    return el.parentElement;
+  }
+
+  function updatePatchStatus(sourceCount, targetCount, keyinCount, empCount, extra){
+    var box =
+      document.getElementById("v6097ApiStatus") ||
+      document.getElementById("v6098ApiStatus");
+
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "v6098ApiStatus";
+      box.style.cssText = [
+        "position:fixed",
+        "right:18px",
+        "bottom:18px",
+        "z-index:999999",
+        "background:#0f172a",
+        "color:#e5e7eb",
+        "border:1px solid #334155",
+        "border-radius:12px",
+        "padding:10px 14px",
+        "font-size:13px",
+        "box-shadow:0 8px 22px rgba(0,0,0,.25)",
+        "max-width:680px",
+        "line-height:1.5"
+      ].join(";");
+
+      document.body.appendChild(box);
+    }
+
+    box.innerHTML =
+      "V60.9.8 已同步主系統資料｜source_data：" + sourceCount +
+      " 筆｜Target_Plan：" + targetCount +
+      " 筆｜keyin：" + keyinCount +
+      " 筆｜人員：" + empCount + " 人" +
+      (extra ? "｜" + esc(extra) : "");
+  }
+
+  function renderSmallDebugPanel(source, targets, keyin){
+    var root = document.querySelector("#dashboardGrid") || document.querySelector(".wrap") || document.body;
+    var panel = document.getElementById("v6098DebugPanel");
+
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "v6098DebugPanel";
+      panel.style.cssText = [
+        "margin:18px 0",
+        "background:#071a36",
+        "border:1px solid #244b75",
+        "border-radius:16px",
+        "padding:14px",
+        "color:#eaf2ff",
+        "box-shadow:0 6px 18px rgba(0,0,0,.18)"
+      ].join(";");
+
+      root.appendChild(panel);
+    }
+
+    panel.innerHTML =
+      '<h2 style="margin:0 0 10px;font-size:20px;color:#eaf2ff">V60.9.8 主系統資料同步檢查</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">' +
+        mini("source_data", source.length) +
+        mini("Target_Plan", targets.length) +
+        mini("keyin", keyin.length) +
+      '</div>' +
+      '<div style="font-size:13px;color:#bfdbfe;line-height:1.6">' +
+        '如果上方 DataHub 有數字，這裡也有數字，代表 GitHub 主網頁已經讀到 Apps Script 資料。' +
+        '<br>若主管首頁 KPI 還是 0，請按「立即更新」或重新整理一次。' +
+      '</div>';
+  }
+
+  function mini(name, val){
+    return '<div style="background:#102b55;border:1px solid #244b75;border-radius:12px;padding:12px">' +
+      '<div style="font-size:13px;color:#bfdbfe;font-weight:900">' + esc(name) + '</div>' +
+      '<div style="font-size:30px;font-weight:900;color:white;margin-top:6px">' + esc(val) + '</div>' +
+    '</div>';
+  }
+
+  function clean(v){
+    return String(v == null ? "" : v).trim().replace(/\s+/g, " ");
+  }
+
+  function wo12Local(v){
+    return String(v || "").trim().replace(/\s+/g, "").toUpperCase().slice(0, 12);
+  }
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function(s){
+      return {
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
+      }[s];
+    });
+  }
+})();
+</script>
 </body>
 </html>
