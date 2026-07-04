@@ -3,43 +3,68 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V66.2 MES Key In Stable</title>
+<title>生產 Key In｜V66.3 Stable</title>
 <style>
-:root{--bg:#071529;--card:#112b52;--line:#29466f;--txt:#eef6ff;--muted:#a9c1df;--brand:#2563eb;--ok:#16a34a}
+:root{
+  --bg:#071529;--panel:#0b2140;--card:#112b52;--line:#29466f;
+  --txt:#eef6ff;--muted:#a9c1df;--brand:#2563eb;--ok:#16a34a;
+  --warn:#f59e0b;--bad:#dc2626
+}
 *{box-sizing:border-box}
-body{margin:0;background:linear-gradient(135deg,#061529,#0b2140 55%,#061529);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--txt)}
-header{padding:22px 28px;background:linear-gradient(135deg,#0f3b8f,#071529);border-bottom:1px solid #1e3a5f}
-h1{margin:0;font-size:34px} header p{color:#c7d7f0;margin:8px 0 0}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#061529,#0b2140 55%,#061529);
+  font-family:"Microsoft JhengHei",Arial,sans-serif;
+  color:var(--txt)
+}
+header{
+  padding:22px 28px;
+  background:linear-gradient(135deg,#0f3b8f,#071529);
+  border-bottom:1px solid #1e3a5f
+}
+h1{margin:0;font-size:34px}
+header p{color:#c7d7f0;margin:8px 0 0}
 .wrap{max-width:1500px;margin:auto;padding:18px}
-.nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.nav a{color:#fff;background:#1d4ed8;text-decoration:none;padding:9px 13px;border-radius:10px;font-weight:900}
+.card{
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px;
+  margin:14px 0;
+  box-shadow:0 12px 32px rgba(0,0,0,.18)
+}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
-.col6{grid-column:span 6}@media(max-width:900px){.col6{grid-column:span 12}}
-.card{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}
-.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:900;color:white;background:var(--brand);cursor:pointer;margin:4px}
-.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}
-input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #bed0e8;font-size:16px}
+.col6{grid-column:span 6}
+@media(max-width:900px){.col6{grid-column:span 12}}
+.btn{
+  border:0;border-radius:12px;padding:11px 16px;font-weight:900;color:white;
+  background:var(--brand);cursor:pointer;margin:4px
+}
+.btn.ok{background:var(--ok)}
+.btn.ghost{background:#e8f0ff;color:#1e3a8a}
+input,select,textarea{
+  width:100%;padding:12px;border-radius:12px;border:1px solid #bed0e8;font-size:16px
+}
 label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}
-.light{background:#f8fbff;color:#10213c}
 .muted{color:var(--muted);font-size:13px}
-.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}
+.toast{
+  position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;
+  padding:12px 16px;border-radius:12px;display:none;z-index:9999
+}
 .toast.show{display:block}
+.light{background:#f8fbff;color:#10213c}
 .statusOk{color:#86efac}
+.statusBad{color:#fecaca}
 </style>
 </head>
+
 <body>
 <header>
-  <h1>生產 Key In｜V66.2 Stable</h1>
+  <h1>生產 Key In｜V66.3 Stable</h1>
   <p>人員回報產量 / บันทึกผลงานผลิต</p>
 </header>
 
 <div class="wrap">
-  <div class="nav">
-    <a href="Dashboard.html">Dashboard</a>
-    <a href="index.html">Key In</a>
-    <a href="Target.html">Target</a>
-  </div>
-
   <div class="grid">
     <div class="card col6">
       <h2>工單資料</h2>
@@ -50,7 +75,11 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}
 
       <label>製程站點</label>
       <select id="site">
-        <option>分條</option><option>複捲</option><option>包裝</option><option>上膠</option><option>其他</option>
+        <option>分條</option>
+        <option>複捲</option>
+        <option>包裝</option>
+        <option>上膠</option>
+        <option>其他</option>
       </select>
 
       <label>工單號</label>
@@ -66,7 +95,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}
       <h2>人員與產出</h2>
 
       <label>工號</label>
-      <input id="emp_no" oninput="fillEmp()" placeholder="例如 10401">
+      <input id="emp_no" oninput="fillEmp()" placeholder="例如 11035">
 
       <label>姓名</label>
       <input id="emp_name" placeholder="依工號自動帶入，可手動補充">
@@ -79,7 +108,10 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}
 
       <label>單位</label>
       <select id="unit">
-        <option>R</option><option>M2</option><option>M</option><option>PCS</option>
+        <option>R</option>
+        <option>M2</option>
+        <option>M</option>
+        <option>PCS</option>
       </select>
 
       <label>備註</label>
@@ -95,6 +127,7 @@ label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}
 
 <script>
 const API_URL="https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
 let IDX={}, EMP={};
 
 function toast(s){
@@ -110,12 +143,17 @@ function wo12(v){return String(v??"").trim().replace(/\s+/g,"").toUpperCase().sl
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 function apiGet(action,params={}){
-  if(action==="source"||action==="getsourcedata") action="keyinsource";
+  if(action==="source" || action==="getsourcedata") action="keyinsource";
+
   return new Promise((resolve,reject)=>{
     const cb="MES_KEYIN_CB_"+Date.now()+"_"+Math.floor(Math.random()*999999);
     const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();
     const s=document.createElement("script");
-    const timer=setTimeout(()=>{cleanup();reject(new Error("API 讀取逾時："+action));},30000);
+
+    const timer=setTimeout(()=>{
+      cleanup();
+      reject(new Error("API 讀取逾時："+action));
+    },30000);
 
     function cleanup(){
       clearTimeout(timer);
@@ -207,7 +245,10 @@ function lookup(){
   const r=IDX[w];
   const box=document.getElementById("lookup");
 
-  if(!w){box.innerHTML="請輸入工單號";return}
+  if(!w){
+    box.innerHTML="請輸入工單號";
+    return;
+  }
 
   if(!r){
     box.innerHTML="查無工單："+esc(w);
