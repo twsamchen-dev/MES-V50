@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V61.0 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.0 Clean DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V61.1 Clean Enterprise Formal UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V61.1 Clean DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1809,7 +1809,21 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
-  function bySource(name){var rows=(window.AppState&&AppState.source)||[];return rows.filter(function(r){return String((r.source||'')).toUpperCase().indexOf(String(name).toUpperCase())>=0;}).length;}
+  function normalizeSourceLabel(v){
+    var s=String(v==null?"":v).trim().toUpperCase();
+    s=s.replace(/[‐‑‒–—−－]/g,"-").replace(/\s+/g,"");
+    if(/^4[-_]?3$/.test(s) || /4[-_]?3/.test(s)) return "4-3";
+    if(/SL31/.test(s)) return "SL31A";
+    if(/PD11/.test(s)) return "PD11B";
+    if(/5[-_]?C/.test(s)) return "5-C";
+    if(/5[-_]?3/.test(s)) return "5-3";
+    return s;
+  }
+  function bySource(name){
+    var rows=(window.AppState&&AppState.source)||[];
+    var key=normalizeSourceLabel(name);
+    return rows.filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
+  }
   function updatedAt(rows){
     rows=rows||[];var m='';rows.forEach(function(r){var u=r.updated_at||r.created_at||r.prod_date||r.report_date||r.plan_date||'';if(String(u)>String(m))m=u;});return m||'-';
   }
@@ -1821,7 +1835,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(!pd && source.length) pd=source.filter(function(r){return /PD11/i.test(String(r.source||''));}).length;
     return [
       {k:'SL31A',name:'SL31A',sub:'訂單 / 規格 / 目標',count:sl,time:updatedAt(source.filter(function(r){return /SL31/i.test(String(r.source||''));}))},
-      {k:'4-3',name:'4-3',sub:'工單 / 排程',count:f43,time:updatedAt(source.filter(function(r){return /4-3/.test(String(r.source||''));}))},
+      {k:'4-3',name:'4-3',sub:'工單 / 排程',count:f43,time:updatedAt(source.filter(function(r){return normalizeSourceLabel(r.source||'')==='4-3';}))},
       {k:'PD11B',name:'PD11B',sub:'日報 / 狀態',count:pd,time:updatedAt(source.filter(function(r){return /PD11/i.test(String(r.source||''));}))},
       {k:'5-C',name:'5-C',sub:'命令單 / 製號 / 尺寸',count:safeCount(AppState.prod5c),time:updatedAt(AppState.prod5c)},
       {k:'5-3',name:'5-3',sub:'製程 / 機台 / 實績',count:safeCount(AppState.prod53),time:updatedAt(AppState.prod53)}
@@ -1939,9 +1953,13 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
   function detectSource(r){
     var s=String(pick(r,["source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"])).trim();
-    if(s)return s;
+    if(s){
+      var ns=normalizeSourceLabel(s);
+      if(ns==="4-3"||ns==="SL31A"||ns==="PD11B"||ns==="5-C"||ns==="5-3") return ns;
+      return s;
+    }
     var all="";
-    try{all=JSON.stringify(r||{}).toUpperCase();}catch(e){all="";}
+    try{all=JSON.stringify(r||{}).toUpperCase().replace(/[\u2010\u2011\u2012\u2013\u2014\u2212\uFF0D]/g,"-");}catch(e){all="";}
     if(all.indexOf("SL31")>=0)return "SL31A";
     if(all.indexOf("PD11")>=0)return "PD11B";
     if(all.indexOf("4-3")>=0 || all.indexOf("4_3")>=0)return "4-3";
@@ -2048,8 +2066,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   }
 
   function countSource(key){
-    key=String(key||"").toUpperCase();
-    return (AppState.source||[]).filter(function(r){return String(r.source||"").toUpperCase().indexOf(key)>=0;}).length;
+    key=normalizeSourceLabel(key);
+    return (AppState.source||[]).filter(function(r){return normalizeSourceLabel(r.source||r.來源||r.__sheet||"")===key;}).length;
   }
 
   function status(msg,bad){
@@ -2137,5 +2155,40 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   });
 })();
 </script>
+
+
+<!-- V61.1 4-3 Source Label Fix｜修正 4-3 因連字號/空白造成前端統計為 0 -->
+<script id="v611_4_3_source_label_fix">
+(function(){
+  function canonical(v){
+    var s=String(v==null?"":v).trim().toUpperCase();
+    s=s.replace(/[‐‑‒–—−－]/g,"-").replace(/\s+/g,"");
+    if(/^4[-_]?3$/.test(s) || /4[-_]?3/.test(s)) return "4-3";
+    if(/SL31/.test(s)) return "SL31A";
+    if(/PD11/.test(s)) return "PD11B";
+    if(/5[-_]?C/.test(s)) return "5-C";
+    if(/5[-_]?3/.test(s)) return "5-3";
+    return String(v==null?"":v).trim();
+  }
+  function fix(){
+    if(!window.AppState || !Array.isArray(AppState.source)) return;
+    AppState.source.forEach(function(r){ if(r) r.source=canonical(r.source||r.來源||r.__sheet||r.sheet||""); });
+    try{ if(typeof buildIndex==="function") buildIndex(); }catch(e){}
+    try{ if(typeof calcActual==="function") calcActual(); }catch(e){}
+    try{ if(typeof renderActive==="function") renderActive(); }catch(e){}
+    try{ if(typeof v541RenderDataHub==="function") v541RenderDataHub(); }catch(e){}
+    var f43=AppState.source.filter(function(r){return canonical(r&&r.source)==="4-3";}).length;
+    if(f43>0){
+      var box=document.getElementById("v610CleanStatus");
+      if(box){
+        box.innerHTML=String(box.innerHTML).replace(/4-3：0/g,"4-3："+f43).replace(/4-3\s*:\s*0/g,"4-3："+f43);
+      }
+    }
+  }
+  window.v611FixSourceLabels=fix;
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(fix,3000);setTimeout(fix,8000);});
+})();
+</script>
+
 </body>
 </html>
