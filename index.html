@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V69 MES 生產 Key In</title>
+<title>V69.1 MES 生產 Key In</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -19,7 +19,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V69 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V69.1 MES Enterprise</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -39,11 +39,21 @@
     <label>回報日期 / วันที่รายงาน</label><input id="report_date" type="date" onchange="onReportDateChange()">
     <label>製程站點 / จุดกระบวนการ</label>
     <select id="site">
-      <option value="分條">分條 / ตัดแบ่งม้วน</option>
-      <option value="複捲">複捲 / กรอกลับ</option>
-      <option value="包裝">包裝 / บรรจุ</option>
+      <option value="開料">開料 / ตัดวัตถุดิบ</option>
+      <option value="清洗">清洗 / ล้าง</option>
+      <option value="退火">退火 / อบคืนตัว</option>
+      <option value="軋延">軋延 / รีด</option>
       <option value="上膠">上膠 / เคลือบกาว</option>
       <option value="覆卷">覆卷 / ม้วนซ้ำ</option>
+      <option value="分條" selected>分條 / ตัดแบ่งม้วน</option>
+      <option value="複捲">複捲 / กรอกลับ</option>
+      <option value="對貼">對貼 / ประกบ</option>
+      <option value="裁切">裁切 / ตัดแผ่น</option>
+      <option value="檢驗">檢驗 / ตรวจสอบ</option>
+      <option value="包裝">包裝 / บรรจุ</option>
+      <option value="入庫">入庫 / เข้าคลัง</option>
+      <option value="重工">重工 / งานแก้ไข</option>
+      <option value="其他">其他 / อื่นๆ</option>
     </select>
     <label>工單號（12碼主工單）/ เลขที่ใบงาน</label><input id="work_order_no" placeholder="例如 MM2605060026" oninput="lookupWO()">
     <label>生產批號 / Lot / ล็อตผลิต</label><input id="batch_no" disabled placeholder="由工單自動帶入">
@@ -105,14 +115,14 @@ async function loadAll(){qs('loadStatus').textContent='讀取中...';try{const [
 async function loadKeyin(show=true){try{const r=await getApi('listKeyin',{date:safeGet('report_date')||isoDate()});App.keyin=(r&&r.rows)||[];renderKeyin();if(show&&window.MES)MES.toast('已讀取今日回報')}catch(e){if(window.MES)MES.toast('讀取回報失敗：'+e.message)}}
 function onReportDateChange(){App.idx=-1;renderPlansHint();loadKeyin(false)}
 function setPlanRange(mode){App.range=mode;App.idx=-1;['today','week','month'].forEach(m=>{const b=qs('range_'+m);if(b)b.classList.toggle('active',m===mode)});renderPlansHint()}
-function currentPlans(){let rows=App.plans.filter(p=>inRange(p.report_date||p.planned_finish));if(rows.length)return rows;return App.source.filter(r=>!rowDate(r)||inRange(rowDate(r))).slice(0,300)}
+function currentPlans(){return App.plans.filter(p=>inRange(p.report_date||p.planned_finish||p.created_at))}
 function lookupWO(){const w=wo(safeGet('work_order_no'));if(!w)return;safeSet('work_order_no',w);const r=App.source.find(x=>wo(x.work_order_no||x.order_no)===w);const box=qs('woMsg');if(!r){box.className='alert';box.innerHTML='查無工單，請確認是否已上傳每日資料。';return}safeSet('batch_no',r.batch_no);if(!safeGet('machine_code'))safeSet('machine_code',r.machine_code);box.className='okbox';box.innerHTML='<b>已帶入工單</b><br>'+html([r.customer,r.product_spec,r.process].filter(Boolean).join('｜'))}
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
-function renderPlansHint(){const r=rangeObj();qs('planRangeText').textContent=r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');qs('planTitle').textContent=r.label+'待辦工單';const list=currentPlans();qs('todayPlans').innerHTML=list.length?list.slice(0,12).map((p,i)=>{const o=sourceObj(p);return '<div class="planItem" onclick="pickPlan('+i+')"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div>'}).join(''):'查無'+r.label+'待辦工單。'}
+function renderPlansHint(){const r=rangeObj();qs('planRangeText').textContent=r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');qs('planTitle').textContent=r.label+'幹部目標工單';const list=currentPlans();qs('todayPlans').innerHTML=list.length?list.slice(0,12).map((p,i)=>{const o=sourceObj(p);return '<div class="planItem" onclick="pickPlan('+i+')"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div>'}).join(''):'查無'+r.label+'幹部目標工單。'}
 function pickPlan(i){const p=currentPlans()[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);lookupWO()}
-function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+rangeObj().label+'待辦工單')}
+function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+rangeObj().label+'幹部目標工單')}
 function nextOrder(){const list=currentPlans();if(!list.length){if(window.MES)MES.toast('沒有可跳轉工單');return}App.idx=(App.idx+1)%list.length;pickPlan(App.idx)}
-async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:w,order_no:w,batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),input_source:'github_v68_3_keyin'};try{await postApi('saveKeyin',data);if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');safeSet('actual_output','');safeSet('process_note','');setTimeout(()=>loadKeyin(false),1800);if(qs('autoNext').checked)nextOrder()}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:w,order_no:w,batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),input_source:'github_v69_1_keyin'};try{await postApi('saveKeyin',data);if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');safeSet('actual_output','');safeSet('process_note','');setTimeout(()=>loadKeyin(false),1800);if(qs('autoNext').checked)nextOrder()}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function renderKeyin(){const q=nrm(safeGet('search'));const rows=App.keyin.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();qs('count').textContent='顯示 '+rows.length+' / '+App.keyin.length+' 筆';qs('rows').innerHTML=rows.map(r=>'<tr><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="12" class="hint">尚無資料</td></tr>'}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v68_3.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{safeSet('report_date',isoDate());loadAll()});
