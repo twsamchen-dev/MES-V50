@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V62.0 MES Enterprise Speed Stable｜Hybrid</title>
+<title>V63.0 MES Enterprise Speed Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V62.0 Enterprise Speed Stable UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V62.0 Speed DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V63.0 DataHub Sheet Stable UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V63.0 Sheet DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -468,19 +468,21 @@ async function uploadCloud(){
     openAdminUploadCenter();
     return;
   }
-  var rows=[].concat(toSourceRows('4-3',AppState.d43),toSourceRows('PD11B',AppState.pd),toSourceRows('SL31A',AppState.sl));
-  if(!rows.length && !AppState.prod5cRaw.length && !AppState.prod53Raw.length){alert('沒有資料，請先選五份檔案');return}
+  var hasMain=(AppState.d43&&AppState.d43.length)||(AppState.pd&&AppState.pd.length)||(AppState.sl&&AppState.sl.length);
+  if(!hasMain && !AppState.prod5cRaw.length && !AppState.prod53Raw.length){alert('沒有資料，請先選五份檔案');return}
   var btn=el('uploadBtn');
   var oldText=btn?btn.textContent:'';
   if(btn)btn.disabled=true;
   try{
     setUploadProgress('開始分批上傳，請不要關閉視窗...');
     var chunk=900;
-    await uploadChunksSource(rows,chunk);
+    await uploadChunksRaw('SL31A',AppState.sl,chunk);
+    await uploadChunksRaw('4-3',AppState.d43,chunk);
+    await uploadChunksRaw('PD11B',AppState.pd,chunk);
     await uploadChunksRaw('5-C',AppState.prod5cRaw,chunk);
     await uploadChunksRaw('5-3',AppState.prod53Raw,chunk);
     setUploadProgress('✅ ✅ 上傳完成，正在快速讀取 Dashboard 摘要...');
-    alert('✅ 五份資料已分批更新完成。讀取速度已改為快速模式。');
+    alert('✅ 五份資料已更新完成。V63 已改為獨立分頁：SL31A / 4-3 / PD11B / 5-C / 5-3。');
     if(typeof v541ReloadAll==='function')setTimeout(v541ReloadAll,500);
   }catch(e){
     console.error(e);
@@ -1859,7 +1861,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </style>
 <script id="v541-datahub-upgrade">
 (function(){
-  window.MES_VERSION='V62.0 Speed Stable';
+  window.MES_VERSION='V63.0 Sheet Stable';
   if(window.AppState){AppState.prod5c=AppState.prod5c||[];AppState.prod53=AppState.prod53||[];AppState.apiHealth=AppState.apiHealth||{};}
   function now(){return new Date().toLocaleString();}
   function safeCount(a){return Array.isArray(a)?a.length:0;}
@@ -2201,7 +2203,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V62.0 Speed 正在讀取 Apps Script 資料...");
+    status("V63.0 Sheet 正在讀取 Apps Script 資料...");
     try{
       var d=ymd();
       var result=await Promise.allSettled([
@@ -2230,8 +2232,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V62.0 Speed 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
-      console.log("V62.0 Speed OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
+      status("V63.0 Sheet 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      console.log("V63.0 Sheet OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
       status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
@@ -2291,7 +2293,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
 
 
-<!-- V62.0 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
+<!-- V63.0 4-3 強制歸類修正｜source_data 內未標示來源但有工單者歸為 4-3 -->
 <script id="v614_4_3_force_source_data_fix">
 (function(){
   function safeStr(v){return String(v==null?"":v).trim();}
@@ -2350,10 +2352,10 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(box){
       var msg=String(box.innerHTML||"");
       msg=msg.replace(/4-3：\d+/g,"4-3："+f43).replace(/4-3\s*:\s*\d+/g,"4-3："+f43);
-      if(msg.indexOf("V62.0 4-3修正")<0) msg += "｜V62.0 4-3修正";
+      if(msg.indexOf("V63.0 4-3修正")<0) msg += "｜V63.0 4-3修正";
       box.innerHTML=msg;
     }
-    console.log("V62.0 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
+    console.log("V63.0 4-3 force fix",{changed:changed,f43:f43,total:AppState.source.length});
   }
   window.v614Fix43=fix43;
   document.addEventListener("DOMContentLoaded",function(){
