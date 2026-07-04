@@ -2,13 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V70 MES Target Enterprise</title>
+<title>V70.1 MES Target Enterprise</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:24px 28px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:30px}header p{margin:8px 0 0;color:#dbeafe}.wrap{max-width:1560px;margin:auto;padding:18px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 28px rgba(15,23,42,.08)}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:900px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:10px 0 5px;font-weight:900}input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px;background:white}.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:4px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpi{color:white;border-radius:18px;padding:18px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.9}.kpi .num{font-size:38px;font-weight:900;margin-top:8px}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:10px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:6px 10px;font-weight:900;font-size:13px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.subhead{font-size:14px;color:#475569;margin-top:5px}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:190px}.th{color:#334155;font-size:13px}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V70 Enterprise</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V70 不開頁讀取 5000 筆工單；輸入工單才查 4-3 / PD11B / SL31A，不影響其他網頁。</p></header>
+<header><h1>今日幹部目標設定中心｜V70.1 Enterprise</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V70.1 只改 Target；右側顯示上傳五份資料，依預交日排序；輸入/點選工單才帶入客戶與 SL31A ㎡。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12">
@@ -60,14 +60,14 @@
       <div class="col12"><label>備註 / หมายเหตุ</label><textarea id="note" rows="3"></textarea></div>
     </div><div id="lookupBox" class="found">輸入工單號後才查資料，不會開頁逾時。</div><button class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
 
-    <div class="card col4"><h2><span id="quickTitle">今日目標工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋目標工單 / 工號 / 姓名 / 客戶 / 製程" oninput="renderQuickList()"><div id="quickList" class="found" style="max-height:560px;overflow:auto">讀取後顯示</div></div>
+    <div class="card col4"><h2><span id="quickTitle">五份資料工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋工單 / 料號 / 規格 / 客戶 / 製程" oninput="debouncedOrderList()"><div id="quickList" class="found" style="max-height:560px;overflow:auto">讀取後顯示</div></div>
     <div class="card col12"><h2><span id="targetTitle">今日目標清單</span> / รายการเป้าหมาย</h2><div id="targetTable"></div></div>
   </div>
 </div>
 <div id="toast" class="toast"></div>
 <script>
 const API_URL=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-let ALL_TARGETS=[],TARGETS=[],EMPLOYEES=[],EMPIDX={},lookupTimer=null,currentRange='today',LAST_LOOKUP=null;
+let ALL_TARGETS=[],TARGETS=[],EMPLOYEES=[],EMPIDX={},ORDER_LIST=[],lookupTimer=null,orderTimer=null,currentRange='today',LAST_LOOKUP=null;
 function $(id){return document.getElementById(id)}
 function toast(s){let t=$('toast');t.textContent=s;t.className='toast show';setTimeout(()=>t.className='toast',2500)}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -85,18 +85,38 @@ async function apiPost(action,body){await fetch(API_URL+'?action='+encodeURIComp
 function setRangeMode(mode,updateDates=true){currentRange=mode;let d=today();if(updateDates){if(mode==='today'){$('rangeStart').value=d;$('rangeEnd').value=d}else if(mode==='week'){$('rangeStart').value=d;$('rangeEnd').value=addDays(d,6)}else if(mode==='month'){$('rangeStart').value=firstMonth(d);$('rangeEnd').value=lastMonth(d)}}['Today','Week','Month','Custom'].forEach(x=>{$('btn'+x).className='btn ghost'});const map={today:'Today',week:'Week',month:'Month',custom:'Custom'};$('btn'+map[mode]).className='btn active';applyRange()}
 function inRangeDate(v){const d=dateKey(v);return d&&d>=dateKey($('rangeStart').value)&&d<=dateKey($('rangeEnd').value)}
 function rangeName(){return currentRange==='today'?'今日':currentRange==='week'?'一周':currentRange==='month'?'本月':'自訂區間'}
-function applyRange(){TARGETS=ALL_TARGETS.filter(r=>inRangeDate(r.report_date));$('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value;$('quickTitle').textContent=rangeName()+'目標工單';$('targetTitle').textContent=rangeName()+'目標清單';renderQuickList();renderTargets();updateKpi()}
+function applyRange(){TARGETS=ALL_TARGETS.filter(r=>inRangeDate(r.report_date));$('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value;$('quickTitle').textContent=rangeName()+'五份資料工單';$('targetTitle').textContent=rangeName()+'目標清單';renderTargets();updateKpi();loadOrderList()}
 function normalizeEmployees(rows){EMPLOYEES=rows||[];EMPIDX={};EMPLOYEES.forEach(e=>{let no=norm(e.emp_no||e['工號']||e.employee_no||'');if(no)EMPIDX[no]=e})}
 function fillEmp(){let no=norm($('emp_no').value);let e=EMPIDX[no];if(!e)return;let name=e.emp_name||e['姓名']||e.name||'';let role=e.role||e['角色']||e['職務']||'';if(name)$('leader_name').value=name;if(role){let sel=$('leader_role');for(let i=0;i<sel.options.length;i++){if(sel.options[i].text.includes(role)||role.includes(sel.options[i].text.split('/')[0].trim())){sel.selectedIndex=i;break}}}}
 function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value}
-async function loadBootstrap(){try{$('loadBtn').textContent='讀取中...';$('loadMsg').textContent='只讀 Target_Plan + Employee，不讀 keyinsource...';const b=await apiGet('targetbootstrap');ALL_TARGETS=b.targets||b.rows||[];normalizeEmployees(b.employees||[]);applyRange();$('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆';toast('目標/人員讀取完成')}catch(e){alert('讀取失敗：'+e.message)}finally{$('loadBtn').textContent='重新讀取目標/人員'}}
+async function loadBootstrap(){try{$('loadBtn').textContent='讀取中...';$('loadMsg').textContent='讀取 Target_Plan + Employee + 五份資料清單...';const b=await apiGet('targetbootstrap');ALL_TARGETS=b.targets||b.rows||[];normalizeEmployees(b.employees||[]);applyRange();$('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆';toast('目標/人員讀取完成')}catch(e){alert('讀取失敗：'+e.message)}finally{$('loadBtn').textContent='重新讀取目標/人員'}}
 function debouncedLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(lookupOrder,500)}
 async function lookupOrder(){let q=wo12($('work_order_no').value);$('work_order_no').value=q;if(!q){$('lookupBox').innerHTML='輸入工單號後才查資料。';return}try{$('lookupBox').innerHTML='查詢工單中 / กำลังค้นหา...';const res=await apiGet('targetlookup',{q});if(!res.found){$('lookupBox').className='found warn';$('lookupBox').innerHTML='查無工單：'+esc(q);return}LAST_LOOKUP=res.row;fillFromOrder(res.row);$('lookupBox').className='found';$('lookupBox').innerHTML='<b>已帶入工單 / นำเข้าข้อมูลแล้ว</b><br>來源：'+esc(res.row.source||'-')+'<br>客戶：'+esc(res.row.customer||'-')+'<br>料號：'+esc(res.row.part_no||'-')+'<br>規格：'+esc(res.row.product_spec||'-')+'<br>SL31A 長×寬：'+esc(res.row.pivot_len||'-')+' × '+esc(res.row.pivot_width||'-')}catch(e){$('lookupBox').className='found warn';$('lookupBox').innerHTML='查詢失敗：'+esc(e.message)}}
-function fillFromOrder(r){if(!r)return;$('work_order_no').value=r.work_order_no||'';$('order_no').value=r.order_no||'';$('part_no').value=r.part_no||'';$('batch_no').value=r.batch_no||'';$('customer').value=r.customer||'';$('product_spec').value=r.product_spec||'';if(r.process)$('process_site').value=matchProcess(r.process);if(r.machine)$('machine_code').value=r.machine;if(r.target_qty&&!$('target_roll').value)$('target_roll').value=r.target_qty;if(r.pivot_len)$('pivot_len').value=r.pivot_len;if(r.pivot_width)$('pivot_width').value=r.pivot_width;calcTargetM2()}
+function fillFromOrder(r){if(!r)return;$('work_order_no').value=r.work_order_no||'';$('order_no').value=r.order_no||'';$('part_no').value=r.part_no||'';$('batch_no').value=r.batch_no||'';$('customer').value=r.customer||$('customer').value||'';$('product_spec').value=r.product_spec||$('product_spec').value||'';if(r.process)$('process_site').value=matchProcess(r.process);if(r.machine)$('machine_code').value=r.machine;if(r.target_qty&&!$('target_roll').value)$('target_roll').value=r.target_qty;if(r.pivot_len)$('pivot_len').value=r.pivot_len;if(r.pivot_width)$('pivot_width').value=r.pivot_width;if(r.due_date&&!$('planned_finish').value)$('planned_finish').value=dateKey(r.due_date);calcTargetM2()}
 function matchProcess(p){p=String(p||'');const sel=$('process_site');for(let i=0;i<sel.options.length;i++){let z=sel.options[i].text;if(z.includes(p)||p.includes(z.split('/')[0].trim()))return sel.options[i].text}return sel.value}
 function calcTargetM2(){let r=num($('target_roll').value),l=num($('pivot_len').value),w=num($('pivot_width').value);if(r&&l&&w){$('target_m2').value=(r*l*w/1000).toFixed(2)}}
-function renderQuickList(){const q=String($('search').value||'').toLowerCase();let rows=TARGETS.filter(r=>!q||[r.report_date,r.leader_name,r.leader_role,r.emp_no,r.work_order_no,r.order_no,r.part_no,r.customer,r.product_spec,r.process_site,r.machine_code].join(' ').toLowerCase().includes(q)).slice(0,120);$('quickList').innerHTML=rows.length?rows.map((r,i)=>'<div class="listitem" onclick="fillFromTarget('+i+')"><b>'+esc(r.work_order_no||r.order_no||'-')+'</b><br><span class="muted">'+esc(r.customer||'-')+'｜'+esc(r.product_spec||'-')+'</span><br><span class="muted">日期：'+esc(dateKey(r.report_date)||'-')+'｜周別：'+esc(r.week_no||isoWeek(r.report_date))+'｜幹部：'+esc(r.leader_name||'-')+'</span></div>').join(''):'目前區間無幹部目標'}
-function fillFromTarget(i){const r=TARGETS.filter(x=>true).filter(r=>{const q=String($('search').value||'').toLowerCase();return !q||[r.report_date,r.leader_name,r.leader_role,r.emp_no,r.work_order_no,r.order_no,r.part_no,r.customer,r.product_spec,r.process_site,r.machine_code].join(' ').toLowerCase().includes(q)})[i];if(!r)return;['report_date','shift','leader_role','leader_name','emp_no','work_order_no','order_no','part_no','batch_no','machine_code','customer','product_spec','target_roll','target_m2','planned_finish','status','note'].forEach(id=>{if($(id)&&r[id]!==undefined)$(id).value=r[id]});if(r.process_site)$('process_site').value=r.process_site;lookupOrder()}
+function debouncedOrderList(){clearTimeout(orderTimer);orderTimer=setTimeout(loadOrderList,350)}
+async function loadOrderList(){
+  try{
+    $('quickList').innerHTML='讀取五份資料中 / กำลังโหลด...';
+    const res=await apiGet('targetorderlist',{start:$('rangeStart').value,end:$('rangeEnd').value,q:$('search').value||'',limit:300});
+    ORDER_LIST=res.rows||[];
+    renderQuickList();
+  }catch(e){
+    $('quickList').innerHTML='<span class="status-wait">讀取五份資料失敗：'+esc(e.message)+'</span>';
+  }
+}
+function renderQuickList(){
+  const rows=(ORDER_LIST||[]).slice(0,300);
+  $('quickList').innerHTML=rows.length?rows.map((r,i)=>'<div class="listitem" onclick="fillFromOrderList('+i+')"><b>'+esc(r.work_order_no||r.order_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(r.source||'-')+'</span><br><span class="muted">預交日：'+esc(r.due_date||'-')+'｜客戶：'+esc(r.customer||'-')+'</span><br><span class="muted">'+esc(r.part_no||'-')+'｜'+esc(r.product_spec||'-')+'</span><br><span class="muted">站點：'+esc(r.process||'-')+'｜機台：'+esc(r.machine||'-')+'</span></div>').join(''):'目前區間無五份資料工單';
+}
+function fillFromOrderList(i){
+  const r=ORDER_LIST[i];
+  if(!r)return;
+  fillFromOrder(r);
+  $('lookupBox').className='found';
+  $('lookupBox').innerHTML='<b>已從五份資料帶入 / นำเข้าจากข้อมูล 5 ไฟล์</b><br>來源：'+esc(r.source||'-')+'<br>預交日：'+esc(r.due_date||'-')+'<br>客戶：'+esc(r.customer||'-')+'<br>料號：'+esc(r.part_no||'-')+'<br>規格：'+esc(r.product_spec||'-')+'<br>SL31A 長×寬：'+esc(r.pivot_len||'-')+' × '+esc(r.pivot_width||'-');
+}
 function renderTargets(){if(!TARGETS.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標</div>';return}const heads=[['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','R'],['target_m2','㎡'],['status','狀態<br>สถานะ'],['note','備註<br>หมายเหตุ']];$('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+TARGETS.map(r=>'<tr>'+heads.map(h=>'<td>'+esc(h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):(r[h[0]]||''))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
 function updateKpi(){$('kpiTargets').textContent=TARGETS.length.toLocaleString();$('kpiRoll').textContent=TARGETS.reduce((a,r)=>a+num(r.target_roll),0).toLocaleString();$('kpiM2').textContent=TARGETS.reduce((a,r)=>a+num(r.target_m2),0).toLocaleString();$('kpiOpen').textContent=TARGETS.filter(r=>!String(r.status||'').includes('已完成')&&!String(r.status||'').includes('เสร็จ')).length.toLocaleString()}
 function clearForm(){['emp_no','leader_name','work_order_no','order_no','part_no','batch_no','machine_code','customer','product_spec','target_roll','target_m2','pivot_len','pivot_width','note'].forEach(id=>$(id).value='');$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單號後才查資料，不會開頁逾時。'}
