@@ -3,12 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V60.4 MES 幹部目標</title>
+<title>V60.5 MES 幹部目標</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 
 <style>
-/* V60.4：隱藏上方三個導覽按鈕 */
 header .nav {
   display: none !important;
 }
@@ -106,6 +105,18 @@ header .nav {
   color: #64748b;
   font-size: 13px;
   margin-top: 8px;
+  line-height: 1.6;
+}
+
+.debug-box {
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 10px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 @media(max-width: 1000px) {
@@ -122,7 +133,7 @@ header .nav {
 
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.4 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.5 MES Enterprise</h1>
   <p>加工課戰情中心 · 幹部目標 · GitHub + Apps Script 正式版</p>
 
   <div class="nav" style="display:none!important;">
@@ -268,10 +279,11 @@ header .nav {
       <div class="row" style="margin-top:16px;">
         <button class="btn ok" onclick="saveTargetPlan()">儲存幹部目標</button>
         <button class="btn ghost" onclick="clearTargetForm()">新增下一筆</button>
-        <button class="btn ghost" onclick="loadTargetPlans()">重新讀取清單</button>
+        <button class="btn" onclick="refreshAllTargetData()">重新讀取資料</button>
       </div>
 
       <div id="saveStatus" class="status-text"></div>
+      <div id="debugBox" class="debug-box">尚未讀取資料。</div>
     </div>
 
     <div class="card">
@@ -337,7 +349,9 @@ header .nav {
 <script>
 const TargetApp = {
   source: [],
-  plans: []
+  plans: [],
+  renderedPlans: [],
+  quickRows: []
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -347,22 +361,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setDefaultDates() {
   const d = getTodayYmd();
-
   setVal2('report_date', d);
   setVal2('listDate', d);
 }
 
 async function loadInitial() {
-  await loadSourceData();
-  await loadTargetPlans();
+  await refreshAllTargetData();
+}
+
+async function refreshAllTargetData() {
+  setDebug('重新讀取資料中...');
+
+  try {
+    await loadSourceData();
+    await loadTargetPlans();
+
+    setStatus(
+      '已重新讀取資料。工單來源 ' +
+      TargetApp.source.length +
+      ' 筆；幹部目標去重後 ' +
+      TargetApp.plans.length +
+      ' 筆。'
+    );
+
+    toast2('已重新讀取資料');
+
+  } catch (e) {
+    setStatus('重新讀取失敗：' + e.message);
+    alert('重新讀取失敗：' + e.message);
+  }
 }
 
 async function loadSourceData() {
   try {
     const r = await MES.get('getSourceData');
-    TargetApp.source = (r && r.rows) || [];
+    const rows = extractRows(r);
+
+    TargetApp.source = rows;
     renderQuickList();
+
   } catch (e) {
+    TargetApp.source = [];
     document.getElementById('quickList').innerHTML = '讀取工單失敗：' + esc2(e.message);
   }
 }
@@ -377,22 +416,29 @@ async function loadTargetPlans() {
   try {
     const rows = [];
 
-    const queryDates = [
+    const tryDates = [
       ymd,
-      ymd.replaceAll('-', '/')
-    ].filter(Boolean);
+      ymd.replaceAll('-', '/'),
+      ''
+    ].filter((v, i, a) => a.indexOf(v) === i);
 
-    for (const d of queryDates) {
+    for (const d of tryDates) {
       try {
-        const r = await MES.get('listTargetPlans', [], { date: d });
-        if (r && Array.isArray(r.rows)) rows.push(...r.rows);
-      } catch (e) {}
-    }
+        let r;
 
-    try {
-      const all = await MES.get('listTargetPlans');
-      if (all && Array.isArray(all.rows)) rows.push(...all.rows);
-    } catch (e) {}
+        if (d) {
+          r = await MES.get('listTargetPlans', [], { date: d });
+        } else {
+          r = await MES.get('listTargetPlans');
+        }
+
+        const gotRows = extractRows(r);
+        rows.push(...gotRows);
+
+      } catch (e) {
+        console.log('listTargetPlans 讀取失敗：', d, e);
+      }
+    }
 
     const map = new Map();
 
@@ -405,17 +451,37 @@ async function loadTargetPlans() {
         p.created_at || ''
       ].join('|');
 
-      if (!map.has(key)) map.set(key, p);
+      if (!map.has(key)) {
+        map.set(key, p);
+      }
     });
 
     TargetApp.plans = Array.from(map.values());
+
+    setDebug(
+      'API 已讀取原始 ' + rows.length +
+      ' 筆，去重後 ' + TargetApp.plans.length +
+      ' 筆。查詢日期：' + ymd +
+      '<br>如果這裡是 0 筆，代表 Apps Script 沒有從 Target_Plan 回傳資料。'
+    );
 
     renderTargetTable();
 
   } catch (e) {
     document.getElementById('targetRows').innerHTML =
       '<tr><td colspan="13" class="hint">讀取失敗：' + esc2(e.message) + '</td></tr>';
+    setDebug('讀取失敗：' + esc2(e.message));
   }
+}
+
+function extractRows(r) {
+  if (!r) return [];
+  if (Array.isArray(r)) return r;
+  if (Array.isArray(r.rows)) return r.rows;
+  if (Array.isArray(r.data)) return r.data;
+  if (r.result && Array.isArray(r.result.rows)) return r.result.rows;
+  if (r.result && Array.isArray(r.result.data)) return r.result.data;
+  return [];
 }
 
 function renderTargetTable() {
@@ -426,7 +492,7 @@ function renderTargetTable() {
   let rows = TargetApp.plans.filter(p => {
     const pd = normalizeDateText(getPlanDateRaw(p));
 
-    if (dateText && pd && pd !== dateText) return false;
+    if (dateText && pd !== dateText) return false;
 
     if (status && String(p.status || '') !== status) return false;
 
@@ -462,6 +528,8 @@ function renderTargetTable() {
     return db.localeCompare(da);
   });
 
+  TargetApp.renderedPlans = rows;
+
   document.getElementById('listCount').textContent =
     '顯示 ' + rows.length + ' / ' + TargetApp.plans.length + ' 筆';
 
@@ -489,8 +557,6 @@ function renderTargetTable() {
       <td>${esc2(p.note || p.remark || '')}</td>
     </tr>
   `).join('');
-
-  TargetApp.renderedPlans = rows;
 }
 
 function loadPlanToForm(idx) {
@@ -524,17 +590,20 @@ function renderQuickList() {
   const q = norm2(getVal2('quickSearch'));
   const box = document.getElementById('quickList');
 
-  let rows = TargetApp.source.filter(r => {
+  let rows = Array.isArray(TargetApp.source) ? TargetApp.source : [];
+
+  rows = rows.filter(r => {
     if (!q) return true;
     return norm2(Object.values(r).join(' ')).includes(q);
-  });
-
-  rows = rows.slice(0, 80);
+  }).slice(0, 80);
 
   if (!rows.length) {
     box.innerHTML = '沒有可快速帶入的工單。';
+    TargetApp.quickRows = [];
     return;
   }
+
+  TargetApp.quickRows = rows;
 
   box.innerHTML = rows.map((r, idx) => {
     const wo = r.work_order_no || r.order_no || '';
@@ -549,8 +618,6 @@ function renderQuickList() {
       </div>
     `;
   }).join('');
-
-  TargetApp.quickRows = rows;
 }
 
 function fillFromSource(idx) {
@@ -582,19 +649,19 @@ async function saveTargetPlan() {
     return;
   }
 
-  document.getElementById('saveStatus').textContent = '儲存中...';
+  setStatus('儲存中...');
 
   try {
     await tryPostTarget(data);
 
-    document.getElementById('saveStatus').textContent = '已儲存幹部目標';
+    setStatus('已儲存幹部目標');
     toast2('已儲存幹部目標');
 
     setVal2('listDate', data.report_date);
     await loadTargetPlans();
 
   } catch (e) {
-    document.getElementById('saveStatus').textContent = '儲存失敗：' + e.message;
+    setStatus('儲存失敗：' + e.message);
     alert('儲存失敗：' + e.message);
   }
 }
@@ -644,7 +711,7 @@ function collectTargetData() {
     plan_end: getVal2('plan_end'),
     status: getVal2('status'),
     note: getVal2('note'),
-    input_source: 'github_target_v60_4'
+    input_source: 'github_target_v60_5'
   };
 }
 
@@ -733,6 +800,16 @@ function esc2(v) {
     '"': '&quot;',
     "'": '&#039;'
   }[s]));
+}
+
+function setStatus(msg) {
+  const box = document.getElementById('saveStatus');
+  if (box) box.textContent = msg;
+}
+
+function setDebug(msg) {
+  const box = document.getElementById('debugBox');
+  if (box) box.innerHTML = msg;
 }
 
 function toast2(msg) {
