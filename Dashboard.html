@@ -1859,6 +1859,582 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){v541ReloadAll(); if((AppState.activeView||'dashboard')==='dashboard')v541RenderDataHub();},1200);});
 })();
 </script>
+<!-- =========================================================
+V60.9.3 Dashboard API Patch
+貼上位置：GitHub → Dashboard.html → </body> 前一行
 
+功能：
+1. 保留原本 Dashboard.html 版型
+2. 從 Apps Script 讀：
+   - getSourceData：每日上傳工單 source_data
+   - listTargetPlans：幹部目標 Target_Plan
+   - listKeyin：人員 Key In
+   - listEmployees：人員/幹部姓名
+3. 嘗試更新原本卡片上的 0
+4. 在主網頁下方新增 API 讀取結果區塊
+========================================================= -->
+<script>
+(function(){
+  const MES_API_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  const MES_DASH_PATCH = {
+    source: [],
+    targets: [],
+    keyin: [],
+    employees: []
+  };
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(startMesDashboardPatch, 1000);
+  });
+
+  async function startMesDashboardPatch(){
+    createPatchStatusBox();
+    patchStatus("MES API Patch 啟動中...");
+    await reloadMesDashboardPatch();
+  }
+
+  async function reloadMesDashboardPatch(){
+    patchStatus("API 讀取中...");
+
+    try {
+      const today = todayYmd();
+
+      const sourceRes = await jsonp("getSourceData");
+      const targetRes = await jsonp("listTargetPlans", { date: today });
+      const keyinRes = await jsonp("listKeyin", { date: today });
+      const empRes = await jsonp("listEmployees");
+
+      MES_DASH_PATCH.source = extractRows(sourceRes);
+      MES_DASH_PATCH.targets = extractRows(targetRes);
+      MES_DASH_PATCH.keyin = extractRows(keyinRes);
+      MES_DASH_PATCH.employees = extractRows(empRes);
+
+      localStorage.setItem("MES_source_data", JSON.stringify(MES_DASH_PATCH.source));
+      localStorage.setItem("MES_target_plan", JSON.stringify(MES_DASH_PATCH.targets));
+      localStorage.setItem("MES_keyin", JSON.stringify(MES_DASH_PATCH.keyin));
+      localStorage.setItem("MES_employee", JSON.stringify(MES_DASH_PATCH.employees));
+
+      updateExistingCards();
+      renderApiPanels();
+
+      patchStatus(
+        "API 已讀取完成｜source_data：" + MES_DASH_PATCH.source.length +
+        " 筆｜Target_Plan：" + MES_DASH_PATCH.targets.length +
+        " 筆｜keyin：" + MES_DASH_PATCH.keyin.length +
+        " 筆｜Employee：" + MES_DASH_PATCH.employees.length + " 筆"
+      );
+
+    } catch (err) {
+      console.error(err);
+      patchStatus("API 讀取失敗：" + err.message);
+    }
+  }
+
+  function jsonp(action, params){
+    return new Promise((resolve, reject) => {
+      const callbackName = "__mes_cb_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
+      const url = new URL(MES_API_URL);
+
+      url.searchParams.set("action", action);
+      url.searchParams.set("callback", callbackName);
+
+      Object.keys(params || {}).forEach(k => {
+        if (params[k] !== undefined && params[k] !== null && params[k] !== "") {
+          url.searchParams.set(k, params[k]);
+        }
+      });
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error(action + " 讀取逾時"));
+      }, 60000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[callbackName] = function(data){
+        cleanup();
+        resolve(data);
+      };
+
+      script.onerror = function(){
+        cleanup();
+        reject(new Error(action + " 讀取失敗"));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  function extractRows(res){
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.rows)) return res.rows;
+    if (Array.isArray(res.data)) return res.data;
+    if (res.result && Array.isArray(res.result.rows)) return res.result.rows;
+    if (res.result && Array.isArray(res.result.data)) return res.result.data;
+    return [];
+  }
+
+  function createPatchStatusBox(){
+    if (document.getElementById("mesApiPatchStatus")) return;
+
+    const box = document.createElement("div");
+    box.id = "mesApiPatchStatus";
+    box.style.cssText = [
+      "position:fixed",
+      "right:18px",
+      "bottom:18px",
+      "z-index:99999",
+      "background:#0f172a",
+      "color:#e5e7eb",
+      "border:1px solid #334155",
+      "border-radius:12px",
+      "padding:10px 14px",
+      "font-size:13px",
+      "box-shadow:0 8px 22px rgba(0,0,0,.25)",
+      "max-width:620px",
+      "line-height:1.5"
+    ].join(";");
+
+    box.textContent = "MES API Patch 尚未啟動";
+    document.body.appendChild(box);
+  }
+
+  function patchStatus(msg){
+    const box = document.getElementById("mesApiPatchStatus");
+    if (box) box.innerHTML = esc(msg);
+  }
+
+  function updateExistingCards(){
+    const bySource = {};
+
+    MES_DASH_PATCH.source.forEach(r => {
+      const s = String(r.source || r.來源 || "").trim() || "source_data";
+      bySource[s] = (bySource[s] || 0) + 1;
+    });
+
+    setCardNumberByTitle("SL31A", bySource["SL31A"] || 0);
+    setCardNumberByTitle("4-3", bySource["4-3"] || bySource["43"] || 0);
+    setCardNumberByTitle("PD11B", bySource["PD11B"] || 0);
+    setCardNumberByTitle("5-C", bySource["5-C"] || bySource["5C"] || 0);
+    setCardNumberByTitle("5-3", bySource["5-3"] || bySource["53"] || 0);
+
+    const totalSource = MES_DASH_PATCH.source.length;
+    const totalTarget = MES_DASH_PATCH.targets.length;
+    const totalKeyin = MES_DASH_PATCH.keyin.length;
+
+    const empSet = new Set();
+    let outputSum = 0;
+
+    MES_DASH_PATCH.keyin.forEach(r => {
+      const empNo = r.emp_no || r.工號 || "";
+      if (empNo) empSet.add(empNo);
+
+      const qty = Number(String(r.actual_output || r.實際產量 || r.output || 0).replace(/,/g, ""));
+      if (!isNaN(qty)) outputSum += qty;
+    });
+
+    const unfinished = MES_DASH_PATCH.targets.filter(r => {
+      const s = r.status || r.狀態 || "";
+      return s !== "已完成";
+    }).length;
+
+    setCardNumberByTitle("總工單", totalSource);
+    setCardNumberByTitle("總工單數", totalSource);
+    setCardNumberByTitle("已設目標", totalTarget);
+    setCardNumberByTitle("今日 KeyIn 數", totalKeyin);
+    setCardNumberByTitle("今日 Key In 數", totalKeyin);
+    setCardNumberByTitle("今日人員數", empSet.size);
+    setCardNumberByTitle("未完成目標", unfinished);
+    setCardNumberByTitle("待確認", unfinished);
+    setCardNumberByTitle("待排", unfinished);
+    setCardNumberByTitle("總產量", formatNum(outputSum));
+  }
+
+  function setCardNumberByTitle(titleText, value){
+    const nodes = Array.from(document.querySelectorAll("body *")).filter(el => {
+      const t = String(el.textContent || "").trim();
+      return t === titleText || t.includes(titleText);
+    });
+
+    for (const node of nodes) {
+      const card = findParentCard(node);
+      if (!card) continue;
+
+      const numberNodes = Array.from(card.querySelectorAll("*")).filter(el => {
+        const t = String(el.textContent || "").trim();
+        return t === "0" || /^-?\d+(\.\d+)?%?$/.test(t);
+      });
+
+      if (numberNodes.length) {
+        numberNodes[0].textContent = value;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function findParentCard(el){
+    let cur = el;
+
+    for (let i = 0; i < 7 && cur; i++) {
+      const cls = String(cur.className || "").toLowerCase();
+
+      if (
+        cls.includes("card") ||
+        cls.includes("kpi") ||
+        cls.includes("hub") ||
+        cls.includes("metric") ||
+        cls.includes("stat")
+      ) {
+        return cur;
+      }
+
+      cur = cur.parentElement;
+    }
+
+    return el.parentElement;
+  }
+
+  function renderApiPanels(){
+    const root = getMainContainer();
+
+    renderSourcePanel(root);
+    renderTargetPanel(root);
+    renderKeyinPanel(root);
+    renderEmployeePanel(root);
+  }
+
+  function getMainContainer(){
+    return document.querySelector("main") ||
+           document.querySelector(".main") ||
+           document.querySelector(".content") ||
+           document.querySelector("#app") ||
+           document.body;
+  }
+
+  function renderSourcePanel(root){
+    let panel = document.getElementById("mesApiSourcePanel");
+
+    if (!panel) {
+      panel = createPanel("mesApiSourcePanel");
+      root.appendChild(panel);
+    }
+
+    const rows = MES_DASH_PATCH.source.slice(0, 120);
+
+    panel.innerHTML = `
+      <h2 style="${panelTitle()}">API 工單資料｜source_data（顯示 ${rows.length} / ${MES_DASH_PATCH.source.length} 筆）</h2>
+      <div style="${tableWrap()}">
+        <table style="${tableStyle()}">
+          <thead>
+            <tr>
+              <th style="${th()}">來源</th>
+              <th style="${th()}">日期</th>
+              <th style="${th()}">工單</th>
+              <th style="${th()}">訂單</th>
+              <th style="${th()}">料號</th>
+              <th style="${th()}">批號</th>
+              <th style="${th()}">製程</th>
+              <th style="${th()}">客戶</th>
+              <th style="${th()}">機台</th>
+              <th style="${th()}">規格 / 品名</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+              ? rows.map(r => `
+                <tr>
+                  <td style="${td()}">${esc(r.source || r.來源 || "source_data")}</td>
+                  <td style="${td()}">${esc(srcDate(r))}</td>
+                  <td style="${td()}"><b>${esc(srcWO(r))}</b></td>
+                  <td style="${td()}">${esc(srcOrder(r))}</td>
+                  <td style="${td()}">${esc(srcPart(r))}</td>
+                  <td style="${td()}">${esc(srcBatch(r))}</td>
+                  <td style="${td()}">${esc(srcProcess(r))}</td>
+                  <td style="${td()}">${esc(srcCustomer(r))}</td>
+                  <td style="${td()}">${esc(srcMachine(r))}</td>
+                  <td style="${td()}">${esc(srcSpec(r))}</td>
+                </tr>
+              `).join("")
+              : `<tr><td colspan="10" style="${td()}">目前沒有 source_data 資料</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderTargetPanel(root){
+    let panel = document.getElementById("mesApiTargetPanel");
+
+    if (!panel) {
+      panel = createPanel("mesApiTargetPanel");
+      root.appendChild(panel);
+    }
+
+    const rows = MES_DASH_PATCH.targets.slice(0, 120);
+
+    panel.innerHTML = `
+      <h2 style="${panelTitle()}">API 幹部目標｜Target_Plan（顯示 ${rows.length} / ${MES_DASH_PATCH.targets.length} 筆）</h2>
+      <div style="${tableWrap()}">
+        <table style="${tableStyle()}">
+          <thead>
+            <tr>
+              <th style="${th()}">日期</th>
+              <th style="${th()}">班別</th>
+              <th style="${th()}">幹部</th>
+              <th style="${th()}">工單</th>
+              <th style="${th()}">製程</th>
+              <th style="${th()}">機台</th>
+              <th style="${th()}">客戶</th>
+              <th style="${th()}">目標R</th>
+              <th style="${th()}">目標㎡</th>
+              <th style="${th()}">狀態</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+              ? rows.map(r => `
+                <tr>
+                  <td style="${td()}">${esc(r.report_date || "")}</td>
+                  <td style="${td()}">${esc(r.shift || "")}</td>
+                  <td style="${td()}">${esc((r.leader_role || "") + " " + (r.leader_name || ""))}</td>
+                  <td style="${td()}"><b>${esc(r.work_order_no || r.order_no || "")}</b></td>
+                  <td style="${td()}">${esc(r.process_site || r.process || "")}</td>
+                  <td style="${td()}">${esc(r.machine_code || "")}</td>
+                  <td style="${td()}">${esc(r.customer || "")}</td>
+                  <td style="${td()}">${esc(r.target_r || r.target_roll || r.target_qty || "")}</td>
+                  <td style="${td()}">${esc(r.target_m2 || r.target_m || "")}</td>
+                  <td style="${td()}">${esc(r.status || "")}</td>
+                </tr>
+              `).join("")
+              : `<tr><td colspan="10" style="${td()}">目前沒有 Target_Plan 資料</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderKeyinPanel(root){
+    let panel = document.getElementById("mesApiKeyinPanel");
+
+    if (!panel) {
+      panel = createPanel("mesApiKeyinPanel");
+      root.appendChild(panel);
+    }
+
+    const rows = MES_DASH_PATCH.keyin.slice(-120).reverse();
+
+    panel.innerHTML = `
+      <h2 style="${panelTitle()}">API 今日 Key In｜keyin（顯示 ${rows.length} / ${MES_DASH_PATCH.keyin.length} 筆）</h2>
+      <div style="${tableWrap()}">
+        <table style="${tableStyle()}">
+          <thead>
+            <tr>
+              <th style="${th()}">時間</th>
+              <th style="${th()}">日期</th>
+              <th style="${th()}">站點</th>
+              <th style="${th()}">工單</th>
+              <th style="${th()}">批號</th>
+              <th style="${th()}">機台</th>
+              <th style="${th()}">工號</th>
+              <th style="${th()}">姓名</th>
+              <th style="${th()}">產量</th>
+              <th style="${th()}">單位</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+              ? rows.map(r => `
+                <tr>
+                  <td style="${td()}">${esc(r.created_at || "")}</td>
+                  <td style="${td()}">${esc(r.report_date || "")}</td>
+                  <td style="${td()}">${esc(r.site || "")}</td>
+                  <td style="${td()}"><b>${esc(r.work_order_no || r.order_no || "")}</b></td>
+                  <td style="${td()}">${esc(r.batch_no || "")}</td>
+                  <td style="${td()}">${esc(r.machine_code || "")}</td>
+                  <td style="${td()}">${esc(r.emp_no || "")}</td>
+                  <td style="${td()}">${esc(r.emp_name || "")}</td>
+                  <td style="${td()}">${esc(r.actual_output || "")}</td>
+                  <td style="${td()}">${esc(r.unit || "")}</td>
+                </tr>
+              `).join("")
+              : `<tr><td colspan="10" style="${td()}">目前沒有今日 Key In 資料</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderEmployeePanel(root){
+    let panel = document.getElementById("mesApiEmployeePanel");
+
+    if (!panel) {
+      panel = createPanel("mesApiEmployeePanel");
+      root.appendChild(panel);
+    }
+
+    const rows = MES_DASH_PATCH.employees.slice(0, 80);
+
+    panel.innerHTML = `
+      <h2 style="${panelTitle()}">API 人員資料｜Employee / 固定資料（顯示 ${rows.length} / ${MES_DASH_PATCH.employees.length} 筆）</h2>
+      <div style="${tableWrap()}">
+        <table style="${tableStyle()}">
+          <thead>
+            <tr>
+              <th style="${th()}">工號</th>
+              <th style="${th()}">姓名</th>
+              <th style="${th()}">原始資料</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+              ? rows.map(r => `
+                <tr>
+                  <td style="${td()}"><b>${esc(r.emp_no || r.工號 || "")}</b></td>
+                  <td style="${td()}">${esc(r.emp_name || r.姓名 || "")}</td>
+                  <td style="${td()}">${esc(shortJson(r))}</td>
+                </tr>
+              `).join("")
+              : `<tr><td colspan="3" style="${td()}">目前沒有 Employee 資料</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function createPanel(id){
+    const panel = document.createElement("section");
+    panel.id = id;
+    panel.style.cssText = [
+      "margin:18px 0",
+      "background:#0b2347",
+      "border:1px solid #1d4f8f",
+      "border-radius:16px",
+      "padding:14px",
+      "color:#eaf2ff",
+      "box-shadow:0 6px 18px rgba(0,0,0,.16)"
+    ].join(";");
+
+    return panel;
+  }
+
+  function srcWO(r){ return r.work_order_no || r.work_order || r.工單 || r.工單號 || r.order_no || ""; }
+  function srcOrder(r){ return r.order_no || r.訂單號 || r.訂單單號 || ""; }
+  function srcPart(r){ return r.part_no || r.料號 || r.品號 || ""; }
+  function srcBatch(r){ return r.batch_no || r.生產批號 || r.批號 || r.lot || ""; }
+  function srcSpec(r){ return r.product_spec || r.產品規格 || r.規格 || r.品名 || r.raw_json || ""; }
+  function srcProcess(r){ return r.process_site || r.process || r.site || r.製程站點 || r.製程 || ""; }
+  function srcMachine(r){ return r.machine_code || r.machine || r.機台 || ""; }
+  function srcCustomer(r){ return r.customer || r.customer_name || r.客戶 || r.客戶名稱 || ""; }
+  function srcDate(r){ return normalizeDate(r.report_date || r.plan_date || r.due_date || r.updated_at || r.created_at || ""); }
+
+  function normalizeDate(v){
+    if (!v) return "";
+    const s = String(v).trim();
+
+    if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+      const p = s.slice(0, 10).split("-");
+      return p[0] + "-" + p[1].padStart(2, "0") + "-" + p[2].padStart(2, "0");
+    }
+
+    if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
+      const p = s.split(/[\/\s]/);
+      return p[0] + "-" + p[1].padStart(2, "0") + "-" + p[2].padStart(2, "0");
+    }
+
+    return "";
+  }
+
+  function todayYmd(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  function formatNum(n){
+    if (!n) return 0;
+    if (Number.isInteger(n)) return String(n);
+    return String(Math.round(n * 100) / 100);
+  }
+
+  function shortJson(obj){
+    try {
+      return JSON.stringify(obj).slice(0, 240);
+    } catch(e) {
+      return "";
+    }
+  }
+
+  function panelTitle(){
+    return "margin:0 0 10px;font-size:20px;color:#eaf2ff;";
+  }
+
+  function tableWrap(){
+    return "overflow:auto;border:1px solid #244b75;border-radius:12px;";
+  }
+
+  function tableStyle(){
+    return "width:100%;min-width:1050px;border-collapse:collapse;background:#071a36;";
+  }
+
+  function th(){
+    return [
+      "background:#102b55",
+      "color:#dbeafe",
+      "border-bottom:1px solid #244b75",
+      "padding:10px",
+      "text-align:left",
+      "white-space:nowrap",
+      "font-size:13px"
+    ].join(";");
+  }
+
+  function td(){
+    return [
+      "color:#eaf2ff",
+      "border-bottom:1px solid #244b75",
+      "padding:10px",
+      "text-align:left",
+      "white-space:nowrap",
+      "font-size:13px"
+    ].join(";");
+  }
+
+  function esc(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[s]));
+  }
+
+  window.MES_DASH_API_PATCH = {
+    reload: reloadMesDashboardPatch,
+    data: MES_DASH_PATCH
+  };
+})();
+</script>
 </body>
 </html>
