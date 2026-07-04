@@ -3,157 +3,170 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>生產 Key In｜V66.3 Stable</title>
+<title>生產 Key In｜V66.3 7/3介面修正版</title>
 <style>
 :root{
-  --bg:#071529;--panel:#0b2140;--card:#112b52;--line:#29466f;
-  --txt:#eef6ff;--muted:#a9c1df;--brand:#2563eb;--ok:#16a34a;
-  --warn:#f59e0b;--bad:#dc2626
+  --bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;
+  --brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626
 }
 *{box-sizing:border-box}
-body{
-  margin:0;
-  background:linear-gradient(135deg,#061529,#0b2140 55%,#061529);
-  font-family:"Microsoft JhengHei",Arial,sans-serif;
-  color:var(--txt)
-}
-header{
-  padding:22px 28px;
-  background:linear-gradient(135deg,#0f3b8f,#071529);
-  border-bottom:1px solid #1e3a5f
-}
-h1{margin:0;font-size:34px}
-header p{color:#c7d7f0;margin:8px 0 0}
-.wrap{max-width:1500px;margin:auto;padding:18px}
-.card{
-  background:rgba(255,255,255,.06);
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:18px;
-  margin:14px 0;
-  box-shadow:0 12px 32px rgba(0,0,0,.18)
-}
-.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
-.col6{grid-column:span 6}
+body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}
+header{background:linear-gradient(135deg,#1d4ed8,#0f172a);color:#fff;padding:18px 20px}
+header h1{margin:0;font-size:26px}
+header p{margin:7px 0 0;color:#dbeafe;font-size:14px}
+.wrap{max-width:1400px;margin:0 auto;padding:14px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 3px 14px rgba(15,23,42,.05)}
+.col12{grid-column:span 12}.col6{grid-column:span 6}
 @media(max-width:900px){.col6{grid-column:span 12}}
-.btn{
-  border:0;border-radius:12px;padding:11px 16px;font-weight:900;color:white;
-  background:var(--brand);cursor:pointer;margin:4px
-}
+h2{font-size:20px;margin:0 0 10px}
+.sub,.hint{font-size:13px;color:var(--muted);line-height:1.5}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white}
 .btn.ok{background:var(--ok)}
-.btn.ghost{background:#e8f0ff;color:#1e3a8a}
-input,select,textarea{
-  width:100%;padding:12px;border-radius:12px;border:1px solid #bed0e8;font-size:16px
-}
-label{display:block;margin:10px 0 5px;font-weight:900;color:#dceaff}
-.muted{color:var(--muted);font-size:13px}
-.toast{
-  position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;
-  padding:12px 16px;border-radius:12px;display:none;z-index:9999
-}
+.btn.ghost{background:#eef2ff;color:#1e40af}
+.btn:disabled{opacity:.55}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:12px;background:white;font-size:16px}
+label{display:block;margin:9px 0 5px;font-size:14px;font-weight:900;color:#334155}
+#batch[readonly], input[readonly]{background:#f1f5f9;color:#334155;cursor:not-allowed}
+.found{border:1px solid #bfdbfe;background:#eff6ff;border-radius:14px;padding:12px;margin-top:10px}
+.notfound{background:#fff1f2;border-color:#fecaca}
+.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#eef2ff;color:#1d4ed8;font-weight:900;font-size:12px;margin:2px}
+.pill.ok{background:#dcfce7;color:#166534}
+.scroll{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:white}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#f8fafc;position:sticky;top:0;z-index:1;white-space:nowrap}
+.toast{position:fixed;right:14px;bottom:14px;background:#0f172a;color:white;padding:12px 14px;border-radius:12px;display:none;z-index:99}
 .toast.show{display:block}
-.light{background:#f8fbff;color:#10213c}
-.statusOk{color:#86efac}
-.statusBad{color:#fecaca}
+.statusOk{color:#16a34a;font-weight:900}
+.statusBad{color:#dc2626;font-weight:900}
 </style>
 </head>
 
 <body>
 <header>
-  <h1>生產 Key In｜V66.3 Stable</h1>
-  <p>人員回報產量 / บันทึกผลงานผลิต</p>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V66.3 Stable</h1>
+  <p>手機 / 電腦 Key In：工單自動帶批號、員工自動帶姓名、送出寫入 keyin。</p>
 </header>
 
 <div class="wrap">
+<section id="keyin" class="view active">
   <div class="grid">
     <div class="card col6">
-      <h2>工單資料</h2>
-      <button class="btn ghost" id="loadBtn" onclick="loadBase()">讀取最新工單/員工</button>
+      <h2>手機 / 電腦 Key In / บันทึกผลงานผ่านมือถือหรือคอมพิวเตอร์</h2>
+      <div class="row">
+        <button class="btn ghost" id="loadSourceBtn2" type="button" onclick="loadBase()">讀取最新工單 / โหลดใบสั่งผลิตล่าสุด</button>
+        <button class="btn ghost" id="loadKeyinBtn2" type="button" onclick="loadKeyinToday()">讀取今日回報 / โหลดรายงานวันนี้</button>
+      </div>
 
-      <label>日期</label>
-      <input id="report_date" type="date">
+      <label>回報日期 / วันที่รายงาน</label>
+      <input id="reportDate" type="date">
 
-      <label>製程站點</label>
-      <select id="site">
-        <option>分條</option>
-        <option>複捲</option>
-        <option>包裝</option>
-        <option>上膠</option>
-        <option>其他</option>
+      <label>製程站點 / จุดผลิต</label>
+      <select id="processSite">
+        <option value="分條">分條 / ตัดแบ่งม้วน</option>
+        <option value="複捲">複捲 / กรอกลับ</option>
+        <option value="包裝">包裝 / บรรจุ</option>
+        <option value="上膠">上膠 / เคลือบกาว</option>
+        <option value="噴碼">噴碼 / พิมพ์รหัส</option>
+        <option value="裁切">裁切 / ตัด</option>
+        <option value="線軸">線軸 / แกน</option>
+        <option value="試機">試機 / ทดลองเครื่อง</option>
+        <option value="點斷">點斷 / ตัดขาด</option>
+        <option value="貼合">貼合 / ลามิเนต</option>
+        <option value="其他">其他 / อื่นๆ</option>
       </select>
 
-      <label>工單號</label>
-      <input id="work_order_no" maxlength="12" oninput="lookup()" placeholder="例如 202603310035">
+      <label>工單號 / เลขที่ใบสั่งผลิต（12碼主工單）</label>
+      <input id="wo" maxlength="12" placeholder="例如 202603310035，超過12碼自動截斷" oninput="lookupWO()">
 
-      <label>批號</label>
-      <input id="batch_no" readonly>
+      <label>生產批號 / ล็อตการผลิต / Lot（系統帶入，不可手動修改）</label>
+      <input id="batch" readonly placeholder="由工單自動帶入 / ระบบเติมอัตโนมัติ">
 
-      <div id="lookup" class="card light">請輸入工單號</div>
+      <div id="lookupBox" class="found notfound">請先讀取最新工單 / กรุณาโหลดใบสั่งผลิตล่าสุดก่อน</div>
+
+      <div id="todayTargetBox" class="found" style="margin-top:12px">
+        <b>今日待辦工單 / งานผลิตวันนี้</b><br>
+        <span class="hint">本頁保留 7/3 Key In 版型；點選工單後只需輸入本次產量。</span>
+      </div>
     </div>
 
     <div class="card col6">
-      <h2>人員與產出</h2>
+      <h2>人員與產出 / พนักงานและผลผลิต</h2>
 
-      <label>工號</label>
-      <input id="emp_no" oninput="fillEmp()" placeholder="例如 11035">
+      <label>工號 / รหัสพนักงาน（可輸入多位，用逗號或空格分隔）</label>
+      <input id="empNo" placeholder="例如 11035 或 11035 10401" oninput="fillEmp()">
 
-      <label>姓名</label>
-      <input id="emp_name" placeholder="依工號自動帶入，可手動補充">
+      <label>姓名 / ชื่อ（依工號自動帶入，可手動補充）</label>
+      <input id="empName" placeholder="輸入工號後自動帶入姓名">
 
-      <label>機台</label>
-      <input id="machine_code" placeholder="例如 1S03 / 1B02">
+      <label>機台 / เครื่องจักร</label>
+      <input id="machineInput" placeholder="例如 1S03 / 1B02">
 
-      <label>實際產量</label>
-      <input id="actual_output" type="number" step="0.01">
+      <div class="row" style="margin:8px 0 6px">
+        <button class="btn ghost" type="button" id="filterTodoBtn" onclick="renderTodoList()">📋 我的待辦工單 / งานของฉัน</button>
+        <button class="btn ghost" type="button" id="nextTodoBtn" onclick="selectNextTodo()">➡️ 下一張工單 / งานถัดไป</button>
+      </div>
 
-      <label>單位</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:900">
+        <input id="autoNextToggle" type="checkbox" checked style="width:auto">送出後自動跳下一張 / ไปงานถัดไปอัตโนมัติ
+      </label>
+
+      <div id="quickSessionHint" class="hint">本班固定：工號、姓名、機台、製程會保留；批號由工單自動帶入不可修改，送出後只清空產量與備註。</div>
+
+      <label>實際產量 / จำนวนผลิตจริง</label>
+      <input id="actual" type="number" step="0.01">
+
+      <label>單位 / หน่วย</label>
       <select id="unit">
-        <option>R</option>
-        <option>M2</option>
-        <option>M</option>
-        <option>PCS</option>
+        <option value="R">R / ม้วน</option>
+        <option value="M">M / เมตร</option>
+        <option value="M2">M2 / ตารางเมตร</option>
+        <option value="PCS">PCS / ชิ้น</option>
       </select>
 
-      <label>備註</label>
-      <textarea id="process_note" rows="3"></textarea>
+      <label>備註 / หมายเหตุ</label>
+      <textarea id="note" rows="3"></textarea>
 
-      <button class="btn ok" onclick="submitKeyin()">送出回報</button>
-      <div id="msg" class="muted"></div>
+      <button class="btn ok" id="submitBtn" type="button" onclick="submitKeyin()">送出回報 / ส่งรายงาน</button>
+      <div id="submitStatus" class="hint"></div>
+    </div>
+
+    <div class="card col12">
+      <h2>Key In 回報資料 / ข้อมูลรายงานการผลิต</h2>
+      <div id="keyinTableBox"><span class="hint">尚未讀取今日回報。</span></div>
     </div>
   </div>
+</section>
 </div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-const API_URL="https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+const API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
 
-let IDX={}, EMP={};
+let IDX = {};
+let EMP = {};
+let ORDERS = [];
+let KEYIN_ROWS = [];
+let TODO_POS = -1;
 
-function toast(s){
-  const t=document.getElementById("toast");
-  if(!t)return;
-  t.textContent=s;
-  t.className="toast show";
-  setTimeout(()=>t.className="toast",2600);
-}
-
+function el(id){return document.getElementById(id)}
+function toast(s){const t=el("toast"); if(!t)return; t.textContent=s; t.className="toast show"; setTimeout(()=>t.className="toast",2600)}
 function today(){return new Date().toISOString().slice(0,10)}
-function wo12(v){return String(v??"").trim().replace(/\s+/g,"").toUpperCase().slice(0,12)}
+function norm(v){return String(v ?? "").trim().replace(/\s+/g,"").toUpperCase()}
+function wo12(v){return norm(v).slice(0,12)}
+function num(v){const n=parseFloat(String(v??"").replace(/,/g,"")); return isNaN(n)?0:n}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 function apiGet(action,params={}){
   if(action==="source" || action==="getsourcedata") action="keyinsource";
-
   return new Promise((resolve,reject)=>{
     const cb="MES_KEYIN_CB_"+Date.now()+"_"+Math.floor(Math.random()*999999);
     const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();
     const s=document.createElement("script");
-
-    const timer=setTimeout(()=>{
-      cleanup();
-      reject(new Error("API 讀取逾時："+action));
-    },30000);
+    const timer=setTimeout(()=>{cleanup();reject(new Error("API 讀取逾時："+action));},30000);
 
     function cleanup(){
       clearTimeout(timer);
@@ -163,15 +176,11 @@ function apiGet(action,params={}){
 
     window[cb]=function(res){
       cleanup();
-      if(res&&res.ok===false) reject(new Error(res.message||res.error||"API error"));
+      if(res && res.ok===false) reject(new Error(res.message||res.error||"API error"));
       else resolve(res||{});
     };
 
-    s.onerror=function(){
-      cleanup();
-      reject(new Error("API 連線失敗："+action));
-    };
-
+    s.onerror=function(){cleanup();reject(new Error("API 連線失敗："+action))};
     s.src=API_URL+"?"+qs;
     document.head.appendChild(s);
   });
@@ -196,16 +205,21 @@ function normalizeRows(rows){
     product_spec:r.product_spec||r["產品規格"]||r["規格"]||r["品名規格"]||"",
     customer:r.customer||r["客戶"]||r["客戶別"]||r["客戶名稱"]||"",
     target_qty:r.target_qty||r["目標數量"]||r["預計產量"]||"",
+    machine:r.machine||r.machine_code||r["機台"]||"",
+    process:r.process||r.process_site||r["製程"]||"",
     source:r.source||""
   })).filter(r=>r.work_order_no);
 }
 
-document.getElementById("report_date").value=today();
+function setDateDefault(){
+  el("reportDate").value=today();
+}
+setDateDefault();
 
 async function loadBase(){
-  const b=document.getElementById("loadBtn");
+  const b=el("loadSourceBtn2");
   try{
-    b.textContent="讀取中...";
+    if(b)b.textContent="讀取中...";
     toast("讀取中...");
 
     const [s,e]=await Promise.all([
@@ -213,86 +227,164 @@ async function loadBase(){
       apiGet("employees")
     ]);
 
-    const rows=normalizeRows(s.rows||[]);
-    IDX={};
-    rows.forEach(r=>{
+    ORDERS = normalizeRows(s.rows||[]);
+    IDX = {};
+    ORDERS.forEach(r=>{
       const w=wo12(r.work_order_no||r.order_no);
-      if(w&&!IDX[w])IDX[w]=r;
+      if(w && !IDX[w]) IDX[w]=r;
     });
 
-    EMP={};
+    EMP = {};
     (e.rows||[]).forEach(r=>{
       const no=String(r.emp_no||r["工號"]||"").trim();
       const name=r.emp_name||r["姓名"]||"";
-      if(no)EMP[no]=name;
+      if(no) EMP[no]=name;
     });
 
-    toast("已讀取工單："+Object.keys(IDX).length+" 張");
-    lookup();
+    toast("已讀取工單："+Object.keys(IDX).length+" 張 / 員工："+Object.keys(EMP).length+" 人");
+    lookupWO();
     fillEmp();
+    renderTodoList();
   }catch(err){
     alert("讀取失敗："+err.message);
   }finally{
-    b.textContent="讀取最新工單/員工";
+    if(b)b.textContent="讀取最新工單 / โหลดใบสั่งผลิตล่าสุด";
   }
 }
 
-function lookup(){
-  const input=document.getElementById("work_order_no");
+function lookupWO(){
+  const input=el("wo");
   const w=wo12(input.value);
   input.value=w;
 
-  const r=IDX[w];
-  const box=document.getElementById("lookup");
-
+  const box=el("lookupBox");
   if(!w){
-    box.innerHTML="請輸入工單號";
+    box.className="found notfound";
+    box.innerHTML="請輸入工單號 / กรุณากรอกเลขที่ใบสั่งผลิต";
     return;
   }
 
+  const r=IDX[w];
   if(!r){
-    box.innerHTML="查無工單："+esc(w);
-    document.getElementById("batch_no").value="";
+    box.className="found notfound";
+    box.innerHTML="查無工單：<b>"+esc(w)+"</b>";
+    el("batch").value="";
     return;
   }
 
-  document.getElementById("batch_no").value=r.batch_no||"";
-  box.innerHTML=
-    "<b>已找到</b><br>"+
-    "來源："+esc(r.source||"-")+"<br>"+
-    "料號："+esc(r.part_no||"-")+"<br>"+
-    "規格："+esc(r.product_spec||"-")+"<br>"+
-    "客戶："+esc(r.customer||"-")+"<br>"+
-    "目標："+esc(r.target_qty||"-");
+  el("batch").value=r.batch_no||"";
+  box.className="found";
+  box.innerHTML =
+    '<span class="pill ok">已找到</span> '+
+    '<span class="pill">'+esc(r.source||"-")+'</span>'+
+    '<table style="margin-top:8px">'+
+    '<tr><th>料號</th><td>'+esc(r.part_no||"-")+'</td></tr>'+
+    '<tr><th>規格</th><td>'+esc(r.product_spec||"-")+'</td></tr>'+
+    '<tr><th>客戶</th><td>'+esc(r.customer||"-")+'</td></tr>'+
+    '<tr><th>製程</th><td>'+esc(r.process||"-")+'</td></tr>'+
+    '<tr><th>目標</th><td>'+esc(r.target_qty||"-")+'</td></tr>'+
+    '</table>';
 }
 
 function fillEmp(){
-  const ids=document.getElementById("emp_no").value
-    .split(/[ ,，、]+/)
-    .map(x=>x.trim())
-    .filter(Boolean);
-
+  const ids=el("empNo").value.split(/[ ,，、]+/).map(x=>x.trim()).filter(Boolean);
   const names=ids.map(x=>EMP[x]).filter(Boolean);
-  if(names.length) document.getElementById("emp_name").value=names.join("、");
+  if(names.length) el("empName").value=names.join("、");
+}
+
+function currentFilteredOrders(){
+  const m=norm(el("machineInput").value);
+  if(!m)return ORDERS.slice(0,80);
+  return ORDERS.filter(r=>norm(r.machine).includes(m)).slice(0,80);
+}
+
+function renderTodoList(){
+  const list=currentFilteredOrders();
+  const box=el("todayTargetBox");
+  if(!list.length){
+    box.className="found notfound";
+    box.innerHTML="<b>今日待辦工單 / งานผลิตวันนี้</b><br><span class='hint'>目前沒有待辦資料；可直接輸入工單號查詢。</span>";
+    return;
+  }
+
+  box.className="found";
+  box.innerHTML='<b>今日待辦工單 / งานผลิตวันนี้</b> <span class="pill ok">可點選</span>'+
+    '<div class="scroll" style="max-height:220px;margin-top:8px"><table><thead><tr><th>工單</th><th>批號</th><th>規格</th><th>客戶</th><th>來源</th></tr></thead><tbody>'+
+    list.slice(0,30).map((r,i)=>
+      '<tr style="cursor:pointer" onclick="useOrder(\''+esc(r.work_order_no)+'\')">'+
+      '<td><b>'+esc(r.work_order_no)+'</b></td>'+
+      '<td>'+esc(r.batch_no||"")+'</td>'+
+      '<td>'+esc(r.product_spec||"")+'</td>'+
+      '<td>'+esc(r.customer||"")+'</td>'+
+      '<td>'+esc(r.source||"")+'</td>'+
+      '</tr>'
+    ).join("")+
+    '</tbody></table></div>';
+}
+
+function useOrder(wo){
+  el("wo").value=wo12(wo);
+  lookupWO();
+}
+
+function selectNextTodo(){
+  const list=currentFilteredOrders();
+  if(!list.length){toast("沒有下一張工單");return}
+  TODO_POS=(TODO_POS+1)%list.length;
+  useOrder(list[TODO_POS].work_order_no);
+}
+
+async function loadKeyinToday(){
+  const b=el("loadKeyinBtn2");
+  try{
+    if(b)b.textContent="讀取中...";
+    const res=await apiGet("listkeyin",{date:el("reportDate").value||today()});
+    KEYIN_ROWS=res.rows||[];
+    renderKeyinTable();
+    toast("已讀取今日回報："+KEYIN_ROWS.length+" 筆");
+  }catch(e){
+    alert("讀取今日回報失敗："+e.message);
+  }finally{
+    if(b)b.textContent="讀取今日回報 / โหลดรายงานวันนี้";
+  }
+}
+
+function renderKeyinTable(){
+  const rows=KEYIN_ROWS.slice().reverse().slice(0,300);
+  const box=el("keyinTableBox");
+  if(!rows.length){box.innerHTML="<span class='hint'>目前無今日回報。</span>";return}
+  box.innerHTML='<div class="scroll"><table><thead><tr><th>時間</th><th>工單</th><th>批號</th><th>工號</th><th>姓名</th><th>機台</th><th>產量</th><th>單位</th><th>備註</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr>'+
+      '<td>'+esc(r.created_at||"")+'</td>'+
+      '<td>'+esc(r.work_order_no||r.order_no||"")+'</td>'+
+      '<td>'+esc(r.batch_no||"")+'</td>'+
+      '<td>'+esc(r.emp_no||"")+'</td>'+
+      '<td>'+esc(r.emp_name||"")+'</td>'+
+      '<td>'+esc(r.machine_code||"")+'</td>'+
+      '<td>'+esc(r.actual_output||"")+'</td>'+
+      '<td>'+esc(r.unit||"")+'</td>'+
+      '<td>'+esc(r.process_note||"")+'</td>'+
+      '</tr>').join("")+
+    '</tbody></table></div>';
 }
 
 async function submitKeyin(){
-  const base=IDX[wo12(document.getElementById("work_order_no").value)]||{};
+  const base=IDX[wo12(el("wo").value)]||{};
   const data={
-    site:document.getElementById("site").value,
-    report_date:document.getElementById("report_date").value,
-    work_order_no:wo12(document.getElementById("work_order_no").value),
+    site:el("processSite").value,
+    report_date:el("reportDate").value||today(),
+    work_order_no:wo12(el("wo").value),
     order_no:base.order_no||"",
     part_no:base.part_no||"",
-    batch_no:document.getElementById("batch_no").value||base.batch_no||"",
+    batch_no:el("batch").value||base.batch_no||"",
     product_spec:base.product_spec||"",
     target_qty:base.target_qty||"",
-    machine_code:document.getElementById("machine_code").value,
-    actual_output:document.getElementById("actual_output").value,
-    unit:document.getElementById("unit").value,
-    emp_no:document.getElementById("emp_no").value,
-    emp_name:document.getElementById("emp_name").value,
-    process_note:document.getElementById("process_note").value,
+    machine_code:el("machineInput").value,
+    actual_output:el("actual").value,
+    unit:el("unit").value,
+    emp_no:el("empNo").value,
+    emp_name:el("empName").value,
+    process_note:el("note").value,
     input_source:"github_keyin"
   };
 
@@ -301,18 +393,28 @@ async function submitKeyin(){
     return;
   }
 
+  const btn=el("submitBtn");
   try{
+    btn.disabled=true;
+    el("submitStatus").innerHTML="傳送中...";
     await apiPost("savekeyin",data);
-    document.getElementById("msg").innerHTML='<span class="statusOk">已送出</span>';
+    el("submitStatus").innerHTML='<span class="statusOk">✅ 已送出 / บันทึกสำเร็จ</span>';
     toast("回報成功");
-    document.getElementById("actual_output").value="";
-    document.getElementById("process_note").value="";
+    el("actual").value="";
+    el("note").value="";
+    if(el("autoNextToggle").checked) setTimeout(selectNextTodo,300);
+    setTimeout(loadKeyinToday,600);
   }catch(e){
+    el("submitStatus").innerHTML='<span class="statusBad">❌ 送出失敗</span>';
     alert("送出失敗："+e.message);
+  }finally{
+    btn.disabled=false;
   }
 }
 
-loadBase();
+document.addEventListener("DOMContentLoaded",function(){
+  loadBase();
+});
 </script>
 </body>
 </html>
