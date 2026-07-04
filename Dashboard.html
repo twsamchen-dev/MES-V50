@@ -1887,23 +1887,63 @@ V60.9.3 Dashboard API Patch
   document.addEventListener("DOMContentLoaded", function(){
     setTimeout(startMesDashboardPatch, 1000);
   });
+async function jsonpAny(actions, params){
+  let last = null;
 
+  for (const action of actions) {
+    try {
+      const res = await jsonp(action, params);
+      const rows = extractRows(res);
+
+      if (rows.length > 0) {
+        return res;
+      }
+
+      last = res;
+    } catch (err) {
+      console.warn("API action failed:", action, err);
+    }
+  }
+
+  return last || { ok:false, rows:[] };
+}
+
+async function reloadMesDashboardPatch(){
   async function startMesDashboardPatch(){
     createPatchStatusBox();
     patchStatus("MES API Patch 啟動中...");
     await reloadMesDashboardPatch();
   }
+async function jsonpAny(actions, params){
+  let last = null;
 
+  for (const action of actions) {
+    try {
+      const res = await jsonp(action, params);
+      const rows = extractRows(res);
+
+      if (rows.length > 0) {
+        return res;
+      }
+
+      last = res;
+    } catch (err) {
+      console.warn("API action failed:", action, err);
+    }
+  }
+
+  return last || { ok:false, rows:[] };
+}
   async function reloadMesDashboardPatch(){
     patchStatus("API 讀取中...");
 
     try {
       const today = todayYmd();
 
-      const sourceRes = await jsonp("getSourceData");
-      const targetRes = await jsonp("listTargetPlans", { date: today });
-      const keyinRes = await jsonp("listKeyin", { date: today });
-      const empRes = await jsonp("listEmployees");
+      const sourceRes = await jsonpAny(["source", "getSourceData"]);
+      const targetRes = await jsonpAny(["targets", "listTargetPlans"], { date: today });
+      const keyinRes = await jsonpAny(["list", "listKeyin"], { date: today });
+      const empRes = await jsonpAny(["employees", "listEmployees"]);
 
       MES_DASH_PATCH.source = extractRows(sourceRes);
       MES_DASH_PATCH.targets = extractRows(targetRes);
