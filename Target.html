@@ -1,46 +1,756 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>生產 Key In｜V60.1 MES Enterprise</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V60.4 MES 幹部目標</title>
+<link rel="stylesheet" href="style.css">
+<script src="api.js"></script>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #f4f7fb;
-      font-family: Arial, "Microsoft JhengHei", sans-serif;
-    }
+<style>
+/* V60.4：隱藏上方三個導覽按鈕 */
+header .nav {
+  display: none !important;
+}
 
-    .loading {
-      width: 100%;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #1e3a8a;
-      font-size: 20px;
-      font-weight: 700;
-    }
-  </style>
+.target-wrap {
+  max-width: 1500px;
+  margin: 22px auto;
+  padding: 0 20px 40px;
+}
+
+.target-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.target-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.target-form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.target-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.target-tools input,
+.target-tools select {
+  max-width: 260px;
+}
+
+.target-table-wrap {
+  overflow: auto;
+}
+
+.target-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1200px;
+}
+
+.target-table th,
+.target-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.target-table th {
+  background: #f1f5f9;
+  font-weight: 900;
+}
+
+.quick-list {
+  max-height: 430px;
+  overflow: auto;
+}
+
+.quick-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.quick-item:hover {
+  background: #f8fafc;
+}
+
+.quick-item b {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.mini {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.status-text {
+  color: #64748b;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+@media(max-width: 1000px) {
+  .target-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .target-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 </head>
 
 <body>
-  <div class="loading">正在載入 MES V60.1...</div>
+<header>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V60.4 MES Enterprise</h1>
+  <p>加工課戰情中心 · 幹部目標 · GitHub + Apps Script 正式版</p>
 
-  <script>
-    /*
-      V60.1 Target.html 救援版
-      功能：
-      1. 避免 Target.html 白畫面
-      2. 自動導回正式首頁 index.html
-      3. 加上版本參數，避免快取
-    */
+  <div class="nav" style="display:none!important;">
+    <a href="index.html">Key In</a>
+    <a href="target.html">幹部目標</a>
+    <a href="dashboard.html">戰情室</a>
+  </div>
+</header>
 
-    window.location.replace("./index.html?v=601");
-  </script>
+<div class="target-wrap">
+
+  <div class="grid target-grid">
+
+    <div class="card">
+      <h2>幹部目標 Key In</h2>
+
+      <div class="target-form-grid">
+
+        <div>
+          <label>日期</label>
+          <input id="report_date" type="date">
+        </div>
+
+        <div>
+          <label>班別</label>
+          <select id="shift">
+            <option value="早班">早班</option>
+            <option value="中班">中班</option>
+            <option value="晚班">晚班</option>
+            <option value="加班">加班</option>
+          </select>
+        </div>
+
+        <div>
+          <label>幹部角色</label>
+          <select id="leader_role">
+            <option value="課長">課長</option>
+            <option value="副課長">副課長</option>
+            <option value="組長">組長</option>
+            <option value="班長">班長</option>
+          </select>
+        </div>
+
+        <div>
+          <label>幹部姓名</label>
+          <input id="leader_name" placeholder="例如 陳善祖">
+        </div>
+
+        <div>
+          <label>工單</label>
+          <input id="work_order_no" placeholder="例如 MM2606120041">
+        </div>
+
+        <div>
+          <label>訂單號</label>
+          <input id="order_no" placeholder="可空白">
+        </div>
+
+        <div>
+          <label>料號</label>
+          <input id="part_no" placeholder="例如 C6036200500-6*7">
+        </div>
+
+        <div>
+          <label>生產批號</label>
+          <input id="batch_no" placeholder="可空白">
+        </div>
+
+        <div>
+          <label>客戶</label>
+          <input id="customer" placeholder="客戶名稱">
+        </div>
+
+        <div>
+          <label>製程站點</label>
+          <select id="process_site">
+            <option value="分條">分條</option>
+            <option value="覆卷">覆卷</option>
+            <option value="複捲">複捲</option>
+            <option value="包裝">包裝</option>
+            <option value="上膠">上膠</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+
+        <div>
+          <label>優先</label>
+          <select id="priority">
+            <option value="一般">一般</option>
+            <option value="急件">急件</option>
+            <option value="特急">特急</option>
+          </select>
+        </div>
+
+        <div>
+          <label>機台</label>
+          <input id="machine_code" placeholder="例如 1S03 / 1B02">
+        </div>
+
+        <div>
+          <label>產品規格</label>
+          <input id="product_spec" placeholder="例：0.040mm*560mm*50M">
+        </div>
+
+        <div>
+          <label>目標卷數 R</label>
+          <input id="target_r" type="number" step="0.01">
+        </div>
+
+        <div>
+          <label>目標面積 ㎡</label>
+          <input id="target_m2" type="number" step="0.01">
+        </div>
+
+        <div>
+          <label>預計開始</label>
+          <input id="plan_start" type="datetime-local">
+        </div>
+
+        <div>
+          <label>預計完成</label>
+          <input id="plan_end" type="datetime-local">
+        </div>
+
+        <div>
+          <label>狀態</label>
+          <select id="status">
+            <option value="待排程">待排程</option>
+            <option value="已排程">已排程</option>
+            <option value="生產中">生產中</option>
+            <option value="已完成">已完成</option>
+            <option value="暫停">暫停</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label>備註</label>
+          <textarea id="note" placeholder="交期、異常、注意事項"></textarea>
+        </div>
+
+      </div>
+
+      <div class="row" style="margin-top:16px;">
+        <button class="btn ok" onclick="saveTargetPlan()">儲存幹部目標</button>
+        <button class="btn ghost" onclick="clearTargetForm()">新增下一筆</button>
+        <button class="btn ghost" onclick="loadTargetPlans()">重新讀取清單</button>
+      </div>
+
+      <div id="saveStatus" class="status-text"></div>
+    </div>
+
+    <div class="card">
+      <h2>可快速帶入工單</h2>
+      <div class="tools">
+        <input id="quickSearch" placeholder="搜尋工單 / 料號 / 規格" oninput="renderQuickList()">
+      </div>
+      <div id="quickList" class="quick-list">
+        尚未讀取工單。
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2>幹部目標清單</h2>
+
+    <div class="target-tools">
+      <input id="listDate" type="date" onchange="loadTargetPlans()">
+      <input id="listSearch" placeholder="搜尋工單/機台/幹部/客戶" oninput="renderTargetTable()">
+      <select id="listStatus" onchange="renderTargetTable()">
+        <option value="">全部狀態</option>
+        <option value="待排程">待排程</option>
+        <option value="已排程">已排程</option>
+        <option value="生產中">生產中</option>
+        <option value="已完成">已完成</option>
+        <option value="暫停">暫停</option>
+      </select>
+      <button class="btn ghost" onclick="loadTargetPlans()">讀取歷史資料</button>
+      <span id="listCount" class="hint"></span>
+    </div>
+
+    <div class="target-table-wrap">
+      <table class="target-table">
+        <thead>
+          <tr>
+            <th>操作</th>
+            <th>日期</th>
+            <th>班別</th>
+            <th>幹部</th>
+            <th>工單</th>
+            <th>機台</th>
+            <th>製程</th>
+            <th>客戶</th>
+            <th>規格</th>
+            <th>目標R</th>
+            <th>目標㎡</th>
+            <th>狀態</th>
+            <th>備註</th>
+          </tr>
+        </thead>
+        <tbody id="targetRows">
+          <tr><td colspan="13" class="hint">目前沒有目標資料</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const TargetApp = {
+  source: [],
+  plans: []
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  setDefaultDates();
+  loadInitial();
+});
+
+function setDefaultDates() {
+  const d = getTodayYmd();
+
+  setVal2('report_date', d);
+  setVal2('listDate', d);
+}
+
+async function loadInitial() {
+  await loadSourceData();
+  await loadTargetPlans();
+}
+
+async function loadSourceData() {
+  try {
+    const r = await MES.get('getSourceData');
+    TargetApp.source = (r && r.rows) || [];
+    renderQuickList();
+  } catch (e) {
+    document.getElementById('quickList').innerHTML = '讀取工單失敗：' + esc2(e.message);
+  }
+}
+
+async function loadTargetPlans() {
+  const dateText = getVal2('listDate');
+  const ymd = normalizeDateText(dateText);
+
+  document.getElementById('targetRows').innerHTML =
+    '<tr><td colspan="13" class="hint">讀取幹部目標資料中...</td></tr>';
+
+  try {
+    const rows = [];
+
+    const queryDates = [
+      ymd,
+      ymd.replaceAll('-', '/')
+    ].filter(Boolean);
+
+    for (const d of queryDates) {
+      try {
+        const r = await MES.get('listTargetPlans', [], { date: d });
+        if (r && Array.isArray(r.rows)) rows.push(...r.rows);
+      } catch (e) {}
+    }
+
+    try {
+      const all = await MES.get('listTargetPlans');
+      if (all && Array.isArray(all.rows)) rows.push(...all.rows);
+    } catch (e) {}
+
+    const map = new Map();
+
+    rows.forEach(p => {
+      const key = [
+        normalizeDateText(getPlanDateRaw(p)),
+        p.work_order_no || p.order_no || '',
+        p.machine_code || p.machine || '',
+        p.process_site || p.site || p.process || '',
+        p.created_at || ''
+      ].join('|');
+
+      if (!map.has(key)) map.set(key, p);
+    });
+
+    TargetApp.plans = Array.from(map.values());
+
+    renderTargetTable();
+
+  } catch (e) {
+    document.getElementById('targetRows').innerHTML =
+      '<tr><td colspan="13" class="hint">讀取失敗：' + esc2(e.message) + '</td></tr>';
+  }
+}
+
+function renderTargetTable() {
+  const dateText = normalizeDateText(getVal2('listDate'));
+  const keyword = norm2(getVal2('listSearch'));
+  const status = getVal2('listStatus');
+
+  let rows = TargetApp.plans.filter(p => {
+    const pd = normalizeDateText(getPlanDateRaw(p));
+
+    if (dateText && pd && pd !== dateText) return false;
+
+    if (status && String(p.status || '') !== status) return false;
+
+    if (keyword) {
+      const pool = [
+        p.report_date,
+        p.shift,
+        p.leader_role,
+        p.leader_name,
+        p.work_order_no,
+        p.order_no,
+        p.part_no,
+        p.batch_no,
+        p.customer,
+        p.product_spec,
+        p.process_site,
+        p.machine_code,
+        p.target_r,
+        p.target_m2,
+        p.status,
+        p.note
+      ].join(' ');
+
+      if (!norm2(pool).includes(keyword)) return false;
+    }
+
+    return true;
+  });
+
+  rows.sort((a, b) => {
+    const da = normalizeDateText(getPlanDateRaw(a));
+    const db = normalizeDateText(getPlanDateRaw(b));
+    return db.localeCompare(da);
+  });
+
+  document.getElementById('listCount').textContent =
+    '顯示 ' + rows.length + ' / ' + TargetApp.plans.length + ' 筆';
+
+  const body = document.getElementById('targetRows');
+
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="13" class="hint">目前沒有目標資料</td></tr>';
+    return;
+  }
+
+  body.innerHTML = rows.map((p, idx) => `
+    <tr>
+      <td><button class="btn ghost" onclick="loadPlanToForm(${idx})">帶入</button></td>
+      <td>${esc2(normalizeDateText(getPlanDateRaw(p)))}</td>
+      <td>${esc2(p.shift || '')}</td>
+      <td>${esc2((p.leader_role || '') + ' ' + (p.leader_name || ''))}</td>
+      <td><b>${esc2(p.work_order_no || p.order_no || '')}</b></td>
+      <td>${esc2(p.machine_code || p.machine || '')}</td>
+      <td>${esc2(p.process_site || p.site || p.process || '')}</td>
+      <td>${esc2(p.customer || '')}</td>
+      <td>${esc2(p.product_spec || '')}</td>
+      <td>${esc2(p.target_r || p.target_qty || '')}</td>
+      <td>${esc2(p.target_m2 || '')}</td>
+      <td>${esc2(p.status || '')}</td>
+      <td>${esc2(p.note || p.remark || '')}</td>
+    </tr>
+  `).join('');
+
+  TargetApp.renderedPlans = rows;
+}
+
+function loadPlanToForm(idx) {
+  const p = TargetApp.renderedPlans && TargetApp.renderedPlans[idx];
+  if (!p) return;
+
+  setVal2('report_date', normalizeDateText(getPlanDateRaw(p)));
+  setVal2('shift', p.shift || '早班');
+  setVal2('leader_role', p.leader_role || '課長');
+  setVal2('leader_name', p.leader_name || '');
+  setVal2('work_order_no', p.work_order_no || p.order_no || '');
+  setVal2('order_no', p.order_no || '');
+  setVal2('part_no', p.part_no || '');
+  setVal2('batch_no', p.batch_no || '');
+  setVal2('customer', p.customer || '');
+  setVal2('process_site', p.process_site || p.site || p.process || '分條');
+  setVal2('priority', p.priority || '一般');
+  setVal2('machine_code', p.machine_code || p.machine || '');
+  setVal2('product_spec', p.product_spec || '');
+  setVal2('target_r', p.target_r || p.target_qty || '');
+  setVal2('target_m2', p.target_m2 || '');
+  setVal2('plan_start', toDateTimeLocal(p.plan_start || p.start_time || ''));
+  setVal2('plan_end', toDateTimeLocal(p.plan_end || p.end_time || ''));
+  setVal2('status', p.status || '待排程');
+  setVal2('note', p.note || p.remark || '');
+
+  toast2('已帶入幹部目標資料');
+}
+
+function renderQuickList() {
+  const q = norm2(getVal2('quickSearch'));
+  const box = document.getElementById('quickList');
+
+  let rows = TargetApp.source.filter(r => {
+    if (!q) return true;
+    return norm2(Object.values(r).join(' ')).includes(q);
+  });
+
+  rows = rows.slice(0, 80);
+
+  if (!rows.length) {
+    box.innerHTML = '沒有可快速帶入的工單。';
+    return;
+  }
+
+  box.innerHTML = rows.map((r, idx) => {
+    const wo = r.work_order_no || r.order_no || '';
+    const spec = r.product_spec || '';
+    const customer = r.customer || '';
+    const process = r.process || r.process_site || '';
+    return `
+      <div class="quick-item" onclick="fillFromSource(${idx})">
+        <b>${esc2(wo)}</b>
+        <div class="mini">${esc2(customer)}｜${esc2(process)}</div>
+        <div class="mini">${esc2(spec)}</div>
+      </div>
+    `;
+  }).join('');
+
+  TargetApp.quickRows = rows;
+}
+
+function fillFromSource(idx) {
+  const r = TargetApp.quickRows && TargetApp.quickRows[idx];
+  if (!r) return;
+
+  setVal2('work_order_no', r.work_order_no || r.order_no || '');
+  setVal2('order_no', r.order_no || '');
+  setVal2('part_no', r.part_no || '');
+  setVal2('batch_no', r.batch_no || '');
+  setVal2('customer', r.customer || '');
+  setVal2('product_spec', r.product_spec || '');
+  setVal2('machine_code', r.machine_code || r.machine || '');
+  setVal2('process_site', r.process_site || r.process || getVal2('process_site'));
+
+  toast2('已帶入工單資料');
+}
+
+async function saveTargetPlan() {
+  const data = collectTargetData();
+
+  if (!data.report_date) {
+    toast2('請選擇日期');
+    return;
+  }
+
+  if (!data.work_order_no) {
+    toast2('請輸入工單');
+    return;
+  }
+
+  document.getElementById('saveStatus').textContent = '儲存中...';
+
+  try {
+    await tryPostTarget(data);
+
+    document.getElementById('saveStatus').textContent = '已儲存幹部目標';
+    toast2('已儲存幹部目標');
+
+    setVal2('listDate', data.report_date);
+    await loadTargetPlans();
+
+  } catch (e) {
+    document.getElementById('saveStatus').textContent = '儲存失敗：' + e.message;
+    alert('儲存失敗：' + e.message);
+  }
+}
+
+async function tryPostTarget(data) {
+  const actions = [
+    'saveTargetPlan',
+    'saveTarget',
+    'upsertTargetPlan'
+  ];
+
+  let lastErr = null;
+
+  for (const action of actions) {
+    try {
+      return await MES.post(action, data);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  throw lastErr || new Error('找不到可用的儲存 API');
+}
+
+function collectTargetData() {
+  const now = new Date().toISOString();
+
+  return {
+    created_at: now,
+    updated_at: now,
+    report_date: normalizeDateText(getVal2('report_date')),
+    shift: getVal2('shift'),
+    leader_role: getVal2('leader_role'),
+    leader_name: getVal2('leader_name'),
+    work_order_no: getVal2('work_order_no'),
+    order_no: getVal2('order_no'),
+    part_no: getVal2('part_no'),
+    batch_no: getVal2('batch_no'),
+    customer: getVal2('customer'),
+    product_spec: getVal2('product_spec'),
+    process_site: getVal2('process_site'),
+    priority: getVal2('priority'),
+    machine_code: getVal2('machine_code'),
+    target_r: getVal2('target_r'),
+    target_m2: getVal2('target_m2'),
+    plan_start: getVal2('plan_start'),
+    plan_end: getVal2('plan_end'),
+    status: getVal2('status'),
+    note: getVal2('note'),
+    input_source: 'github_target_v60_4'
+  };
+}
+
+function clearTargetForm() {
+  [
+    'work_order_no',
+    'order_no',
+    'part_no',
+    'batch_no',
+    'customer',
+    'product_spec',
+    'machine_code',
+    'target_r',
+    'target_m2',
+    'plan_start',
+    'plan_end',
+    'note'
+  ].forEach(id => setVal2(id, ''));
+
+  setVal2('status', '待排程');
+  setVal2('priority', '一般');
+  toast2('已清空，可新增下一筆');
+}
+
+function getPlanDateRaw(p) {
+  return p.report_date || p.date || p.plan_date || p.target_date || p.created_at || '';
+}
+
+function normalizeDateText(v) {
+  if (!v) return '';
+
+  let s = String(v).trim();
+
+  if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
+    const parts = s.split(/[\/\s]/);
+    return parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
+  }
+
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+    const parts = s.slice(0, 10).split('-');
+    return parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
+  }
+
+  return '';
+}
+
+function getTodayYmd() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function toDateTimeLocal(v) {
+  if (!v) return '';
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 16);
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) return s.replace(' ', 'T').slice(0, 16);
+  if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
+    const d = normalizeDateText(s);
+    return d ? d + 'T00:00' : '';
+  }
+  return '';
+}
+
+function getVal2(id) {
+  const el = document.getElementById(id);
+  return el ? String(el.value || '').trim() : '';
+}
+
+function setVal2(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value == null ? '' : value;
+}
+
+function norm2(v) {
+  return String(v || '').toLowerCase().replace(/\s+/g, '');
+}
+
+function esc2(v) {
+  return String(v ?? '').replace(/[&<>"']/g, s => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[s]));
+}
+
+function toast2(msg) {
+  if (window.MES && typeof MES.toast === 'function') {
+    MES.toast(msg);
+    return;
+  }
+
+  const t = document.getElementById('toast');
+  if (!t) {
+    alert(msg);
+    return;
+  }
+
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+</script>
 </body>
 </html>
