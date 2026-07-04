@@ -4466,5 +4466,312 @@ async function jsonpAny(actions, params){
   });
 })();
 </script>
+<!-- V60.9.12 Dashboard Source Keep-All Fix｜修正 SL31A / 4-3 被過濾問題 -->
+<script id="v60912_dashboard_source_keep_all_fix">
+(function(){
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function(s){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s];
+    });
+  }
+
+  function norm(v){
+    return String(v == null ? "" : v).trim().replace(/\s+/g, "").toUpperCase();
+  }
+
+  function wo12(v){
+    return norm(v).slice(0, 12);
+  }
+
+  function num(v){
+    var n = parseFloat(String(v == null ? "" : v).replace(/,/g, ""));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function dateKey(v){
+    var s = String(v == null ? "" : v).trim();
+    if (!s) return "";
+    s = s.replace(/\//g, "-");
+    var m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    return m ? m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0") : s.slice(0, 10);
+  }
+
+  function pick(r, names){
+    if (!r) return "";
+    for (var i = 0; i < names.length; i++) {
+      var k = names[i];
+      if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== "") {
+        return r[k];
+      }
+    }
+    return "";
+  }
+
+  function rowsOf(res){
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.rows)) return res.rows;
+    if (Array.isArray(res.data)) return res.data;
+    if (res.result && Array.isArray(res.result.rows)) return res.result.rows;
+    if (res.result && Array.isArray(res.result.data)) return res.result.data;
+    return [];
+  }
+
+  function jsonp(action, params){
+    return new Promise(function(resolve, reject){
+      var cb = "MES_V60912_CB_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+      var url = new URL(API_URL);
+
+      url.searchParams.set("action", action);
+      url.searchParams.set("callback", cb);
+      url.searchParams.set("_", Date.now());
+
+      Object.keys(params || {}).forEach(function(k){
+        if (params[k] !== undefined && params[k] !== null && params[k] !== "") {
+          url.searchParams.set(k, params[k]);
+        }
+      });
+
+      var s = document.createElement("script");
+      var timer = setTimeout(function(){
+        cleanup();
+        reject(new Error(action + " 讀取逾時"));
+      }, 45000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+        if (s.parentNode) s.parentNode.removeChild(s);
+      }
+
+      window[cb] = function(data){
+        cleanup();
+        resolve(data);
+      };
+
+      s.onerror = function(){
+        cleanup();
+        reject(new Error(action + " JSONP 失敗"));
+      };
+
+      s.src = url.toString();
+      document.body.appendChild(s);
+    });
+  }
+
+  async function callAny(actions, params){
+    var last = null;
+    for (var i = 0; i < actions.length; i++) {
+      try {
+        var res = await jsonp(actions[i], params || {});
+        last = res;
+        var rows = rowsOf(res);
+        if (rows.length > 0) return res;
+      } catch(e) {
+        console.warn("V60.9.12 retry", actions[i], e);
+      }
+    }
+    return last || { rows: [] };
+  }
+
+  function detectSourceName(r){
+    var s = String(pick(r, [
+      "source","來源","source_name","data_source","資料來源","sheet","sheet_name","__sheet"
+    ]) || "").trim();
+
+    var all = JSON.stringify(r || {}).toUpperCase();
+
+    if (s) return s;
+    if (all.indexOf("SL31") >= 0) return "SL31A";
+    if (all.indexOf("PD11") >= 0) return "PD11B";
+    if (all.indexOf("4-3") >= 0 || all.indexOf("4_3") >= 0) return "4-3";
+    if (all.indexOf("5-C") >= 0 || all.indexOf("5C") >= 0) return "5-C";
+    if (all.indexOf("5-3") >= 0 || all.indexOf("53") >= 0) return "5-3";
+
+    return "source_data";
+  }
+
+  function normalizeSourceKeepAll(rows){
+    return (rows || []).map(function(r){
+      var src = detectSourceName(r);
+
+      var wo = wo12(pick(r, [
+        "work_order_no","work_order","工單號","工單","工單編號",
+        "命令單","命令單號","製令單號","製令",
+        "order_no","訂單號","訂單單號","單號"
+      ]));
+
+      var order = pick(r, [
+        "order_no","訂單號","訂單單號","客戶訂單","銷售單號","單號"
+      ]);
+
+      var batch = pick(r, [
+        "batch_no","生產批號","批號","製號","產出製號","投入製號","Lot","LOT","lot"
+      ]);
+
+      return {
+        source: src,
+
+        work_order_no: wo,
+        order_no: order,
+
+        part_no: pick(r, [
+          "part_no","料號","品號","料品編號","產品料號","產品編號","品名"
+        ]),
+
+        batch_no: batch,
+
+        product_spec: pick(r, [
+          "product_spec","產品規格","規格","品名規格","長寬","尺寸","品名"
+        ]),
+
+        target_qty: num(pick(r, [
+          "target_qty","目標數量","預計產量","工單目標","訂單數量",
+          "數量","目標R","目標卷數","target_roll","target_r"
+        ])),
+
+        process: pick(r, [
+          "process_site","process","製程站點","製程","站點","目前製程","站別","排程"
+        ]),
+
+        customer: pick(r, [
+          "customer","customer_name","客戶","客戶名稱","客戶別"
+        ]),
+
+        machine: pick(r, [
+          "machine_code","machine","機台","機台代碼","設備","設備編號"
+        ]),
+
+        plan_date: dateKey(pick(r, [
+          "plan_date","report_date","日期","工單日期","開立日","建立日","製令日期"
+        ])),
+
+        due_date: dateKey(pick(r, [
+          "due_date","預交日","交期","預計完成日","預計入庫日","預定完成日","預計交貨日"
+        ])),
+
+        status: pick(r, [
+          "status","狀態","工單狀態","生產狀態","入庫狀態","完工狀態"
+        ]),
+
+        issue_status: pick(r, [
+          "issue_status","異常","異常狀態","問題","備註","原因"
+        ]),
+
+        material_status: pick(r, [
+          "material_status","待料","領料狀態","備料狀態","物料狀態"
+        ]),
+
+        warehouse_status: pick(r, [
+          "warehouse_status","入庫","入庫狀態","倉庫狀態"
+        ]),
+
+        stockin_date: dateKey(pick(r, [
+          "stockin_date","實際入庫日","入庫完成日","入庫日期"
+        ])),
+
+        finish_date: dateKey(pick(r, [
+          "finish_date","完工日","完成日"
+        ])),
+
+        pick_date: dateKey(pick(r, [
+          "pick_date","領料日","領料日期"
+        ])),
+
+        priority: pick(r, [
+          "priority","優先","急件"
+        ]),
+
+        raw_json: JSON.stringify(r || {})
+      };
+    });
+  }
+
+  function countSource(rows, key){
+    key = String(key || "").toUpperCase();
+    return (rows || []).filter(function(r){
+      return String(r.source || "").toUpperCase().indexOf(key) >= 0;
+    }).length;
+  }
+
+  function status(msg){
+    var old = document.getElementById("v60911Status");
+    if (old) old.style.display = "none";
+
+    var box = document.getElementById("v60912Status");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "v60912Status";
+      box.style.cssText = [
+        "position:fixed",
+        "right:18px",
+        "bottom:18px",
+        "z-index:99999999",
+        "background:#0f172a",
+        "color:#e5e7eb",
+        "border:1px solid #22c55e",
+        "border-radius:12px",
+        "padding:10px 14px",
+        "font-size:13px",
+        "box-shadow:0 8px 22px rgba(0,0,0,.25)",
+        "max-width:880px",
+        "line-height:1.5"
+      ].join(";");
+
+      document.body.appendChild(box);
+    }
+
+    box.innerHTML = esc(msg);
+  }
+
+  function renderAfterLoad(){
+    try { if (typeof buildIndex === "function") buildIndex(); } catch(e) {}
+    try { if (typeof calcActual === "function") calcActual(); } catch(e) {}
+    try { if (typeof renderActive === "function") renderActive(); } catch(e) {}
+    try { if (typeof v541RenderDataHub === "function") v541RenderDataHub(); } catch(e) {}
+  }
+
+  async function reload60912(){
+    status("V60.9.12 重新讀取 source_data 中...");
+
+    var res = await callAny(["source","getSourceData","getsourcedata"], {});
+    var raw = rowsOf(res);
+
+    if (!window.AppState) window.AppState = {};
+    AppState.source = normalizeSourceKeepAll(raw);
+
+    renderAfterLoad();
+
+    var sl = countSource(AppState.source, "SL31");
+    var f43 = countSource(AppState.source, "4-3");
+    var pd = countSource(AppState.source, "PD11");
+
+    status(
+      "V60.9.12 source_data 已重新灌入｜SL31A：" + sl +
+      "｜4-3：" + f43 +
+      "｜PD11B：" + pd +
+      "｜source_data：" + AppState.source.length +
+      "｜主畫面工單索引：" + Object.keys(AppState.idx || {}).length
+    );
+
+    console.log("V60.9.12 source keep all", {
+      raw: raw.length,
+      source: AppState.source.length,
+      SL31A: sl,
+      F43: f43,
+      PD11B: pd,
+      idx: Object.keys(AppState.idx || {}).length
+    });
+  }
+
+  window.v60912ReloadSource = reload60912;
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(reload60912, 6500);
+  });
+})();
+</script>
 </body>
 </html>
