@@ -8,7 +8,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V72.3 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V72.3 版面優化版；五份資料建立快取後查詢，不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V72.4 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V72.4 快取查詢版；五份資料建立快取後查詢，不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -138,7 +138,28 @@ function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').val
 async function loadBootstrap(){try{$('loadBtn').textContent='讀取中...';$('loadMsg').textContent='讀取 Target_Plan + Employee + 五份資料清單...';const b=await apiGet('targetbootstrap');ALL_TARGETS=b.targets||b.rows||[];normalizeEmployees(b.employees||[]);applyRange();$('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆';toast('目標/人員讀取完成')}catch(e){alert('讀取失敗：'+e.message)}finally{$('loadBtn').textContent='重新讀取目標/人員'}}
 function debouncedLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(lookupOrder,500)}
 async function lookupOrder(){let q=wo12($('work_order_no').value);$('work_order_no').value=q;if(!q){$('lookupBox').innerHTML='輸入工單號後才查資料。';return}try{$('lookupBox').innerHTML='查詢工單中 / กำลังค้นหา...';const res=await apiGet('targetlookup',{q});if(!res.found){$('lookupBox').className='found warn';$('lookupBox').innerHTML='查無工單：'+esc(q);return}LAST_LOOKUP=res.row;fillFromOrder(res.row);$('lookupBox').className='found';$('lookupBox').innerHTML='<b>已帶入工單 / นำเข้าข้อมูลแล้ว</b><br>來源：'+esc(res.row.source||'-')+'<br>客戶：'+esc(res.row.customer||'-')+'<br>料號：'+esc(res.row.part_no||'-')+'<br>規格：'+esc(res.row.product_spec||'-')+'<br>SL31A 長×寬：'+esc(res.row.pivot_len||'-')+' × '+esc(res.row.pivot_width||'-')}catch(e){$('lookupBox').className='found warn';$('lookupBox').innerHTML='查詢失敗：'+esc(e.message)}}
-function fillFromOrder(r){if(!r)return;$('work_order_no').value=r.work_order_no||'';$('order_no').value=r.order_no||'';$('part_no').value=r.part_no||'';$('batch_no').value=r.batch_no||'';$('customer').value=r.customer||$('customer').value||'';$('product_spec').value=r.product_spec||$('product_spec').value||'';if(r.process)$('process_site').value=matchProcess(r.process);if(r.machine)$('machine_code').value=r.machine;if(r.target_qty&&!$('target_roll').value)$('target_roll').value=r.target_qty;if(r.pivot_len)$('pivot_len').value=r.pivot_len;if(r.pivot_width)$('pivot_width').value=r.pivot_width;if(r.due_date&&!$('planned_finish').value)$('planned_finish').value=dateKey(r.due_date);calcTargetM2()}
+function clearOrderFields(){
+  ['work_order_no','order_no','part_no','batch_no','machine_code','customer','product_spec','target_roll','target_m2','pivot_len','pivot_width'].forEach(id=>{if($(id))$(id).value=''});
+  if($('planned_finish')) $('planned_finish').value=$('report_date').value||today();
+  if($('process_site')) $('process_site').selectedIndex=0;
+}
+function fillFromOrder(r){
+  if(!r)return;
+  clearOrderFields();
+  $('work_order_no').value=r.work_order_no||'';
+  $('order_no').value=r.order_no||'';
+  $('part_no').value=r.part_no||'';
+  $('batch_no').value=r.batch_no||'';
+  $('customer').value=r.customer||'';
+  $('product_spec').value=r.product_spec||'';
+  if(r.process)$('process_site').value=matchProcess(r.process);
+  if(r.machine)$('machine_code').value=r.machine;
+  if(r.target_qty)$('target_roll').value=r.target_qty;
+  if(r.pivot_len)$('pivot_len').value=r.pivot_len;
+  if(r.pivot_width)$('pivot_width').value=r.pivot_width;
+  if(r.due_date)$('planned_finish').value=dateKey(r.due_date);
+  calcTargetM2();
+}
 function matchProcess(p){p=String(p||'');const sel=$('process_site');for(let i=0;i<sel.options.length;i++){let z=sel.options[i].text;if(z.includes(p)||p.includes(z.split('/')[0].trim()))return sel.options[i].text}return sel.value}
 function calcTargetM2(){let r=num($('target_roll').value),l=num($('pivot_len').value),w=num($('pivot_width').value);if(r&&l&&w){$('target_m2').value=(r*l*w/1000).toFixed(2)}}
 function debouncedOrderList(){clearTimeout(orderTimer);orderTimer=setTimeout(loadOrderList,350)}
@@ -154,7 +175,7 @@ async function loadOrderList(){
     ORDER_LIST=res.rows||[];
     renderQuickList();
   }catch(e){
-    $('quickList').innerHTML='<span class="status-wait">讀取五份資料失敗：'+esc(e.message)+'</span>';
+    $('quickList').innerHTML='<span class="status-wait">讀取五份資料失敗：'+esc(e.message)+'。請確認 Apps Script 已更新 V72.4，並先重建快取'+'</span>';
   }
 }
 function renderQuickList(){
@@ -210,7 +231,7 @@ function updateKpi(){
   $('kpiPair').textContent=rows.length?Math.round(paired/rows.length*100)+'%':'0%';
 }
 
-function clearForm(){['emp_no','leader_name','work_order_no','order_no','part_no','batch_no','machine_code','customer','product_spec','target_roll','target_m2','pivot_len','pivot_width','note'].forEach(id=>$(id).value='');$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單號後才查資料，不會開頁逾時。'}
+function clearForm(){['emp_no','leader_name','note'].forEach(id=>$(id).value='');clearOrderFields();$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單號後才查資料，不會開頁逾時。'}
 async function saveTarget(){const data={report_date:$('report_date').value||today(),week_no:isoWeek($('report_date').value||today()),shift:$('shift').value,emp_no:$('emp_no').value,leader_role:$('leader_role').value,leader_name:$('leader_name').value,work_order_no:wo12($('work_order_no').value),order_no:$('order_no').value,part_no:$('part_no').value,batch_no:$('batch_no').value,process_site:$('process_site').value,machine_code:$('machine_code').value,customer:$('customer').value,product_spec:$('product_spec').value,target_roll:$('target_roll').value,target_m2:$('target_m2').value,planned_finish:$('planned_finish').value,status:$('status').value,note:$('note').value};if(!data.work_order_no){toast('請輸入工單號');return}try{await apiPost('savetargetplan',data);$('saveMsg').textContent='已儲存';toast('目標已儲存');setTimeout(loadBootstrap,700)}catch(e){alert('儲存失敗：'+e.message)}}
 document.addEventListener('DOMContentLoaded',()=>{$('report_date').value=today();$('planned_finish').value=today();setRangeMode('today');loadBootstrap()});
 </script>
