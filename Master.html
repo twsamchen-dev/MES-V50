@@ -3,101 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V80.1 MES DataHub Master</title>
+<title>V80.2 MES DataHub Master</title>
 <style>
-:root{--bg:#f4f7fb;--card:#fff;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--blue:#1d4ed8;--navy:#0f172a}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:18px 26px;background:linear-gradient(135deg,var(--blue),var(--navy));color:white}h1{margin:0;font-size:28px}header p{margin:8px 0 0;color:#dbeafe}.wrap{max-width:1720px;margin:auto;padding:14px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}.col2{grid-column:span 2}@media(max-width:1100px){.col8,.col6,.col4,.col3,.col2{grid-column:span 12}}h2{margin:0 0 12px;font-size:22px}.muted{color:var(--muted);font-size:13px}.btn{border:0;border-radius:12px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input,select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:12px;font-size:15px}.kpi{color:white;border-radius:16px;padding:16px;min-height:104px}.kpi .label{font-size:13px;opacity:.92}.kpi .num{font-size:36px;font-weight:900;margin-top:8px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.purple{background:linear-gradient(135deg,#7c3aed,#312e81)}.teal{background:linear-gradient(135deg,#0891b2,#164e63)}.scroll{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px;background:white}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc;z-index:1}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#eef2ff;color:#1e3a8a}.ok{color:#15803d;font-weight:900}.warn{color:#b45309;font-weight:900}.bad{color:#991b1b;font-weight:900}.timeline{display:flex;gap:8px;flex-wrap:wrap}.step{padding:9px 11px;border:1px solid var(--line);border-radius:999px;background:#f8fafc;font-weight:900;font-size:13px}.step.on{background:#dcfce7;border-color:#86efac;color:#166534}.detailbox{min-height:150px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:14px;padding:14px}.footer-note{font-size:12px;color:#64748b;margin-top:10px}
+:root{--bg:#f4f7fb;--card:#fff;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--blue:#1d4ed8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:18px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#dbeafe}.wrap{max-width:1680px;margin:auto;padding:14px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:900px){.col8,.col6,.col4,.col3{grid-column:span 12}}.btn{border:0;border-radius:12px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:3px}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.ok{background:var(--ok)}input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:12px;font-size:15px}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.muted{color:var(--muted);font-size:13px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.kpi .label{font-size:13px;opacity:.95}.kpi .num{font-size:34px;font-weight:900;margin-top:8px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.scroll{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc;z-index:1}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#eef2ff;color:#1e3a8a}.oktxt{color:#15803d;font-weight:900}.warntxt{color:#b45309;font-weight:900}.badtxt{color:#991b1b;font-weight:900}.drawer{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px;min-height:180px}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.section-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.small{font-size:12px}.source{font-weight:900;color:#1e3a8a}.status-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:#94a3b8}.status-ok .status-dot{background:var(--ok)}.status-warn .status-dot{background:var(--warn)}.status-bad .status-dot{background:var(--bad)}
 </style>
 </head>
 <body>
 <header>
-  <h1>MES DataHub Master｜V80.1 測試主頁</h1>
-  <p>新增第 4 個資料主網頁；不覆蓋 Key In、Target、Dashboard。此版先建立介面骨架，下一版再接 API。</p>
+  <h1>MES DataHub Master｜V80.2 Enterprise</h1>
+  <p>第 4 個獨立主網頁：只讀 MasterData 測試 API，不影響 Key In / Target / Dashboard。</p>
 </header>
 <div class="wrap">
   <div class="grid">
-    <div class="card col12">
-      <div class="tools">
-        <button class="btn" onclick="showNote('V80.1 目前是介面骨架，下一版會接 action=masterbootstrap / masterdata。')">讀取 MasterData</button>
-        <button class="btn ghost" onclick="showNote('此頁不寫入資料，只讀取與統計，不影響正式三頁。')">系統說明</button>
-        <span id="msg" class="muted">狀態：V80.1 介面建立完成，尚未接資料。</span>
-      </div>
+    <div class="card col12 toolbar">
+      <button class="btn" onclick="loadMaster()">讀取 MasterData</button>
+      <button class="btn ghost" onclick="loadStats()">刷新 KPI</button>
+      <button class="btn ghost" onclick="clearSearch()">清除搜尋</button>
+      <span id="loadMsg" class="muted">尚未讀取</span>
     </div>
 
-    <div class="kpi blue col2"><div class="label">今日工單</div><div class="num" id="kpiToday">0</div></div>
-    <div class="kpi green col2"><div class="label">完成</div><div class="num" id="kpiDone">0</div></div>
-    <div class="kpi orange col2"><div class="label">作業中</div><div class="num" id="kpiRun">0</div></div>
-    <div class="kpi red col2"><div class="label">逾期</div><div class="num" id="kpiLate">0</div></div>
-    <div class="kpi purple col2"><div class="label">配對率</div><div class="num" id="kpiMatch">0%</div></div>
-    <div class="kpi teal col2"><div class="label">Key In 達成</div><div class="num" id="kpiKeyin">0%</div></div>
+    <div class="kpi blue col3"><div class="label">Master 筆數</div><div class="num" id="kpiTotal">0</div></div>
+    <div class="kpi green col3"><div class="label">已配對</div><div class="num" id="kpiPaired">0</div></div>
+    <div class="kpi orange col3"><div class="label">資料不足</div><div class="num" id="kpiPartial">0</div></div>
+    <div class="kpi red col3"><div class="label">未配對</div><div class="num" id="kpiBad">0</div></div>
 
     <div class="card col12">
-      <h2>搜尋 / 篩選</h2>
-      <div class="grid">
-        <div class="col4"><input id="q" placeholder="搜尋：工單 / 訂單 / 日報號 / 命令單號 / 批號 / 料號 / 客戶 / 機台 / 人員"></div>
-        <div class="col2"><select><option>全部狀態</option><option>未作業</option><option>作業中</option><option>完成</option><option>逾期</option><option>配對異常</option></select></div>
-        <div class="col2"><select><option>全部站點</option><option>開料</option><option>上膠</option><option>分條</option><option>複捲</option><option>包裝</option></select></div>
-        <div class="col2"><input type="date"></div>
-        <div class="col2"><input type="date"></div>
-      </div>
-      <div class="footer-note">V80.2 起會支援即時搜尋與區間篩選。</div>
+      <div class="section-title"><h2>搜尋 / Search</h2><span class="muted">工單、訂單、日報、命令、批號、客戶、料號、機台、站點</span></div>
+      <input id="search" placeholder="輸入關鍵字..." oninput="renderTable()">
     </div>
 
-    <div class="card col8">
-      <h2>MasterData 主清單</h2>
+    <div class="card col12">
+      <div class="section-title"><h2>MasterData 工單總覽</h2><span id="rowCount" class="muted"></span></div>
       <div class="scroll">
         <table>
           <thead><tr>
-            <th>狀態</th><th>預交日</th><th>客戶</th><th>訂單單號</th><th>日報號</th><th>命令單號</th><th>生產批號</th><th>投入料號</th><th>產出料號</th><th>規格</th><th>站點</th><th>機台</th><th>幹部目標</th><th>Key In</th><th>完成率</th><th>配對</th>
+            <th>配對</th><th>預交日</th><th>客戶</th><th>訂單單號</th><th>日報號</th><th>命令單號</th><th>生產批號</th><th>投入/產出</th><th>規格</th><th>站點</th><th>機台</th><th>Target</th><th>Key In</th><th>完成率</th>
           </tr></thead>
-          <tbody id="rows">
-            <tr><td colspan="16" class="muted">尚未接資料。下一版會由 Apps Script action=masterdata 回傳。</td></tr>
-          </tbody>
+          <tbody id="rows"><tr><td colspan="14" class="muted">尚未讀取 MasterData</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <div class="card col4">
-      <h2>工單生命週期</h2>
-      <div class="timeline">
-        <span class="step on">4-3 主檔</span>
-        <span class="step">PD11B 日報</span>
-        <span class="step">SL31A 規格</span>
-        <span class="step">5-C</span>
-        <span class="step">5-3</span>
-        <span class="step">Target</span>
-        <span class="step">Key In</span>
-      </div>
-      <div class="detailbox" id="detail" style="margin-top:12px">
-        點選左側 MasterData 後，這裡會顯示該工單完整追蹤：4-3、PD11B、SL31A、5-C、5-3、幹部目標、Key In 回報。
-      </div>
-    </div>
-
     <div class="card col6">
-      <h2>資料關聯規則</h2>
-      <table>
-        <tbody>
-          <tr><td><b>4-3</b></td><td>主檔：訂單單號、命令單號、客戶 G 欄、預交日 O 欄</td></tr>
-          <tr><td><b>PD11B</b></td><td>日報號、命令單號、站點、機台、產量</td></tr>
-          <tr><td><b>命令單號</b></td><td>對應生產批號</td></tr>
-          <tr><td><b>生產批號</b></td><td>對應投入料號、投入製號、產出料號、產出製號</td></tr>
-          <tr><td><b>SL31A</b></td><td>料號、規格、長寬、㎡換算</td></tr>
-          <tr><td><b>Target / Key In</b></td><td>幹部目標與人員回報統計</td></tr>
-        </tbody>
-      </table>
+      <h2>工單詳細追蹤</h2>
+      <div id="detail" class="drawer muted">點選上方任一列，這裡會顯示五份資料、Target、Key In 的關聯。</div>
     </div>
-
     <div class="card col6">
-      <h2>異常提醒</h2>
-      <div class="detailbox">
-        <span class="pill">待開發</span><br><br>
-        未配對工單、逾期未完成、有幹部目標但無 Key In、有 Key In 但無目標、PD11B 有產量但 Key In 無資料等，會在這裡集中提醒。
+      <h2>資料關聯邏輯</h2>
+      <div class="drawer">
+        <div><b>4-3</b>：訂單單號、命令單號、客戶 G 欄、預交日 O 欄</div>
+        <div><b>PD11B</b>：日報號、命令單號、站點、機台、產量</div>
+        <div><b>命令單號</b> → 生產批號</div>
+        <div><b>生產批號</b> → 投入料號 / 投入製號 / 產出料號 / 產出製號</div>
+        <div><b>SL31A</b>：料號、規格、長寬、㎡換算</div>
+        <div><b>Target_Plan / Key In</b>：目標與實際回報</div>
       </div>
     </div>
   </div>
 </div>
+<div id="toast" class="toast"></div>
 <script>
-function showNote(s){document.getElementById('msg').textContent='狀態：'+s}
+const API_URL=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+let MASTER=[];
+function $(id){return document.getElementById(id)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function norm(v){return String(v??'').trim().replace(/\s+/g,'').toUpperCase()}
+function num(v){let n=parseFloat(String(v??'').replace(/,/g,''));return isNaN(n)?0:n}
+function toast(s){const t=$('toast');t.textContent=s;t.className='toast show';setTimeout(()=>t.className='toast',2200)}
+function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MASTER_V80_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},60000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
+async function loadMaster(){try{$('loadMsg').textContent='讀取 MasterData 中...';const res=await apiGet('masterdata',{limit:800});MASTER=res.rows||[];renderTable();updateKpi(res.summary);$('loadMsg').textContent='已讀取 MasterData '+MASTER.length+' 筆｜'+(res.time||'');toast('MasterData 讀取完成')}catch(e){$('loadMsg').textContent='讀取失敗：'+e.message;alert('讀取失敗：'+e.message)}}
+async function loadStats(){try{const res=await apiGet('masterstats');updateKpi(res.summary);toast('KPI 已刷新')}catch(e){toast('KPI 讀取失敗')}}
+function clearSearch(){$('search').value='';renderTable()}
+function pairClass(r){const s=String(r.match_status||'');if(s.includes('完整')||s.includes('已配對'))return 'status-ok';if(s.includes('不足')||s.includes('部分'))return 'status-warn';return 'status-bad'}
+function renderTable(){const q=norm($('search').value);let rows=MASTER.filter(r=>!q||norm(Object.values(r).join(' ')).includes(q));$('rowCount').textContent='顯示 '+rows.length+' / '+MASTER.length+' 筆';$('rows').innerHTML=rows.length?rows.map((r,i)=>`<tr onclick="showDetail(${i})">
+<td class="${pairClass(r)}"><span class="status-dot"></span>${esc(r.match_status||'-')}</td>
+<td>${esc(r.due_date||'-')}</td><td><b>${esc(r.customer||'-')}</b></td><td>${esc(r.order_no||'-')}</td><td>${esc(r.daily_no||'-')}</td><td>${esc(r.command_no||'-')}</td><td>${esc(r.batch_no||'-')}</td>
+<td class="small">投入：${esc(r.input_part_no||'-')} / ${esc(r.input_lot_no||'-')}<br>產出：${esc(r.output_part_no||'-')} / ${esc(r.output_lot_no||'-')}</td>
+<td>${esc(r.product_spec||'-')}</td><td>${esc(r.process||'-')}</td><td>${esc(r.machine||'-')}</td><td>${esc(r.target_roll||0)}</td><td>${esc(r.keyin_roll||0)}</td><td>${esc(r.completion_pct||0)}%</td>
+</tr>`).join(''):'<tr><td colspan="14" class="muted">沒有符合資料</td></tr>'}
+function updateKpi(summary){summary=summary||{};const total=summary.total??MASTER.length;const paired=summary.paired??MASTER.filter(r=>String(r.match_status||'').includes('完整')||String(r.match_status||'').includes('已配對')).length;const partial=summary.partial??MASTER.filter(r=>String(r.match_status||'').includes('不足')||String(r.match_status||'').includes('部分')).length;const bad=Math.max(0,total-paired-partial);$('kpiTotal').textContent=Number(total||0).toLocaleString();$('kpiPaired').textContent=Number(paired||0).toLocaleString();$('kpiPartial').textContent=Number(partial||0).toLocaleString();$('kpiBad').textContent=Number(bad||0).toLocaleString()}
+function showDetail(i){const r=MASTER.filter(x=>!norm($('search').value)||norm(Object.values(x).join(' ')).includes(norm($('search').value)))[i];if(!r)return;$('detail').innerHTML=`<h3>${esc(r.order_no||r.command_no||r.daily_no||'-')}</h3><p><span class="pill">${esc(r.match_status||'-')}</span> <span class="pill">${esc(r.source||'-')}</span></p><p><b>客戶：</b>${esc(r.customer||'-')}｜<b>預交日：</b>${esc(r.due_date||'-')}</p><p><b>日報號：</b>${esc(r.daily_no||'-')}｜<b>命令單號：</b>${esc(r.command_no||'-')}｜<b>生產批號：</b>${esc(r.batch_no||'-')}</p><p><b>投入：</b>${esc(r.input_part_no||'-')} / ${esc(r.input_lot_no||'-')}</p><p><b>產出：</b>${esc(r.output_part_no||'-')} / ${esc(r.output_lot_no||'-')}</p><p><b>規格：</b>${esc(r.product_spec||'-')}｜<b>機台：</b>${esc(r.machine||'-')}｜<b>站點：</b>${esc(r.process||'-')}</p><p><b>Target：</b>${esc(r.target_roll||0)} R｜<b>Key In：</b>${esc(r.keyin_roll||0)} R｜<b>完成率：</b>${esc(r.completion_pct||0)}%</p>`}
+document.addEventListener('DOMContentLoaded',()=>{loadMaster()});
 </script>
 </body>
 </html>
-
