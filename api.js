@@ -1,6 +1,7 @@
 /****************************************************
- * MES API Bridge｜V60.5
+ * MES API Bridge｜V69.4
  * GitHub 前端 → Apps Script Web App
+ * 修正：Key In 讀取 action=keyinsource
  ****************************************************/
 
 const MES_API_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
@@ -8,34 +9,46 @@ const MES_API_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNg
 window.MES = {
   get,
   post,
-  toast
+  toast,
+  getKeyinSource
 };
 
 function buildUrl(action, params = {}) {
   const url = new URL(MES_API_URL);
-
   url.searchParams.set("action", action);
-
   Object.keys(params || {}).forEach(k => {
     if (params[k] !== undefined && params[k] !== null && params[k] !== "") {
       url.searchParams.set(k, params[k]);
     }
   });
-
   return url.toString();
 }
 
-/**
- * GET：使用 JSONP，避免 GitHub Pages CORS 問題
- * 用法：
- * MES.get("listTargetPlans", [], { date: "2026-07-02" })
- */
+function normalizeAction(action) {
+  const a = String(action || "").toLowerCase();
+
+  if (
+    a === "source" ||
+    a === "getsourcedata" ||
+    a === "listworkorders" ||
+    a === "workorders" ||
+    a === "latestorders" ||
+    a === "keyinsource" ||
+    a === "getkeyinsource"
+  ) {
+    return "keyinsource";
+  }
+
+  return action;
+}
+
 function get(action, args = [], params = {}) {
   return new Promise((resolve, reject) => {
+    const realAction = normalizeAction(action);
     const cbName = "__mes_cb_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
 
     const url = new URL(MES_API_URL);
-    url.searchParams.set("action", action);
+    url.searchParams.set("action", realAction);
     url.searchParams.set("callback", cbName);
 
     Object.keys(params || {}).forEach(k => {
@@ -49,16 +62,13 @@ function get(action, args = [], params = {}) {
 
     const timer = setTimeout(() => {
       cleanup();
-      reject(new Error("API 讀取逾時：" + action));
+      reject(new Error("API 讀取逾時：" + realAction));
     }, 60000);
 
     function cleanup() {
       clearTimeout(timer);
-      try {
-        delete window[cbName];
-      } catch (e) {
-        window[cbName] = undefined;
-      }
+      try { delete window[cbName]; }
+      catch (e) { window[cbName] = undefined; }
 
       if (script && script.parentNode) {
         script.parentNode.removeChild(script);
@@ -67,22 +77,36 @@ function get(action, args = [], params = {}) {
 
     window[cbName] = function (data) {
       cleanup();
+
+      if (realAction === "keyinsource") {
+        const rows = Array.isArray(data?.rows) ? data.rows : [];
+        resolve({
+          ...data,
+          ok: data?.ok !== false,
+          rows,
+          data: rows,
+          list: rows,
+          total: data?.total || rows.length
+        });
+        return;
+      }
+
       resolve(data);
     };
 
     script.onerror = function () {
       cleanup();
-      reject(new Error("API 讀取失敗：" + action));
+      reject(new Error("API 讀取失敗：" + realAction));
     };
 
     document.body.appendChild(script);
   });
 }
 
-/**
- * POST：送出 Key In / 幹部目標
- * Google Apps Script 可接受 no-cors 寫入
- */
+function getKeyinSource(params = {}) {
+  return get("keyinsource", [], params);
+}
+
 async function post(action, data = {}) {
   const payload = {
     ...data,
