@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V65.2 MES Enterprise Stable｜Hybrid</title>
+<title>V69.4 MES Enterprise Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V65.2 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V65.2 Stable DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V69.4 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V69.4 Stable DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -326,9 +326,104 @@ function setColFilter(id,i,v){AppState.tables[id].filters[i]=v;drawTable(id)}
 function sortTable(id,i){var t=AppState.tables[id];if(t.sortCol===i)t.sortDir*=-1;else{t.sortCol=i;t.sortDir=1}drawTable(id)}
 function clearTableFilter(id){var t=AppState.tables[id];t.filters=new Array(t.heads.length).fill("");t.global="";t.sortCol=null;drawTable(id)}
 
-async function readFile(file){var data=await file.arrayBuffer(),wb=XLSX.read(data,{type:"array"}),out=[],keys=["單號","工單號","命令單","訂單單號","料品編號","生產批號","製程","站別","預計產量","規格","日期","預交日"];wb.SheetNames.forEach(function(name){var ws=wb.Sheets[name],arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});if(!arr.length)return;var hr=0,best=-1;for(var i=0;i<Math.min(arr.length,30);i++){var vals=arr[i].map(function(v){return String(v||"").trim()}),score=keys.reduce(function(n,k){return n+(vals.indexOf(k)>=0?1:0)},0);if(score>best){best=score;hr=i}}XLSX.utils.sheet_to_json(ws,{defval:"",range:hr}).forEach(function(r){r.__sheet=name;out.push(r)})});return out}
+/* V69.4 修正：五份 Excel 匯入解析規則
+   - PD11B 固定讀「部門日報」分頁，第 6 列為標題，第 7 列開始資料
+   - SL31A / 4-3 / 5-C / 5-3 使用加強版自動標題列偵測，避免把下載說明列匯成「欄位1、欄位2」
+*/
+function cleanHeaderName(v,i){
+  var h=String(v==null?"":v).trim().replace(/\s+/g," ");
+  return h || ("欄位"+(i+1));
+}
+function isNoiseHeaderRow(headers){
+  var joined=headers.join(" ");
+  if(!joined.trim())return true;
+  if(/^欄位\d+(\s+欄位\d+)*$/.test(joined.replace(/\s+/g," ").trim()))return true;
+  if(/開始時間|下載完成|整理完成|查詢條件|報表名稱|列印時間|製表日期/.test(joined))return true;
+  return false;
+}
+function rowsToObjects(arr,sheetName,headerIndex){
+  if(!arr || !arr.length || headerIndex<0 || headerIndex>=arr.length)return [];
+  var headers=(arr[headerIndex]||[]).map(cleanHeaderName);
+  if(isNoiseHeaderRow(headers))return [];
+  var out=[];
+  arr.slice(headerIndex+1).forEach(function(row){
+    var hasData=(row||[]).some(function(c){return String(c==null?"":c).trim()!==""});
+    if(!hasData)return;
+    var obj={};
+    headers.forEach(function(h,i){obj[h]=(row&&row[i]!==undefined&&row[i]!==null)?row[i]:""});
+    obj.__sheet=sheetName;
+    out.push(obj);
+  });
+  return out;
+}
+function scoreHeaderRow(row,kind){
+  var vals=(row||[]).map(function(v){return String(v||"").trim()});
+  var joined=vals.join(" ");
+  if(!joined.trim())return -999;
+  if(/開始時間|下載完成|整理完成|查詢條件|報表名稱|列印時間|製表日期/.test(joined))return -500;
+  var keys=["單號","工單號","工單","命令單","訂單單號","訂單號","料號","料品編號","品號","生產批號","批號","製號","製程","站別","機台","預計產量","目標數量","數量","規格","品名","客戶","日期","預交日","入庫日期"];
+  if(kind==="sl") keys=keys.concat(["客戶簡稱","客戶名稱","訂單數量","產品規格","長度","寬度","厚度"]);
+  if(kind==="d43") keys=keys.concat(["製令單號","製令日期","預計開工","預計完工","製程代號"]);
+  if(kind==="prod5c") keys=keys.concat(["命令單","尺寸","換算㎡"]);
+  if(kind==="prod53") keys=keys.concat(["產出","閒置","投入"]);
+  var score=0;
+  keys.forEach(function(k){ if(vals.indexOf(k)>=0 || joined.indexOf(k)>=0)score+=3; });
+  var nonEmpty=vals.filter(function(v){return v!==""}).length;
+  score+=Math.min(nonEmpty,20)*0.2;
+  return score;
+}
+function findBestHeaderIndex(arr,kind){
+  var bestIndex=0,bestScore=-999;
+  var limit=Math.min(arr.length,100);
+  for(var i=0;i<limit;i++){
+    var sc=scoreHeaderRow(arr[i],kind);
+    if(sc>bestScore){bestScore=sc;bestIndex=i;}
+  }
+  return bestIndex;
+}
+async function readFile(file,kind){
+  var data=await file.arrayBuffer();
+  var wb=XLSX.read(data,{type:"array",cellDates:true});
+  var out=[];
+
+  // PD11B：固定規則，不再自動猜標題列
+  if(kind==="pd"){
+    var sheetName=wb.SheetNames.find(function(n){return String(n).trim()==="部門日報"}) || wb.SheetNames.find(function(n){return String(n).indexOf("部門日報")>=0});
+    if(!sheetName) throw new Error("PD11B 找不到「部門日報」分頁，請確認 Excel 分頁名稱。");
+    var ws=wb.Sheets[sheetName];
+    var arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+    // Excel 第 6 列 = JS index 5；第 7 列開始為資料
+    out=rowsToObjects(arr,sheetName,5);
+    if(!out.length) throw new Error("PD11B 部門日報第 6 列沒有讀到有效標題或第 7 列後沒有資料。");
+    return out;
+  }
+
+  // 其他檔案：加強版自動找真正 Header，避開下載資訊與說明列
+  wb.SheetNames.forEach(function(sheetName){
+    var ws=wb.Sheets[sheetName];
+    var arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+    if(!arr.length)return;
+    var hr=findBestHeaderIndex(arr,kind||"");
+    rowsToObjects(arr,sheetName,hr).forEach(function(r){out.push(r)});
+  });
+  return out;
+}
 function toSourceRows(src,rows){return rows.map(function(r){return{source:src,work_order_no:norm(pick(r,"wo")),order_no:pick(r,"order"),part_no:pick(r,"part"),batch_no:pick(r,"batch"),product_spec:pick(r,"spec"),target_qty:num(pick(r,"target"))||"",process:pick(r,"process"),customer:pick(r,"customer"),machine:pick(r,"machine"),plan_date:dateKey(pick(r,"plan")),due_date:dateKey(pick(r,"due")),status:pick(r,"status"),issue_status:pick(r,"issue"),material_status:pick(r,"material"),warehouse_status:pick(r,"warehouse"),stockin_date:dateKey(pick(r,"stockin")),finish_date:dateKey(pick(r,"finish")),pick_date:dateKey(pick(r,"pick")),priority:pick(r,"priority"),raw_json:""}}).filter(function(r){return r.work_order_no})}
-async function bindFile(id,key,stat,kpi){var f=el(id).files[0];if(!f)return;AppState[key]=await readFile(f);el(stat).textContent="已讀取："+f.name+"，"+AppState[key].length+" 筆";el(kpi).textContent=AppState[key].length;toast("已讀取 "+f.name)}
+async function bindFile(id,key,stat,kpi){
+  var f=el(id).files[0];if(!f)return;
+  var kind=(key==="pd")?"pd":(key==="sl")?"sl":(key==="d43")?"d43":(key==="prod5cRaw")?"prod5c":(key==="prod53Raw")?"prod53":"";
+  try{
+    AppState[key]=await readFile(f,kind);
+    el(stat).textContent="已讀取："+f.name+"，"+AppState[key].length+" 筆";
+    el(kpi).textContent=AppState[key].length;
+    toast("已讀取 "+f.name);
+  }catch(e){
+    AppState[key]=[];
+    el(stat).textContent="讀取失敗："+(e.message||e);
+    el(kpi).textContent=0;
+    alert("讀取 "+f.name+" 失敗："+(e.message||e));
+  }
+}
 function buildIndex(){AppState.idx={};AppState.source.forEach(function(r){var wo=wo12(r.work_order_no||r.order_no);if(!wo)return;var o=AppState.idx[wo]=AppState.idx[wo]||{wo:wo,from:{},target:0,actual:0};o.from[r.source||"source"]=true;o.order=o.order||r.order_no;o.part=o.part||r.part_no;o.batch=o.batch||r.batch_no;o.spec=o.spec||r.product_spec;o.customer=o.customer||r.customer;o.process=o.process||r.process;o.machine=o.machine||r.machine;o.plan=o.plan||r.plan_date;o.due=o.due||r.due_date;o.rawStatus=o.rawStatus||r.status;o.issueStatus=o.issueStatus||r.issue_status;o.materialStatus=o.materialStatus||r.material_status;o.warehouseStatus=o.warehouseStatus||r.warehouse_status;o.stockin=o.stockin||r.stockin_date;o.finish=o.finish||r.finish_date;o.pick=o.pick||r.pick_date;var tg=num(r.target_qty);if(tg&&!o.target)o.target=tg});calcActual();if(el("kpiIdx"))el("kpiIdx").textContent=Object.keys(AppState.idx).length}
 function calcActual(){Object.values(AppState.idx).forEach(function(o){o.actual=0});AppState.keyin.forEach(function(r){if(AppState.idx[r.wo])AppState.idx[r.wo].actual+=num(r.actual)})}
 function orderStatus(o){var all=String([o.rawStatus,o.issueStatus,o.materialStatus,o.warehouseStatus].join(" ")).toLowerCase();if(o.stockin||o.finish||all.indexOf("入庫")>=0||all.indexOf("完工")>=0||all.indexOf("結案")>=0)return"已入庫";if(num(o.target)&&num(o.actual)>=num(o.target))return"已入庫";if(all.indexOf("待料")>=0||all.indexOf("缺料")>=0)return"待料";if(o.pick||all.indexOf("領料")>=0)return"已領料";if(o.due&&o.due<today())return"逾期";if(num(o.actual)>0||all.indexOf("生產")>=0||all.indexOf("開工")>=0)return"生產中";return"未開工"}
