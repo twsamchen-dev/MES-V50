@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V69.3 MES 生產 Key In</title>
+<title>V69.3.1 MES 生產 Key In</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -27,7 +27,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V69.3 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V69.3.1 MES Enterprise</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -53,6 +53,7 @@
       <option value="軋延">軋延 / รีด</option>
       <option value="上膠">上膠 / เคลือบกาว</option>
       <option value="覆卷">覆卷 / ม้วนซ้ำ</option>
+      <option value="線軸">線軸 / แกนม้วน</option>
       <option value="分條" selected>分條 / ตัดแบ่งม้วน</option>
       <option value="複捲">複捲 / กรอกลับ</option>
       <option value="對貼">對貼 / ประกบ</option>
@@ -108,42 +109,38 @@ const App={source:[],employees:[],keyin:[],plans:[],idx:-1,range:'today',keyinRa
 function qs(id){return document.getElementById(id)}
 function safeGet(id){const el=qs(id);return el?el.value:''}
 function safeSet(id,v){const el=qs(id);if(el)el.value=v??''}
-function localDateKey(d){
-  if(!(d instanceof Date) || isNaN(d))return '';
+function localYMD(d){
+  if(!(d instanceof Date))d=new Date(d);
+  if(isNaN(d))d=new Date();
   const y=d.getFullYear();
   const m=String(d.getMonth()+1).padStart(2,'0');
   const day=String(d.getDate()).padStart(2,'0');
   return y+'-'+m+'-'+day;
 }
-function dToday(){return localDateKey(new Date())}
+function dToday(){return localYMD(new Date())}
 function isoDate(){return dToday()}
 function nrm(v){return String(v??'').trim().replace(/\s+/g,'').toUpperCase()}
 function wo(v){return nrm(v).slice(0,12)}
 function dk(v){
-  if(v instanceof Date)return localDateKey(v);
+  if(v instanceof Date)return localYMD(v);
+  if(typeof v==='number' && v>20000){
+    const d=new Date(Math.round((v-25569)*86400*1000));
+    return localYMD(d);
+  }
   let s=String(v??'').trim();
   if(!s)return '';
-  // ISO / Apps Script datetime，例如 2026-07-05T16:00:00.000Z，需轉成本地日期
-  if(/[T]|GMT|UTC|Z$/.test(s)){
-    const d=new Date(s);
-    if(!isNaN(d))return localDateKey(d);
-  }
   s=s.replace(/年|\//g,'-').replace(/月/g,'-').replace(/日/g,'');
   let m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
   if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
-  // 兼容 07-06-2026 / 07/06/2026
-  m=s.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
-  if(m)return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
   const d=new Date(s);
-  if(!isNaN(d))return localDateKey(d);
-  return '';
+  return isNaN(d)?s.slice(0,10):localYMD(d);
 }
 function isoWeek(v){const dstr=dk(v)||isoDate();const d=new Date(dstr+'T00:00:00');d.setHours(0,0,0,0);d.setDate(d.getDate()+3-((d.getDay()+6)%7));const w1=new Date(d.getFullYear(),0,4);const week=1+Math.round(((d-w1)/86400000-3+((w1.getDay()+6)%7))/7);return d.getFullYear()+'-W'+String(week).padStart(2,'0')}
 function empDisplay(r){return r.leader_name||r.emp_name||r['幹部姓名']||r['姓名']||''}
 function roleDisplay(r){return r.leader_role||r.role||r['幹部角色']||r['職務']||''}
 function html(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function addDays(s,n){let d=new Date((s||isoDate())+'T00:00:00');d.setDate(d.getDate()+n);return localDateKey(d)}
-function monthEnd(s){let d=new Date((s||isoDate())+'T00:00:00');return localDateKey(new Date(d.getFullYear(),d.getMonth()+1,0))}
+function addDays(s,n){let d=new Date((s||isoDate())+'T00:00:00');d.setDate(d.getDate()+n);return localYMD(d)}
+function monthEnd(s){let d=new Date((s||isoDate())+'T00:00:00');return localYMD(new Date(d.getFullYear(),d.getMonth()+1,0))}
 function rangeObj(){const base=dk(safeGet('report_date'))||isoDate();if(App.range==='week')return{start:base,end:addDays(base,6),label:'一周'};if(App.range==='month')return{start:base.slice(0,7)+'-01',end:monthEnd(base),label:'本月'};return{start:base,end:base,label:'今日'}}
 function inRange(v){const d=dk(v);if(!d)return false;const r=rangeObj();return d>=r.start&&d<=r.end}
 function rowDate(r){return dk(r.report_date||r.planned_finish||r.plan_date||r.due_date||r['日期']||r['工單日期']||r.updated_at)}
@@ -154,12 +151,7 @@ async function loadAll(){qs('loadStatus').textContent='讀取中...';try{const [
 async function loadKeyin(show=true){try{const r=await getApi('listKeyin');App.keyin=(r&&r.rows)||[];renderKeyin();if(show&&window.MES)MES.toast('已讀取回報資料')}catch(e){if(window.MES)MES.toast('讀取回報失敗：'+e.message)}}
 function onReportDateChange(){App.idx=-1;renderPlansHint();renderKeyin()}
 function setPlanRange(mode){App.range=mode;App.idx=-1;['today','week','month'].forEach(m=>{const b=qs('range_'+m);if(b)b.classList.toggle('active',m===mode)});renderPlansHint()}
-function keyinRangeObj(){
-  const base=dk(safeGet('report_date'))||isoDate();
-  if(App.keyinRange==='week')return{start:addDays(base,-6),end:base,label:'一周'};
-  if(App.keyinRange==='month')return{start:base.slice(0,7)+'-01',end:monthEnd(base),label:'本月'};
-  return{start:base,end:base,label:'今日'};
-}
+function keyinRangeObj(){const base=dk(safeGet('report_date'))||isoDate();if(App.keyinRange==='week')return{start:base,end:addDays(base,6),label:'一周'};if(App.keyinRange==='month')return{start:base.slice(0,7)+'-01',end:monthEnd(base),label:'本月'};return{start:base,end:base,label:'今日'}}
 function keyinInRange(v){const d=dk(v);if(!d)return false;const r=keyinRangeObj();return d>=r.start&&d<=r.end}
 function setKeyinRange(mode){App.keyinRange=mode;['today','week','month'].forEach(m=>{const b=qs('keyin_range_'+m);if(b)b.classList.toggle('active',m===mode)});renderKeyin()}
 
