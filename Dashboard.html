@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V69.4 MES Enterprise Stable｜Hybrid</title>
+<title>V69.5 MES Enterprise Stable｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -77,7 +77,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V69.4 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V69.4 Stable DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V69.5 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V69.5 Stable DataHub Hybrid。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -232,8 +232,8 @@ var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW
     return new Promise(function(resolve,reject){
       var cb="MES_JSONP_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
       var s=document.createElement("script");
-      var timer=setTimeout(function(){cleanup();reject(new Error("API timeout"));},20000);
-      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;} if(s&&s.parentNode)s.parentNode.removeChild(s);}
+      var timer=setTimeout(function(){cleanup();reject(new Error("API timeout"));},120000);
+      function cleanup(){clearTimeout(timer);window[cb]=function(){}; if(s&&s.parentNode)s.parentNode.removeChild(s);}
       window[cb]=function(res){cleanup(); if(res && res.ok===false) reject(new Error(res.error||res.message||"API error")); else resolve(res);};
       s.onerror=function(){cleanup();reject(new Error("JSONP 連線失敗"));};
       s.src=buildUrl(a)+"&callback="+encodeURIComponent(cb)+"&_="+Date.now();
@@ -2090,10 +2090,10 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
         if(params[k] !== undefined && params[k] !== null && params[k] !== "") url.searchParams.set(k, params[k]);
       });
       var s=document.createElement("script");
-      var timer=setTimeout(function(){cleanup();reject(new Error(action+" 讀取逾時"));},45000);
+      var timer=setTimeout(function(){cleanup();reject(new Error(action+" 讀取逾時"));},120000);
       function cleanup(){
         clearTimeout(timer);
-        try{delete window[cb];}catch(e){window[cb]=undefined;}
+        window[cb]=function(){};
         if(s.parentNode)s.parentNode.removeChild(s);
       }
       window[cb]=function(data){cleanup();resolve(data);};
@@ -2486,7 +2486,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function esc(v){return s(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
   function pick(r,ks){r=r||{};for(var i=0;i<ks.length;i++){var k=ks[i];if(r[k]!==undefined&&r[k]!==null&&s(r[k])!=="")return r[k];}return "";}
   function canon(v){var x=norm(v).replace(/[‐‑‒–—−－]/g,"-");if(x.indexOf("SL31")>=0)return"SL31A";if(x.indexOf("PD11")>=0)return"PD11B";if(x.indexOf("4-3")>=0||x.indexOf("4_3")>=0||/^4[-_]?3$/.test(x))return"4-3";if(x.indexOf("5-C")>=0||x.indexOf("5C")>=0)return"5-C";if(x.indexOf("5-3")>=0||x==="53")return"5-3";return s(v);}
-  function jsonp(action,params){return new Promise(function(resolve,reject){var cb="MES_V65_"+Date.now()+"_"+Math.floor(Math.random()*999999);var url=new URL(API_URL);url.searchParams.set("action",action);url.searchParams.set("callback",cb);url.searchParams.set("_",Date.now());Object.keys(params||{}).forEach(function(k){if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")url.searchParams.set(k,params[k]);});var tag=document.createElement("script");var timer=setTimeout(function(){cleanup();reject(new Error(action+" timeout"));},60000);function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;}if(tag.parentNode)tag.parentNode.removeChild(tag);}window[cb]=function(data){cleanup();resolve(data||{});};tag.onerror=function(){cleanup();reject(new Error(action+" jsonp failed"));};tag.src=url.toString();document.body.appendChild(tag);});}
+  function jsonp(action,params){return new Promise(function(resolve,reject){var cb="MES_V65_"+Date.now()+"_"+Math.floor(Math.random()*999999);var url=new URL(API_URL);url.searchParams.set("action",action);url.searchParams.set("callback",cb);url.searchParams.set("_",Date.now());Object.keys(params||{}).forEach(function(k){if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")url.searchParams.set(k,params[k]);});var tag=document.createElement("script");var timer=setTimeout(function(){cleanup();reject(new Error(action+" timeout"));},120000);function cleanup(){clearTimeout(timer);window[cb]=function(){};if(tag.parentNode)tag.parentNode.removeChild(tag);}window[cb]=function(data){cleanup();resolve(data||{});};tag.onerror=function(){cleanup();reject(new Error(action+" jsonp failed"));};tag.src=url.toString();document.body.appendChild(tag);});}
   function rows(res){if(!res)return[];if(Array.isArray(res))return res;if(Array.isArray(res.rows))return res.rows;if(Array.isArray(res.data))return res.data;if(res.result&&Array.isArray(res.result.rows))return res.result.rows;return[];}
   function normalizeSource(arr){return (arr||[]).map(function(r){var src=canon(pick(r,["source","來源","__sheet","sheet","sheet_name"]));if(!src)src="4-3";return {source:src,work_order_no:wo12(pick(r,["work_order_no","工單號","工單","命令單","製令單號","order_no","訂單號","單號"])),order_no:pick(r,["order_no","訂單號","訂單單號","單號"]),part_no:pick(r,["part_no","料號","品號","料品編號","產品名稱","品名"]),batch_no:pick(r,["batch_no","生產批號","批號","製號"]),product_spec:pick(r,["product_spec","產品規格","規格","品名規格","尺寸","品名"]),target_qty:num(pick(r,["target_qty","預計產量","目標數量","工單目標","訂單數量","數量","預計數量"])),process:pick(r,["process","製程","製程站點","站點","目前製程","站別","排程"]),customer:pick(r,["customer","客戶","客戶別","客戶名稱"]),machine:pick(r,["machine","machine_code","機台","機台編號","設備"]),plan_date:dateKey(pick(r,["plan_date","日期","工單開立日","開立日","製令日期","工單日期"])),due_date:dateKey(pick(r,["due_date","預交日","預計完工日","交期","預定完成日"])),status:pick(r,["status","狀態","工單狀態","生產狀態","入庫狀態"]),updated_at:pick(r,["updated_at","更新時間"]),raw:r};}).filter(function(r){return r.work_order_no||r.order_no;});}
   function normalizeKeyin(arr){return (arr||[]).map(function(r){return {date:dateKey(pick(r,["report_date","date","日期"])),site:pick(r,["site","製程站點"]),wo:wo12(pick(r,["work_order_no","order_no","工單號","訂單號"])),batch:pick(r,["batch_no","批號","生產批號"]),part:pick(r,["part_no","料號","品號"]),spec:pick(r,["product_spec","規格","產品規格"]),target:num(pick(r,["target_qty","目標"])),empNo:pick(r,["emp_no","工號"]),empName:pick(r,["emp_name","姓名"]),machine:pick(r,["machine_code","machine","機台"]),actual:num(pick(r,["actual_output","actual","實際產量"])),unit:pick(r,["unit","單位"]),note:pick(r,["process_note","note","備註"])};}).filter(function(r){return r.wo||r.actual||r.empNo;});}
@@ -2495,7 +2495,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function status(msg,bad){var box=document.getElementById("v650Status");if(!box){box=document.createElement("div");box.id="v650Status";box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:920px;line-height:1.5";document.body.appendChild(box);}box.style.borderColor=bad?"#dc2626":"#22c55e";box.innerHTML=esc(msg);}
   function applySummary(summary){window.AppState=window.AppState||{};AppState.sourceSummary=summary||{};}
   function renderAll(){try{if(typeof buildIndex==="function")buildIndex();}catch(e){}try{if(typeof calcActual==="function")calcActual();}catch(e){}try{if(typeof renderActive==="function")renderActive();}catch(e){}try{if(typeof v541RenderDataHub==="function")v541RenderDataHub();}catch(e){}}
-  async function reload(){if(loading)return;loading=true;status("V65.0 正在讀取獨立分頁資料...");try{window.AppState=window.AppState||{};var d=ymd();var all=await Promise.allSettled([jsonp("v65dashboard",{}),jsonp("listtargetplans",{date:d}),jsonp("listkeyin",{date:d}),jsonp("listemployees",{}),jsonp("listprod5cdata",{}),jsonp("listprod53data",{})]);var src=all[0].status==="fulfilled"?all[0].value:{};var rawSource=rows(src);AppState.source=normalizeSource(rawSource);applySummary(src.summary||src.counts||{});AppState.targets=normalizeTargets(all[1].status==="fulfilled"?rows(all[1].value):[]);AppState.keyin=normalizeKeyin(all[2].status==="fulfilled"?rows(all[2].value):[]);var empRows=normalizeEmployees(all[3].status==="fulfilled"?rows(all[3].value):[]);AppState.prod5c=all[4].status==="fulfilled"?rows(all[4].value):[];AppState.prod53=all[5].status==="fulfilled"?rows(all[5].value):[];AppState.apiHealth={source:AppState.source.length>0,targets:AppState.targets.length>0,keyin:true,employees:empRows.length>0,prod5c:AppState.prod5c.length>0,prod53:AppState.prod53.length>0};renderAll();var sum=AppState.sourceSummary||{};function c(k){return sum[k]&&typeof sum[k].count==="number"?sum[k].count:0;}status("V65.0 已讀取｜SL31A："+c("SL31A")+"｜4-3："+c("4-3")+"｜PD11B："+c("PD11B")+"｜5-C："+AppState.prod5c.length+"｜5-3："+AppState.prod53.length+"｜Dashboard列："+AppState.source.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);}catch(e){console.error(e);status("V65.0 讀取失敗："+(e.message||e),true);}finally{loading=false;}}
+  async function reload(){if(loading)return;loading=true;status("V65.0 正在讀取獨立分頁資料...");try{window.AppState=window.AppState||{};var d=ymd();var all=await Promise.allSettled([jsonp("v65dashboard",{}),jsonp("listtargetplans",{date:d}),jsonp("listkeyin",{date:d}),jsonp("listemployees",{}),jsonp("prod5c",{}),jsonp("prod53",{})]);var src=all[0].status==="fulfilled"?all[0].value:{};var rawSource=rows(src);AppState.source=normalizeSource(rawSource);applySummary(src.summary||src.counts||{});AppState.targets=normalizeTargets(all[1].status==="fulfilled"?rows(all[1].value):[]);AppState.keyin=normalizeKeyin(all[2].status==="fulfilled"?rows(all[2].value):[]);var empRows=normalizeEmployees(all[3].status==="fulfilled"?rows(all[3].value):[]);AppState.prod5c=all[4].status==="fulfilled"?rows(all[4].value):[];AppState.prod53=all[5].status==="fulfilled"?rows(all[5].value):[];AppState.apiHealth={source:AppState.source.length>0,targets:AppState.targets.length>0,keyin:true,employees:empRows.length>0,prod5c:AppState.prod5c.length>0,prod53:AppState.prod53.length>0};renderAll();var sum=AppState.sourceSummary||{};function c(k){return sum[k]&&typeof sum[k].count==="number"?sum[k].count:0;}status("V65.0 已讀取｜SL31A："+c("SL31A")+"｜4-3："+c("4-3")+"｜PD11B："+c("PD11B")+"｜5-C："+AppState.prod5c.length+"｜5-3："+AppState.prod53.length+"｜Dashboard列："+AppState.source.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);}catch(e){console.error(e);status("V65.0 讀取失敗："+(e.message||e),true);}finally{loading=false;}}
   window.v650ReloadAll=reload;
   window.v541ReloadAll=reload;
   window.v610CleanReload=reload;
@@ -2532,10 +2532,10 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       var timer = setTimeout(function(){
         cleanup();
         reject(new Error(action + " timeout"));
-      }, 45000);
+      }, 120000);
       function cleanup(){
         clearTimeout(timer);
-        try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+        window[cb]=function(){};
         if(script && script.parentNode) script.parentNode.removeChild(script);
       }
       window[cb] = function(res){
@@ -2691,9 +2691,9 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       var all = await Promise.allSettled([
         jsonp("listsl31a",{}),
         jsonp("list43",{}),
-        jsonp("listpd11b",{}),
-        jsonp("5-c",{}),
-        jsonp("5-3",{}),
+        jsonp("pd11b",{}),
+        jsonp("prod5c",{}),
+        jsonp("prod53",{}),
         jsonp("listtargetplans",{date:d}),
         jsonp("listkeyin",{date:d}),
         jsonp("listemployees",{})
