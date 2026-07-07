@@ -74,6 +74,18 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 .backHomeBtn{border:0;border-radius:12px;padding:11px 15px;font-weight:900;cursor:pointer;background:#eef2ff;color:#1e40af}
 .backHomeBtn:hover{background:#dbeafe}
 .backHomeTitle{font-weight:900;font-size:18px}.backHomeHint{font-size:12px;color:#64748b;margin-top:2px}
+
+/* V69.6：右下角 DataHub 狀態提示｜可點擊關閉、自動淡出 */
+.mesStatusBox{position:fixed;right:18px;bottom:18px;z-index:999999999;background:linear-gradient(135deg,#071a33,#0f2d5c);color:#e5e7eb;border:1px solid #22c55e;border-radius:16px;padding:12px 42px 12px 14px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.32);max-width:560px;min-width:300px;line-height:1.55;cursor:pointer;transition:opacity .22s ease,transform .22s ease}
+.mesStatusBox:hover{transform:translateY(-1px)}
+.mesStatusClose{position:absolute;right:10px;top:8px;border:0;background:rgba(255,255,255,.08);color:#e5e7eb;width:22px;height:22px;border-radius:999px;font-size:16px;font-weight:900;cursor:pointer;line-height:18px}
+.mesStatusClose:hover{background:rgba(255,255,255,.18)}
+.mesStatusTitle{font-weight:900;font-size:14px;margin-bottom:4px}
+.mesStatusGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px;margin-top:4px}
+.mesStatusGrid div{white-space:nowrap}
+.mesStatusTime{margin-top:6px;color:#bfdbfe;font-size:12px}
+.mesStatusBad{border-color:#ef4444!important;background:linear-gradient(135deg,#2b1010,#450a0a)!important}
+
 </style>
 </head>
 <body>
@@ -304,6 +316,52 @@ function dateKey(v){var s=String(v==null?"":v).trim();if(!s)return"";s=s.replace
 function daysBetween(a,b){var da=new Date(a),db=new Date(b);if(isNaN(da)||isNaN(db))return 0;return Math.round((db-da)/86400000)}
 function pick(r,k){var a=AL[k]||[];for(var i=0;i<a.length;i++){if(r[a[i]]!==undefined&&String(r[a[i]]).trim()!=="")return r[a[i]]}return""}
 function toast(s){var t=el("toast");if(!t)return;t.textContent=s;t.className="toast show";setTimeout(function(){t.className="toast"},2200)}
+
+/* V69.6 Stable：DataHub 右下角提示控制 */
+window.__MES_V696_VERSION = "MES Enterprise V69.6 Stable";
+function mesV696NowTime(){
+  var d=new Date();
+  return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
+}
+function mesV696HideStatus(){
+  var box=document.getElementById("v650Status")||document.getElementById("v652Status")||document.getElementById("mesDataHubStatus");
+  if(!box) return;
+  if(window.__mesStatusTimer){clearTimeout(window.__mesStatusTimer);window.__mesStatusTimer=null;}
+  box.style.opacity="0";
+  setTimeout(function(){ if(box){ box.style.display="none"; box.style.opacity="1"; } },260);
+}
+function mesV696Status(msg,bad,opts){
+  opts=opts||{};
+  var box=document.getElementById("v650Status")||document.getElementById("v652Status")||document.getElementById("mesDataHubStatus");
+  if(!box){
+    box=document.createElement("div");
+    box.id="mesDataHubStatus";
+    document.body.appendChild(box);
+  }
+  box.className="mesStatusBox"+(bad?" mesStatusBad":"");
+  if(window.__mesStatusTimer){clearTimeout(window.__mesStatusTimer);window.__mesStatusTimer=null;}
+  box.style.display="block";
+  box.style.opacity="1";
+  box.onclick=function(){mesV696HideStatus();};
+  var title=bad?"❌ 同步異常":(opts.loading?"🔄 正在同步五份 ERP":"✅ 五份資料同步完成");
+  var body=String(msg||"");
+  box.innerHTML='<button class="mesStatusClose" type="button" title="關閉" onclick="event.stopPropagation();mesV696HideStatus();">×</button>'+
+    '<div class="mesStatusTitle">'+title+'</div>'+body+'<div class="mesStatusTime">'+window.__MES_V696_VERSION+'｜'+mesV696NowTime()+'</div>';
+  if(!bad && !opts.loading){
+    window.__mesStatusTimer=setTimeout(mesV696HideStatus,8000);
+  }
+}
+function mesV696SuccessMessage(data){
+  data=data||{};
+  function n(v){return Number(v||0).toLocaleString();}
+  return '<div class="mesStatusGrid">'+
+    '<div>SL31A：'+n(data.sl)+'</div><div>4-3：'+n(data.d43)+'</div>'+
+    '<div>PD11B：'+n(data.pd)+'</div><div>5-C：'+n(data.c5)+'</div>'+
+    '<div>5-3：'+n(data.p53)+'</div><div>Dashboard：'+n(data.dashboard)+'</div>'+
+    '<div>工單索引：'+n(data.idx)+'</div><div>Key In：'+n(data.keyin)+'</div>'+
+    '</div>';
+}
+
 function statusClass(s){return s==="已入庫"?"sDone":s==="逾期"?"sLate":s==="待料"?"sWait":s==="已領料"?"sPick":s==="生產中"?"sRun":"sIdle"}
 function statusColor(s){return s==="已入庫"?"#16a34a":s==="逾期"?"#dc2626":s==="待料"?"#f59e0b":s==="已領料"?"#0ea5e9":s==="生產中"?"#eab308":"#94a3b8"}
 function statusBadge(s){return'<span class="status '+statusClass(s)+'">'+s+'</span>'}
@@ -2266,19 +2324,12 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
   function status(msg,bad){
     hideOldStatus();
-    var box=document.getElementById("v610CleanStatus");
-    if(!box){
-      box=document.createElement("div");
-      box.id="v610CleanStatus";
-      box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:99999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:900px;line-height:1.5";
-      document.body.appendChild(box);
-    }
-    box.style.borderColor=bad?"#dc2626":"#22c55e";
-    box.innerHTML=esc(msg);
+    var isLoading = String(msg||"").indexOf("正在") >= 0 || (String(msg||"").indexOf("同步") >= 0 && String(msg||"").indexOf("已") < 0);
+    if(typeof mesV696Status === "function") return mesV696Status(String(msg||"").replace(/V6[0-9](\.[0-9])?\s*(Emergency|Stable|緊急穩定)?\s*/g,""), bad, {loading:isLoading});
   }
 
   function hideOldStatus(){
-    ["mesApiPatchStatus","v6097ApiStatus","v6098ApiStatus","v6099Status","v60911Status","v60912Status"].forEach(function(id){
+    ["mesApiPatchStatus","v6097ApiStatus","v6098ApiStatus","v6099Status","v60911Status","v60912Status","v610CleanStatus"].forEach(function(id){
       var x=document.getElementById(id);if(x)x.style.display="none";
     });
     Array.from(document.querySelectorAll("body *")).forEach(function(x){
@@ -2298,7 +2349,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     if(loading)return;
     loading=true;
     ensure();
-    status("V65.0 Emergency 正在讀取 Apps Script 資料...");
+    status("正在同步五份 ERP...");
     try{
       var d=ymd();
       try{ await callLargest(["setupdatahub","setup","initdatahub"],{}); }catch(setupErr){ console.warn("V65.0 setup skipped", setupErr); }
@@ -2336,11 +2387,11 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       AppState.apiHealth={source:rawSource.length>0,targets:rawTargets.length>0,keyin:true,employees:empRows.length>0,prod5c:raw5c.length>0,prod53:raw53.length>0};
       renderAll();
 
-      status("V65.0 Emergency 主系統資料已讀取｜SL31A："+countSource("SL31")+"｜4-3："+countSource("4-3")+"｜PD11B："+countSource("PD11")+"｜source_data："+((sourceRes&&sourceRes.total_source_rows)||AppState.source.length)+"｜Dashboard列："+AppState.source.length+"｜Target_Plan："+AppState.targets.length+"｜keyin："+AppState.keyin.length+"｜Employee："+empRows.length+"｜5-C："+raw5c.length+"｜5-3："+raw53.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);
+      status(mesV696SuccessMessage({sl:countSource("SL31"),d43:countSource("4-3"),pd:countSource("PD11"),c5:raw5c.length,p53:raw53.length,dashboard:AppState.source.length,idx:Object.keys(AppState.idx||{}).length,keyin:AppState.keyin.length}));
       console.log("V65.0 Emergency OK",{rawSource:rawSource.length,source:AppState.source.length,sl31a:countSource("SL31"),f43:countSource("4-3"),pd11b:countSource("PD11"),targets:AppState.targets.length,keyin:AppState.keyin.length,emp:empRows.length,prod5c:raw5c.length,prod53:raw53.length,idx:Object.keys(AppState.idx||{}).length});
     }catch(e){
       console.error("V61.0 Clean failed",e);
-      status("V61.2 Clean API 讀取失敗："+(e.message||e),true);
+      status("讀取失敗："+(e.message||e),true);
     }finally{
       loading=false;
     }
@@ -2493,27 +2544,12 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function normalizeTargets(arr){return (arr||[]).map(function(r){return {report_date:dateKey(pick(r,["report_date","日期"])),shift:pick(r,["shift","班別"]),leader_role:pick(r,["leader_role","角色"]),leader_name:pick(r,["leader_name","姓名"]),work_order_no:wo12(pick(r,["work_order_no","order_no","工單號","訂單號"])),order_no:pick(r,["order_no","訂單號"]),process_site:pick(r,["process_site","process","製程站點","製程"]),machine_code:pick(r,["machine_code","machine","機台"]),customer:pick(r,["customer","客戶"]),product_spec:pick(r,["product_spec","規格"]),target_roll:num(pick(r,["target_roll","目標卷數"])),target_m2:num(pick(r,["target_m2","目標㎡"])),status:pick(r,["status","狀態"])};}).filter(function(r){return r.work_order_no||r.machine_code||r.leader_name;});}
   function normalizeEmployees(arr){var emp={},list=[];(arr||[]).forEach(function(r){var no=s(pick(r,["emp_no","工號","employee_no"]));var name=s(pick(r,["emp_name","姓名","employee_name"]));if(no){emp[no]=name;list.push({emp_no:no,emp_name:name,raw:r});}});window.EMP=emp;window.EMP_ROWS=list;return list;}
   function status(msg,bad){
-    var box=document.getElementById("v650Status")||document.getElementById("v652Status");
-    if(!box){
-      box=document.createElement("div");
-      box.id="v650Status";
-      box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:12px 38px 12px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:920px;line-height:1.5;cursor:pointer";
-      document.body.appendChild(box);
-    }
-    if(window.__mesStatusTimer){clearTimeout(window.__mesStatusTimer);window.__mesStatusTimer=null;}
-    box.style.display="block";
-    box.style.opacity="1";
-    box.style.transition="opacity .22s ease";
-    box.style.borderColor=bad?"#dc2626":"#22c55e";
-    box.onclick=function(){box.style.display="none";};
-    box.innerHTML='<button type="button" title="關閉" style="position:absolute;right:8px;top:6px;border:0;background:transparent;color:#e5e7eb;font-size:18px;font-weight:900;cursor:pointer;line-height:1" onclick="event.stopPropagation();this.parentNode.style.display=\'none\';">×</button><div>'+esc(msg)+'</div>';
-    if(!bad && String(msg).indexOf("正在讀取")<0){
-      window.__mesStatusTimer=setTimeout(function(){if(box){box.style.opacity="0";setTimeout(function(){box.style.display="none";box.style.opacity="1";},260);}},8000);
-    }
+    var isLoading = String(msg||"").indexOf("正在") >= 0 || (String(msg||"").indexOf("同步") >= 0 && String(msg||"").indexOf("已") < 0);
+    if(typeof mesV696Status === "function") return mesV696Status(String(msg||"").replace(/V6[0-9](\.[0-9])?\s*(Emergency|Stable|緊急穩定)?\s*/g,""), bad, {loading:isLoading});
   }
   function applySummary(summary){window.AppState=window.AppState||{};AppState.sourceSummary=summary||{};}
   function renderAll(){try{if(typeof buildIndex==="function")buildIndex();}catch(e){}try{if(typeof calcActual==="function")calcActual();}catch(e){}try{if(typeof renderActive==="function")renderActive();}catch(e){}try{if(typeof v541RenderDataHub==="function")v541RenderDataHub();}catch(e){}}
-  async function reload(){if(loading)return;loading=true;status("V65.0 正在讀取獨立分頁資料...");try{window.AppState=window.AppState||{};var d=ymd();var all=await Promise.allSettled([jsonp("v65dashboard",{}),jsonp("listtargetplans",{date:d}),jsonp("listkeyin",{date:d}),jsonp("listemployees",{}),jsonp("prod5c",{}),jsonp("prod53",{})]);var src=all[0].status==="fulfilled"?all[0].value:{};var rawSource=rows(src);AppState.source=normalizeSource(rawSource);applySummary(src.summary||src.counts||{});AppState.targets=normalizeTargets(all[1].status==="fulfilled"?rows(all[1].value):[]);AppState.keyin=normalizeKeyin(all[2].status==="fulfilled"?rows(all[2].value):[]);var empRows=normalizeEmployees(all[3].status==="fulfilled"?rows(all[3].value):[]);AppState.prod5c=all[4].status==="fulfilled"?rows(all[4].value):[];AppState.prod53=all[5].status==="fulfilled"?rows(all[5].value):[];AppState.apiHealth={source:AppState.source.length>0,targets:AppState.targets.length>0,keyin:true,employees:empRows.length>0,prod5c:AppState.prod5c.length>0,prod53:AppState.prod53.length>0};renderAll();var sum=AppState.sourceSummary||{};function c(k){return sum[k]&&typeof sum[k].count==="number"?sum[k].count:0;}status("V65.0 已讀取｜SL31A："+c("SL31A")+"｜4-3："+c("4-3")+"｜PD11B："+c("PD11B")+"｜5-C："+AppState.prod5c.length+"｜5-3："+AppState.prod53.length+"｜Dashboard列："+AppState.source.length+"｜工單索引："+Object.keys(AppState.idx||{}).length);}catch(e){console.error(e);status("V65.0 讀取失敗："+(e.message||e),true);}finally{loading=false;}}
+  async function reload(){if(loading)return;loading=true;status("正在同步五份 ERP...");try{window.AppState=window.AppState||{};var d=ymd();var all=await Promise.allSettled([jsonp("v65dashboard",{}),jsonp("listtargetplans",{date:d}),jsonp("listkeyin",{date:d}),jsonp("listemployees",{}),jsonp("prod5c",{}),jsonp("prod53",{})]);var src=all[0].status==="fulfilled"?all[0].value:{};var rawSource=rows(src);AppState.source=normalizeSource(rawSource);applySummary(src.summary||src.counts||{});AppState.targets=normalizeTargets(all[1].status==="fulfilled"?rows(all[1].value):[]);AppState.keyin=normalizeKeyin(all[2].status==="fulfilled"?rows(all[2].value):[]);var empRows=normalizeEmployees(all[3].status==="fulfilled"?rows(all[3].value):[]);AppState.prod5c=all[4].status==="fulfilled"?rows(all[4].value):[];AppState.prod53=all[5].status==="fulfilled"?rows(all[5].value):[];AppState.apiHealth={source:AppState.source.length>0,targets:AppState.targets.length>0,keyin:true,employees:empRows.length>0,prod5c:AppState.prod5c.length>0,prod53:AppState.prod53.length>0};renderAll();var sum=AppState.sourceSummary||{};function c(k){return sum[k]&&typeof sum[k].count==="number"?sum[k].count:0;}status(mesV696SuccessMessage({sl:c("SL31A"),d43:c("4-3"),pd:c("PD11B"),c5:AppState.prod5c.length,p53:AppState.prod53.length,dashboard:AppState.source.length,idx:Object.keys(AppState.idx||{}).length,keyin:AppState.keyin.length}));}catch(e){console.error(e);status("V65.0 讀取失敗："+(e.message||e),true);}finally{loading=false;}}
   window.v650ReloadAll=reload;
   window.v541ReloadAll=reload;
   window.v610CleanReload=reload;
@@ -2642,29 +2678,12 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     window.EMP_ROWS = list;
     return list;
   }
-  function setStatus(msg, bad){
-    var box = document.getElementById("v650Status") || document.getElementById("v652Status");
-    if(!box){
-      box = document.createElement("div");
-      box.id = "v652Status";
-      box.style.cssText = "position:fixed;right:18px;bottom:18px;z-index:999999999;background:#0f172a;color:#e5e7eb;border:1px solid #22c55e;border-radius:12px;padding:12px 38px 12px 14px;font-size:13px;box-shadow:0 8px 22px rgba(0,0,0,.25);max-width:920px;line-height:1.5;cursor:pointer";
-      document.body.appendChild(box);
+  function setStatus(msg, bad, opts){
+    var isLoading = opts && opts.loading;
+    if(isLoading === undefined){
+      isLoading = String(msg||"").indexOf("正在") >= 0 || (String(msg||"").indexOf("同步") >= 0 && String(msg||"").indexOf("已") < 0);
     }
-    if(window.__mesStatusTimer){ clearTimeout(window.__mesStatusTimer); window.__mesStatusTimer = null; }
-    box.style.display = "block";
-    box.style.opacity = "1";
-    box.style.transition = "opacity .22s ease";
-    box.style.borderColor = bad ? "#dc2626" : "#22c55e";
-    box.onclick = function(){ box.style.display = "none"; };
-    box.innerHTML = '<button type="button" title="關閉" style="position:absolute;right:8px;top:6px;border:0;background:transparent;color:#e5e7eb;font-size:18px;font-weight:900;cursor:pointer;line-height:1" onclick="event.stopPropagation();this.parentNode.style.display=\'none\';">×</button><div>'+esc(msg)+'</div>';
-    if(!bad && String(msg).indexOf("正在讀取") < 0){
-      window.__mesStatusTimer = setTimeout(function(){
-        if(box){
-          box.style.opacity = "0";
-          setTimeout(function(){ box.style.display = "none"; box.style.opacity = "1"; }, 260);
-        }
-      }, 8000);
-    }
+    if(typeof mesV696Status === "function") return mesV696Status(String(msg||"").replace(/V6[0-9](\.[0-9])?\s*(Emergency|Stable|緊急穩定)?\s*/g,""), bad, {loading:isLoading});
   }
   function sourceCard(x){
     var cls = x.count > 0 ? "v541-ok" : "v541-empty";
@@ -2714,7 +2733,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   async function reloadV652(){
     if(loading) return;
     loading = true;
-    setStatus("V65.2 正在讀取五份資料...");
+    setStatus("正在同步五份 ERP...", false, {loading:true});
     try{
       window.AppState = window.AppState || {};
       var d = ymd();
@@ -2767,19 +2786,15 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
       renderAll();
 
-      setStatus(
-        "V65.2 已讀取｜SL31A："+AppState.sl.length.toLocaleString()+
-        "｜4-3："+AppState.d43.length.toLocaleString()+
-        "｜PD11B："+AppState.pd.length.toLocaleString()+
-        "｜5-C："+AppState.prod5c.length.toLocaleString()+
-        "｜5-3："+AppState.prod53.length.toLocaleString()+
-        "｜Dashboard列："+AppState.source.length.toLocaleString()+
-        "｜工單索引："+Object.keys(AppState.idx||{}).length.toLocaleString()
-      );
+      setStatus(mesV696SuccessMessage({
+        sl:AppState.sl.length, d43:AppState.d43.length, pd:AppState.pd.length,
+        c5:AppState.prod5c.length, p53:AppState.prod53.length,
+        dashboard:AppState.source.length, idx:Object.keys(AppState.idx||{}).length, keyin:AppState.keyin.length
+      }), false, {loading:false});
       console.log("V65.2 Stable OK", AppState.sourceSummary);
     }catch(e){
       console.error("V65.2 reload failed",e);
-      setStatus("V65.2 讀取失敗："+(e.message||e), true);
+      setStatus("讀取失敗："+(e.message||e), true, {loading:false});
     }finally{
       loading = false;
     }
