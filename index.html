@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V69.6 MES 生產 Key In</title>
+<title>V70.0 MES 生產 Key In Fast Input</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -23,18 +23,27 @@
 .planMain{min-width:0}
 .planStatus{text-align:right;white-space:nowrap}
 .progressText{font-size:12px;color:#64748b;margin-top:3px}
+
+.fastPanel{margin-top:12px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:16px;padding:12px}
+.fastTitle{font-weight:900;color:#1e3a8a;margin-bottom:8px}
+.quickBtns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.quickBtn{border:0;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer;background:#e0e7ff;color:#1e40af}
+.quickBtn.green{background:#dcfce7;color:#166534}.quickBtn.orange{background:#ffedd5;color:#9a3412}.quickBtn.gray{background:#f1f5f9;color:#334155}
+.recentBox{display:grid;gap:6px;margin-top:8px}
+.recentItem{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #dbe4f0;background:white;border-radius:12px;padding:8px 10px;font-size:13px}
+.recentItem b{color:#0f172a}.miniText{font-size:12px;color:#64748b}.opBtn{border:0;border-radius:10px;padding:5px 8px;font-weight:900;cursor:pointer;background:#eef2ff;color:#1e40af}
 </style>
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V69.6 MES Enterprise</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V70.0 MES Fast Input</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
 <div class="wrap"><div class="grid">
   <div class="card hero col12">
     <h2>手機 / 電腦 Key In</h2>
-    <div class="sub">讀取工單使用 keyinsource，不再讀 source；送出回報 / ส่งรายงาน使用 Apps Script POST。</div>
+    <div class="sub">讀取工單使用 keyinsource；新增連續輸入、Enter 快速送出、最近五筆與沿用上一筆。</div>
     <div class="row" style="margin-top:12px">
       <button class="btn" onclick="loadAll()">讀取最新工單 / โหลดงานล่าสุด</button>
       <button class="btn ghost" onclick="loadKeyin()">讀取回報資料 / โหลดรายงาน</button>
@@ -84,7 +93,19 @@
     <label>姓名 / ชื่อ</label><input id="emp_name" placeholder="依工號自動帶入，可手動補充">
     <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02">
     <div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單 / งานของฉัน</button><button class="btn ghost" onclick="nextOrder()">下一張工單 / งานถัดไป</button></div>
-    <label><input id="autoNext" type="checkbox" checked style="width:auto"> 送出後自動跳下一張 / ส่งแล้วไปงานถัดไปอัตโนมัติ</label>
+    <div class="fastPanel">
+      <div class="fastTitle">快速連續輸入 / ป้อนข้อมูลเร็ว</div>
+      <label><input id="fastMode" type="checkbox" checked style="width:auto"> 連續輸入模式：保留日期、站點、工號、姓名、機台、單位</label>
+      <label><input id="autoNext" type="checkbox" checked style="width:auto"> 送出後自動跳下一張 / ส่งแล้วไปงานถัดไปอัตโนมัติ</label>
+      <div class="quickBtns">
+        <button class="quickBtn green" onclick="nextOrder()">🟢 下一張工單</button>
+        <button class="quickBtn" onclick="copyLastSubmit()">🔵 沿用上一筆</button>
+        <button class="quickBtn orange" onclick="clearCurrentInput()">🟠 清除本筆</button>
+        <button class="quickBtn gray" onclick="saveQuickProfile()">💾 記住工號/機台</button>
+      </div>
+      <div class="miniText">提示：工單欄按 Enter 會跳到產量；產量欄按 Enter 會直接送出。</div>
+      <div id="recentBox" class="recentBox"></div>
+    </div>
     <label>實際產量 / ผลผลิตจริง</label><input id="actual_output" type="number" step="0.01">
     <label>單位 / หน่วย</label><select id="unit"><option>R / ม้วน</option><option>㎡</option><option>KG</option><option>M</option></select>
     <label>備註 / หมายเหตุ</label><textarea id="process_note"></textarea>
@@ -100,12 +121,14 @@
       <button id="keyin_range_month" class="rangeBtn" onclick="setKeyinRange('month')">本月 / เดือนนี้</button>
     </div>
     <div class="tools"><input id="search" placeholder="全表搜尋 / ค้นหา" oninput="renderKeyin()"><button class="btn ghost" onclick="exportCSV()">匯出 CSV / ส่งออก CSV</button><span id="count" class="hint"></span></div>
-    <div class="scroll"><table><thead><tr><th>時間<br>เวลา</th><th>日期<br>วันที่</th><th>周別<br>สัปดาห์</th><th>站點<br>จุด</th><th>工單<br>ใบงาน</th><th>批號<br>ล็อต</th><th>機台<br>เครื่อง</th><th>工號<br>รหัส</th><th>姓名<br>ชื่อ</th><th>產量<br>ผลผลิต</th><th>單位<br>หน่วย</th><th>備註<br>หมายเหตุ</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="scroll"><table><thead><tr><th>操作<br>ทำ</th><th>時間<br>เวลา</th><th>日期<br>วันที่</th><th>周別<br>สัปดาห์</th><th>站點<br>จุด</th><th>工單<br>ใบงาน</th><th>批號<br>ล็อต</th><th>機台<br>เครื่อง</th><th>工號<br>รหัส</th><th>姓名<br>ชื่อ</th><th>產量<br>ผลผลิต</th><th>單位<br>หน่วย</th><th>備註<br>หมายเหตุ</th></tr></thead><tbody id="rows"></tbody></table></div>
   </div>
 </div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],idx:-1,range:'today',keyinRange:'today'};
+const App={source:[],employees:[],keyin:[],plans:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
+const LS_PROFILE='MES_KEYIN_FAST_PROFILE_V70';
+const LS_RECENT='MES_KEYIN_RECENT_V70';
 function rowsOf(r){if(Array.isArray(r))return r;if(Array.isArray(r?.rows))return r.rows;if(Array.isArray(r?.data))return r.data;if(Array.isArray(r?.list))return r.list;if(Array.isArray(r?.items))return r.items;return []}
 function qs(id){return document.getElementById(id)}
 function safeGet(id){const el=qs(id);return el?el.value:''}
@@ -162,16 +185,31 @@ function currentPlans(){return App.plans.filter(p=>inRange(p.report_date||p.plan
 function actualSumForWO(w){w=wo(w);const r=rangeObj();return App.keyin.filter(k=>wo(k.work_order_no||k.order_no)===w).filter(k=>{const d=dk(k.report_date||k.created_at);return d&&d>=r.start&&d<=r.end}).reduce((a,k)=>a+(parseFloat(String(k.actual_output||0).replace(/,/g,''))||0),0)}
 function targetQtyForPlan(p){const vals=[p.target_roll,p.target_m2,p.target_qty,p['目標卷數'],p['目標㎡'],p['目標數量']];for(const v of vals){const n=parseFloat(String(v??'').replace(/,/g,''));if(!isNaN(n)&&n>0)return n}return 0}
 function matchStatus(p){const o=sourceObj(p);const actual=actualSumForWO(o.work_order_no||o.order_no);const target=targetQtyForPlan(p);const pct=target>0?Math.min(999,actual/target*100):actual>0?100:0;let label='未作業',th='ยังไม่ทำ',cls='statusNone';if(actual>0){label='作業中';th='กำลังทำ';cls='statusRun'}if(target>0&&actual>=target){label='作業完成';th='เสร็จแล้ว';cls='statusDone'}return{label,th,cls,actual,target,pct}}
-function lookupWO(){const w=wo(safeGet('work_order_no'));if(!w)return;safeSet('work_order_no',w);const r=App.source.find(x=>wo(x.work_order_no||x.order_no)===w);const box=qs('woMsg');if(!r){box.className='alert';box.innerHTML='查無工單，請確認是否已上傳每日資料。';return}safeSet('batch_no',r.batch_no);if(!safeGet('machine_code'))safeSet('machine_code',r.machine_code);box.className='okbox';box.innerHTML='<b>已帶入工單</b><br>'+html([r.customer,r.product_spec,r.process].filter(Boolean).join('｜'))}
+function lookupWO(){const w=wo(safeGet('work_order_no'));if(!w)return;safeSet('work_order_no',w);const r=App.source.find(x=>wo(x.work_order_no||x.order_no)===w);const box=qs('woMsg');if(!r){box.className='alert';box.innerHTML='查無工單，請確認是否已上傳每日資料。';return}safeSet('batch_no',r.batch_no);if(!safeGet('machine_code'))safeSet('machine_code',r.machine_code);box.className='okbox';box.innerHTML='<b>已帶入工單</b><br>'+html([r.customer,r.product_spec,r.process].filter(Boolean).join('｜'));setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},50)}
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
 function renderPlansHint(){const r=rangeObj();qs('planRangeText').textContent=r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';const list=currentPlans();qs('todayPlans').innerHTML=list.length?list.slice(0,20).map((p,i)=>{const o=sourceObj(p);const st=matchStatus(p);return '<div class="planItem" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' / '+(st.target?st.target.toLocaleString():'未設目標')+'</div></div></div></div>'}).join(''):'查無'+r.label+'幹部目標工單。'}
 function pickPlan(i){const p=currentPlans()[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);lookupWO()}
 function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+rangeObj().label+'幹部目標工單')}
 function nextOrder(){const list=currentPlans();if(!list.length){if(window.MES)MES.toast('沒有可跳轉工單');return}App.idx=(App.idx+1)%list.length;pickPlan(App.idx)}
-async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:w,order_no:w,batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),input_source:'github_v69_6_keyin'};try{await postApi('saveKeyin',data);if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');safeSet('actual_output','');safeSet('process_note','');setTimeout(()=>loadKeyin(false),1800);if(qs('autoNext').checked)nextOrder()}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
-function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map(r=>'<tr><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="12" class="hint">尚無資料</td></tr>'}
+
+function quickDataFromForm(){return{site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:wo(safeGet('work_order_no')),batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note')}}
+function applyQuickData(d,keepOutput=false){if(!d)return;safeSet('site',d.site||safeGet('site'));safeSet('report_date',dk(d.report_date)||safeGet('report_date')||isoDate());safeSet('work_order_no',wo(d.work_order_no||''));safeSet('batch_no',d.batch_no||'');safeSet('machine_code',d.machine_code||'');safeSet('unit',d.unit||safeGet('unit'));safeSet('emp_no',d.emp_no||safeGet('emp_no'));safeSet('emp_name',d.emp_name||safeGet('emp_name'));if(keepOutput){safeSet('actual_output',d.actual_output||'');safeSet('process_note',d.process_note||'')}lookupWO();setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},80)}
+function getRecentList(){try{return JSON.parse(localStorage.getItem(LS_RECENT)||'[]')}catch(e){return[]}}
+function setRecentList(list){localStorage.setItem(LS_RECENT,JSON.stringify((list||[]).slice(0,5)));renderRecentBox()}
+function addRecent(d){const list=getRecentList().filter(x=>!(wo(x.work_order_no)===wo(d.work_order_no)&&String(x.created_at||'')===String(d.created_at||'')));list.unshift({...d,created_at:new Date().toLocaleString('zh-TW',{hour12:false})});setRecentList(list)}
+function renderRecentBox(){const box=qs('recentBox');if(!box)return;const list=getRecentList();box.innerHTML=list.length?list.map((r,i)=>'<div class="recentItem"><div><b>'+html(wo(r.work_order_no))+'</b> <span class="miniText">'+html(r.actual_output||'')+' '+html(r.unit||'')+'</span><br><span class="miniText">'+html([r.machine_code,r.batch_no].filter(Boolean).join('｜'))+'</span></div><button class="opBtn" onclick="useRecent('+i+')">帶入</button></div>').join(''):'<div class="miniText">尚無最近輸入資料</div>'}
+function useRecent(i){const r=getRecentList()[i];applyQuickData(r,true)}
+function copyLastSubmit(){const r=App.lastSubmit||getRecentList()[0];if(!r){if(window.MES)MES.toast('尚無上一筆可沿用');return}applyQuickData(r,true)}
+function clearCurrentInput(){safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');const w=qs('work_order_no');if(w)w.focus()}
+function saveQuickProfile(){const d={emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),machine_code:safeGet('machine_code'),site:safeGet('site'),unit:safeGet('unit')};localStorage.setItem(LS_PROFILE,JSON.stringify(d));if(window.MES)MES.toast('已記住常用工號/機台')}
+function loadQuickProfile(){try{const d=JSON.parse(localStorage.getItem(LS_PROFILE)||'{}');if(d.emp_no)safeSet('emp_no',d.emp_no);if(d.emp_name)safeSet('emp_name',d.emp_name);if(d.machine_code)safeSet('machine_code',d.machine_code);if(d.site)safeSet('site',d.site);if(d.unit)safeSet('unit',d.unit)}catch(e){}renderRecentBox()}
+function afterSubmitClear(){if(qs('fastMode')&&qs('fastMode').checked){safeSet('actual_output','');safeSet('process_note','');if(qs('autoNext')&&qs('autoNext').checked)nextOrder();else safeSet('work_order_no',''),safeSet('batch_no','');setTimeout(()=>{const target=safeGet('work_order_no')?qs('actual_output'):qs('work_order_no');if(target)target.focus()},80)}else{safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','')}}
+function setupFastInputKeys(){['work_order_no','actual_output'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();setTimeout(()=>qs('actual_output')&&qs('actual_output').focus(),80)}else if(id==='actual_output'){submitKeyin()}})})}
+async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:w,order_no:w,batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),input_source:'github_v69_6_keyin'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
+function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
-document.addEventListener('DOMContentLoaded',()=>{safeSet('report_date',isoDate());loadAll()});
+document.addEventListener('DOMContentLoaded',()=>{safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadAll()});
 </script>
 </body>
 </html>
