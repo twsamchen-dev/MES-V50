@@ -2,13 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V73.2 MES Target Enterprise</title>
+<title>V74.0 MES Target Enterprise Fast</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V73.2 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V73.2 快取穩定版；4-3 G欄客戶、O欄預交日、快取查詢與配對狀態，不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V74.0 Enterprise Fast</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V74.0 分段載入版；避免 targetbootstrap 逾時，不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -73,6 +73,7 @@
 <script>
 const API_URL=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
 let ALL_TARGETS=[],TARGETS=[],MATCH_ROWS=[],EMPLOYEES=[],EMPIDX={},ORDER_LIST=[],lookupTimer=null,orderTimer=null,currentRange='today',LAST_LOOKUP=null;
+let __bgMatchTimer=null,__bgOrderTimer=null,__orderCacheKey='',__lastOrderSearch='';
 function $(id){return document.getElementById(id)}
 function toast(s){let t=$('toast');t.textContent=s;t.className='toast show';setTimeout(()=>t.className='toast',2500)}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -86,13 +87,30 @@ function cleanSource(s){s=String(s||'');const a=[];if(s.includes('4-3'))a.push('
 function num(v){let n=parseFloat(String(v??'').replace(/,/g,''));return isNaN(n)?0:n}
 function dateKey(v){let s=String(v||'').replace(/\//g,'-');let m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):s.slice(0,10)}
 function isoWeek(d){let x=new Date(dateKey(d)+'T00:00:00');if(isNaN(x))return '';x.setHours(0,0,0,0);x.setDate(x.getDate()+3-((x.getDay()+6)%7));let w1=new Date(x.getFullYear(),0,4);let week=1+Math.round(((x-w1)/86400000-3+((w1.getDay()+6)%7))/7);return x.getFullYear()+'-W'+String(week).padStart(2,'0')}
-function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V732_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');let done=false;const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},90000);function cleanup(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
+function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V732_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');let done=false;const timeout=(action==='targetmatchlist'||action==='targetorderlist')?120000:90000;
+      const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},timeout);function cleanup(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
 async function apiGetRetry(action,params={},retry=2){let lastErr=null;for(let i=0;i<=retry;i++){try{return await apiGet(action,params)}catch(e){lastErr=e;if(i<retry){$('loadMsg').textContent='API暫時失敗，重試 '+(i+1)+'/'+retry+'：'+action;await new Promise(r=>setTimeout(r,900+i*700));}}}throw lastErr}
 async function apiPost(action,body){await fetch(API_URL+'?action='+encodeURIComponent(action)+'&_='+Date.now(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body||{})});return {ok:true}}
 function setRangeMode(mode,updateDates=true){currentRange=mode;let d=today();if(updateDates){if(mode==='today'){$('rangeStart').value=d;$('rangeEnd').value=d}else if(mode==='week'){$('rangeStart').value=d;$('rangeEnd').value=addDays(d,6)}else if(mode==='month'){$('rangeStart').value=firstMonth(d);$('rangeEnd').value=lastMonth(d)}}['Today','Week','Month','Custom'].forEach(x=>{$('btn'+x).className='btn ghost'});const map={today:'Today',week:'Week',month:'Month',custom:'Custom'};$('btn'+map[mode]).className='btn active';applyRange()}
 function inRangeDate(v){const d=dateKey(v);return d&&d>=dateKey($('rangeStart').value)&&d<=dateKey($('rangeEnd').value)}
 function rangeName(){return currentRange==='today'?'今日':currentRange==='week'?'一周':currentRange==='month'?'本月':'自訂區間'}
-function applyRange(){TARGETS=ALL_TARGETS.filter(r=>inRangeDate(r.report_date));$('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value;$('quickTitle').textContent=rangeName()+'五份資料工單';$('targetTitle').textContent=rangeName()+'目標清單 / 配對狀況';renderTargetsLoading();updateKpi();loadMatchList();loadOrderList()}
+function applyRange(){
+  TARGETS=ALL_TARGETS.filter(r=>inRangeDate(r.report_date));
+  $('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value;
+  $('quickTitle').textContent=rangeName()+'五份資料工單';
+  $('targetTitle').textContent=rangeName()+'目標清單 / 配對狀況';
+  MATCH_ROWS=[];
+  renderTargetsFallback();
+  updateKpi();
+  scheduleBackgroundLoads();
+}
+function scheduleBackgroundLoads(){
+  if(__bgMatchTimer)clearTimeout(__bgMatchTimer);
+  if(__bgOrderTimer)clearTimeout(__bgOrderTimer);
+  __bgMatchTimer=setTimeout(()=>loadMatchList(),700);
+  __bgOrderTimer=setTimeout(()=>loadOrderList(),1600);
+}
+
 function normalizeEmployees(rows){EMPLOYEES=rows||[];EMPIDX={};EMPLOYEES.forEach(e=>{let no=norm(e.emp_no||e['工號']||e.employee_no||'');if(no)EMPIDX[no]=e})}
 function fillEmp(){let no=norm($('emp_no').value);let e=EMPIDX[no];if(!e)return;let name=e.emp_name||e['姓名']||e.name||'';let role=e.role||e['角色']||e['職務']||'';if(name)$('leader_name').value=name;if(role){let sel=$('leader_role');for(let i=0;i<sel.options.length;i++){if(sel.options[i].text.includes(role)||role.includes(sel.options[i].text.split('/')[0].trim())){sel.selectedIndex=i;break}}}}
 
@@ -159,7 +177,35 @@ async function rebuildOrderCache(){
 }
 
 function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value}
-async function loadBootstrap(){try{$('loadBtn').textContent='讀取中...';$('loadMsg').textContent='讀取 Target_Plan + Employee + 五份資料清單...';const b=await apiGet('targetbootstrap');ALL_TARGETS=b.targets||b.rows||[];normalizeEmployees(b.employees||[]);applyRange();$('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆';toast('目標/人員讀取完成')}catch(e){alert('讀取失敗：'+e.message)}finally{$('loadBtn').textContent='重新讀取目標/人員'}}
+async function loadBootstrap(){
+  try{
+    $('loadBtn').textContent='讀取中...';
+    $('loadMsg').textContent='分段讀取：Target_Plan + Employee，不再呼叫 targetbootstrap...';
+    const start=$('rangeStart').value||today();
+    const end=$('rangeEnd').value||today();
+    const [t,e]=await Promise.all([
+      apiGetRetry('listtargetplans',{start:start,end:end,date:start,_:Date.now()},1).catch(async err=>{
+        $('loadMsg').textContent='Target_Plan 第一次讀取逾時，改用 targets 備援...';
+        return await apiGetRetry('targets',{start:start,end:end,date:start,_:Date.now()},1);
+      }),
+      apiGetRetry('listemployees',{_:Date.now()},1).catch(async err=>{
+        $('loadMsg').textContent='Employee 第一次讀取失敗，改用 employees 備援...';
+        return await apiGetRetry('employees',{_:Date.now()},1);
+      })
+    ]);
+    ALL_TARGETS=t.targets||t.rows||t.data||t.list||[];
+    normalizeEmployees(e.employees||e.rows||e.data||e.list||[]);
+    applyRange();
+    $('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆；配對與工單清單背景載入中。';
+    toast('目標/人員讀取完成');
+  }catch(e){
+    $('loadMsg').textContent='讀取失敗：'+e.message;
+    alert('讀取失敗：'+e.message);
+  }finally{
+    $('loadBtn').textContent='重新讀取目標/人員';
+  }
+}
+
 function debouncedLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(lookupOrder,500)}
 async function lookupOrder(){let q=wo12($('work_order_no').value);$('work_order_no').value=q;if(!q){$('lookupBox').innerHTML='輸入工單號後才查資料。';return}try{$('lookupBox').innerHTML='查詢工單中 / กำลังค้นหา...';const res=await apiGet('targetlookup',{q});if(!res.found){$('lookupBox').className='found warn';$('lookupBox').innerHTML='查無工單：'+esc(q);return}LAST_LOOKUP=res.row;fillFromOrder(res.row);$('lookupBox').className='found';$('lookupBox').innerHTML='<b>已帶入工單 / นำเข้าข้อมูลแล้ว</b><br>來源：'+esc(cleanSource(res.row.source))+'<br>預交日：'+esc(res.row.due_date||'-')+'<br>客戶：'+esc(res.row.customer||'-')+'<br>料號：'+esc(res.row.part_no||'-')+'<br>規格：'+esc(res.row.product_spec||'-')+'<br>SL31A 長×寬：'+esc(res.row.pivot_len||'-')+' × '+esc(res.row.pivot_width||'-')}catch(e){$('lookupBox').className='found warn';$('lookupBox').innerHTML='查詢失敗：'+esc(e.message)}}
 function clearOrderFields(){
@@ -190,15 +236,20 @@ function calcTargetM2(){let r=num($('target_roll').value),l=num($('pivot_len').v
 function debouncedOrderList(){clearTimeout(orderTimer);orderTimer=setTimeout(loadOrderList,350)}
 async function loadOrderList(){
   const keepOld = ORDER_LIST && ORDER_LIST.length;
+  const q=$('search').value||'';
+  const cacheKey=[$('rangeStart').value,$('rangeEnd').value,q].join('|');
+  if(keepOld && cacheKey===__orderCacheKey){renderQuickList();return;}
   try{
-    if(!keepOld) $('quickList').innerHTML='讀取快取資料中 / กำลังโหลดข้อมูลแคช...';
-    const res=await apiGet('targetorderlist',{start:$('rangeStart').value,end:$('rangeEnd').value,q:$('search').value||'',limit:200});
+    if(!keepOld) $('quickList').innerHTML='背景讀取快取資料中 / กำลังโหลดข้อมูลแคช...';
+    const res=await apiGetRetry('targetorderlist',{start:$('rangeStart').value,end:$('rangeEnd').value,q:q,limit:200,_:Date.now()},1);
     if(res && res.cache_exists===false){
       ORDER_LIST=[];
+      __orderCacheKey='';
       $('quickList').innerHTML='<span class="status-wait">尚未建立五份資料快取，請先按「重建五份資料快取」。</span>';
       return;
     }
     ORDER_LIST=res.rows||res.data||res.items||[];
+    __orderCacheKey=cacheKey;
     renderQuickList();
   }catch(e){
     if(keepOld){
@@ -247,6 +298,7 @@ function renderTargets(){
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):(r[h[0]]||'');
+    if(h[0]==='report_date')v=dateKey(v);
     if(h[0]==='completion_rate')v=(v===''?'':v+'%');
     if(h[0]==='file_match_status'||h[0]==='work_status')return '<td class="'+statusClass(v)+'">'+esc(v)+'</td>';
     return '<td>'+esc(v)+'</td>';
@@ -264,6 +316,17 @@ function updateKpi(){
 
 function clearForm(){['emp_no','leader_name','note'].forEach(id=>$(id).value='');clearOrderFields();$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單號後才查資料，不會開頁逾時。'}
 async function saveTarget(){const data={report_date:$('report_date').value||today(),week_no:isoWeek($('report_date').value||today()),shift:$('shift').value,emp_no:$('emp_no').value,leader_role:$('leader_role').value,leader_name:$('leader_name').value,work_order_no:wo12($('work_order_no').value),order_no:$('order_no').value,part_no:$('part_no').value,batch_no:$('batch_no').value,process_site:$('process_site').value,machine_code:$('machine_code').value,customer:$('customer').value,product_spec:$('product_spec').value,target_roll:$('target_roll').value,target_m2:$('target_m2').value,planned_finish:$('planned_finish').value,status:$('status').value,note:$('note').value};if(!data.work_order_no){toast('請輸入工單號');return}try{await apiPost('savetargetplan',data);$('saveMsg').textContent='已儲存';toast('目標已儲存');setTimeout(loadBootstrap,700)}catch(e){alert('儲存失敗：'+e.message)}}
-document.addEventListener('DOMContentLoaded',()=>{$('report_date').value=today();$('planned_finish').value=today();$('due_date_display').value='';setRangeMode('today');loadBootstrap()});
+document.addEventListener('DOMContentLoaded',()=>{
+  $('report_date').value=today();
+  $('planned_finish').value=today();
+  $('due_date_display').value='';
+  $('rangeStart').value=today();
+  $('rangeEnd').value=today();
+  ['Today','Week','Month','Custom'].forEach(x=>{$('btn'+x).className='btn ghost'});
+  $('btnToday').className='btn active';
+  $('rangeHint').textContent='目前：今日 '+$('rangeStart').value+' ~ '+$('rangeEnd').value;
+  loadBootstrap();
+});
+
 </script>
 </body></html>
