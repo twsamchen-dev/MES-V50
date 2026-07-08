@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V69.5 MES Enterprise Stable｜Hybrid</title>
+<title>V70.1 MES Enterprise Fast Dashboard｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V69.5 Stable DataHub UI Hybrid</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Data Center、主管首頁、工單搜尋、甘特排程、入庫追蹤、機台地圖、異常中心、目標管理與晨會模式。｜V69.5 Stable DataHub Hybrid。</p></header>
+<header><h1>生產戰情室 | V70.1 Fast Dashboard</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -636,7 +636,7 @@ async function uploadCloud(){
     await uploadChunksRaw('5-3',AppState.prod53Raw,chunk);
     setUploadProgress('✅ ✅ 上傳完成，正在快速讀取 Dashboard 摘要...');
     alert('✅ 五份資料已更新完成。V63 已改為獨立分頁：SL31A / 4-3 / PD11B / 5-C / 5-3。');
-    if(typeof v541ReloadAll==='function')setTimeout(v541ReloadAll,500);
+    if(typeof v541ReloadAll==='function')setTimeout(v541ReloadAll,500); // 上傳完成後仍允許自動刷新一次
   }catch(e){
     console.error(e);
     alert('上傳失敗：'+((e&&e.message)||e));
@@ -1008,7 +1008,7 @@ function init(){
     }
   });
 
-  loadEmployees();loadSource();loadKeyin();loadTargets();renderActive();
+  renderActive();setTimeout(function(){try{if(typeof v541RenderDataHub==='function')v541RenderDataHub();}catch(e){}},300);try{toast('Dashboard 已就緒；需要更新請按「立即更新」或「重新讀取五份資料」');}catch(e){}
 }
 window.onerror=function(msg){toast("系統錯誤："+msg)};
 document.addEventListener("DOMContentLoaded",init);
@@ -2084,7 +2084,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     window.renderDashboard=function(){oldRender.apply(this,arguments);setTimeout(v541RenderDataHub,30);};
     if(window.R)R.dashboard=window.renderDashboard;
   }
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){v541ReloadAll(); if((AppState.activeView||'dashboard')==='dashboard')v541RenderDataHub();},1200);});
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){ if((AppState.activeView||'dashboard')==='dashboard' && typeof v541RenderDataHub==='function')v541RenderDataHub();},1200);});
 })();
 </script>
 <!-- V61.0 Clean Dashboard Loader｜完整乾淨版：只保留一套 API 讀取邏輯 -->
@@ -2405,8 +2405,8 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   window.loadEmployees=function(){v610CleanReload();};
 
   document.addEventListener("DOMContentLoaded",function(){
-    setTimeout(v610CleanReload,1800);
-    setTimeout(v610CleanReload,5200);
+    // V70.1 Fast Dashboard：首頁不自動重抓五份資料，改為按鈕手動更新。
+    if(typeof v541RenderDataHub==='function')setTimeout(v541RenderDataHub,700);
     setTimeout(hideOldStatus,8000);
   });
 })();
@@ -2553,7 +2553,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   window.v650ReloadAll=reload;
   window.v541ReloadAll=reload;
   window.v610CleanReload=reload;
-  document.addEventListener("DOMContentLoaded",function(){setTimeout(reload,1500);});
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(function(){try{if(typeof v541RenderDataHub==='function')v541RenderDataHub();}catch(e){}},900);});
 })();
 </script>
 
@@ -2811,7 +2811,32 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   window.reloadV652 = reloadV652;
 
   document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(reloadV652, 2200);
+    // V70.1 Fast Dashboard：不自動同步大資料，避免首頁長時間轉圈。
+    setTimeout(function(){try{renderHub();}catch(e){}}, 900);
+  });
+})();
+</script>
+
+
+<!-- V70.1 Fast Dashboard Safety Patch｜停止首頁自動重抓，保留手動更新 -->
+<script id="v701_fast_dashboard_safety_patch">
+(function(){
+  window.__MES_FAST_DASHBOARD__ = true;
+  function hideLoadingStatus(){
+    try{
+      var box=document.getElementById("v650Status")||document.getElementById("v652Status")||document.getElementById("mesDataHubStatus");
+      if(box && /正在|同步|讀取中/.test(String(box.textContent||""))){
+        box.style.display="none";
+      }
+    }catch(e){}
+  }
+  document.addEventListener("DOMContentLoaded",function(){
+    setTimeout(hideLoadingStatus,4500);
+    setTimeout(function(){
+      try{
+        if(typeof toast==="function") toast("V70.1 Fast Dashboard：首頁不自動重抓大資料；需更新請按『立即更新』");
+      }catch(e){}
+    },1200);
   });
 })();
 </script>
