@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V71.0 MES Enterprise Dashboard｜Hybrid</title>
+<title>V70.1 MES Enterprise Fast Dashboard｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -86,21 +86,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 .mesStatusTime{margin-top:6px;color:#bfdbfe;font-size:12px}
 .mesStatusBad{border-color:#ef4444!important;background:linear-gradient(135deg,#2b1010,#450a0a)!important}
 
-
-
-/* V71.0 Enterprise Dashboard Patch：首頁KPI、排行、趨勢圖，不影響 Key In / Target / API */
-.v710-hero{grid-column:span 12;background:linear-gradient(135deg,#0f172a,#1d4ed8);color:#fff;border-radius:22px;padding:18px 20px;box-shadow:0 12px 28px rgba(15,23,42,.18)}
-.v710-hero h2{color:#fff;margin:0 0 6px;font-size:26px}.v710-hero .meta{color:#dbeafe;font-size:13px;line-height:1.6}.v710-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}.v710-btn{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:#eff6ff;color:#1e40af}
-.v710-rank{display:flex;flex-direction:column;gap:8px}.v710-rankRow{display:grid;grid-template-columns:42px 1.2fr 1fr 80px;gap:8px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:9px;background:#fff}.v710-rankRow b{font-size:15px}.v710-rankRow .small{font-size:12px;color:#64748b;line-height:1.4}.v710-medal{font-size:22px;text-align:center}.v710-value{text-align:right;font-weight:900;color:#1d4ed8}
-.v710-miniStatus{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.v710-statusBox{border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center;background:#fff}.v710-statusBox .name{font-size:12px;color:#64748b;font-weight:900}.v710-statusBox .num{font-size:26px;font-weight:900;margin-top:4px}
-.v710-hourBars{display:flex;align-items:flex-end;gap:5px;height:185px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 4px 22px;margin-top:8px}.v710-hourBar{flex:1;min-width:8px;background:linear-gradient(180deg,#60a5fa,#1d4ed8);border-radius:7px 7px 0 0;min-height:4px;position:relative}.v710-hourBar span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;color:#64748b;white-space:nowrap}.v710-hourBar em{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;border-radius:8px;padding:4px 6px;font-size:11px;font-style:normal;white-space:nowrap}.v710-hourBar:hover em{display:block}
-.v710-note{border-left:5px solid #2563eb;background:#eff6ff;border-radius:14px;padding:12px;line-height:1.65;color:#334155}.v710-empty{color:#64748b;font-size:13px;padding:12px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc}.v710-donutWrap{display:grid;place-items:center;min-height:210px}.v710-kpiSub{font-size:12px;opacity:.85;margin-top:4px}
-@media(max-width:900px){.v710-rankRow{grid-template-columns:36px 1fr}.v710-value{text-align:left}.v710-miniStatus{grid-template-columns:repeat(2,1fr)}}
-
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V71.0 MES Enterprise Dashboard</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：新增今日目標實績、工單狀態、機台 / 人員 / 客戶排行榜與每小時產量圖；保留手動更新避免長時間轉圈。</p></header>
+<header><h1>生產戰情室 | V70.1 Fast Dashboard</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -329,7 +318,7 @@ function pick(r,k){var a=AL[k]||[];for(var i=0;i<a.length;i++){if(r[a[i]]!==unde
 function toast(s){var t=el("toast");if(!t)return;t.textContent=s;t.className="toast show";setTimeout(function(){t.className="toast"},2200)}
 
 /* V69.6 Stable：DataHub 右下角提示控制 */
-window.__MES_V696_VERSION = "MES Enterprise V71.0 Dashboard";
+window.__MES_V696_VERSION = "MES Enterprise V69.6 Stable";
 function mesV696NowTime(){
   var d=new Date();
   return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
@@ -2848,129 +2837,6 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
         if(typeof toast==="function") toast("V70.1 Fast Dashboard：首頁不自動重抓大資料；需更新請按『立即更新』");
       }catch(e){}
     },1200);
-  });
-})();
-</script>
-
-
-
-<!-- V71.0 Enterprise Dashboard Patch｜只覆蓋 Dashboard 首頁渲染，不動 Key In / Target / API -->
-<script id="v710_enterprise_dashboard_patch">
-(function(){
-  window.__MES_DASHBOARD_VERSION__ = "V71.0 MES Enterprise Dashboard";
-
-  function N(v){ var n=Number(v||0); return isFinite(n)?n.toLocaleString():"0"; }
-  function F(v){ var n=Number(v||0); return isFinite(n)?Math.round(n).toLocaleString():"0"; }
-  function H(v){ return (typeof htmlEsc==="function"?htmlEsc(v):String(v==null?"":v).replace(/[&<>"']/g,function(s){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s];})); }
-  function D(v){ return (typeof dateKey==="function"?dateKey(v):String(v||"").slice(0,10)); }
-  function Q(v){ return String(v==null?"":v).trim(); }
-  function medal(i){ return i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1); }
-  function safeNum(v){ var n=parseFloat(String(v==null?"":v).replace(/,/g,"")); return isNaN(n)?0:n; }
-  function keyinRowsByDate(qDate){
-    return (AppState.keyin||[]).filter(function(r){ return D(r.date||r.report_date||r.created_at)===qDate; });
-  }
-  function groupTop(rows,keyFn,valFn,metaFn,limit){
-    var map={};
-    (rows||[]).forEach(function(r){
-      var k=Q(keyFn(r))||"未指定";
-      if(!map[k]) map[k]={key:k,value:0,count:0,meta:{}};
-      map[k].value+=safeNum(valFn(r)); map[k].count++;
-      if(metaFn){ var m=metaFn(r)||{}; Object.keys(m).forEach(function(x){ if(m[x]&&!map[k].meta[x]) map[k].meta[x]=m[x]; }); }
-    });
-    return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.value-a.value || b.count-a.count;}).slice(0,limit||10);
-  }
-  function actualByWorkOrder(qDate){
-    var m={};
-    keyinRowsByDate(qDate).forEach(function(r){ var wo=(typeof wo12==="function"?wo12(r.wo||r.work_order_no||r.order_no):Q(r.wo||r.work_order_no||r.order_no)); if(wo)m[wo]=(m[wo]||0)+safeNum(r.actual||r.actual_output); });
-    return m;
-  }
-  function customerOfKeyin(r){
-    if(r.customer) return r.customer;
-    var wo=(typeof wo12==="function"?wo12(r.wo||r.work_order_no||r.order_no):Q(r.wo||r.work_order_no||r.order_no));
-    var o=AppState.idx&&AppState.idx[wo];
-    return o&&o.customer?o.customer:"未指定";
-  }
-  function rankHtml(items,unit,emptyText){
-    if(!items.length) return '<div class="v710-empty">'+H(emptyText||"目前沒有資料")+'</div>';
-    return '<div class="v710-rank">'+items.map(function(x,i){
-      var meta=[]; if(x.meta&&x.meta.machine) meta.push("機台 "+x.meta.machine); if(x.meta&&x.meta.emp) meta.push(x.meta.emp); meta.push(x.count+" 筆");
-      return '<div class="v710-rankRow"><div class="v710-medal">'+medal(i)+'</div><div><b>'+H(x.key)+'</b><div class="small">'+H(meta.join("｜"))+'</div></div><div class="small">'+H(x.meta&&x.meta.extra?x.meta.extra:"")+'</div><div class="v710-value">'+F(x.value)+(unit||"")+'</div></div>';
-    }).join('')+'</div>';
-  }
-  function hourChart(rows){
-    var arr=new Array(24).fill(0);
-    rows.forEach(function(r){
-      var t=String(r.createdAt||r.created_at||r.time||"");
-      var m=t.match(/(?:T|\s)(\d{1,2}):\d{2}/); var h=m?parseInt(m[1],10):null;
-      if(h===null || isNaN(h) || h<0 || h>23) h=8;
-      arr[h]+=safeNum(r.actual||r.actual_output);
-    });
-    var max=Math.max.apply(null,arr.concat([1]));
-    return '<div class="v710-hourBars">'+arr.map(function(v,h){
-      var ht=Math.max(4,Math.round(v/max*150));
-      var label=(h%3===0)?String(h).padStart(2,"0"):"";
-      return '<div class="v710-hourBar" style="height:'+ht+'px"><em>'+String(h).padStart(2,"0")+':00｜'+F(v)+'</em><span>'+label+'</span></div>';
-    }).join('')+'</div>';
-  }
-  function renderV710Dashboard(){
-    if(!document.getElementById("dashboardGrid")) return;
-    var s=(typeof getStats==="function"?getStats():{orders:[],c:{},todayPlans:[],todayKeyin:0,todayEmp:0,todayQty:0,targetRoll:0,actualRoll:0,targetM2:0,actualM2:0,targetRate:0,queryDate:(typeof today==="function"?today():new Date().toISOString().slice(0,10))});
-    var box=document.getElementById("dashboardGrid");
-    var qDate=s.queryDate || (typeof targetDate==="function"?targetDate():new Date().toISOString().slice(0,10));
-    var dateLabel=(typeof today==="function" && qDate===today())?"今日":qDate;
-    var orders=s.orders||[];
-    var kRows=keyinRowsByDate(qDate);
-    var c=s.c||{};
-    var workActual=actualByWorkOrder(qDate);
-    var totalPlan=s.targetRoll||s.targetM2||0;
-    var totalDone=s.actualRoll||s.actualM2||s.todayQty||0;
-    var rate=totalPlan?Math.round(totalDone/totalPlan*100):(s.targetRate||0);
-    var remain=Math.max(0,totalPlan-totalDone);
-    var machineTop=groupTop(kRows,function(r){return r.machine||r.machine_code;},function(r){return r.actual||r.actual_output;},function(r){return {emp:r.empName||r.emp_name||r.empNo||r.emp_no};},10);
-    var empTop=groupTop(kRows,function(r){return (r.empName||r.emp_name||r.empNo||r.emp_no);},function(r){return r.actual||r.actual_output;},function(r){return {machine:r.machine||r.machine_code,emp:r.empNo||r.emp_no};},10);
-    var customerTop=groupTop(kRows,function(r){return customerOfKeyin(r);},function(r){return r.actual||r.actual_output;},function(r){return {machine:r.machine||r.machine_code};},10);
-    var statusRows=[["未開工",c["未開工"]||0],["生產中",c["生產中"]||0],["已入庫",c["已入庫"]||0],["逾期",c["逾期"]||0]];
-    var risk=orders.filter(function(o){var st=(typeof orderStatus==="function"?orderStatus(o):"");return ["逾期","待料","未開工"].indexOf(st)>=0;}).slice(0,12);
-    var targetRows=(s.todayPlans||[]).map(function(t){
-      var wo=(typeof wo12==="function"?wo12(t.work_order_no||t.order_no):Q(t.work_order_no||t.order_no));
-      var done=(typeof actualByPlan==="function"?actualByPlan(t,qDate):(workActual[wo]||0));
-      var tg=(typeof targetValue==="function"?targetValue(t):(safeNum(t.target_roll)||safeNum(t.target_m2)));
-      var rr=tg?Math.round(done/tg*100):0;
-      var icon=(typeof rateEmoji==="function"?rateEmoji(rr):(rr>=100?"✅":rr>0?"🟡":"⚪"));
-      return [icon,t.machine_code||"",t.work_order_no||"",(t.leader_role||"")+" "+(t.leader_name||""),t.product_spec||"",F(tg),F(done),F(Math.max(0,tg-done)),rr+"%",t.planned_finish||""];
-    });
-
-    box.innerHTML=
-      '<div class="v710-hero"><h2>📊 '+dateLabel+'生產戰情｜V71.0 Enterprise</h2><div class="meta">資料來源：DataHub 五份 ERP + 幹部目標 + Key In。此版只更新 Dashboard 首頁，不變更 Key In、Target、Apps Script API。</div><div class="v710-actions"><button class="v710-btn" onclick="v541ReloadAll&&v541ReloadAll()">↻ 重新讀取五份資料</button><button class="v710-btn" onclick="switchView&&switchView(\'datacenter\')">資料中心</button><button class="v710-btn" onclick="switchView&&switchView(\'machine\')">機台地圖</button></div></div>'+ 
-      '<div class="card col2 kpiCard blue"><div class="name">總工單</div><div class="num">'+N(orders.length)+'</div><div class="v710-kpiSub">DataHub 工單索引</div></div>'+ 
-      '<div class="card col2 kpiCard orange"><div class="name">'+dateLabel+'目標</div><div class="num">'+F(totalPlan)+'</div><div class="v710-kpiSub">R / M2 依資料來源</div></div>'+ 
-      '<div class="card col2 kpiCard green"><div class="name">'+dateLabel+'完成</div><div class="num">'+F(totalDone)+'</div><div class="v710-kpiSub">Key In 實績</div></div>'+ 
-      '<div class="card col2 kpiCard violet"><div class="name">達成率</div><div class="num">'+N(rate)+'%</div><div class="v710-kpiSub">完成 ÷ 目標</div></div>'+ 
-      '<div class="card col2 kpiCard cyan"><div class="name">Key In</div><div class="num">'+N(kRows.length)+'</div><div class="v710-kpiSub">人員 '+N(s.todayEmp||0)+'</div></div>'+ 
-      '<div class="card col2 kpiCard red"><div class="name">逾期</div><div class="num">'+N(c["逾期"]||0)+'</div><div class="v710-kpiSub">需優先追蹤</div></div>'+ 
-      '<div class="card col4"><h2>🎯 '+dateLabel+'目標 vs 實績</h2><div class="v710-donutWrap"><div class="donut" style="--deg:'+Math.min(360,Math.max(0,rate*3.6))+'deg"><div>'+N(rate)+'%</div></div></div><table><tr><td>目標</td><td>'+F(totalPlan)+'</td></tr><tr><td>完成</td><td>'+F(totalDone)+'</td></tr><tr><td>剩餘</td><td>'+F(remain)+'</td></tr><tr><td>目標筆數</td><td>'+N((s.todayPlans||[]).length)+'</td></tr></table></div>'+ 
-      '<div class="card col4"><h2>🧭 今日工單狀態</h2><div class="v710-miniStatus">'+statusRows.map(function(x){return '<div class="v710-statusBox"><div class="name">'+H(x[0])+'</div><div class="num">'+N(x[1])+'</div></div>';}).join('')+'</div><div class="v710-note" style="margin-top:12px">管理重點：逾期與待料先排除；生產中追完成率；未開工確認是否排程或缺料。</div></div>'+ 
-      '<div class="card col4"><h2>📈 '+dateLabel+'每小時產量</h2>'+hourChart(kRows)+'<div class="hint">滑過柱狀圖可看該小時產量。若 Key In 沒有時間戳，會暫歸在 08:00。</div></div>'+ 
-      '<div class="card col4"><h2>🏆 機台 TOP10</h2>'+rankHtml(machineTop,"","今日尚無機台 Key In 產量")+'</div>'+ 
-      '<div class="card col4"><h2>👥 人員 TOP10</h2>'+rankHtml(empTop,"","今日尚無人員 Key In 產量")+'</div>'+ 
-      '<div class="card col4"><h2>📦 客戶 TOP10</h2>'+rankHtml(customerTop,"","今日尚無客戶產量資料")+'</div>'+ 
-      '<div class="card col12"><h2>今日目標戰情｜幹部目標 vs 人員 Key In</h2>'+ (typeof targetFilterHtml==="function"?targetFilterHtml(qDate):"") +'<div id="targetBattleBox"></div></div>'+ 
-      '<div class="card col12"><h2>TOP 風險工單</h2><div id="dashRiskBox"></div></div>';
-
-    if(typeof makeTable==="function"){
-      makeTable("targetBattleBox",["狀態","機台","工單","幹部","規格","目標","完成","剩餘","達成率","預計完成"],targetRows);
-      makeTable("dashRiskBox",["狀態","工單","預交日","機台","製程","客戶","目標","實績"],risk.map(function(o){var st=(typeof orderStatus==="function"?orderStatus(o):"");return[(typeof statusBadge==="function"?statusBadge(st):st),o.wo,o.due||"",o.machine||"",o.process||"",o.customer||"",F(o.target||0),F(o.actual||0)];}));
-    }
-    try{ if(typeof v541RenderDataHub==="function") v541RenderDataHub(); }catch(e){}
-  }
-  window.renderDashboard = renderV710Dashboard;
-  var oldRenderActive = window.renderActive;
-  window.renderActive = function(){
-    if(window.AppState && AppState.activeView==="dashboard") return renderV710Dashboard();
-    if(typeof oldRenderActive==="function") return oldRenderActive.apply(this,arguments);
-  };
-  document.addEventListener("DOMContentLoaded",function(){
-    setTimeout(function(){ try{ renderV710Dashboard(); }catch(e){ console.error("V71 dashboard render failed",e); } },1100);
   });
 })();
 </script>
