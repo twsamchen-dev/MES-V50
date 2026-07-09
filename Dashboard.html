@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V70.2 MES Enterprise Fast Dashboard｜Hybrid</title>
+<title>V70.3 MES Enterprise Fast Dashboard｜UI Patch</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V70.2 Fast Dashboard</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
+<header><h1>生產戰情室 | V70.3 Fast Dashboard UI</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -2844,16 +2844,24 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
 <!-- V70.2 Stable Patch｜人員效率時間切換＋首頁目標/Key In 狀況卡片 -->
 <style id="v702_efficiency_target_status_style">
-.v702-periodBar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
-.v702-periodBtn{border:1px solid #bfdbfe;background:#eff6ff;color:#1e40af;border-radius:999px;padding:9px 14px;font-weight:900;cursor:pointer}
-.v702-periodBtn.active{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;border-color:#2563eb;box-shadow:0 8px 18px rgba(37,99,235,.2)}
-.v702-statusCard{border:1px solid #bfdbfe;background:linear-gradient(180deg,#ffffff,#f8fbff);border-radius:20px;padding:16px;margin:0 0 12px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
-.v702-statusTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
-.v702-statusTop h2{margin:0;font-size:22px}.v702-statusTop .meta{font-size:13px;color:#64748b;margin-top:4px;line-height:1.5}
-.v702-kpiGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}@media(max-width:900px){.v702-kpiGrid{grid-template-columns:repeat(2,1fr)}}
-.v702-kpi{border:1px solid #e2e8f0;border-radius:16px;background:#fff;padding:12px}.v702-kpi .name{font-size:12px;color:#64748b;font-weight:900}.v702-kpi .num{font-size:28px;font-weight:900;margin-top:5px;color:#172033}
-.v702-alertLine{margin-top:10px;padding:10px 12px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-weight:900;line-height:1.5}
-.v702-okLine{margin-top:10px;padding:10px 12px;border-radius:14px;background:#dcfce7;border:1px solid #bbf7d0;color:#166534;font-weight:900;line-height:1.5}
+/* V70.3 UI Patch：只美化 V70.2 目標 × Key In 卡片，不動 API / 資料結構 / 主架構 */
+@keyframes v702FadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes v702Shine{0%{transform:translateX(-120%)}100%{transform:translateX(220%)}}
+@keyframes v702Pulse{0%,100%{box-shadow:0 0 0 rgba(96,165,250,0)}50%{box-shadow:0 0 24px rgba(96,165,250,.28)}}
+.v702-periodBar{display:flex;gap:7px;flex-wrap:wrap;margin:0}
+.v702-periodBtn{border:1px solid rgba(148,163,184,.34);background:rgba(255,255,255,.08);color:#dbeafe;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:900;cursor:pointer;transition:.18s ease;backdrop-filter:blur(8px)}
+.v702-periodBtn:hover{transform:translateY(-1px);background:rgba(255,255,255,.15)}
+.v702-periodBtn.active{background:linear-gradient(135deg,#60a5fa,#2563eb);color:white;border-color:rgba(191,219,254,.8);box-shadow:0 10px 24px rgba(37,99,235,.28)}
+.v702-statusCard{position:relative;overflow:hidden;border:1px solid rgba(96,165,250,.35);background:radial-gradient(circle at 10% 15%,rgba(96,165,250,.22),transparent 28%),linear-gradient(135deg,#071a33,#0f2d5c 52%,#173f82);border-radius:24px;padding:18px;margin:16px 0 12px;box-shadow:0 18px 36px rgba(2,6,23,.22);color:#eaf2ff;animation:v702FadeUp .45s ease both}
+.v702-statusCard:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.10) 42%,transparent 68%);transform:translateX(-120%);animation:v702Shine 4s ease-in-out infinite;pointer-events:none}
+.v702-statusTop{position:relative;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px;z-index:1}
+.v702-statusTop h2{margin:0;font-size:23px;color:white;letter-spacing:.2px}.v702-statusTop .meta{font-size:13px;color:#bfdbfe;margin-top:5px;line-height:1.6}
+.v702-progressWrap{position:relative;z-index:1;margin:8px 0 15px}.v702-progressText{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#dbeafe;margin-bottom:8px;font-weight:900}.v702-progressText b{font-size:22px;color:white}.v702-progressTrack{height:13px;background:rgba(255,255,255,.14);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.16)}.v702-progressFill{height:100%;border-radius:999px;background:linear-gradient(90deg,#22c55e,#60a5fa,#3b82f6);position:relative;transition:width .6s ease;animation:v702Pulse 2.6s ease-in-out infinite}.v702-progressFill:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent,rgba(255,255,255,.38),transparent);animation:v702Shine 2.4s linear infinite}
+.v702-kpiGrid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(6,1fr);gap:10px}@media(max-width:900px){.v702-kpiGrid{grid-template-columns:repeat(2,1fr)}}
+.v702-kpi{border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(255,255,255,.10);padding:13px;backdrop-filter:blur(12px);transition:.18s ease}.v702-kpi:hover{transform:translateY(-2px);background:rgba(255,255,255,.15)}.v702-kpi .name{font-size:12px;color:#bfdbfe;font-weight:900}.v702-kpi .num{font-size:30px;font-weight:900;margin-top:5px;color:white;letter-spacing:.3px}
+.v702-alertLine{position:relative;z-index:1;margin-top:12px;padding:9px 12px;border-radius:14px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.42);color:#fed7aa;font-weight:900;line-height:1.5;font-size:13px}
+.v702-okLine{position:relative;z-index:1;margin-top:12px;padding:9px 12px;border-radius:14px;background:rgba(34,197,94,.12);border:1px solid rgba(74,222,128,.38);color:#bbf7d0;font-weight:900;line-height:1.5;font-size:13px}
+.v702-footHint{position:relative;z-index:1;margin-top:10px;color:#cbd5e1;font-size:12px;line-height:1.6}
 </style>
 <script id="v702_efficiency_target_status_patch">
 (function(){
@@ -2871,11 +2879,33 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function targetMachine(r){return r.machine_code||r.machine||r['機台']||r['機台編號']||''}
   function targetRoll(r){return n(r.target_roll||r.roll||r.target_qty||r['目標卷數']||r['卷數']||r['目標數量']||0)}
   function targetM2(r){return n(r.target_m2||r.m2||r.convert_m2||r['目標㎡']||r['目標M2']||r['換算㎡']||0)}
-  function periodBtns(active,fn){return '<div class="v702-periodBar"><button class="v702-periodBtn '+(active==='today'?'active':'')+'" onclick="'+fn+'(\'today\')">今日</button><button class="v702-periodBtn '+(active==='week'?'active':'')+'" onclick="'+fn+'(\'week\')">本週</button><button class="v702-periodBtn '+(active==='month'?'active':'')+'" onclick="'+fn+'(\'month\')">本月</button></div>'}
+  function periodBtns(active,fn){return '<div class="v702-periodBar"><button class="v702-periodBtn '+(active==='today'?'active':'')+'" onclick="'+fn+'(\'today\')">● 今日</button><button class="v702-periodBtn '+(active==='week'?'active':'')+'" onclick="'+fn+'(\'week\')">○ 本週</button><button class="v702-periodBtn '+(active==='month'?'active':'')+'" onclick="'+fn+'(\'month\')">○ 本月</button></div>'}
   function calcStatus(mode){var r=rng(mode),targets=(window.AppState&&AppState.targets)||[],keyin=(window.AppState&&AppState.keyin)||[];var tr=targets.filter(function(x){return inRange(x.report_date||x.date||x['日期'],r)});var kr=keyin.filter(function(x){return inRange(x.date||x.report_date,r)});var twos={},kwos={},machs={},emps={};tr.forEach(function(x){var w=targetWo(x);if(w)twos[w]=true;var m=targetMachine(x);if(m)machs[m]=true});kr.forEach(function(x){var w=wo(x.wo||x.work_order_no||x.order_no);if(w)kwos[w]=true;if(x.empNo||x.empName)emps[(x.empNo||'')+'|'+(x.empName||'')]=true});var targetWoCount=Object.keys(twos).length,keyinWoCount=Object.keys(kwos).length;var missing=Object.keys(twos).filter(function(w){return !kwos[w]}).length;var extra=Object.keys(kwos).filter(function(w){return !twos[w]}).length;return {range:r,targetRows:tr.length,keyinRows:kr.length,targetWo:targetWoCount,keyinWo:keyinWoCount,missing:missing,extra:extra,machines:Object.keys(machs).length,emps:Object.keys(emps).length,targetRoll:tr.reduce(function(a,x){return a+targetRoll(x)},0),targetM2:tr.reduce(function(a,x){return a+targetM2(x)},0),keyinQty:kr.reduce(function(a,x){return a+n(x.actual||x.actual_output)},0)}}
   window.v702SetMainPeriod=function(mode){window.v702MainPeriod=mode||'today';renderTargetKeyinStatusCard()}
-  function renderTargetKeyinStatusCard(){var grid=E('dashboardGrid');if(!grid)return;var old=E('v702TargetKeyinStatus');if(old)old.remove();var s=calcStatus(window.v702MainPeriod);var done=s.targetWo?Math.round((s.targetWo-s.missing)/s.targetWo*100):0;var warn=[];if(s.missing)warn.push('幹部已有目標但尚未 Key In：'+s.missing+' 張');if(s.extra)warn.push('有 Key In 但目標清單沒有對到：'+s.extra+' 張');var line=warn.length?'<div class="v702-alertLine">⚠️ '+warn.join('　｜　')+'</div>':'<div class="v702-okLine">✅ 目標與 Key In 狀況正常，目前沒有明顯落差。</div>';var div=document.createElement('div');div.id='v702TargetKeyinStatus';div.className='v702-statusCard';div.innerHTML='<div class="v702-statusTop"><div><h2>🎯 幹部目標 × 人員 Key In 狀況</h2><div class="meta">'+s.range.label+'｜'+s.range.start+' ~ '+s.range.end+'；用來確認「幹部有沒有輸入目標」以及「現場人員有沒有回報」。</div></div>'+periodBtns(window.v702MainPeriod,'v702SetMainPeriod')+'</div><div class="v702-kpiGrid"><div class="v702-kpi"><div class="name">目標筆數</div><div class="num">'+s.targetRows+'</div></div><div class="v702-kpi"><div class="name">目標工單</div><div class="num">'+s.targetWo+'</div></div><div class="v702-kpi"><div class="name">Key In 筆數</div><div class="num">'+s.keyinRows+'</div></div><div class="v702-kpi"><div class="name">Key In 工單</div><div class="num">'+s.keyinWo+'</div></div><div class="v702-kpi"><div class="name">回報人員</div><div class="num">'+s.emps+'</div></div><div class="v702-kpi"><div class="name">目標覆蓋率</div><div class="num">'+done+'%</div></div></div>'+line+'<div class="hint" style="margin-top:8px">目標量：'+Math.round(s.targetRoll).toLocaleString()+' R / '+Math.round(s.targetM2).toLocaleString()+' ㎡；Key In 產量：'+Math.round(s.keyinQty).toLocaleString()+'。</div>';var hub=E('v541DataHub');if(hub&&hub.parentNode===grid)grid.insertBefore(div,hub.nextSibling);else grid.insertBefore(div,grid.firstChild)}
-  var oldDash=window.renderDashboard;
+  function v702Kpi(name,value){return '<div class="v702-kpi"><div class="name">'+name+'</div><div class="num">'+value+'</div></div>'}
+  function v702PlaceCard(grid,div){
+    var hub=E('v541DataHub');
+    var ref=null;
+    if(hub&&hub.parentNode===grid){
+      ref=hub;
+      for(var i=0;i<2&&ref&&ref.nextElementSibling;i++)ref=ref.nextElementSibling;
+      if(ref&&ref.nextElementSibling)grid.insertBefore(div,ref.nextElementSibling);else grid.appendChild(div);
+    }else{
+      var kids=[].slice.call(grid.children).filter(function(x){return x.id!=='v702TargetKeyinStatus'});
+      if(kids.length>=3)grid.insertBefore(div,kids[3]);else grid.appendChild(div);
+    }
+  }
+  function v702AnimateNums(scope){
+    [].slice.call(scope.querySelectorAll('.v702-count')).forEach(function(elm){
+      var final=parseFloat(elm.getAttribute('data-final')||'0');
+      var suffix=elm.getAttribute('data-suffix')||'';
+      var start=performance.now(),dur=650;
+      function step(t){var p=Math.min(1,(t-start)/dur),v=Math.round(final*(1-Math.pow(1-p,3)));elm.textContent=v.toLocaleString()+suffix;if(p<1)requestAnimationFrame(step)}
+      requestAnimationFrame(step);
+    });
+  }
+  function renderTargetKeyinStatusCard(){var grid=E('dashboardGrid');if(!grid)return;var old=E('v702TargetKeyinStatus');if(old)old.remove();var s=calcStatus(window.v702MainPeriod);var done=s.targetWo?Math.max(0,Math.min(100,Math.round((s.targetWo-s.missing)/s.targetWo*100))):0;var warn=[];if(s.missing)warn.push('幹部已有目標但尚未 Key In：'+s.missing+' 張');if(s.extra)warn.push('有 Key In 但目標清單沒有對到：'+s.extra+' 張');var line=warn.length?'<div class="v702-alertLine">⚠️ '+warn.join('　｜　')+'</div>':'<div class="v702-okLine">✅ 目標與 Key In 狀況正常，目前沒有明顯落差。</div>';var div=document.createElement('div');div.id='v702TargetKeyinStatus';div.className='v702-statusCard';div.innerHTML='<div class="v702-statusTop"><div><h2>🎯 幹部目標 × 人員 Key In 狀況</h2><div class="meta">'+s.range.label+'｜'+s.range.start+' ~ '+s.range.end+'；確認幹部目標建立與現場 Key In 回報落差。</div></div>'+periodBtns(window.v702MainPeriod,'v702SetMainPeriod')+'</div><div class="v702-progressWrap"><div class="v702-progressText"><span>目標覆蓋率</span><b><span class="v702-count" data-final="'+done+'" data-suffix="%">0%</span></b></div><div class="v702-progressTrack"><div class="v702-progressFill" style="width:'+done+'%"></div></div></div><div class="v702-kpiGrid">'+v702Kpi('目標筆數','<span class="v702-count" data-final="'+s.targetRows+'">0</span>')+v702Kpi('目標工單','<span class="v702-count" data-final="'+s.targetWo+'">0</span>')+v702Kpi('Key In 筆數','<span class="v702-count" data-final="'+s.keyinRows+'">0</span>')+v702Kpi('Key In 工單','<span class="v702-count" data-final="'+s.keyinWo+'">0</span>')+v702Kpi('回報人員','<span class="v702-count" data-final="'+s.emps+'">0</span>')+v702Kpi('未回報工單','<span class="v702-count" data-final="'+s.missing+'">0</span>')+'</div>'+line+'<div class="v702-footHint">目標量：'+Math.round(s.targetRoll).toLocaleString()+' R / '+Math.round(s.targetM2).toLocaleString()+' ㎡　｜　Key In 產量：'+Math.round(s.keyinQty).toLocaleString()+'</div>';v702PlaceCard(grid,div);v702AnimateNums(div)}
+  var oldDash=window.renderDashboard;  var oldDash=window.renderDashboard;
   if(typeof oldDash==='function'){
     window.renderDashboard=function(){oldDash.apply(this,arguments);setTimeout(renderTargetKeyinStatusCard,30)};
     if(window.R)R.dashboard=window.renderDashboard;
