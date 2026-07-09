@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V70.1 MES Enterprise Fast Dashboard｜Hybrid</title>
+<title>V70.2 MES Enterprise Fast Dashboard｜Hybrid</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V70.1 Fast Dashboard</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
+<header><h1>生產戰情室 | V70.2 Fast Dashboard</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -2818,7 +2818,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </script>
 
 
-<!-- V70.1 Fast Dashboard Safety Patch｜停止首頁自動重抓，保留手動更新 -->
+<!-- V70.2 Fast Dashboard Safety Patch｜停止首頁自動重抓，保留手動更新 -->
 <script id="v701_fast_dashboard_safety_patch">
 (function(){
   window.__MES_FAST_DASHBOARD__ = true;
@@ -2834,10 +2834,67 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     setTimeout(hideLoadingStatus,4500);
     setTimeout(function(){
       try{
-        if(typeof toast==="function") toast("V70.1 Fast Dashboard：首頁不自動重抓大資料；需更新請按『立即更新』");
+        if(typeof toast==="function") toast("V70.2 Fast Dashboard：首頁不自動重抓大資料；需更新請按『立即更新』");
       }catch(e){}
     },1200);
   });
+})();
+</script>
+
+
+<!-- V70.2 Stable Patch｜人員效率時間切換＋首頁目標/Key In 狀況卡片 -->
+<style id="v702_efficiency_target_status_style">
+.v702-periodBar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.v702-periodBtn{border:1px solid #bfdbfe;background:#eff6ff;color:#1e40af;border-radius:999px;padding:9px 14px;font-weight:900;cursor:pointer}
+.v702-periodBtn.active{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;border-color:#2563eb;box-shadow:0 8px 18px rgba(37,99,235,.2)}
+.v702-statusCard{border:1px solid #bfdbfe;background:linear-gradient(180deg,#ffffff,#f8fbff);border-radius:20px;padding:16px;margin:0 0 12px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.v702-statusTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.v702-statusTop h2{margin:0;font-size:22px}.v702-statusTop .meta{font-size:13px;color:#64748b;margin-top:4px;line-height:1.5}
+.v702-kpiGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}@media(max-width:900px){.v702-kpiGrid{grid-template-columns:repeat(2,1fr)}}
+.v702-kpi{border:1px solid #e2e8f0;border-radius:16px;background:#fff;padding:12px}.v702-kpi .name{font-size:12px;color:#64748b;font-weight:900}.v702-kpi .num{font-size:28px;font-weight:900;margin-top:5px;color:#172033}
+.v702-alertLine{margin-top:10px;padding:10px 12px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-weight:900;line-height:1.5}
+.v702-okLine{margin-top:10px;padding:10px 12px;border-radius:14px;background:#dcfce7;border:1px solid #bbf7d0;color:#166534;font-weight:900;line-height:1.5}
+</style>
+<script id="v702_efficiency_target_status_patch">
+(function(){
+  window.v702EffPeriod = window.v702EffPeriod || 'today';
+  window.v702MainPeriod = window.v702MainPeriod || 'today';
+  function E(id){return document.getElementById(id)}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function n(v){var x=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(x)?0:x}
+  function ymd(d){return d.toISOString().slice(0,10)}
+  function dk(v){try{return dateKey(v)}catch(e){var s=String(v||'').replace(/\//g,'-');var m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):s.slice(0,10)}}
+  function rng(mode){var now=new Date(),start=new Date(now),end=new Date(now);mode=mode||'today';if(mode==='week'){var day=(now.getDay()+6)%7;start.setDate(now.getDate()-day);end=new Date(start);end.setDate(start.getDate()+6)}else if(mode==='month'){start=new Date(now.getFullYear(),now.getMonth(),1);end=new Date(now.getFullYear(),now.getMonth()+1,0)}return {start:ymd(start),end:ymd(end),label:mode==='week'?'本週':mode==='month'?'本月':'今日',mode:mode}}
+  function inRange(date,range){var d=dk(date);return d && d>=range.start && d<=range.end}
+  function wo(v){try{return wo12(v)}catch(e){return String(v||'').trim().replace(/\s+/g,'').toUpperCase().slice(0,12)}}
+  function targetWo(r){return wo(r.work_order_no||r.order_no||r.wo||r['工單號']||r['命令單號']||r['訂單單號']||r['單號']||'')}
+  function targetMachine(r){return r.machine_code||r.machine||r['機台']||r['機台編號']||''}
+  function targetRoll(r){return n(r.target_roll||r.roll||r.target_qty||r['目標卷數']||r['卷數']||r['目標數量']||0)}
+  function targetM2(r){return n(r.target_m2||r.m2||r.convert_m2||r['目標㎡']||r['目標M2']||r['換算㎡']||0)}
+  function periodBtns(active,fn){return '<div class="v702-periodBar"><button class="v702-periodBtn '+(active==='today'?'active':'')+'" onclick="'+fn+'(\'today\')">今日</button><button class="v702-periodBtn '+(active==='week'?'active':'')+'" onclick="'+fn+'(\'week\')">本週</button><button class="v702-periodBtn '+(active==='month'?'active':'')+'" onclick="'+fn+'(\'month\')">本月</button></div>'}
+  function calcStatus(mode){var r=rng(mode),targets=(window.AppState&&AppState.targets)||[],keyin=(window.AppState&&AppState.keyin)||[];var tr=targets.filter(function(x){return inRange(x.report_date||x.date||x['日期'],r)});var kr=keyin.filter(function(x){return inRange(x.date||x.report_date,r)});var twos={},kwos={},machs={},emps={};tr.forEach(function(x){var w=targetWo(x);if(w)twos[w]=true;var m=targetMachine(x);if(m)machs[m]=true});kr.forEach(function(x){var w=wo(x.wo||x.work_order_no||x.order_no);if(w)kwos[w]=true;if(x.empNo||x.empName)emps[(x.empNo||'')+'|'+(x.empName||'')]=true});var targetWoCount=Object.keys(twos).length,keyinWoCount=Object.keys(kwos).length;var missing=Object.keys(twos).filter(function(w){return !kwos[w]}).length;var extra=Object.keys(kwos).filter(function(w){return !twos[w]}).length;return {range:r,targetRows:tr.length,keyinRows:kr.length,targetWo:targetWoCount,keyinWo:keyinWoCount,missing:missing,extra:extra,machines:Object.keys(machs).length,emps:Object.keys(emps).length,targetRoll:tr.reduce(function(a,x){return a+targetRoll(x)},0),targetM2:tr.reduce(function(a,x){return a+targetM2(x)},0),keyinQty:kr.reduce(function(a,x){return a+n(x.actual||x.actual_output)},0)}}
+  window.v702SetMainPeriod=function(mode){window.v702MainPeriod=mode||'today';renderTargetKeyinStatusCard()}
+  function renderTargetKeyinStatusCard(){var grid=E('dashboardGrid');if(!grid)return;var old=E('v702TargetKeyinStatus');if(old)old.remove();var s=calcStatus(window.v702MainPeriod);var done=s.targetWo?Math.round((s.targetWo-s.missing)/s.targetWo*100):0;var warn=[];if(s.missing)warn.push('幹部已有目標但尚未 Key In：'+s.missing+' 張');if(s.extra)warn.push('有 Key In 但目標清單沒有對到：'+s.extra+' 張');var line=warn.length?'<div class="v702-alertLine">⚠️ '+warn.join('　｜　')+'</div>':'<div class="v702-okLine">✅ 目標與 Key In 狀況正常，目前沒有明顯落差。</div>';var div=document.createElement('div');div.id='v702TargetKeyinStatus';div.className='v702-statusCard';div.innerHTML='<div class="v702-statusTop"><div><h2>🎯 幹部目標 × 人員 Key In 狀況</h2><div class="meta">'+s.range.label+'｜'+s.range.start+' ~ '+s.range.end+'；用來確認「幹部有沒有輸入目標」以及「現場人員有沒有回報」。</div></div>'+periodBtns(window.v702MainPeriod,'v702SetMainPeriod')+'</div><div class="v702-kpiGrid"><div class="v702-kpi"><div class="name">目標筆數</div><div class="num">'+s.targetRows+'</div></div><div class="v702-kpi"><div class="name">目標工單</div><div class="num">'+s.targetWo+'</div></div><div class="v702-kpi"><div class="name">Key In 筆數</div><div class="num">'+s.keyinRows+'</div></div><div class="v702-kpi"><div class="name">Key In 工單</div><div class="num">'+s.keyinWo+'</div></div><div class="v702-kpi"><div class="name">回報人員</div><div class="num">'+s.emps+'</div></div><div class="v702-kpi"><div class="name">目標覆蓋率</div><div class="num">'+done+'%</div></div></div>'+line+'<div class="hint" style="margin-top:8px">目標量：'+Math.round(s.targetRoll).toLocaleString()+' R / '+Math.round(s.targetM2).toLocaleString()+' ㎡；Key In 產量：'+Math.round(s.keyinQty).toLocaleString()+'。</div>';var hub=E('v541DataHub');if(hub&&hub.parentNode===grid)grid.insertBefore(div,hub.nextSibling);else grid.insertBefore(div,grid.firstChild)}
+  var oldDash=window.renderDashboard;
+  if(typeof oldDash==='function'){
+    window.renderDashboard=function(){oldDash.apply(this,arguments);setTimeout(renderTargetKeyinStatusCard,30)};
+    if(window.R)R.dashboard=window.renderDashboard;
+  }
+  window.v702SetEffPeriod=function(mode){window.v702EffPeriod=mode||'today';if(typeof renderEff==='function')renderEff()}
+  window.renderEff=function(){
+    var box=E('effTableBox');if(!box)return;var pr=rng(window.v702EffPeriod);var rows=((window.AppState&&AppState.keyin)||[]).filter(function(x){return inRange(x.date||x.report_date,pr)});var scopeLabel=pr.label;
+    var woEmp={};rows.forEach(function(r){var w=wo(r.wo||r.work_order_no||r.order_no);if(!w)return;woEmp[w]=woEmp[w]||new Set();if(r.empNo||r.empName)woEmp[w].add((r.empNo||'')+'|'+(r.empName||''));});
+    var empMap={},seen={};rows.forEach(function(r){var w=wo(r.wo||r.work_order_no||r.order_no);var key=(r.empNo||'')+'|'+(r.empName||'未填姓名');empMap[key]=empMap[key]||{empNo:r.empNo||'',empName:r.empName||'未填姓名',actual:0,standard:0,count:0,wos:new Set(),machines:new Set(),processes:new Set()};var e=empMap[key];e.actual+=n(r.actual||r.actual_output);e.count++;if(w)e.wos.add(w);if(r.machine)e.machines.add(r.machine);if(r.site)e.processes.add(r.site);var base=(AppState.idx||{})[w]||{};var std=n(base.target||r.target||r.target_qty||0);var members=woEmp[w]?Math.max(1,woEmp[w].size):1;var sk=key+'|'+w;if(std&&!seen[sk]){e.standard+=std/members;seen[sk]=true;}});
+    function rateClass(rate){return rate>=100?'rateGood':rate>=80?'rateMid':'rateBad'}function barWidth(rate){return Math.max(3,Math.min(100,Math.round(rate||0)))}
+    var emps=Object.values(empMap).map(function(e){e.rate=e.standard?Math.round(e.actual/e.standard*100):0;return e}).sort(function(a,b){return (b.rate-a.rate)||(b.actual-a.actual)});var valid=emps.filter(function(e){return e.standard>0});var avg=valid.length?Math.round(valid.reduce(function(a,e){return a+e.rate},0)/valid.length):0;var top=valid.length?valid[0].rate:0;var low=valid.filter(function(e){return e.rate>0&&e.rate<80}).length;var medals=['🥇','🥈','🥉'];
+    var topCards=emps.slice(0,3).map(function(e,i){var w=barWidth(e.rate);return '<div class="rankCard"><div class="medal">'+(medals[i]||'🏅')+'</div><div class="person">'+esc(e.empName||'-')+'</div><div class="meta">'+esc(e.empNo||'')+'｜工單 '+e.wos.size+'｜機台 '+Array.from(e.machines).slice(0,2).map(esc).join('、')+'</div><div class="rate '+rateClass(e.rate)+'">'+(e.standard?e.rate+'%':'未定標準')+'</div><div class="effBar"><div class="effFill" style="width:'+w+'%"></div></div><div class="meta">實績 '+Math.round(e.actual)+' / 標準 '+Math.round(e.standard||0)+'</div></div>'}).join('')||'<div class="hint">這個區間尚無人員回報資料。</div>';
+    var rankRows=emps.slice(0,12).map(function(e,i){var w=barWidth(e.rate);return '<div class="effRow"><div><b>#'+(i+1)+'</b></div><div><b>'+esc(e.empName||'-')+'</b><br><span class="hint">'+esc(e.empNo||'')+'｜'+e.wos.size+'張工單｜'+e.count+'筆回報</span></div><div><div class="effBar"><div class="effFill" style="width:'+w+'%"></div></div><span class="hint">實績 '+Math.round(e.actual)+' / 標準 '+Math.round(e.standard||0)+'</span></div><div class="'+rateClass(e.rate)+'" style="font-size:24px;font-weight:900">'+(e.standard?e.rate+'%':'-')+'</div></div>'}).join('')||'<div class="hint">這個區間尚無資料。</div>';
+    var mach={};rows.forEach(function(r){var w=wo(r.wo||r.work_order_no||r.order_no);var m=r.machine||((AppState.idx||{})[w]||{}).machine||'未指定';mach[m]=mach[m]||{m:m,actual:0,standard:0,wos:new Set(),emps:new Set()};mach[m].actual+=n(r.actual||r.actual_output);if(w)mach[m].wos.add(w);if(r.empNo||r.empName)mach[m].emps.add((r.empNo||'')+'|'+(r.empName||''));});Object.values(mach).forEach(function(x){x.wos.forEach(function(w){x.standard+=n(((AppState.idx||{})[w]||{}).target||0)});x.rate=x.standard?Math.round(x.actual/x.standard*100):0;});
+    var machCards=Object.values(mach).sort(function(a,b){return (b.rate-a.rate)||(b.actual-a.actual)}).slice(0,8).map(function(x){var w=barWidth(x.rate);return '<div class="machineEffCard"><b>'+esc(x.m)+'</b><div class="big '+rateClass(x.rate)+'">'+(x.standard?x.rate+'%':'-')+'</div><div class="effBar"><div class="effFill" style="width:'+w+'%"></div></div><div class="hint">實績 '+Math.round(x.actual)+' / 標準 '+Math.round(x.standard||0)+'<br>工單 '+x.wos.size+'｜人員 '+x.emps.size+'</div></div>'}).join('')||'<div class="hint">這個區間尚無機台效率資料。</div>';
+    box.innerHTML='<div class="effHero"><h2>📊 標準效率分析中心</h2><div class="hint">以 '+scopeLabel+' 回報資料計算；標準暫以 source_data / SL31A 匯入的工單目標，並依同工單參與人員平均分攤。</div>'+periodBtns(window.v702EffPeriod,'v702SetEffPeriod')+'<div class="effKpiGrid"><div class="effKpi"><div class="name">回報人數</div><div class="num">'+emps.length+'</div></div><div class="effKpi"><div class="name">平均效率</div><div class="num">'+avg+'%</div></div><div class="effKpi"><div class="name">最高效率</div><div class="num">'+top+'%</div></div><div class="effKpi"><div class="name">低於80%</div><div class="num">'+low+'</div></div></div></div><div class="card" style="margin-top:12px"><h2>🏆 '+scopeLabel+'效率 TOP 3</h2><div class="rankGrid">'+topCards+'</div></div><div class="card" style="margin-top:12px"><h2>👥 人員效率排行榜</h2><div class="effList">'+rankRows+'</div></div><div class="card" style="margin-top:12px"><h2>🏭 機台效率排行榜</h2><div class="machineEffGrid">'+machCards+'</div></div><div class="effNote" style="margin-top:12px"><b>判讀方式：</b>效率 = 人員實績 ÷ 分攤標準。若顯示「未定標準」，代表該工單目前沒有讀到目標量，需回頭確認幹部目標或 ERP 工單目標。</div>';
+  };
+  if(window.R)R.eff=window.renderEff;
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{if((AppState.activeView||'dashboard')==='dashboard')renderTargetKeyinStatusCard();if((AppState.activeView||'')==='eff')renderEff();}catch(e){console.warn('V70.2 patch',e)}},1200)});
 })();
 </script>
 
