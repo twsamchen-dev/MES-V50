@@ -2898,14 +2898,36 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   function calcStatus(mode){
     var r=rng(mode),targets=(window.AppState&&AppState.targets)||[],keyin=(window.AppState&&AppState.keyin)||[];
     var tr=targets.filter(function(x){return inRange(targetDateOf(x),r)});
-    var kr=keyin.filter(function(x){return inRange(keyinDateOf(x),r)});
+    var allKr=keyin.filter(function(x){return inRange(keyinDateOf(x),r)});
     var twos={},kwos={},machs={},emps={};
-    tr.forEach(function(x){var w=targetWo(x);if(w)twos[w]=true;var m=targetMachine(x);if(m)machs[m]=true});
-    kr.forEach(function(x){var w=wo(x.wo||x.work_order_no||x.order_no||x['工單號']||x['訂單號']);if(w)kwos[w]=true;if(x.empNo||x.empName||x.emp_no||x.emp_name)emps[(x.empNo||x.emp_no||'')+'|'+(x.empName||x.emp_name||'')]=true});
+
+    // V70.5 修正：這張卡片改成「以幹部 Target_Plan 為主」做比對。
+    // 只統計目標清單內的工單 Key In，避免本週所有 Key In 工單一起灌進來，造成 4 張目標卻出現 46 張 Key In 工單。
+    tr.forEach(function(x){
+      var w=targetWo(x);
+      if(w)twos[w]=true;
+      var m=targetMachine(x);
+      if(m)machs[m]=true;
+    });
+
+    var kr=allKr.filter(function(x){
+      var w=wo(x.wo||x.work_order_no||x.order_no||x['工單號']||x['訂單號']);
+      return w && !!twos[w];
+    });
+
+    kr.forEach(function(x){
+      var w=wo(x.wo||x.work_order_no||x.order_no||x['工單號']||x['訂單號']);
+      if(w)kwos[w]=true;
+      if(x.empNo||x.empName||x.emp_no||x.emp_name)emps[(x.empNo||x.emp_no||'')+'|'+(x.empName||x.emp_name||'')]=true;
+    });
+
     var targetWoCount=Object.keys(twos).length,keyinWoCount=Object.keys(kwos).length;
     var missing=Object.keys(twos).filter(function(w){return !kwos[w]}).length;
-    var extra=Object.keys(kwos).filter(function(w){return !twos[w]}).length;
-    return {range:r,targetRows:tr.length,keyinRows:kr.length,targetWo:targetWoCount,keyinWo:keyinWoCount,missing:missing,extra:extra,machines:Object.keys(machs).length,emps:Object.keys(emps).length,targetRoll:tr.reduce(function(a,x){return a+targetRoll(x)},0),targetM2:tr.reduce(function(a,x){return a+targetM2(x)},0),keyinQty:kr.reduce(function(a,x){return a+n(x.actual||x.actual_output||x['實際產量'])},0)}
+    var outside=allKr.filter(function(x){
+      var w=wo(x.wo||x.work_order_no||x.order_no||x['工單號']||x['訂單號']);
+      return w && !twos[w];
+    }).length;
+    return {range:r,targetRows:tr.length,keyinRows:kr.length,targetWo:targetWoCount,keyinWo:keyinWoCount,missing:missing,extra:0,outside:outside,machines:Object.keys(machs).length,emps:Object.keys(emps).length,targetRoll:tr.reduce(function(a,x){return a+targetRoll(x)},0),targetM2:tr.reduce(function(a,x){return a+targetM2(x)},0),keyinQty:kr.reduce(function(a,x){return a+n(x.actual||x.actual_output||x['實際產量'])},0)}
   }
   window.v702SetMainPeriod=function(mode){window.v702MainPeriod=mode||'today';renderTargetKeyinStatusCard()}
   function v702Kpi(name,value){return '<div class="v702-kpi"><div class="name">'+name+'</div><div class="num">'+value+'</div></div>'}
@@ -2930,7 +2952,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       requestAnimationFrame(step);
     });
   }
-  function renderTargetKeyinStatusCard(){var grid=E('dashboardGrid');if(!grid)return;var old=E('v702TargetKeyinStatus');if(old)old.remove();var s=calcStatus(window.v702MainPeriod);var done=s.targetWo?Math.max(0,Math.min(100,Math.round((s.targetWo-s.missing)/s.targetWo*100))):0;var warn=[];if(s.missing)warn.push('幹部已有目標但尚未 Key In：'+s.missing+' 張');if(s.extra)warn.push('有 Key In 但目標清單沒有對到：'+s.extra+' 張');var line=warn.length?'<div class="v702-alertLine">⚠️ '+warn.join('　｜　')+'</div>':'<div class="v702-okLine">✅ 目標與 Key In 狀況正常，目前沒有明顯落差。</div>';var div=document.createElement('div');div.id='v702TargetKeyinStatus';div.className='v702-statusCard';div.innerHTML='<div class="v702-statusTop"><div><h2>🎯 幹部目標 × 人員 Key In 狀況</h2><div class="meta">'+s.range.label+'｜'+s.range.start+' ~ '+s.range.end+'；確認幹部目標建立與現場 Key In 回報落差。</div></div>'+periodBtns(window.v702MainPeriod,'v702SetMainPeriod')+'</div><div class="v702-progressWrap"><div class="v702-progressText"><span>目標覆蓋率</span><b><span class="v702-count" data-final="'+done+'" data-suffix="%">0%</span></b></div><div class="v702-progressTrack"><div class="v702-progressFill" style="width:'+done+'%"></div></div></div><div class="v702-kpiGrid">'+v702Kpi('目標筆數','<span class="v702-count" data-final="'+s.targetRows+'">0</span>')+v702Kpi('目標工單','<span class="v702-count" data-final="'+s.targetWo+'">0</span>')+v702Kpi('Key In 筆數','<span class="v702-count" data-final="'+s.keyinRows+'">0</span>')+v702Kpi('Key In 工單','<span class="v702-count" data-final="'+s.keyinWo+'">0</span>')+v702Kpi('回報人員','<span class="v702-count" data-final="'+s.emps+'">0</span>')+v702Kpi('未回報工單','<span class="v702-count" data-final="'+s.missing+'">0</span>')+'</div>'+line+'<div class="v702-footHint">目標量：'+Math.round(s.targetRoll).toLocaleString()+' R / '+Math.round(s.targetM2).toLocaleString()+' ㎡　｜　Key In 產量：'+Math.round(s.keyinQty).toLocaleString()+'</div>';v702PlaceCard(grid,div);v702AnimateNums(div)}
+  function renderTargetKeyinStatusCard(){var grid=E('dashboardGrid');if(!grid)return;var old=E('v702TargetKeyinStatus');if(old)old.remove();var s=calcStatus(window.v702MainPeriod);var done=s.targetWo?Math.max(0,Math.min(100,Math.round((s.targetWo-s.missing)/s.targetWo*100))):0;var warn=[];if(s.missing)warn.push('幹部已有目標但尚未 Key In：'+s.missing+' 張');var line=warn.length?'<div class="v702-alertLine">⚠️ '+warn.join('　｜　')+'</div>':'<div class="v702-okLine">✅ 目標與 Key In 狀況正常，目前沒有明顯落差。</div>';var div=document.createElement('div');div.id='v702TargetKeyinStatus';div.className='v702-statusCard';div.innerHTML='<div class="v702-statusTop"><div><h2>🎯 幹部目標 × 人員 Key In 狀況</h2><div class="meta">'+s.range.label+'｜'+s.range.start+' ~ '+s.range.end+'；確認幹部目標建立與現場 Key In 回報落差。</div></div>'+periodBtns(window.v702MainPeriod,'v702SetMainPeriod')+'</div><div class="v702-progressWrap"><div class="v702-progressText"><span>目標覆蓋率</span><b><span class="v702-count" data-final="'+done+'" data-suffix="%">0%</span></b></div><div class="v702-progressTrack"><div class="v702-progressFill" style="width:'+done+'%"></div></div></div><div class="v702-kpiGrid">'+v702Kpi('目標筆數','<span class="v702-count" data-final="'+s.targetRows+'">0</span>')+v702Kpi('目標工單','<span class="v702-count" data-final="'+s.targetWo+'">0</span>')+v702Kpi('Key In 筆數','<span class="v702-count" data-final="'+s.keyinRows+'">0</span>')+v702Kpi('Key In 工單','<span class="v702-count" data-final="'+s.keyinWo+'">0</span>')+v702Kpi('回報人員','<span class="v702-count" data-final="'+s.emps+'">0</span>')+v702Kpi('未回報工單','<span class="v702-count" data-final="'+s.missing+'">0</span>')+'</div>'+line+'<div class="v702-footHint">目標量：'+Math.round(s.targetRoll).toLocaleString()+' R / '+Math.round(s.targetM2).toLocaleString()+' ㎡　｜　Key In 產量：'+Math.round(s.keyinQty).toLocaleString()+'</div>';v702PlaceCard(grid,div);v702AnimateNums(div)}
   var oldDash=window.renderDashboard;  var oldDash=window.renderDashboard;
   if(typeof oldDash==='function'){
     window.renderDashboard=function(){oldDash.apply(this,arguments);setTimeout(renderTargetKeyinStatusCard,30)};
