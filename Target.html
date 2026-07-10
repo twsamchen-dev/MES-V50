@@ -2,13 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V76.0 MES Target Enterprise Fast Stable</title>
+<title>V76.7 MES Target Enterprise Fast Stable</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V76.0 Enterprise Fast Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V76.0 五份資料固定欄位版；4-3/PD11B/5-3/5-C 固定欄位，SL31A 只讀樞紐分頁，不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V76.7 Enterprise Fast Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V76.7 前端搜尋修正版；4-3/PD11B/5-3/5-C 固定欄位，SL31A 只讀樞紐分頁，不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -226,15 +226,16 @@ function clearOrderFields(){
 }
 function fillFromOrder(r){
   if(!r)return;
+  r=normalizeClientOrder(r);
   clearOrderFields();
-  $('work_order_no').value=r.work_order_no||'';
+  $('work_order_no').value=r.work_order_no||r.command_no||'';
   $('order_no').value=r.order_no||'';
   $('part_no').value=r.part_no||'';
   $('batch_no').value=r.batch_no||'';
   $('customer').value=r.customer||'';
   $('product_spec').value=r.product_spec||'';
   if(r.process)$('process_site').value=matchProcess(r.process);
-  if(r.machine)$('machine_code').value=r.machine;
+  if(r.machine||r.machine_code)$('machine_code').value=r.machine||r.machine_code;
   if(r.target_qty)$('target_roll').value=r.target_qty;
   if(r.pivot_len)$('pivot_len').value=r.pivot_len;
   if(r.pivot_width)$('pivot_width').value=r.pivot_width;
@@ -245,10 +246,64 @@ function fillFromOrder(r){
 function matchProcess(p){p=String(p||'');const sel=$('process_site');for(let i=0;i<sel.options.length;i++){let z=sel.options[i].text;if(z.includes(p)||p.includes(z.split('/')[0].trim()))return sel.options[i].text}return sel.value}
 function calcTargetM2(){let r=num($('target_roll').value),l=num($('pivot_len').value),w=num($('pivot_width').value);if(r&&l&&w){$('target_m2').value=(r*l*w/1000).toFixed(2)}}
 function debouncedOrderList(){clearTimeout(orderTimer);orderTimer=setTimeout(loadOrderList,350)}
+function splitRawText(r){
+  const raw=String(r&&r.raw_text||r&&r.product_spec||'');
+  return raw.split('|').map(x=>String(x||'').trim()).filter(x=>x!=='');
+}
+function looksOrderNo(v){return /^\d{10,}$/.test(norm(v));}
+function looksWorkNo(v){return /^[A-Z]{1,4}\d{8,}/.test(norm(v));}
+function normalizeClientOrder(r){
+  r=Object.assign({},r||{});
+  const parts=splitRawText(r);
+  if(!r.order_no){
+    const hit=parts.find(looksOrderNo);
+    if(hit)r.order_no=hit;
+  }
+  if(!r.work_order_no&&!r.command_no){
+    const hit=parts.find(looksWorkNo);
+    if(hit){r.work_order_no=hit;r.command_no=hit;}
+  }
+  if(!r.customer){
+    const idx=parts.findIndex(looksOrderNo);
+    if(idx>=1 && parts[idx-1] && !looksWorkNo(parts[idx-1])) r.customer=parts[idx-1];
+    if(!r.customer && idx>=6 && parts[idx+6]) r.customer=parts[idx+6];
+  }
+  if(!r.part_no){
+    const hit=parts.find(x=>/[A-Z]\d{4,}|[A-Z][A-Z]?\d{3,}/i.test(x)&&String(x).includes('*'));
+    if(hit)r.part_no=hit;
+  }
+  if(!r.process){
+    const hit=parts.find(x=>['分條','複捲','包裝','上膠','覆卷','開料','檢驗'].some(p=>String(x).includes(p)));
+    if(hit)r.process=hit;
+  }
+  if(!r.due_date){
+    const hit=parts.find(x=>/\d{4}[-/]\d{1,2}[-/]\d{1,2}|Jul|Jan|Feb|Mar|Apr|May|Jun|Aug|Sep|Oct|Nov|Dec/i.test(x));
+    if(hit)r.due_date=dateKey(hit);
+  }
+  if(!r.product_spec || r.product_spec===r.raw_text){
+    const idx=parts.findIndex(looksOrderNo);
+    if(idx>=5 && parts[idx+5]) r.product_spec=parts[idx+5];
+  }
+  if(!r.target_qty){
+    const idx=parts.findIndex(looksOrderNo);
+    if(idx>=0 && parts[idx+8] && !isNaN(parseFloat(parts[idx+8]))) r.target_qty=parts[idx+8];
+  }
+  if(!r.pivot_width){
+    const idx=parts.findIndex(looksOrderNo);
+    if(idx>=0 && parts[idx+3] && !isNaN(parseFloat(parts[idx+3]))) r.pivot_width=parts[idx+3];
+  }
+  if(!r.pivot_len){
+    const idx=parts.findIndex(looksOrderNo);
+    if(idx>=0 && parts[idx+4] && !isNaN(parseFloat(parts[idx+4]))) r.pivot_len=parts[idx+4];
+  }
+  return r;
+}
+function displayMainNo(r){r=normalizeClientOrder(r);return r.work_order_no||r.command_no||r.order_no||r.daily_report_no||r.report_no||r.part_no||'-'}
 function localOrderMatch(r,q){
   const key=norm(q);
   if(!key)return true;
-  const vals=[r.work_order_no,r.order_no,r.command_no,r.mo_no,r.daily_report_no,r.report_no,r.part_no,r.batch_no,r.input_part_no,r.output_part_no,r.input_lot_no,r.output_lot_no,r.product_spec,r.customer,r.process,r.machine,r.machine_code,r.source];
+  r=normalizeClientOrder(r);
+  const vals=[r.work_order_no,r.order_no,r.command_no,r.mo_no,r.daily_report_no,r.report_no,r.part_no,r.batch_no,r.input_part_no,r.output_part_no,r.input_lot_no,r.output_lot_no,r.product_spec,r.customer,r.process,r.machine,r.machine_code,r.source,r.raw_text];
   return vals.some(v=>norm(v).includes(key));
 }
 function localOrderInRange(r){
@@ -292,7 +347,7 @@ async function loadOrderList(force=false){
       }
     }
 
-    rows=(rows||[]).filter(r=>hasQ ? localOrderMatch(r,q) : (localOrderInRange(r)&&localOrderMatch(r,q)));
+    rows=(rows||[]).map(normalizeClientOrder).filter(r=>hasQ ? localOrderMatch(r,q) : (localOrderInRange(r)&&localOrderMatch(r,q)));
     ORDER_LIST=rows;
     __orderCacheKey=cacheKey;
     renderQuickList();
@@ -309,16 +364,17 @@ async function loadOrderList(force=false){
   }
 }
 function renderQuickList(){
-  const rows=(ORDER_LIST||[]).filter(r=>r.work_order_no||r.order_no).slice(0,300);
-  $('quickList').innerHTML=rows.length?rows.map((r,i)=>'<div class="listitem" onclick="fillFromOrderList('+i+')"><b>'+esc(r.work_order_no||r.order_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">預交日：'+esc(r.due_date||'-')+'｜客戶：'+esc(r.customer||'-')+'</span><br><span class="muted">'+esc(r.part_no||'-')+'｜'+esc(r.product_spec||'-')+'</span><br><span class="muted">站點：'+esc(r.process||'-')+'｜機台：'+esc(r.machine||'-')+'</span></div>').join(''):( $('search').value ? '目前區間找不到：'+esc($('search').value)+'（已比對工單/命令單/訂單號/料號/客戶）' : '目前區間無五份資料工單' );
+  const rows=(ORDER_LIST||[]).map(normalizeClientOrder).filter(r=>displayMainNo(r)!=='-' || r.raw_text).slice(0,300);
+  $('quickList').innerHTML=rows.length?rows.map((r,i)=>'<div class="listitem" onclick="fillFromOrderList('+i+')"><b>'+esc(displayMainNo(r))+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">預交日：'+esc(r.due_date||'-')+'｜客戶：'+esc(r.customer||'-')+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜料號：'+esc(r.part_no||'-')+'</span><br><span class="muted">'+esc(r.product_spec||'-')+'</span><br><span class="muted">站點：'+esc(r.process||'-')+'｜機台：'+esc(r.machine||r.machine_code||'-')+'</span></div>').join(''):( $('search').value ? '目前找不到：'+esc($('search').value)+'（API有資料時會顯示；請確認已部署 V76.6 後端）' : '目前區間無五份資料工單' );
 }
 function fillFromOrderList(i){
-  const r=ORDER_LIST[i];
+  const r=normalizeClientOrder(ORDER_LIST[i]);
   if(!r)return;
   fillFromOrder(r);
   $('lookupBox').className='found';
-  $('lookupBox').innerHTML='<b>已從五份資料帶入 / นำเข้าจากข้อมูล 5 ไฟล์</b><br>來源：'+esc(cleanSource(r.source))+'<br>預交日：'+esc(r.due_date||'-')+'<br>客戶：'+esc(r.customer||'-')+'<br>料號：'+esc(r.part_no||'-')+'<br>規格：'+esc(r.product_spec||'-')+'<br>SL31A 長×寬：'+esc(r.pivot_len||'-')+' × '+esc(r.pivot_width||'-');
+  $('lookupBox').innerHTML='<b>已從五份資料帶入 / นำเข้าจากข้อมูล 5 ไฟล์</b><br>來源：'+esc(cleanSource(r.source))+'<br>工單/命令單：'+esc(r.work_order_no||r.command_no||'-')+'<br>訂單號：'+esc(r.order_no||'-')+'<br>預交日：'+esc(r.due_date||'-')+'<br>客戶：'+esc(r.customer||'-')+'<br>料號：'+esc(r.part_no||'-')+'<br>規格：'+esc(r.product_spec||'-')+'<br>SL31A 長×寬：'+esc(r.pivot_len||'-')+' × '+esc(r.pivot_width||'-');
 }
+
 
 function renderTargetsLoading(){
   if(!TARGETS.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
