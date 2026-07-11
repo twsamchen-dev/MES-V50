@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0043</title>
+<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0044</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -1866,7 +1866,7 @@ window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats
 (()=>{
 'use strict';
 
-/* Build 0043｜Google Sheets APS DataCenter
+/* Build 0044｜Google Sheets APS DataCenter
  * 原則：
  * 1. 雲端有資料才覆蓋本機狀態。
  * 2. 雲端空白時保留 localStorage，不清除既有資料。
@@ -2199,7 +2199,30 @@ async function saveDataset(name,silent=true){
 
     await post(action,{rows:payload});
     if(!silent){
-      setCloudStatus("ok","已保存",`${name} 已送出至 Google Sheets，共 ${payload.length} 筆`);
+      setCloudStatus("ok","已送出",`${name} 已送出至 Google Sheets，共 ${payload.length} 筆`);
+      setTimeout(async()=>{
+        try{
+          const checkAction={
+            workpool:"apsloadworkpool",
+            schedule:"apsloadschedule",
+            speed:"apsloadspeedmaster",
+            preprocess:"apsloadpreprocess",
+            machine:"apsloadmachinemaster",
+            manpower:"apsloadmanpower",
+            settings:"apsloadsettings"
+          }[name];
+          if(!checkAction)return;
+          const check=await jsonp(checkAction);
+          const cloudCount=Number(check.count||check.rows?.length||0);
+          if(cloudCount>0||payload.length===0){
+            setCloudStatus("ok","保存完成",`${name} 雲端確認 ${cloudCount} 筆`);
+          }else{
+            setCloudStatus("warn","尚未寫入",`${name} 已送出，但雲端仍為 0 筆；請確認 Apps Script 已部署新版本`);
+          }
+        }catch(err){
+          setCloudStatus("warn","等待確認",`${name} 已送出；雲端確認失敗：${err.message}`);
+        }
+      },1800);
     }
   }catch(err){
     console.error("APS cloud save failed",name,err);
@@ -2307,28 +2330,79 @@ function installHooks(){
   wrapFunction("saveShiftSettings",()=>queueSave("settings",500));
   wrapFunction("resetShiftSettings",()=>queueSave("settings",500));
 
-  document.getElementById("saveSpeedFeedback")?.addEventListener("click",()=>{
-    queueSave("speed",800);
-    queueSave("workpool",1200);
-  });
-  document.getElementById("sysSaveAll")?.addEventListener("click",()=>queueSave("settings",500));
+  /*
+   * Build 0044 修正：
+   * APS 舊模組先把 onclick 綁到舊函式參照，後續只替換 window.buildPool
+   * 不會自動更新按鈕原本的 onclick，因此按「建立工單池」時雲端保存未觸發。
+   * 此處直接在按鈕完成後排入保存，並加上 dataset 防止重複綁定。
+   */
+  const buildButton=document.getElementById("buildPool");
+  if(buildButton&&!buildButton.dataset.apsCloudHook){
+    buildButton.dataset.apsCloudHook="1";
+    buildButton.addEventListener("click",()=>{
+      setTimeout(()=>{
+        const count=window.S?.pool?.length||0;
+        if(count>0){
+          setCloudStatus("loading","正在保存",`工單池 ${count} 筆準備寫入 Google Sheets`);
+          queueSave("workpool",100,false);
+          queueSave("speed",350);
+          queueSave("machine",550);
+          queueSave("preprocess",750);
+        }
+      },250);
+    });
+  }
 
-  document.addEventListener("change",event=>{
-    if(event.target.closest("#machineCenter")||event.target.closest("#master")){
-      queueSave("machine",1000);
-      queueSave("settings",1200);
-    }
-    if(event.target.closest("#workforce")){
-      queueSave("manpower",1000);
-    }
-    if(event.target.closest("#preprocess")){
-      queueSave("preprocess",900);
-      queueSave("workpool",1200);
+  ["runSchedule","rerunSchedule","homeRunSchedule"].forEach(id=>{
+    const button=document.getElementById(id);
+    if(button&&!button.dataset.apsCloudHook){
+      button.dataset.apsCloudHook="1";
+      button.addEventListener("click",()=>{
+        setTimeout(()=>{
+          if((window.S?.schedule?.length||0)>0){
+            queueSave("schedule",100,false);
+            queueSave("machine",350);
+          }
+        },300);
+      });
     }
   });
+
+  const speedButton=document.getElementById("saveSpeedFeedback");
+  if(speedButton&&!speedButton.dataset.apsCloudHook){
+    speedButton.dataset.apsCloudHook="1";
+    speedButton.addEventListener("click",()=>{
+      queueSave("speed",800);
+      queueSave("workpool",1200);
+    });
+  }
+
+  const systemButton=document.getElementById("sysSaveAll");
+  if(systemButton&&!systemButton.dataset.apsCloudHook){
+    systemButton.dataset.apsCloudHook="1";
+    systemButton.addEventListener("click",()=>queueSave("settings",500));
+  }
+
+  if(!document.documentElement.dataset.apsCloudChangeHook){
+    document.documentElement.dataset.apsCloudChangeHook="1";
+    document.addEventListener("change",event=>{
+      if(event.target.closest("#machineCenter")||event.target.closest("#master")){
+        queueSave("machine",1000);
+        queueSave("settings",1200);
+      }
+      if(event.target.closest("#workforce")){
+        queueSave("manpower",1000);
+      }
+      if(event.target.closest("#preprocess")){
+        queueSave("preprocess",900);
+        queueSave("workpool",1200);
+      }
+    });
+  }
 
   const status=document.getElementById("apsCloudStatus");
-  if(status){
+  if(status&&!status.dataset.apsCloudHook){
+    status.dataset.apsCloudHook="1";
     status.style.cursor="pointer";
     status.addEventListener("click",()=>saveAllCloud(false));
     status.title="點一下立即保存全部 APS 資料";
