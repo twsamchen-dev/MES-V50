@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0044</title>
+<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0045</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -524,7 +524,7 @@ html.aps-locked body{overflow:auto!important}
 <div class="hidden-log"><div id="log">[系統] APS Pro 已啟動。請到「資料更新」上傳檔案。</div></div>
 </section>
 <section id="upload" class="page"><div class="grid">
-<div class="card col8"><h2>ERP／Master 檔案上傳</h2><div class="sub">可一次拖入多份 XLSX。支援：3-9、4-3、9-1、9-3、加工課產速表。檔案只在你的瀏覽器記憶體內解析，不會上傳網路。</div><div id="drop" class="drop" style="margin-top:14px"><b>拖曳 Excel 檔案到這裡</b>或點擊選擇檔案<input id="files" type="file" accept=".xlsx" multiple hidden></div><div id="filechips" class="filechips"></div><div class="actions"><button class="btn green" id="buildPool">建立工單池</button><button class="btn ghost" id="clearData">清除全部資料</button></div></div>
+<div class="card col8"><h2>ERP／Master 檔案上傳</h2><div class="sub"><b>每日只需更新 4 份 ERP：</b>3-9、4-3、9-1、9-3。<br><b>加工課產速表為固定主檔：</b>第一次建立或有新料號／新機台產速時才上傳；系統會與既有主檔合併，不會清除原資料。</div><div id="drop" class="drop" style="margin-top:14px"><b>拖曳 Excel 檔案到這裡</b>或點擊選擇檔案<input id="files" type="file" accept=".xlsx" multiple hidden></div><div id="filechips" class="filechips"></div><div class="actions"><button class="btn green" id="buildPool">建立工單池</button><button class="btn ghost" id="clearData">清除全部資料</button></div><div class="notice" style="margin-top:12px;border-left-color:#22c55e">日常更新不必再上傳加工課產速表。缺少的新產品產速，可到「產速回饋中心」逐筆新增並永久保存。</div></div>
 <div class="card col4"><h2>辨識規則</h2><div class="sub">系統會依檔名、工作表名稱與欄位名稱辨識資料。產速表優先讀取「產速(主力機)」，工單來源讀取 4-3。</div><div id="fileStatus" class="sub" style="margin-top:14px"></div></div>
 <div class="card col12"><h2>資料預覽</h2><div id="preview" class="empty">尚未上傳檔案</div></div>
 </div></section>
@@ -651,7 +651,7 @@ html.aps-locked body{overflow:auto!important}
     <div class="notice" style="margin-top:12px">公式：所需回數＝CEILING（剩餘需求 ÷ 每回產量）；排程分鐘＝所需回數 × 每回時間。</div>
     <input id="sfEditIndex" type="hidden" value=""><div class="actions"><button class="btn green" id="saveSpeedFeedback">儲存並重新計算</button><button class="btn ghost" id="clearSpeedForm">清除表單</button></div><div id="speedFormMsg" class="hint"></div>
   </div>
-  <div class="card col12"><h2>永久產速紀錄</h2><div class="sub">第一次上傳產速表後會自動保存在此瀏覽器。後續 ERP 更新不必重傳產速表；可直接編輯、刪除或匯出備份。</div><div id="speedFeedbackTable" class="empty">尚無永久產速紀錄</div></div>
+  <div class="card col12"><h2>永久產速紀錄</h2><div class="sub">加工課產速表會永久保存到 Google Sheets 與瀏覽器備援。後續每日 ERP 更新不必重傳；新料號或新機台資料採增量合併，也可在此直接新增、修改或匯出備份。</div><div id="speedFeedbackTable" class="empty">尚無永久產速紀錄</div></div>
   <div class="card col12"><h2>機台回數與稼動率</h2><div class="sub">稼動率仍以排程分鐘 ÷ 可用分鐘計算，但排程分鐘來源固定為「回數 × 每回時間」。</div><div id="roundUtilTable" class="empty">產生排程後顯示。</div></div>
 </div></section>
 <section id="master" class="page"><div class="grid">
@@ -753,8 +753,32 @@ function detectType(fileName,sheets){
  return'unknown'
 }
 const typeNames={order:'3-9 訂單',workorder:'4-3 工單',output:'9-1 產出',input:'9-3 投料',speed:'加工課產速',unknown:'未辨識'};
-async function handleFiles(files){for(const f of files){try{log(`解析 ${f.name}...`);const sheets=await readXlsx(f),type=detectType(f.name,sheets);S.files[type]={file:f,sheets};log(`${f.name} → ${typeNames[type]}，${sheets.length} 個工作表`)}catch(e){log(`${f.name} 解析失敗：${e.message}`)}}renderFiles();renderPreview()}
-function renderFiles(){const types=['order','workorder','output','input','speed'];$('filechips').innerHTML=types.map(t=>`<span class="chip ${S.files[t]?'ok':'warn'}">${S.files[t]?'✓':'○'} ${typeNames[t]}</span>`).join('');$('fileStatus').innerHTML=types.map(t=>`${S.files[t]?'✅':'⬜'} ${typeNames[t]}${S.files[t]?`：${esc(S.files[t].file.name)}`:''}`).join('<br>')}
+async function handleFiles(files){
+ for(const f of files){
+   try{
+     log(`解析 ${f.name}...`);
+     const sheets=await readXlsx(f),type=detectType(f.name,sheets);
+     S.files[type]={file:f,sheets};
+     if(type==='speed')window.__APS_SPEED_IMPORT_NOTICE__=false;
+     log(`${f.name} → ${typeNames[type]}，${sheets.length} 個工作表`);
+   }catch(e){log(`${f.name} 解析失敗：${e.message}`)}
+ }
+ renderFiles();renderPreview();
+}
+function renderFiles(){
+ const daily=['order','workorder','output','input'];
+ let masterCount=0;
+ try{masterCount=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]').length}catch(e){}
+ const speedUploaded=!!S.files.speed;
+ $('filechips').innerHTML=[
+   ...daily.map(t=>`<span class="chip ${S.files[t]?'ok':'warn'}">${S.files[t]?'✓':'○'} ${typeNames[t]}（每日）</span>`),
+   `<span class="chip ${(speedUploaded||masterCount>0)?'ok':'warn'}">${speedUploaded?'✓':masterCount>0?'✓':'○'} 加工課產速（固定主檔${masterCount?` ${masterCount}筆`:''}${speedUploaded?'／本次有增量':''}）</span>`
+ ].join('');
+ $('fileStatus').innerHTML=[
+   ...daily.map(t=>`${S.files[t]?'✅':'⬜'} ${typeNames[t]}${S.files[t]?`：${esc(S.files[t].file.name)}`:'（每日更新）'}`),
+   `${(speedUploaded||masterCount>0)?'✅':'⚠️'} 加工課產速：${speedUploaded?`本次增量 ${esc(S.files.speed.file.name)}`:masterCount>0?`永久主檔 ${masterCount} 筆，不必每日上傳`:'尚未建立固定主檔，可先建立工單池後逐筆補產速'}`
+ ].join('<br>');
+}
 function renderPreview(){const e=Object.entries(S.files).find(([k])=>k!=='unknown');if(!e){$('preview').className='empty';$('preview').textContent='尚未上傳檔案';return}const [type,obj]=e,sh=obj.sheets[0],rows=sh.rows.slice(0,8);$('preview').className='tablewrap';$('preview').innerHTML=tableHtml(rows[0]||[],rows.slice(1))}
 function tableHtml(headers,rows,renderers={}){return `<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${headers.map((h,i)=>`<td>${renderers[i]?renderers[i](r[i],r):esc(r[i]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 function pickSheet(type,preferred){const o=S.files[type];if(!o)return null;return o.sheets.find(s=>preferred.some(p=>norm(s.name).includes(norm(p))))||o.sheets[0]}
@@ -889,17 +913,45 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
  function saveStoredMaster(rows){localStorage.setItem(MASTER_KEY,JSON.stringify(rows))}
  function feedbackRows(){return loadFeedback().map((x,i)=>({...x,_feedback:true,_index:i,total:Number(x.minutesRound)||0,qtyPerRound:Number(x.qtyRound)||0,unit:x.unit||'R',inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,run:Number(x.minutesRound)||0,down:0,speed:0}))}
  const baseBuildSpeed=window.buildSpeed;
+ function speedMasterKey(x){return[norm(x.part),norm(x.machine),norm(x.process)].join('|')}
+ function mergeStoredMaster(incoming){
+   const current=loadStoredMaster();
+   const merged=new Map(current.map(x=>[speedMasterKey(x),x]));
+   let added=0,updated=0;
+   incoming.forEach(row=>{
+     const k=speedMasterKey(row);
+     if(!k.replace(/\|/g,''))return;
+     if(merged.has(k))updated++;else added++;
+     merged.set(k,{...merged.get(k),...row,updatedAt:new Date().toISOString()});
+   });
+   const rows=[...merged.values()];
+   saveStoredMaster(rows);
+   return{rows,added,updated,total:rows.length};
+ }
  window.buildSpeed=function(){
    const uploaded=baseBuildSpeed?baseBuildSpeed():[];
+   let base=loadStoredMaster();
    if(uploaded.length){
-     const clean=uploaded.map(x=>({part:x.part,name:x.name||'',machine:x.machine||'',process:x.process||'',inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,run:Number(x.run)||0,down:Number(x.down)||0,total:Number(x.total)||0,speed:Number(x.speed)||0,updatedAt:new Date().toISOString()}));
-     saveStoredMaster(clean);
+     const clean=uploaded.map(x=>({
+       part:x.part,name:x.name||'',machine:x.machine||'',process:x.process||'',
+       inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,
+       run:Number(x.run)||0,down:Number(x.down)||0,total:Number(x.total)||0,
+       speed:Number(x.speed)||0,source:'加工課產速表'
+     }));
+     const result=mergeStoredMaster(clean);
+     base=result.rows;
+     if(!window.__APS_SPEED_IMPORT_NOTICE__){
+       window.__APS_SPEED_IMPORT_NOTICE__=true;
+       setTimeout(()=>{
+         log(`固定產速主檔增量合併：新增 ${result.added} 筆、更新 ${result.updated} 筆、累計 ${result.total} 筆`);
+         window.APSCloudDataCenter?.saveDataset?.('speed',false);
+         renderFiles();
+       },150);
+     }
    }
-   const base=uploaded.length?uploaded:loadStoredMaster();
    const fb=feedbackRows();
-   const key=x=>[norm(x.part),norm(x.machine),norm(x.process)].join('|');
-   const m=new Map(base.map(x=>[key(x),x]));
-   fb.forEach(x=>m.set(key(x),x));
+   const m=new Map(base.map(x=>[speedMasterKey(x),x]));
+   fb.forEach(x=>m.set(speedMasterKey(x),x));
    return [...m.values()];
  };
  function perRoundFor(speed,jobUnit){
@@ -1866,7 +1918,7 @@ window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats
 (()=>{
 'use strict';
 
-/* Build 0044｜Google Sheets APS DataCenter
+/* Build 0045｜Google Sheets APS DataCenter
  * 原則：
  * 1. 雲端有資料才覆蓋本機狀態。
  * 2. 雲端空白時保留 localStorage，不清除既有資料。
@@ -2166,6 +2218,7 @@ function renderAfterCloudLoad(){
   try{window.renderSpeedCenter?.()}catch(e){console.warn(e)}
   try{window.renderPreprocessCenter?.()}catch(e){console.warn(e)}
   try{window.updateKpi?.()}catch(e){console.warn(e)}
+  try{window.renderFiles?.()}catch(e){console.warn(e)}
   try{window.SKAPSSystem?.renderStats?.()}catch(e){console.warn(e)}
 }
 
