@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0042</title>
+<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0043</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -93,7 +93,7 @@ body{background:#050b0f;color:#f7f9fa}
 /* Build 0006｜回數產速與回饋中心 */
 .speed-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px}.speed-kpis>div{background:#0a1319;border:1px solid #30414a;border-radius:8px;padding:13px 15px}.speed-kpis span,.speed-kpis small{display:block;color:#9eabb2}.speed-kpis b{display:block;font-size:29px;margin:5px 0;color:#fff}.danger-text{color:#ff626a!important}.speed-form{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:13px}.speed-form .span2{grid-column:span 2}.feedback-source{color:#75d5ff}.missing-action{white-space:nowrap}.round-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.round-summary div{padding:9px;background:#0b151b;border:1px solid #283a43;border-radius:7px}.round-summary b{display:block;font-size:18px;margin-top:4px}.master-alert{border-color:#7d2d31!important;box-shadow:inset 4px 0 #e22b32}.master-alert strong{color:#ff676e}@media(max-width:900px){.speed-kpis,.round-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.speed-form{grid-template-columns:1fr}.speed-form .span2{grid-column:span 1}.speed-kpis,.round-summary{grid-template-columns:1fr}}
 
-/* Build 0042｜時間軸日期標示與完整日期 Tooltip */
+/* Build 0043｜時間軸日期標示與完整日期 Tooltip */
 .schedule-day-title{display:flex!important;padding:10px 14px!important;background:linear-gradient(90deg,#102331,#0a1720)!important;border-bottom:1px solid #294452!important}
 .schedule-day-title b{font-size:14px!important;color:#eaf7ff!important}.schedule-day-title span{font-size:11px;color:#8fb4c8}
 .axis-date-band{position:absolute;left:0;right:0;top:0;height:22px;display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #294452;z-index:7;pointer-events:none}
@@ -103,7 +103,7 @@ body{background:#050b0f;color:#f7f9fa}
 .shift-midnight b{top:2px!important;min-width:74px;text-align:center}.shift-axis-label{font-size:10px!important;padding:2px 6px!important}.shift-tick{padding-top:9px!important}
 @media(max-width:1200px){.axis-date-cell{font-size:9px}.today-badge{display:none}.time-scale{height:100px!important}}
 
-/* Build 0042｜急單／插單頁面格式修正 */
+/* Build 0043｜急單／插單頁面格式修正 */
 #urgent .grid{grid-template-columns:repeat(12,minmax(0,1fr));align-items:start}
 #urgent .card{min-width:0;width:auto}
 #urgent .col5{grid-column:span 5}
@@ -117,7 +117,7 @@ body{background:#050b0f;color:#f7f9fa}
 @media(max-width:1200px){#urgent .col5,#urgent .col7{grid-column:span 12}#urgent .impact-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:720px){#urgent .urgent-form{grid-template-columns:1fr}#urgent .urgent-form .span2{grid-column:span 1}#urgent .impact-cards{grid-template-columns:1fr}}
 
-/* Build 0042｜AI 排程建議中心 */
+/* Build 0043｜AI 排程建議中心 */
 .ai-summary{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0}.ai-stat{border:1px solid #30414a;background:#0b151b;border-radius:9px;padding:14px}.ai-stat span{display:block;color:#9fb0ba;font-size:12px}.ai-stat b{display:block;font-size:28px;margin-top:6px}.ai-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ai-toolbar select{background:#0b151a;color:#fff;border:1px solid #344953;border-radius:7px;padding:9px 10px}.ai-card{border:1px solid #2d3e48;border-radius:9px;background:#0b151b;padding:14px;margin-bottom:10px}.ai-card.high{box-shadow:inset 4px 0 #ef4444}.ai-card.medium{box-shadow:inset 4px 0 #f59e0b}.ai-card.low{box-shadow:inset 4px 0 #3b82f6}.ai-card h3{margin:0 0 7px;font-size:16px}.ai-card p{margin:4px 0;color:#c7d1d8;line-height:1.6}.ai-card small{color:#8fa1ad}.ai-badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;margin-right:6px}.ai-badge.high{background:#4a181c;color:#ff9ca1}.ai-badge.medium{background:#46350f;color:#ffd97e}.ai-badge.low{background:#17324e;color:#98c9ff}.ai-empty{padding:30px;text-align:center;color:#98a6b6}@media(max-width:900px){.ai-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.ai-summary{grid-template-columns:1fr}}
 
 /* Build 0042｜四大管理中心 */
@@ -1860,6 +1860,503 @@ document.addEventListener('click',e=>{const d=e.target.closest('[data-sys-downlo
 window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats};
 })();
 </script>
+
+
+<script id="build0043-cloud-datacenter-js">
+(()=>{
+'use strict';
+
+/* Build 0043｜Google Sheets APS DataCenter
+ * 原則：
+ * 1. 雲端有資料才覆蓋本機狀態。
+ * 2. 雲端空白時保留 localStorage，不清除既有資料。
+ * 3. 建立工單池、產生排程、修改產速與設定後自動保存。
+ * 4. 不修改原 APS 排程演算法與畫面結構。
+ */
+const APS_CLOUD_API =
+  window.MES_API_URL ||
+  "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+const SPEED_MASTER_KEY = "SK_APS_SPEED_MASTER_V1";
+const SPEED_FEEDBACK_KEY = "SK_APS_SPEED_FEEDBACK_V2";
+const SHIFT_KEY = "SK_APS_SHIFT_SETTINGS_V1";
+const SYSTEM_KEY = "SK_APS_SYSTEM_SETTINGS_V1";
+const WORKFORCE_KEY = "SK_APS_WORKFORCE_V1";
+const MACHINE_CENTER_KEY = "SK_APS_MACHINE_CENTER_V1";
+
+const CLOUD = {
+  loading: false,
+  loaded: false,
+  saving: new Set(),
+  timers: {},
+  meta: {},
+  lastMessage: "尚未連線"
+};
+
+function cloudStyle(){
+  if(document.getElementById("apsCloudStyle")) return;
+  const style=document.createElement("style");
+  style.id="apsCloudStyle";
+  style.textContent=`
+    .aps-cloud-status{
+      display:flex;align-items:center;gap:7px;padding:7px 10px;
+      border:1px solid #354956;border-radius:999px;background:#0b171e;
+      color:#b9c9d2;font-size:11px;white-space:nowrap
+    }
+    .aps-cloud-status i{width:9px;height:9px;border-radius:50%;background:#7b8790;box-shadow:0 0 8px #000}
+    .aps-cloud-status.loading i{background:#f59e0b;box-shadow:0 0 10px #f59e0b88}
+    .aps-cloud-status.ok i{background:#22c55e;box-shadow:0 0 10px #22c55e88}
+    .aps-cloud-status.warn i{background:#f59e0b;box-shadow:0 0 10px #f59e0b88}
+    .aps-cloud-status.bad i{background:#ef4444;box-shadow:0 0 10px #ef444488}
+    .aps-cloud-panel{
+      position:fixed;right:14px;bottom:14px;z-index:9997;width:min(390px,calc(100vw - 28px));
+      background:#09131aee;border:1px solid #31434e;border-radius:10px;
+      box-shadow:0 12px 34px #0009;padding:10px 12px;color:#d8e2e7;font-size:11px;
+      backdrop-filter:blur(10px)
+    }
+    .aps-cloud-panel b{font-size:12px;color:#fff}
+    .aps-cloud-panel small{display:block;margin-top:4px;color:#8fa1ac;line-height:1.45}
+    .aps-cloud-panel.hide{display:none}
+    @media(max-width:900px){.aps-cloud-status{display:none}.aps-cloud-panel{font-size:10px}}
+  `;
+  document.head.appendChild(style);
+}
+
+function ensureCloudUI(){
+  cloudStyle();
+  let status=document.getElementById("apsCloudStatus");
+  if(!status){
+    status=document.createElement("div");
+    status.id="apsCloudStatus";
+    status.className="aps-cloud-status";
+    status.innerHTML="<i></i><span>APS 雲端：等待連線</span>";
+    const host=document.querySelector(".header-right") || document.querySelector("header");
+    host?.prepend(status);
+  }
+  let panel=document.getElementById("apsCloudPanel");
+  if(!panel){
+    panel=document.createElement("div");
+    panel.id="apsCloudPanel";
+    panel.className="aps-cloud-panel hide";
+    panel.innerHTML="<b>APS DataCenter</b><small id='apsCloudPanelText'>尚未載入</small>";
+    document.body.appendChild(panel);
+  }
+}
+
+function setCloudStatus(state,message,detail=""){
+  ensureCloudUI();
+  CLOUD.lastMessage=message;
+  const el=document.getElementById("apsCloudStatus");
+  if(el){
+    el.className="aps-cloud-status "+state;
+    el.querySelector("span").textContent="APS 雲端："+message;
+    el.title=detail||message;
+  }
+  const p=document.getElementById("apsCloudPanel");
+  const t=document.getElementById("apsCloudPanelText");
+  if(p&&t){
+    t.textContent=detail||message;
+    p.classList.remove("hide");
+    clearTimeout(setCloudStatus._timer);
+    setCloudStatus._timer=setTimeout(()=>p.classList.add("hide"),4200);
+  }
+}
+
+function jsonp(action,params={}){
+  return new Promise((resolve,reject)=>{
+    const cb="APS_CLOUD_CB_"+Date.now()+"_"+Math.floor(Math.random()*1e6);
+    const script=document.createElement("script");
+    let finished=false;
+    const cleanup=()=>{
+      if(finished) return;
+      finished=true;
+      clearTimeout(timer);
+      try{delete window[cb]}catch{window[cb]=undefined}
+      script.remove();
+    };
+    const timer=setTimeout(()=>{
+      cleanup();
+      reject(new Error("雲端讀取逾時："+action));
+    },90000);
+    window[cb]=res=>{
+      cleanup();
+      if(res&&res.ok===false) reject(new Error(res.message||"APS API error"));
+      else resolve(res||{});
+    };
+    script.onerror=()=>{
+      cleanup();
+      reject(new Error("雲端連線失敗："+action));
+    };
+    const qs=new URLSearchParams({...params,action,callback:cb,_:Date.now()});
+    script.src=APS_CLOUD_API+"?"+qs.toString();
+    document.head.appendChild(script);
+  });
+}
+
+async function post(action,payload){
+  await fetch(APS_CLOUD_API+"?action="+encodeURIComponent(action)+"&_="+Date.now(),{
+    method:"POST",
+    mode:"no-cors",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify(payload||{})
+  });
+  return {ok:true};
+}
+
+function parseJSON(value,fallback){
+  if(value===undefined||value===null||value==="") return fallback;
+  if(typeof value==="object") return value;
+  try{return JSON.parse(value)}catch{return fallback}
+}
+
+function reviveDate(value){
+  if(!value) return null;
+  if(value instanceof Date) return value;
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?null:d;
+}
+
+function revivePool(rows){
+  return (rows||[]).map(row=>{
+    const x={...row};
+    if(x.due) x.due=reviveDate(x.due);
+    ["planned","output","remaining","minutes","cycles","perRound","roundMinutes"].forEach(k=>{
+      if(x[k]!==undefined&&x[k]!=="") x[k]=Number(x[k])||0;
+    });
+    ["urgent","risk","ready","closed"].forEach(k=>{
+      if(x[k]!==undefined) x[k]=x[k]===true||String(x[k]).toLowerCase()==="true";
+    });
+    return x;
+  });
+}
+
+function reviveSchedule(rows){
+  return (rows||[]).map(row=>{
+    const x={...row};
+    if(x.start) x.start=reviveDate(x.start);
+    if(x.end) x.end=reviveDate(x.end);
+    if(x.due) x.due=reviveDate(x.due);
+    if(x.minutes!==undefined) x.minutes=Number(x.minutes)||0;
+    return x;
+  });
+}
+
+function machineRows(){
+  return Object.entries(window.S?.machines||{}).map(([machine_code,v])=>({
+    machine_code,
+    hours:Number(v?.hours)||0,
+    enabled:v?.enabled!==false
+  }));
+}
+
+function applyMachineRows(rows){
+  if(!rows?.length) return false;
+  const result={};
+  rows.forEach(r=>{
+    const code=String(r.machine_code||r.machine||"").trim();
+    if(!code) return;
+    result[code]={
+      hours:Number(r.hours)||24,
+      enabled:r.enabled===true||String(r.enabled).toLowerCase()==="true"
+    };
+  });
+  if(Object.keys(result).length){
+    window.S.machines=result;
+    return true;
+  }
+  return false;
+}
+
+function speedRows(){
+  const master=parseJSON(localStorage.getItem(SPEED_MASTER_KEY),[]);
+  const feedback=parseJSON(localStorage.getItem(SPEED_FEEDBACK_KEY),[]);
+  return [
+    ...master.map(x=>({...x,_aps_speed_kind:"master"})),
+    ...feedback.map(x=>({...x,_aps_speed_kind:"feedback"}))
+  ];
+}
+
+function applySpeedRows(rows){
+  if(!rows?.length) return false;
+  const master=[],feedback=[];
+  rows.forEach(r=>{
+    const x={...r};
+    delete x._aps_record_id;
+    delete x._aps_updated_at;
+    const kind=x._aps_speed_kind;
+    delete x._aps_speed_kind;
+    if(kind==="feedback") feedback.push(x);
+    else master.push(x);
+  });
+  localStorage.setItem(SPEED_MASTER_KEY,JSON.stringify(master));
+  localStorage.setItem(SPEED_FEEDBACK_KEY,JSON.stringify(feedback));
+  return true;
+}
+
+function settingsRows(){
+  return [{
+    setting_id:"APS_SETTINGS",
+    shift_json:JSON.stringify(parseJSON(localStorage.getItem(SHIFT_KEY),{})),
+    system_json:JSON.stringify(parseJSON(localStorage.getItem(SYSTEM_KEY),{})),
+    saved_at:new Date().toISOString()
+  }];
+}
+
+function applySettingsRows(rows){
+  const r=rows?.[0];
+  if(!r) return false;
+  const shift=parseJSON(r.shift_json,null);
+  const system=parseJSON(r.system_json,null);
+  if(shift) localStorage.setItem(SHIFT_KEY,JSON.stringify(shift));
+  if(system) localStorage.setItem(SYSTEM_KEY,JSON.stringify(system));
+  return !!(shift||system);
+}
+
+function manpowerRows(){
+  return [{
+    record_id:"APS_MANPOWER",
+    workforce_json:JSON.stringify(parseJSON(localStorage.getItem(WORKFORCE_KEY),{})),
+    machine_center_json:JSON.stringify(parseJSON(localStorage.getItem(MACHINE_CENTER_KEY),{})),
+    saved_at:new Date().toISOString()
+  }];
+}
+
+function applyManpowerRows(rows){
+  const r=rows?.[0];
+  if(!r) return false;
+  const workforce=parseJSON(r.workforce_json,null);
+  const machineCenter=parseJSON(r.machine_center_json,null);
+  if(workforce) localStorage.setItem(WORKFORCE_KEY,JSON.stringify(workforce));
+  if(machineCenter) localStorage.setItem(MACHINE_CENTER_KEY,JSON.stringify(machineCenter));
+  return !!(workforce||machineCenter);
+}
+
+function preprocessRows(){
+  return (window.S?.pool||[]).filter(x=>x.wo).map(x=>({
+    work_order_no:x.wo,
+    preprocess:x.preprocess||"",
+    updated_at:new Date().toISOString()
+  }));
+}
+
+function applyPreprocessRows(rows){
+  if(!rows?.length||!window.S?.pool?.length) return false;
+  const map=new Map(rows.map(r=>[String(r.work_order_no||r.wo||""),r.preprocess||""]));
+  window.S.pool.forEach(x=>{
+    if(map.has(String(x.wo||""))) x.preprocess=map.get(String(x.wo||""));
+  });
+  return true;
+}
+
+function cloudMetaText(meta){
+  const keys=[
+    ["workpool","工單池"],["schedule","排程"],["speed_master","產速"],
+    ["preprocess","前製程"],["machine_master","機台"],["manpower","人力"],["settings","設定"]
+  ];
+  return keys.map(([k,label])=>{
+    const m=meta?.[k]||{};
+    return `${label} ${Number(m.count||0).toLocaleString("zh-TW")} 筆${m.updated_at?"｜"+m.updated_at:""}`;
+  }).join("；");
+}
+
+function renderAfterCloudLoad(){
+  try{window.renderPool?.()}catch(e){console.warn(e)}
+  try{window.renderSchedule?.()}catch(e){console.warn(e)}
+  try{window.renderMachineSettings?.()}catch(e){console.warn(e)}
+  try{window.renderSpeedCenter?.()}catch(e){console.warn(e)}
+  try{window.renderPreprocessCenter?.()}catch(e){console.warn(e)}
+  try{window.updateKpi?.()}catch(e){console.warn(e)}
+  try{window.SKAPSSystem?.renderStats?.()}catch(e){console.warn(e)}
+}
+
+async function saveDataset(name,silent=true){
+  if(CLOUD.saving.has(name)) return;
+  CLOUD.saving.add(name);
+  try{
+    let action="",payload=[];
+    if(name==="workpool"){
+      action="apssaveworkpool";
+      payload=window.S?.pool||[];
+    }else if(name==="schedule"){
+      action="apssaveschedule";
+      payload=window.S?.schedule||[];
+    }else if(name==="speed"){
+      action="apssavespeedmaster";
+      payload=speedRows();
+    }else if(name==="preprocess"){
+      action="apssavepreprocess";
+      payload=preprocessRows();
+    }else if(name==="machine"){
+      action="apssavemachinemaster";
+      payload=machineRows();
+    }else if(name==="manpower"){
+      action="apssavemanpower";
+      payload=manpowerRows();
+    }else if(name==="settings"){
+      action="apssavesettings";
+      payload=settingsRows();
+    }else return;
+
+    await post(action,{rows:payload});
+    if(!silent){
+      setCloudStatus("ok","已保存",`${name} 已送出至 Google Sheets，共 ${payload.length} 筆`);
+    }
+  }catch(err){
+    console.error("APS cloud save failed",name,err);
+    setCloudStatus("bad","保存失敗",err.message);
+  }finally{
+    CLOUD.saving.delete(name);
+  }
+}
+
+function queueSave(name,delay=900,silent=true){
+  clearTimeout(CLOUD.timers[name]);
+  CLOUD.timers[name]=setTimeout(()=>saveDataset(name,silent),delay);
+}
+
+async function saveAllCloud(silent=false){
+  setCloudStatus("loading","正在保存","工單池、排程、產速、前製程、機台、人力與設定");
+  for(const name of ["workpool","schedule","speed","preprocess","machine","manpower","settings"]){
+    await saveDataset(name,true);
+  }
+  setCloudStatus("ok","保存完成","APS DataCenter 已更新");
+  if(!silent) window.log?.("APS DataCenter：全部資料已保存至 Google Sheets");
+}
+
+async function bootstrapCloud(){
+  if(CLOUD.loading) return;
+  CLOUD.loading=true;
+  ensureCloudUI();
+  setCloudStatus("loading","正在載入","讀取 Google Sheets APS DataCenter");
+
+  try{
+    const res=await jsonp("apsbootstrap");
+    const state=window.S;
+    let loadedCount=0;
+
+    if(res.workpool?.length){
+      state.pool=revivePool(res.workpool);
+      loadedCount+=res.workpool.length;
+    }
+    if(res.schedule?.length){
+      state.schedule=reviveSchedule(res.schedule);
+      loadedCount+=res.schedule.length;
+    }
+    if(applyMachineRows(res.machine_master||res.machineMaster||[])){
+      loadedCount+=(res.machine_master||res.machineMaster||[]).length;
+    }
+    if(applySpeedRows(res.speed_master||res.speedMaster||[])){
+      loadedCount+=(res.speed_master||res.speedMaster||[]).length;
+    }
+    applySettingsRows(res.settings||[]);
+    applyManpowerRows(res.manpower||[]);
+    applyPreprocessRows(res.preprocess||res.preProcess||[]);
+
+    CLOUD.meta=res.meta||{};
+    CLOUD.loaded=true;
+    renderAfterCloudLoad();
+
+    if(loadedCount>0){
+      setCloudStatus("ok","已載入",cloudMetaText(CLOUD.meta));
+      window.log?.(`APS DataCenter 已載入：工單池 ${state.pool.length} 筆、排程 ${state.schedule.length} 段`);
+    }else{
+      const localCount=(state.pool?.length||0)+(state.schedule?.length||0);
+      if(localCount>0){
+        setCloudStatus("warn","雲端空白","偵測到本機已有資料，正在建立第一份雲端資料");
+        await saveAllCloud(true);
+      }else{
+        setCloudStatus("warn","尚無資料","第一次使用請上傳 ERP 並建立工單池；完成後會自動保存");
+      }
+    }
+  }catch(err){
+    console.error("APS cloud bootstrap failed",err);
+    setCloudStatus("bad","連線失敗",`${err.message}；已保留瀏覽器本機資料`);
+  }finally{
+    CLOUD.loading=false;
+  }
+}
+
+function wrapFunction(name,after){
+  const fn=window[name];
+  if(typeof fn!=="function"||fn.__cloudWrapped) return;
+  const wrapped=function(...args){
+    const result=fn.apply(this,args);
+    Promise.resolve(result).finally(()=>setTimeout(after,60));
+    return result;
+  };
+  wrapped.__cloudWrapped=true;
+  wrapped.__cloudOriginal=fn;
+  window[name]=wrapped;
+}
+
+function installHooks(){
+  wrapFunction("buildPool",()=>{
+    queueSave("workpool",500);
+    queueSave("speed",700);
+    queueSave("machine",900);
+    queueSave("preprocess",1100);
+  });
+  wrapFunction("schedule",()=>{
+    queueSave("schedule",600);
+    queueSave("machine",800);
+  });
+  wrapFunction("runSchedule",()=>{
+    queueSave("schedule",600);
+    queueSave("machine",800);
+  });
+  wrapFunction("saveShiftSettings",()=>queueSave("settings",500));
+  wrapFunction("resetShiftSettings",()=>queueSave("settings",500));
+
+  document.getElementById("saveSpeedFeedback")?.addEventListener("click",()=>{
+    queueSave("speed",800);
+    queueSave("workpool",1200);
+  });
+  document.getElementById("sysSaveAll")?.addEventListener("click",()=>queueSave("settings",500));
+
+  document.addEventListener("change",event=>{
+    if(event.target.closest("#machineCenter")||event.target.closest("#master")){
+      queueSave("machine",1000);
+      queueSave("settings",1200);
+    }
+    if(event.target.closest("#workforce")){
+      queueSave("manpower",1000);
+    }
+    if(event.target.closest("#preprocess")){
+      queueSave("preprocess",900);
+      queueSave("workpool",1200);
+    }
+  });
+
+  const status=document.getElementById("apsCloudStatus");
+  if(status){
+    status.style.cursor="pointer";
+    status.addEventListener("click",()=>saveAllCloud(false));
+    status.title="點一下立即保存全部 APS 資料";
+  }
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  ensureCloudUI();
+  setTimeout(()=>{
+    installHooks();
+    bootstrapCloud();
+  },850);
+});
+
+setTimeout(()=>{
+  installHooks();
+  if(!CLOUD.loaded&&!CLOUD.loading) bootstrapCloud();
+},1800);
+
+window.APSCloudDataCenter={
+  bootstrap:bootstrapCloud,
+  saveAll:saveAllCloud,
+  saveDataset,
+  status:()=>({...CLOUD})
+};
+})();
+</script>
+
 
 <script id="build0042-security-js">
 (()=>{
