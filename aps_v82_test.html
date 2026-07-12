@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V82 Enterprise Build 0050</title>
+<title>SEAL KING Smart APS｜V82 Enterprise Build 0050 Compatibility Fix</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -456,59 +456,15 @@ function anomalyList(value){
 </script>
 
 
-<style id="v82EnterpriseSafeLayer">
-/* =========================================================
-   V82 Enterprise Build 0050 — Safe Upgrade Layer
-   Only adds navigation/visual assistance.
-   Existing page IDs, buttons, API, calculations and scheduling logic remain unchanged.
-   ========================================================= */
-.v82-safe-bar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin:0 0 10px;padding:10px 13px;border:1px solid #3d3033;
-  border-radius:8px;background:linear-gradient(90deg,#151d24,#211316 78%,#151d24);
-  box-shadow:0 7px 20px #0004;min-width:0
-}
-.v82-safe-title{display:flex;align-items:center;gap:10px;min-width:0}
-.v82-safe-mark{
-  width:29px;height:29px;border-radius:7px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#e21c25,#8c1016);font-size:13px;font-weight:900
-}
-.v82-safe-title strong{font-size:13px;white-space:nowrap}
-.v82-safe-title small{display:block;color:#9facb5;font-size:10px;margin-top:2px}
-.v82-quick-nav{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-.v82-quick-nav button{
-  min-height:31px;padding:0 10px;border-radius:6px;border:1px solid #354651;
-  background:#101b22;color:#e8eef2;cursor:pointer;font-family:inherit;font-size:12px
-}
-.v82-quick-nav button:hover{background:#1b2a34;border-color:#587181}
-.v82-quick-nav button.primary{border-color:#a6262d;background:linear-gradient(180deg,#a81b22,#721218)}
-.v82-integrity{
-  display:inline-flex;align-items:center;gap:6px;color:#8fe1b8;font-size:11px;
-  white-space:nowrap
-}
-.v82-integrity i{width:8px;height:8px;border-radius:50%;background:#24c276;box-shadow:0 0 8px #24c276}
-.v82-integrity.bad{color:#ff9aa1}.v82-integrity.bad i{background:#e23a43;box-shadow:0 0 8px #e23a43}
-.side-nav .tab[data-page="home"]::after,
-.side-nav .tab[data-page="pool"]::after,
-.side-nav .tab[data-page="schedule"]::after,
-.side-nav .tab[data-page="missingSpeed"]::after{
-  content:"★";margin-left:auto;color:#e9bd45;font-size:10px
-}
-.v82-build-ribbon{
-  position:fixed;right:12px;bottom:12px;z-index:18;pointer-events:none;
-  padding:6px 9px;border-radius:6px;border:1px solid #4b3437;
-  background:#11191fe8;color:#aeb9c0;font-size:10px;box-shadow:0 5px 16px #0007
-}
-.v82-build-ribbon b{color:#ff747b}
-@media(max-width:900px){
-  .v82-safe-bar{align-items:flex-start;flex-direction:column}
-  .v82-quick-nav{justify-content:flex-start}
-  .v82-safe-title small{white-space:normal}
-}
-@media(max-width:620px){
-  .v82-integrity{display:none}
-  .v82-quick-nav button{font-size:0;width:34px;padding:0}
-  .v82-quick-nav button::first-letter{font-size:14px}
+<style id="v82CompatibilityFixStyle">
+/* V82 Build 0050 Compatibility Fix
+   僅視覺標記；不新增 DOM、不改初始化、不改 API。 */
+body::after{
+  content:"V82 Enterprise｜Build 0050 Compatibility Fix";
+  position:fixed;right:12px;bottom:10px;z-index:9999;
+  padding:5px 8px;border:1px solid #4b3437;border-radius:6px;
+  background:#11191fe8;color:#b7c0c7;font-size:10px;pointer-events:none;
+  box-shadow:0 5px 16px #0007
 }
 </style>
 
@@ -589,21 +545,6 @@ function anomalyList(value){
 <button class="tab" data-page="speedFeedback"><span>↻</span>產速回饋中心</button>
 <button class="tab" data-page="master"><span>⚙</span>Master 設定</button>
 <button class="tab" data-page="systemSettings"><span>⚙</span>系統設定</button></nav><div class="side-footer"><img src="data:image/png;base64,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" alt="SEAL KING"><div><b>SEAL <em>KING</em></b><small>Smart Factory</small></div></div></aside><main class="workspace">
-
-<div class="v82-safe-bar" id="v82SafeBar">
-  <div class="v82-safe-title">
-    <span class="v82-safe-mark">V82</span>
-    <div><strong>Enterprise 安全升級模式</strong><small>以 Build 0046-4 為基準；原有分頁、資料欄位與計算流程完整保留</small></div>
-  </div>
-  <div class="v82-quick-nav" aria-label="常用功能">
-    <button type="button" data-v82-jump="home">⌂ 戰情中心</button>
-    <button type="button" data-v82-jump="pool">▤ 工單池</button>
-    <button type="button" class="primary" data-v82-jump="schedule">▥ APS 排程</button>
-    <button type="button" data-v82-jump="missingSpeed">⚠ 缺產速</button>
-    <span class="v82-integrity" id="v82Integrity"><i></i><span>檢查分頁中</span></span>
-  </div>
-</div>
-
 <section id="home" class="page active">
 <div class="dashboard-kpis">
   <div class="metric-card red"><div class="metric-icon">▣</div><div><span>加工課工單</span><strong id="kpiAll">0</strong><small>4-3 站別＝加工課</small></div></div>
@@ -2762,54 +2703,5 @@ window.SEAL_KING_SECURITY={
 };
 })();
 </script>
-
-
-<script id="v82EnterpriseSafeScript">
-(() => {
-  "use strict";
-  const REQUIRED_PAGES = [
-    "home","upload","pool","schedule","missingSpeed","urgent","workforce",
-    "preprocess","machineCenter","ai","autoSchedule","reports",
-    "speedFeedback","master","systemSettings"
-  ];
-
-  function jump(pageId){
-    const tab = document.querySelector('.side-nav .tab[data-page="' + pageId + '"]');
-    if (tab) {
-      tab.click();
-      return;
-    }
-    if (typeof window.showPage === "function") window.showPage(pageId);
-  }
-
-  function verifyPages(){
-    const missing = REQUIRED_PAGES.filter(id => !document.getElementById(id));
-    const box = document.getElementById("v82Integrity");
-    if (!box) return;
-    if (missing.length === 0){
-      box.classList.remove("bad");
-      box.innerHTML = "<i></i><span>15/15 分頁完整</span>";
-    } else {
-      box.classList.add("bad");
-      box.innerHTML = "<i></i><span>缺少 " + missing.length + " 個分頁</span>";
-      console.warn("[V82] Missing pages:", missing);
-    }
-  }
-
-  function init(){
-    document.querySelectorAll("[data-v82-jump]").forEach(btn => {
-      btn.addEventListener("click", () => jump(btn.dataset.v82Jump), {passive:true});
-    });
-    verifyPages();
-  }
-
-  if (document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", init, {once:true});
-  } else {
-    init();
-  }
-})();
-</script>
-<div class="v82-build-ribbon"><b>V82 Enterprise</b>｜Build 0050 Safe Upgrade</div>
 
 </body></html>
