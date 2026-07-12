@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V82 Enterprise Build 0050 Compatibility Fix</title>
+<title>SEAL KING Smart APS｜Build 0047.1 Stable</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -456,15 +456,13 @@ function anomalyList(value){
 </script>
 
 
-<style id="v82CompatibilityFixStyle">
-/* V82 Build 0050 Compatibility Fix
-   僅視覺標記；不新增 DOM、不改初始化、不改 API。 */
+<style id="apsBuild00471StableStyle">
 body::after{
-  content:"V82 Enterprise｜Build 0050 Compatibility Fix";
-  position:fixed;right:12px;bottom:10px;z-index:9999;
-  padding:5px 8px;border:1px solid #4b3437;border-radius:6px;
-  background:#11191fe8;color:#b7c0c7;font-size:10px;pointer-events:none;
-  box-shadow:0 5px 16px #0007
+  content:"APS Build 0047.1 Stable";
+  position:fixed;right:11px;bottom:10px;z-index:9998;
+  padding:5px 8px;border-radius:6px;border:1px solid #38505e;
+  background:#10191fdc;color:#9fc9da;font-size:10px;
+  pointer-events:none;box-shadow:0 5px 15px #0007
 }
 </style>
 
@@ -473,7 +471,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V82 Build 0050</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0047.1 Stable</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -510,10 +508,10 @@ body::after{
       <div class="sk-word"><strong>SEAL KING</strong><span>SMART FACTORY</span></div>
     </div>
     <div class="header-divider"></div>
-    <div class="system-title"><h1>SEAL KING Smart APS V82</h1><p>加工課智慧排程與決策平台｜Enterprise Edition</p></div>
+    <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V82 Enterprise ｜ Build 0050</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Build 0047.1 Stable</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -2086,7 +2084,7 @@ function readCfg(){try{return {...defaults,...JSON.parse(localStorage.getItem(CF
 function writeCfg(c){localStorage.setItem(CFG_KEY,JSON.stringify(c))}
 function cfgFromForm(){return {name:$s('sysName')?.value.trim()||defaults.name,admin:$s('sysAdmin')?.value.trim()||defaults.admin,department:$s('sysDepartment')?.value.trim()||defaults.department,subtitle:$s('sysSubtitle')?.value.trim()||defaults.subtitle,version:$s('sysVersion')?.value.trim()||defaults.version,dataOwner:$s('sysDataOwner')?.value.trim()||'',animations:!!$s('sysAnimations')?.checked,compact:!!$s('sysCompact')?.checked,stickySidebar:!!$s('sysStickySidebar')?.checked,tooltips:!!$s('sysTooltips')?.checked,persistPool:!!$s('sysPersistPool')?.checked,autoLoadPool:!!$s('sysAutoLoadPool')?.checked,persistSchedule:!!$s('sysPersistSchedule')?.checked,autoLoadSchedule:!!$s('sysAutoLoadSchedule')?.checked,missingSpeedAlert:Number($s('sysMissingSpeedAlert')?.value)||0,overdueAlert:Number($s('sysOverdueAlert')?.value)||0,machineLoadAlert:Number($s('sysMachineLoadAlert')?.value)||90,staleHours:Number($s('sysStaleHours')?.value)||24}}
 function fillForm(c){const m={sysName:c.name,sysAdmin:c.admin,sysDepartment:c.department,sysSubtitle:c.subtitle,sysVersion:c.version,sysDataOwner:c.dataOwner,sysMissingSpeedAlert:c.missingSpeedAlert,sysOverdueAlert:c.overdueAlert,sysMachineLoadAlert:c.machineLoadAlert,sysStaleHours:c.staleHours};Object.entries(m).forEach(([id,v])=>{if($s(id))$s(id).value=v});[['sysAnimations','animations'],['sysCompact','compact'],['sysStickySidebar','stickySidebar'],['sysTooltips','tooltips'],['sysPersistPool','persistPool'],['sysAutoLoadPool','autoLoadPool'],['sysPersistSchedule','persistSchedule'],['sysAutoLoadSchedule','autoLoadSchedule']].forEach(([id,k])=>{if($s(id))$s(id).checked=!!c[k]})}
-function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0042`;window.SK_APS_CONFIG=c}
+function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0047.1 Stable`;window.SK_APS_CONFIG=c}
 function toast(t){const old=document.querySelector('.sys-toast');if(old)old.remove();const d=document.createElement('div');d.className='sys-toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
@@ -2095,7 +2093,7 @@ function download(name,obj){const b=new Blob([JSON.stringify(obj,null,2)],{type:
 function saveSnapshots(silent=false){const c=readCfg();if(c.persistPool)localStorage.setItem(POOL_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:window.S?.pool||[]}));if(c.persistSchedule)localStorage.setItem(SCH_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:window.S?.schedule||[],machines:window.S?.machines||{}}));updateSnapshotStatus();renderStats();if(!silent)toast('目前工單池與排程已保存')}
 function restoreSnapshots(){const c=readCfg();try{if(c.autoLoadPool&&!(window.S?.pool||[]).length){const p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');if(p?.rows?.length)window.S.pool=p.rows}if(c.autoLoadSchedule&&!(window.S?.schedule||[]).length){const q=JSON.parse(localStorage.getItem(SCH_KEY)||'null');if(q?.rows?.length){window.S.schedule=q.rows;window.S.machines=q.machines||window.S.machines||{}}}}catch(e){console.warn('snapshot restore failed',e)}try{window.renderPool?.();window.renderSchedule?.();window.updateKpi?.()}catch{}}
 function updateSnapshotStatus(){const e=$s('sysSnapshotStatus');if(!e)return;let p=null,q=null;try{p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');q=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch{};e.textContent=`工單池快照：${p?.rows?.length||0} 筆${p?.savedAt?'（'+new Date(p.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}；排程快照：${q?.rows?.length||0} 段${q?.savedAt?'（'+new Date(q.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}。`}
-function exportAll(){const storage={};apsKeys().forEach(k=>storage[k]=localStorage.getItem(k));download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,{format:'SEAL_KING_APS_BACKUP',build:'0040',exportedAt:new Date().toISOString(),storage,state:{pool:window.S?.pool||[],schedule:window.S?.schedule||[],machines:window.S?.machines||{}}})}
+function exportAll(){const storage={};apsKeys().forEach(k=>storage[k]=localStorage.getItem(k));download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,{format:'SEAL_KING_APS_BACKUP',build:'0047.1',exportedAt:new Date().toISOString(),storage,state:{pool:window.S?.pool||[],schedule:window.S?.schedule||[],machines:window.S?.machines||{}}})}
 async function importAll(file){const txt=await file.text(),obj=JSON.parse(txt);if(obj.format!=='SEAL_KING_APS_BACKUP'&&!obj.storage)throw new Error('不是有效的 APS 完整備份');Object.entries(obj.storage||{}).forEach(([k,v])=>{if(k.startsWith('SK_APS_'))localStorage.setItem(k,String(v))});if(obj.state&&window.S){window.S.pool=obj.state.pool||[];window.S.schedule=obj.state.schedule||[];window.S.machines=obj.state.machines||{}}const c=readCfg();fillForm(c);applyCfg(c);renderStats();updateSnapshotStatus();window.renderPool?.();window.renderSchedule?.();window.updateKpi?.();toast('完整系統備份已匯入')}
 function clearAll(){if(!confirm('確定清除全部 APS 永久資料？此操作無法復原，建議先下載備份。'))return;apsKeys().forEach(k=>localStorage.removeItem(k));if(window.S){window.S.pool=[];window.S.schedule=[];window.S.machines={}}fillForm(defaults);applyCfg(defaults);renderStats();updateSnapshotStatus();toast('全部 APS 永久資料已清除')}
 function hookPersistence(){const wrap=(name,type)=>{const f=window[name];if(typeof f!=='function'||f.__sysWrapped)return;const g=function(...args){const r=f.apply(this,args);setTimeout(()=>{const c=readCfg();if((type==='pool'&&c.persistPool)||(type==='schedule'&&c.persistSchedule))saveSnapshots(true)},0);return r};g.__sysWrapped=true;window[name]=g};wrap('buildPool','pool');wrap('runSchedule','schedule');wrap('renderSchedule','schedule')}
@@ -2526,8 +2524,17 @@ async function bootstrapCloud(){
     CLOUD.loaded=true;
     renderAfterCloudLoad();
 
+    /* Build 0047.1 Stable：
+       雲端資料成功載入後立即建立本機快照。
+       API 暫時逾時時仍可先顯示最近一次可用資料。 */
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
+
     if(loadedCount>0){
-      setCloudStatus("ok","已載入",cloudMetaText(CLOUD.meta));
+      setCloudStatus(
+        "ok",
+        `已載入｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,
+        cloudMetaText(CLOUD.meta)
+      );
       window.log?.(`APS DataCenter 已載入：工單池 ${state.pool.length} 筆、排程 ${state.schedule.length} 段`);
     }else{
       const localCount=(state.pool?.length||0)+(state.schedule?.length||0);
@@ -2540,7 +2547,21 @@ async function bootstrapCloud(){
     }
   }catch(err){
     console.error("APS cloud bootstrap failed",err);
-    setCloudStatus("bad","連線失敗",`${err.message}；已保留瀏覽器本機資料`);
+    try{
+      window.SKAPSSystem?.restoreSnapshots?.();
+      renderAfterCloudLoad();
+    }catch(e){
+      console.warn("APS local fallback failed",e);
+    }
+    const localPool=window.S?.pool?.length||0;
+    const localSchedule=window.S?.schedule?.length||0;
+    setCloudStatus(
+      localPool||localSchedule ? "warn" : "bad",
+      localPool||localSchedule
+        ? `使用本機備援｜工單池 ${localPool}｜排程 ${localSchedule}`
+        : "連線失敗",
+      `${err.message}；已嘗試載入最近一次本機快照`
+    );
   }finally{
     CLOUD.loading=false;
   }
@@ -2561,16 +2582,19 @@ function wrapFunction(name,after){
 
 function installHooks(){
   wrapFunction("buildPool",()=>{
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch{}
     queueSave("workpool",500);
     queueSave("speed",700);
     queueSave("machine",900);
     queueSave("preprocess",1100);
   });
   wrapFunction("schedule",()=>{
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch{}
     queueSave("schedule",600);
     queueSave("machine",800);
   });
   wrapFunction("runSchedule",()=>{
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch{}
     queueSave("schedule",600);
     queueSave("machine",800);
   });
@@ -2651,8 +2675,14 @@ function installHooks(){
   if(status&&!status.dataset.apsCloudHook){
     status.dataset.apsCloudHook="1";
     status.style.cursor="pointer";
-    status.addEventListener("click",()=>saveAllCloud(false));
-    status.title="點一下立即保存全部 APS 資料";
+    status.addEventListener("click",event=>{
+      if(event.altKey){
+        saveAllCloud(false);
+      }else{
+        bootstrapCloud();
+      }
+    });
+    status.title="點一下重新載入 APS 雲端資料；按住 Alt 再點可立即保存全部資料";
   }
 }
 
