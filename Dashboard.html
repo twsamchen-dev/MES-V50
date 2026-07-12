@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V80.6.2 MES Enterprise｜Production Command Center</title>
+<title>V81.0 SEAL KING MES Enterprise｜Production Command Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>MES Enterprise｜V80.6.2 Production Command Center</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：加工課戰情中心 / ศูนย์ควบคุมการผลิต：營運 KPI 優先顯示，DataHub 預設收合，維持手動更新模式。</p></header>
+<header><h1>SEAL KING｜MES Enterprise V81.0</h1><p>PRODUCTION COMMAND CENTER｜品質至上・服務為先｜加工課即時生產戰情中心</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -1033,7 +1033,7 @@ header{margin-left:268px;background:linear-gradient(135deg,#081934,#123c8a 55%,#
   window.createEnterpriseSidebar=function(){
     if(document.getElementById('epSidebar')) return;
     var side=document.createElement('aside'); side.id='epSidebar'; side.className='epSidebar';
-    side.innerHTML='<div class="epBrand"><div class="epLogo">🏭</div><div><b>生產戰情室</b><span>MES Enterprise</span></div></div><div class="epUser"><div class="epAvatar">👷</div><div><b>白班</b><span class="epOnline">● 線上 / Admin</span></div></div><nav class="epNav">'+navItems().map(function(x){return '<button type="button" data-ep-view="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2].split(' ')[0]+'<small>'+x[2].split(' ').slice(1).join(' ')+'</small></span></button>'}).join('')+'<button type="button" data-ep-meeting="1"><span class="ico">📺</span><span>晨會模式<small>Morning Meeting</small></span></button></nav><div class="epFoot">V43.1 Enterprise Professional<br>Animated Edition</div>';
+    side.innerHTML='<div class="epBrand"><div class="epLogo">🏭</div><div><b>生產戰情室</b><span>MES Enterprise</span></div></div><div class="epUser"><div class="epAvatar">👷</div><div><b>白班</b><span class="epOnline">● 線上 / Admin</span></div></div><nav class="epNav">'+navItems().map(function(x){return '<button type="button" data-ep-view="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2].split(' ')[0]+'<small>'+x[2].split(' ').slice(1).join(' ')+'</small></span></button>'}).join('')+'<button type="button" data-ep-meeting="1"><span class="ico">📺</span><span>晨會模式<small>Morning Meeting</small></span></button></nav><div class="epFoot">V81.0 SEAL KING<br>Corporate Edition</div>';
     document.body.insertBefore(side,document.body.firstChild);
     side.querySelectorAll('[data-ep-view]').forEach(function(b){b.addEventListener('click',function(){window.switchView(b.getAttribute('data-ep-view'))})});
     var mb=side.querySelector('[data-ep-meeting]'); if(mb)mb.addEventListener('click',function(){ if(window.openMeeting) window.openMeeting(); });
@@ -3250,5 +3250,121 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
   document.addEventListener("DOMContentLoaded",function(){setTimeout(start,1000)});
 })();
 </script>
+
+<style id="v810SealKingCorporateTheme">
+/* V81.0｜SEAL KING Corporate Theme｜CSS-only，保持資料、API 與 DOM 邏輯不變 */
+:root{
+  --sk-red:#d91f26;
+  --sk-red-dark:#b5121b;
+  --sk-ink:#20242a;
+  --sk-charcoal:#30343b;
+  --sk-gray:#6f7378;
+  --sk-line:#e3e5e8;
+  --sk-soft:#f4f5f6;
+  --sk-white:#ffffff;
+}
+html{background:var(--sk-soft)!important}
+body{background:linear-gradient(180deg,#f7f7f7 0,#f1f2f3 100%)!important;color:var(--sk-ink)!important}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(217,31,38,.025) 1px,transparent 1px),linear-gradient(rgba(217,31,38,.018) 1px,transparent 1px);background-size:48px 48px;z-index:-1}
+/* 完全停用動態效果，避免頁面閃爍 */
+*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+
+header{margin-left:268px!important;background:#fff!important;color:var(--sk-ink)!important;border-bottom:4px solid var(--sk-red)!important;box-shadow:0 3px 16px rgba(0,0,0,.08)!important;padding:20px 28px!important}
+header h1{color:var(--sk-ink)!important;font-size:29px!important;letter-spacing:.2px}
+header h1::first-letter{color:var(--sk-red)}
+header p{color:#5f6368!important;font-weight:700!important;letter-spacing:.4px}
+.wrap{background:transparent!important}
+
+.epSidebar{background:linear-gradient(180deg,#252a31 0%,#16191e 100%)!important;box-shadow:8px 0 28px rgba(0,0,0,.22)!important}
+.epBrand{background:#fff!important;border-bottom:4px solid var(--sk-red)!important;color:var(--sk-ink)!important}
+.epLogo{font-size:0!important;border-radius:999px!important;background:var(--sk-red)!important;box-shadow:none!important;position:relative}
+.epLogo:before{content:"S";font-size:25px;font-weight:1000;font-style:italic;color:#fff;letter-spacing:-2px}
+.epBrand b{color:var(--sk-ink)!important;font-style:italic;letter-spacing:.3px}
+.epBrand span{color:#6b6f75!important}
+.epUser{background:#30363e!important;border-color:#444b54!important}
+.epAvatar{background:linear-gradient(135deg,#fff,#e9eaec)!important}
+.epOnline{color:#f0b4b7!important}
+.epNav button{color:#e6e8eb!important;border-left:4px solid transparent!important;border-radius:7px!important}
+.epNav button:hover{background:#353b44!important;transform:none!important}
+.epNav button.active{background:var(--sk-red)!important;border-left-color:#fff!important;box-shadow:none!important;color:#fff!important}
+.epNav .ico{background:rgba(255,255,255,.09)!important}
+.epNav small{color:#b9bec5!important}
+.epFoot{color:#c9cdd2!important;border-top-color:#3e444c!important;background:#14171b!important}
+
+.card,.epPanel,.rankCard,.machineEffCard,.backHomeBar{background:#fff!important;color:var(--sk-ink)!important;border:1px solid var(--sk-line)!important;border-radius:12px!important;box-shadow:0 5px 18px rgba(22,25,29,.07)!important}
+.card h2,.epPanel h2,h2{color:var(--sk-ink)!important}
+.sub,.hint,.epQuick small{color:#6e7277!important}
+.epPanel{border-top:4px solid var(--sk-red)!important}
+
+.commandHero,.effHero{background:linear-gradient(120deg,#2d3137,#16191e)!important;border-left:7px solid var(--sk-red)!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important}
+.commandHero h2,.effHero h2{color:#fff!important}
+.commandClock,.commandHero .hint,.effHero .hint{color:#e7e7e7!important}
+
+.epTopBar{background:#fff!important;border:1px solid var(--sk-line)!important;border-left:7px solid var(--sk-red)!important;border-radius:12px!important;padding:15px 18px!important;box-shadow:0 5px 18px rgba(22,25,29,.06)!important}
+.epTitle h2{color:var(--sk-ink)!important;text-transform:uppercase;letter-spacing:.4px}
+.epActionBtn,.btn{background:var(--sk-red)!important;color:#fff!important;border:1px solid var(--sk-red)!important;border-radius:7px!important;box-shadow:none!important}
+.epActionBtn:hover,.btn:hover{background:var(--sk-red-dark)!important;transform:none!important;box-shadow:none!important}
+.btn.ghost,.backHomeBtn,.sortBtn{background:#fff!important;color:var(--sk-red)!important;border:1px solid #e7a6aa!important}
+.btn.ok{background:var(--sk-red)!important}
+.btn.danger{background:#6b7077!important}
+
+.epKpi{background:#fff!important;color:var(--sk-ink)!important;border:1px solid var(--sk-line)!important;border-top:5px solid var(--sk-red)!important;border-radius:11px!important;box-shadow:0 5px 18px rgba(22,25,29,.07)!important;min-height:128px!important}
+.epKpi:after{display:none!important}
+.epKpi .name{color:#686c71!important;text-transform:uppercase;letter-spacing:.45px}
+.epKpi .num{color:var(--sk-ink)!important}
+.epKpi .sub{color:#777b80!important}
+.epBlue,.epGreen,.epPurple,.epCyan,.epOrange,.epRed{background:#fff!important}
+.epKpiGrid .epKpi:nth-child(2n){border-top-color:#666b72!important}
+
+.epQuick{background:#fff!important;border:1px solid var(--sk-line)!important;border-left:4px solid var(--sk-red)!important;border-radius:10px!important;box-shadow:0 4px 14px rgba(22,25,29,.06)!important}
+.epQuick:hover{transform:none!important;box-shadow:0 4px 14px rgba(22,25,29,.06)!important;border-color:var(--sk-line)!important}
+.epQuickIcon{background:var(--sk-red)!important;border-radius:999px!important}
+
+input,select,textarea{background:#fff!important;color:var(--sk-ink)!important;border:1px solid #cfd2d5!important;border-radius:7px!important}
+input:focus,select:focus,textarea:focus{outline:2px solid rgba(217,31,38,.18)!important;border-color:var(--sk-red)!important}
+.tableTools{background:#f7f7f7!important;padding:9px!important;border-radius:8px!important}
+table{background:#fff!important}
+th{background:#30343b!important;color:#fff!important;border-bottom:3px solid var(--sk-red)!important}
+td{color:#2f3338!important;border-bottom-color:#eceeef!important}
+tbody tr:nth-child(even){background:#fafafa!important}
+tbody tr:hover{background:#fff2f3!important}
+.scroll{border-color:var(--sk-line)!important;background:#fff!important}
+
+.ganttLine,.effBar,.epEffBar{background:#e5e7e9!important}
+.ganttFill,.effFill,.epEffFill,.meetBar{background:linear-gradient(90deg,var(--sk-red),#ef555b)!important}
+.chartBar,.epChart div{background:linear-gradient(180deg,#ef666b,var(--sk-red-dark))!important}
+.epRing{background:conic-gradient(var(--sk-red) var(--deg),#e5e7eb 0)!important}
+.status{border:1px solid transparent!important}
+.sDone{background:#eef1f2!important;color:#34383d!important;border-color:#bfc3c7!important}
+.sRun{background:#fff0f1!important;color:#a30f16!important;border-color:#efb3b6!important}
+.sLate{background:#ffe5e7!important;color:#9d1118!important;border-color:#e88f94!important}
+.sWait{background:#f4f4f4!important;color:#555a60!important;border-color:#cfd2d5!important}
+.sPick{background:#f1f2f3!important;color:#3d4248!important;border-color:#c9cdd1!important}
+.sIdle{background:#f6f6f6!important;color:#6a6e73!important}
+
+.machineTile{border-radius:10px!important;box-shadow:none!important}
+.tileRun{background:linear-gradient(135deg,#444a51,#252a30)!important}
+.tileLate{background:linear-gradient(135deg,var(--sk-red),#8d0d14)!important}
+.tileWait{background:linear-gradient(135deg,#73777c,#41464c)!important}
+.tileIdle{background:linear-gradient(135deg,#a7aaad,#666a6e)!important}
+.machineTile.activeMachine{outline:3px solid var(--sk-red)!important;box-shadow:0 0 0 5px rgba(217,31,38,.12)!important;transform:none!important}
+.machineDetailPanel{border-left-color:var(--sk-red)!important;background:#fff!important}
+
+.pill{background:#fff0f1!important;color:#a30f16!important;border:1px solid #efb3b6!important}
+.pill.ok{background:#f1f2f3!important;color:#34383d!important;border-color:#cfd2d5!important}
+.found{background:#fff7f7!important;border-color:#efb3b6!important}
+.notfound{background:#f7f7f7!important;border-color:#d4d6d8!important}
+.aiBox,.effNote{border-left-color:var(--sk-red)!important;background:#fff5f5!important}
+
+.mesStatusBox{background:#252a31!important;border-color:var(--sk-red)!important;border-radius:8px!important}
+.mesStatusBad{background:#4a1418!important;border-color:#ff646a!important}
+.toast{background:#24282e!important;border-left:5px solid var(--sk-red)!important;border-radius:7px!important}
+
+#meeting{background:#171a1f!important}
+.meetCard{border-radius:12px!important;border-top:5px solid var(--sk-red)!important;background:#2b3037!important;box-shadow:none!important}
+.meetTable th{background:#2f343b!important}
+
+@media(max-width:1100px){header{margin-left:0!important}}
+</style>
 </body>
 </html>
