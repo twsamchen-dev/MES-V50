@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V80.3 MES Dashboard｜DataHub Integration</title>
+<title>V80.4 MES Dashboard Pro｜DataHub Control Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -2977,43 +2977,45 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 </script>
 
 
-<style id="v803DataHubDashboardCss">
-/* V80.3｜Dashboard × DataHub */
-.v803-dh-card{grid-column:span 12;background:linear-gradient(135deg,#071a35,#103b78 58%,#071a35);color:#fff;border:1px solid #2d63a7;border-radius:20px;padding:18px;box-shadow:0 14px 34px rgba(15,45,95,.24);position:relative;overflow:hidden}
-.v803-dh-card:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-90px;top:-120px;background:rgba(96,165,250,.18);pointer-events:none}
-.v803-dh-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;position:relative;z-index:1}
-.v803-dh-title h2{margin:0;font-size:22px;color:#fff}.v803-dh-title p{margin:6px 0 0;color:#bfdbfe;font-size:13px}
-.v803-dh-actions{display:flex;gap:8px;flex-wrap:wrap}
-.v803-dh-btn{border:1px solid #60a5fa;background:#eff6ff;color:#1e3a8a;border-radius:11px;padding:9px 13px;font-weight:900;cursor:pointer}
-.v803-dh-btn.dark{background:#0b2348;color:#dbeafe;border-color:#315f9a}.v803-dh-btn:hover{filter:brightness(1.08)}
-.v803-dh-kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px;margin-top:15px;position:relative;z-index:1}
-.v803-dh-kpi{background:rgba(3,16,39,.58);border:1px solid rgba(147,197,253,.28);border-radius:14px;padding:12px}
-.v803-dh-kpi span{display:block;color:#bfdbfe;font-size:11px}.v803-dh-kpi b{display:block;font-size:25px;margin-top:5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v803-dh-health{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:900}
-.v803-dh-health.ok{background:#14532d;color:#bbf7d0}.v803-dh-health.warn{background:#78350f;color:#fde68a}.v803-dh-health.bad{background:#7f1d1d;color:#fecaca}
-.v803-dh-detail{display:none;margin-top:14px;background:#fff;color:#172033;border-radius:14px;overflow:hidden;position:relative;z-index:1}
-.v803-dh-detail.open{display:block}.v803-dh-toolbar{padding:11px 12px;border-bottom:1px solid #dbe4f0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.v803-dh-toolbar input{flex:1;min-width:220px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 11px}
-.v803-dh-tablewrap{overflow:auto;max-height:360px}.v803-dh-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
-.v803-dh-table th{position:sticky;top:0;background:#eaf2ff;color:#1e3a8a;padding:9px;border-bottom:1px solid #cbd5e1;text-align:left}
-.v803-dh-table td{padding:9px;border-bottom:1px solid #e2e8f0}.v803-dh-empty{padding:24px;text-align:center;color:#64748b}
-.v803-dh-loading{opacity:.65}
-@media(max-width:1100px){.v803-dh-kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.v803-dh-kpis{grid-template-columns:repeat(2,1fr)}}
+
+<style id="v804DataHubDashboardCss">
+/* V80.4｜Dashboard Pro × DataHub */
+.v804-dh-card{grid-column:span 12;background:linear-gradient(135deg,#071a35,#103b78 58%,#071a35);color:#fff;border:1px solid #2d63a7;border-radius:20px;padding:18px;box-shadow:0 14px 34px rgba(15,45,95,.24);position:relative;overflow:hidden}
+.v804-dh-card:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-100px;top:-130px;background:rgba(96,165,250,.18);pointer-events:none}
+.v804-dh-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;position:relative;z-index:1}
+.v804-dh-title h2{margin:0;font-size:22px;color:#fff}.v804-dh-title p{margin:6px 0 0;color:#bfdbfe;font-size:13px}
+.v804-dh-actions{display:flex;gap:8px;flex-wrap:wrap}.v804-dh-btn{border:1px solid #60a5fa;background:#eff6ff;color:#1e3a8a;border-radius:11px;padding:9px 13px;font-weight:900;cursor:pointer}
+.v804-dh-btn.dark{background:#0b2348;color:#dbeafe;border-color:#315f9a}.v804-dh-btn:hover{filter:brightness(1.08)}
+.v804-dh-kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px;margin-top:15px;position:relative;z-index:1}
+.v804-dh-kpi{appearance:none;width:100%;text-align:left;color:#fff;background:rgba(3,16,39,.58);border:1px solid rgba(147,197,253,.28);border-radius:14px;padding:12px;cursor:pointer;transition:.18s}
+.v804-dh-kpi:hover,.v804-dh-kpi.active{transform:translateY(-2px);border-color:#7dd3fc;background:rgba(12,42,85,.82);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.v804-dh-kpi span{display:block;color:#bfdbfe;font-size:11px}.v804-dh-kpi b{display:block;font-size:23px;margin-top:5px;color:#fff;white-space:normal;overflow-wrap:anywhere;line-height:1.15}
+.v804-dh-kpi small{display:block;color:#93c5fd;font-size:10px;margin-top:6px}
+.v804-dh-version b{font-size:19px}.v804-dh-health{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:900}
+.v804-dh-health.ok{background:#14532d;color:#bbf7d0}.v804-dh-health.warn{background:#78350f;color:#fde68a}.v804-dh-health.bad{background:#7f1d1d;color:#fecaca}
+.v804-dh-detail{display:none;margin-top:14px;background:#fff;color:#172033;border-radius:14px;overflow:hidden;position:relative;z-index:1}.v804-dh-detail.open{display:block}
+.v804-dh-toolbar{padding:11px 12px;border-bottom:1px solid #dbe4f0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.v804-dh-toolbar input{flex:1;min-width:220px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 11px}
+.v804-dh-subtitle{font-weight:900;color:#1e3a8a}.v804-dh-count{color:#64748b;font-size:12px}
+.v804-dh-tablewrap{overflow:auto;max-height:400px}.v804-dh-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+.v804-dh-table th{position:sticky;top:0;background:#eaf2ff;color:#1e3a8a;padding:9px;border-bottom:1px solid #cbd5e1;text-align:left}
+.v804-dh-table td{padding:9px;border-bottom:1px solid #e2e8f0}.v804-dh-table tr:hover td{background:#f8fbff}
+.v804-dh-empty{padding:28px;text-align:center;color:#64748b}.v804-dh-loading{opacity:.68}.v804-dh-error{padding:18px;color:#991b1b;background:#fee2e2}
+.v804-dh-pagebar{display:flex;gap:8px;align-items:center;margin-left:auto}.v804-dh-pagebar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}.v804-dh-pagebar button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:1100px){.v804-dh-kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.v804-dh-kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 
 
-<script id="v803DataHubDashboardJs">
+<script id="v804DataHubDashboardJs">
 (function(){
   'use strict';
   var API=window.MES_API_URL||window.API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-  var state={status:null,pending:[],open:false,loading:false,filter:"",lastLoad:0};
+  var state={status:null,mode:"",rows:[],total:0,loading:false,filter:"",page:1,pageSize:100,lastLoad:0,error:""};
 
-  function escDh(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
+  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
   function api(action,params){
     params=params||{};
     return new Promise(function(resolve,reject){
-      var cb="V803_DH_"+Date.now()+"_"+Math.floor(Math.random()*999999);
-      var s=document.createElement("script"),done=false;
+      var cb="V804_DH_"+Date.now()+"_"+Math.floor(Math.random()*999999),s=document.createElement("script"),done=false;
       var timer=setTimeout(function(){finish();reject(new Error("DataHub API 逾時："+action))},60000);
       function finish(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
       window[cb]=function(data){finish();if(data&&data.ok===false)reject(new Error(data.message||data.error||"DataHub API 錯誤"));else resolve(data||{})};
@@ -3022,81 +3024,82 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       s.src=API+"?"+q.join("&");s.onerror=function(){finish();reject(new Error("DataHub API 連線失敗："+action))};document.head.appendChild(s);
     });
   }
-  function n(v){var x=Number(v||0);return isFinite(x)?x:0}
-  function dt(v){var s=String(v||"").trim();return s||"—"}
-  function ageLabel(r){
-    if(r.wait_label)return r.wait_label;
-    var s=r.created_at||r.report_date;if(!s)return "待 ERP 更新";
-    var d=new Date(String(s).replace(" ","T"));if(isNaN(d.getTime()))return "待 ERP 更新";
-    var m=Math.max(0,Math.round((Date.now()-d.getTime())/60000));
-    if(m<60)return m+" 分鐘";if(m<1440)return Math.floor(m/60)+" 小時";return Math.floor(m/1440)+" 天";
+  function num(v){var x=Number(v||0);return isFinite(x)?x:0}
+  function health(st){var h=String((st.status||{}).health||"OK").toUpperCase();if(h==="OK"||h==="HEALTHY")return{cls:"ok",text:"健康"};if(h==="WARN"||h==="WARNING")return{cls:"warn",text:"注意"};return{cls:"bad",text:h||"異常"}}
+  function shortVersion(v){v=String(v||"—");var m=v.match(/^V?\d+(?:\.\d+){1,2}/i);return m?m[0]:v}
+  function ageLabel(r){if(r.wait_label)return r.wait_label;return "等待 ERP 吸收"}
+  function modeTitle(){
+    return {workorders:"工單索引",pending:"Pending Key In",history:"History Key In",batch:"ERP 匯入批次"}[state.mode]||"DataHub 明細";
   }
-  function healthInfo(st){
-    var status=(st&&st.status)||{},h=String(status.health||"OK").toUpperCase();
-    if(h==="OK"||h==="HEALTHY")return {cls:"ok",text:"健康"};
-    if(h==="WARN"||h==="WARNING")return {cls:"warn",text:"注意"};
-    return {cls:"bad",text:h||"異常"};
+  function modeAction(){
+    return {workorders:"datahubworkorders",pending:"datahubkeyinpending",history:"datahubkeyinhistory",batch:"datahubimportlog"}[state.mode]||"";
   }
-  function filtered(){
-    var q=state.filter.toLowerCase().replace(/\s+/g,"");
-    if(!q)return state.pending;
-    return state.pending.filter(function(r){
-      return [r.work_order_no,r.batch_no,r.machine_code,r.emp_no,r.emp_name,r.factory_id].join(" ").toLowerCase().replace(/\s+/g,"").indexOf(q)>=0
-    });
+  function rowHtml(r){
+    if(state.mode==="workorders")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.order_no||"-")+'</td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||r.machine||"-")+'</td><td>'+esc(r.customer||"-")+'</td><td>'+esc(r.product_spec||"-")+'</td><td>'+esc(r.due_date||"-")+'</td><td>'+esc(r.source_name||r.source||"-")+'</td></tr>';
+    if(state.mode==="pending")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||"-")+'</td><td>'+esc(r.emp_no||"-")+'</td><td>'+esc(r.emp_name||"-")+'</td><td>'+esc(r.actual_output||0)+'</td><td>'+esc(r.unit||"-")+'</td><td>'+esc(r.created_at||r.report_date||"-")+'</td><td>'+esc(ageLabel(r))+'</td><td><span class="tag yellow">等待 ERP 吸收</span></td></tr>';
+    if(state.mode==="history")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||"-")+'</td><td>'+esc(r.emp_no||"-")+'</td><td>'+esc(r.emp_name||"-")+'</td><td>'+esc(r.actual_output||0)+'</td><td>'+esc(r.unit||"-")+'</td><td>'+esc(r.created_at||r.report_date||"-")+'</td><td>'+esc(r.absorbed_at||"-")+'</td><td>'+esc(r.absorbed_batch_id||"-")+'</td></tr>';
+    return '<tr><td><b>'+esc(r.import_batch_id||"-")+'</b></td><td>'+esc(r.business_date||"-")+'</td><td>'+esc(r.uploaded_at||"-")+'</td><td>'+esc(r.data_cutoff_at||"-")+'</td><td>'+esc(r.status||"-")+'</td><td>'+esc(r.total_files||0)+'</td><td>'+esc(r.success_files||0)+'</td><td>'+esc(r.failed_files||0)+'</td><td>'+num(r.total_rows).toLocaleString()+'</td><td>'+esc(r.duration_seconds||0)+' 秒</td></tr>';
   }
-  function tableHtml(){
-    var rows=filtered();
-    if(!rows.length)return '<div class="v803-dh-empty">目前沒有符合條件的 Pending Key In。</div>';
-    return '<div class="v803-dh-tablewrap"><table class="v803-dh-table"><thead><tr><th>工單</th><th>批號</th><th>機台</th><th>工號</th><th>姓名</th><th>產量</th><th>單位</th><th>回報時間</th><th>等待</th><th>狀態</th></tr></thead><tbody>'+
-      rows.map(function(r){return '<tr><td><b>'+escDh(r.work_order_no||"-")+'</b></td><td>'+escDh(r.batch_no||"-")+'</td><td>'+escDh(r.machine_code||"-")+'</td><td>'+escDh(r.emp_no||"-")+'</td><td>'+escDh(r.emp_name||"-")+'</td><td>'+escDh(r.actual_output||0)+'</td><td>'+escDh(r.unit||"-")+'</td><td>'+escDh(r.created_at||r.report_date||"-")+'</td><td>'+escDh(ageLabel(r))+'</td><td><span class="tag yellow">等待 ERP 吸收</span></td></tr>'}).join("")+
-      '</tbody></table></div>';
+  function headers(){
+    if(state.mode==="workorders")return ["工單","訂單／命令單","批號","機台","客戶","規格","預交日","來源"];
+    if(state.mode==="pending")return ["工單","批號","機台","工號","姓名","產量","單位","回報時間","等待","狀態"];
+    if(state.mode==="history")return ["工單","批號","機台","工號","姓名","產量","單位","回報時間","吸收時間","ERP批次"];
+    return ["匯入批次","資料日期","上傳時間","截止時間","狀態","檔案數","成功","失敗","總筆數","耗時"];
+  }
+  function detailHtml(){
+    if(!state.mode)return "";
+    if(state.error)return '<div class="v804-dh-detail open"><div class="v804-dh-error">'+esc(state.error)+'</div></div>';
+    var head=headers().map(function(h){return"<th>"+esc(h)+"</th>"}).join("");
+    var body=state.rows.length?'<div class="v804-dh-tablewrap"><table class="v804-dh-table"><thead><tr>'+head+'</tr></thead><tbody>'+state.rows.map(rowHtml).join("")+'</tbody></table></div>':'<div class="v804-dh-empty">目前沒有資料。</div>';
+    var pages=Math.max(1,Math.ceil(state.total/state.pageSize));
+    return '<div class="v804-dh-detail open"><div class="v804-dh-toolbar"><span class="v804-dh-subtitle">'+esc(modeTitle())+'</span><span class="v804-dh-count">共 '+state.total.toLocaleString()+' 筆</span><input id="v804DhSearch" placeholder="搜尋目前明細" value="'+esc(state.filter)+'"><button class="v804-dh-btn dark" onclick="v804ApplyFilter()">搜尋</button><div class="v804-dh-pagebar"><button onclick="v804Page(-1)" '+(state.page<=1?'disabled':'')+'>上一頁</button><span>'+state.page+' / '+pages+'</span><button onclick="v804Page(1)" '+(state.page>=pages?'disabled':'')+'>下一頁</button></div></div>'+body+'</div>';
   }
   function cardHtml(){
-    var st=state.status||{},c=st.counts||{},s=st.status||{},h=healthInfo(st);
-    var version=st.version||s.version||"—";
-    var pending=state.pending.length||n(c.pendingKeyin);
-    return '<div class="v803-dh-head"><div class="v803-dh-title"><h2>🧠 DataHub 健康中心 <span class="v803-dh-health '+h.cls+'">● '+h.text+'</span></h2><p>Dashboard 已連接 DataHub；核心五份資料建立工單索引，9-1／9-3／3-9 保留供 APS 下一階段使用。</p></div><div class="v803-dh-actions"><button class="v803-dh-btn dark" onclick="v803TogglePending()">'+(state.open?'收合 Pending':'查看 Pending')+'</button><button class="v803-dh-btn" onclick="v803RefreshDataHub()">重新整理</button></div></div>'+
-      '<div class="v803-dh-kpis">'+
-      '<div class="v803-dh-kpi"><span>DataHub 版本</span><b title="'+escDh(version)+'">'+escDh(version)+'</b></div>'+
-      '<div class="v803-dh-kpi"><span>工單索引</span><b>'+n(c.workorders).toLocaleString()+'</b></div>'+
-      '<div class="v803-dh-kpi"><span>Pending Key In</span><b>'+pending.toLocaleString()+'</b></div>'+
-      '<div class="v803-dh-kpi"><span>History Key In</span><b>'+n(c.historyKeyin).toLocaleString()+'</b></div>'+
-      '<div class="v803-dh-kpi"><span>ERP 批次</span><b title="'+escDh(s.latest_batch_id||"")+'">'+escDh(s.latest_batch_id||"—")+'</b></div>'+
-      '<div class="v803-dh-kpi"><span>最後重建</span><b title="'+escDh(s.last_rebuild_at||"")+'">'+escDh(s.last_rebuild_at||"—")+'</b></div>'+
-      '</div>'+
-      '<div class="v803-dh-detail '+(state.open?'open':'')+'"><div class="v803-dh-toolbar"><b>待吸收 Key In：'+pending+' 筆</b><input id="v803DhSearch" placeholder="搜尋工單、批號、機台、工號、姓名" value="'+escDh(state.filter)+'"><button class="v803-dh-btn dark" onclick="v803ApplyPendingFilter()">搜尋</button></div><div id="v803DhPendingBody">'+tableHtml()+'</div></div>';
+    var st=state.status||{},c=st.counts||{},s=st.status||{},h=health(st),version=st.version||s.version||"—";
+    var batch=s.latest_batch_id||st.latestBatchId||"—";
+    return '<div class="v804-dh-head"><div class="v804-dh-title"><h2>🧠 DataHub 控制中心 <span class="v804-dh-health '+h.cls+'">● '+h.text+'</span></h2><p>點擊下方卡片可查看工單、Pending、History 與 ERP 匯入批次明細。</p></div><div class="v804-dh-actions"><button class="v804-dh-btn" onclick="v804RefreshAll()">重新整理</button><button class="v804-dh-btn dark" onclick="v804CloseDetail()">收合明細</button></div></div>'+
+      '<div class="v804-dh-kpis">'+
+      '<button class="v804-dh-kpi v804-dh-version" onclick="v804OpenMode(\'status\')"><span>DataHub 版本</span><b>'+esc(shortVersion(version))+'</b><small title="'+esc(version)+'">'+esc(version)+'</small></button>'+
+      '<button class="v804-dh-kpi '+(state.mode==="workorders"?"active":"")+'" onclick="v804OpenMode(\'workorders\')"><span>工單索引</span><b>'+num(c.workorders).toLocaleString()+'</b><small>點擊查看全部工單</small></button>'+
+      '<button class="v804-dh-kpi '+(state.mode==="pending"?"active":"")+'" onclick="v804OpenMode(\'pending\')"><span>Pending Key In</span><b>'+num(c.pendingKeyin).toLocaleString()+'</b><small>點擊查看待吸收</small></button>'+
+      '<button class="v804-dh-kpi '+(state.mode==="history"?"active":"")+'" onclick="v804OpenMode(\'history\')"><span>History Key In</span><b>'+num(c.historyKeyin).toLocaleString()+'</b><small>點擊查看吸收紀錄</small></button>'+
+      '<button class="v804-dh-kpi '+(state.mode==="batch"?"active":"")+'" onclick="v804OpenMode(\'batch\')"><span>ERP 批次</span><b>'+esc(batch)+'</b><small>點擊查看匯入紀錄</small></button>'+
+      '<button class="v804-dh-kpi" onclick="v804RefreshAll()"><span>最後重建</span><b>'+esc(s.last_rebuild_at||"—")+'</b><small>點擊重新讀取狀態</small></button>'+
+      '</div>'+detailHtml();
   }
   function inject(){
     var grid=document.getElementById("dashboardGrid");if(!grid)return;
-    var old=document.getElementById("v803DataHubCard");
-    if(!old){old=document.createElement("div");old.id="v803DataHubCard";old.className="v803-dh-card";grid.insertBefore(old,grid.firstChild)}
-    old.classList.toggle("v803-dh-loading",state.loading);old.innerHTML=cardHtml();
+    var card=document.getElementById("v804DataHubCard");
+    if(!card){card=document.createElement("div");card.id="v804DataHubCard";card.className="v804-dh-card";grid.insertBefore(card,grid.firstChild)}
+    card.classList.toggle("v804-dh-loading",state.loading);card.innerHTML=cardHtml();
   }
-  function load(force){
-    if(state.loading)return;
-    if(!force&&Date.now()-state.lastLoad<15000){inject();return}
-    state.loading=true;inject();
-    Promise.all([api("datahubstatus"),api("datahubkeyinpending")]).then(function(res){
-      state.status=res[0]||{};state.pending=(res[1]&&res[1].rows)||[];state.lastLoad=Date.now();
-    }).catch(function(e){
-      state.status={version:"讀取失敗",counts:{},status:{health:"BAD",last_rebuild_at:e.message}};
-      state.pending=[];
-      if(window.toast)toast("DataHub 讀取失敗："+e.message);
-    }).then(function(){state.loading=false;inject()});
+  function loadStatus(){
+    return api("datahubstatus").then(function(x){state.status=x||{};state.lastLoad=Date.now()});
   }
-  window.v803RefreshDataHub=function(){state.lastLoad=0;load(true)};
-  window.v803TogglePending=function(){state.open=!state.open;inject()};
-  window.v803ApplyPendingFilter=function(){var x=document.getElementById("v803DhSearch");state.filter=x?x.value:"";inject()};
-  document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="v803DhSearch")window.v803ApplyPendingFilter()});
-
+  function loadMode(){
+    var action=modeAction();if(!action){state.rows=[];state.total=0;return Promise.resolve()}
+    return api(action,{q:state.filter,page:state.page,pageSize:state.pageSize}).then(function(x){
+      state.rows=x.rows||[];state.total=Number(x.total!=null?x.total:state.rows.length)||0;
+    });
+  }
+  function refresh(all){
+    if(state.loading)return;state.loading=true;state.error="";inject();
+    var jobs=[loadStatus()];if(state.mode)jobs.push(loadMode());
+    Promise.all(jobs).catch(function(e){state.error=e.message||String(e)}).then(function(){state.loading=false;inject()});
+  }
+  window.v804OpenMode=function(mode){
+    if(mode==="status"){state.mode="";state.rows=[];state.total=0;inject();return}
+    state.mode=mode;state.page=1;state.filter="";refresh(true);
+  };
+  window.v804CloseDetail=function(){state.mode="";state.rows=[];state.total=0;state.error="";inject()};
+  window.v804RefreshAll=function(){refresh(true)};
+  window.v804ApplyFilter=function(){var x=document.getElementById("v804DhSearch");state.filter=x?x.value:"";state.page=1;refresh(true)};
+  window.v804Page=function(delta){var pages=Math.max(1,Math.ceil(state.total/state.pageSize));state.page=Math.max(1,Math.min(pages,state.page+delta));refresh(true)};
+  document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="v804DhSearch")window.v804ApplyFilter()});
   function watch(){
-    var grid=document.getElementById("dashboardGrid");
-    if(!grid){setTimeout(watch,300);return}
-    new MutationObserver(function(){
-      if(!document.getElementById("v803DataHubCard"))setTimeout(inject,20);
-    }).observe(grid,{childList:true});
-    load(true);
-    setInterval(function(){if(document.visibilityState==="visible")load(false)},60000);
+    var grid=document.getElementById("dashboardGrid");if(!grid){setTimeout(watch,300);return}
+    new MutationObserver(function(){if(!document.getElementById("v804DataHubCard"))setTimeout(inject,20)}).observe(grid,{childList:true});
+    refresh(true);setInterval(function(){if(document.visibilityState==="visible"&&!state.loading)loadStatus().then(inject)},60000);
   }
   document.addEventListener("DOMContentLoaded",function(){setTimeout(watch,1200)});
 })();
