@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V80.4 MES Dashboard Pro｜DataHub Control Center</title>
+<title>V80.5 MES Command Center｜Animated DataHub</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -2978,44 +2978,176 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 
 
 
-<style id="v804DataHubDashboardCss">
-/* V80.4｜Dashboard Pro × DataHub */
-.v804-dh-card{grid-column:span 12;background:linear-gradient(135deg,#071a35,#103b78 58%,#071a35);color:#fff;border:1px solid #2d63a7;border-radius:20px;padding:18px;box-shadow:0 14px 34px rgba(15,45,95,.24);position:relative;overflow:hidden}
-.v804-dh-card:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-100px;top:-130px;background:rgba(96,165,250,.18);pointer-events:none}
-.v804-dh-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;position:relative;z-index:1}
-.v804-dh-title h2{margin:0;font-size:22px;color:#fff}.v804-dh-title p{margin:6px 0 0;color:#bfdbfe;font-size:13px}
-.v804-dh-actions{display:flex;gap:8px;flex-wrap:wrap}.v804-dh-btn{border:1px solid #60a5fa;background:#eff6ff;color:#1e3a8a;border-radius:11px;padding:9px 13px;font-weight:900;cursor:pointer}
-.v804-dh-btn.dark{background:#0b2348;color:#dbeafe;border-color:#315f9a}.v804-dh-btn:hover{filter:brightness(1.08)}
-.v804-dh-kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px;margin-top:15px;position:relative;z-index:1}
-.v804-dh-kpi{appearance:none;width:100%;text-align:left;color:#fff;background:rgba(3,16,39,.58);border:1px solid rgba(147,197,253,.28);border-radius:14px;padding:12px;cursor:pointer;transition:.18s}
-.v804-dh-kpi:hover,.v804-dh-kpi.active{transform:translateY(-2px);border-color:#7dd3fc;background:rgba(12,42,85,.82);box-shadow:0 8px 20px rgba(0,0,0,.18)}
-.v804-dh-kpi span{display:block;color:#bfdbfe;font-size:11px}.v804-dh-kpi b{display:block;font-size:23px;margin-top:5px;color:#fff;white-space:normal;overflow-wrap:anywhere;line-height:1.15}
-.v804-dh-kpi small{display:block;color:#93c5fd;font-size:10px;margin-top:6px}
-.v804-dh-version b{font-size:19px}.v804-dh-health{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:900}
-.v804-dh-health.ok{background:#14532d;color:#bbf7d0}.v804-dh-health.warn{background:#78350f;color:#fde68a}.v804-dh-health.bad{background:#7f1d1d;color:#fecaca}
-.v804-dh-detail{display:none;margin-top:14px;background:#fff;color:#172033;border-radius:14px;overflow:hidden;position:relative;z-index:1}.v804-dh-detail.open{display:block}
-.v804-dh-toolbar{padding:11px 12px;border-bottom:1px solid #dbe4f0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.v804-dh-toolbar input{flex:1;min-width:220px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 11px}
-.v804-dh-subtitle{font-weight:900;color:#1e3a8a}.v804-dh-count{color:#64748b;font-size:12px}
-.v804-dh-tablewrap{overflow:auto;max-height:400px}.v804-dh-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
-.v804-dh-table th{position:sticky;top:0;background:#eaf2ff;color:#1e3a8a;padding:9px;border-bottom:1px solid #cbd5e1;text-align:left}
-.v804-dh-table td{padding:9px;border-bottom:1px solid #e2e8f0}.v804-dh-table tr:hover td{background:#f8fbff}
-.v804-dh-empty{padding:28px;text-align:center;color:#64748b}.v804-dh-loading{opacity:.68}.v804-dh-error{padding:18px;color:#991b1b;background:#fee2e2}
-.v804-dh-pagebar{display:flex;gap:8px;align-items:center;margin-left:auto}.v804-dh-pagebar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}.v804-dh-pagebar button:disabled{opacity:.45;cursor:not-allowed}
-@media(max-width:1100px){.v804-dh-kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.v804-dh-kpis{grid-template-columns:repeat(2,1fr)}}
+
+<style id="v805CommandCenterCss">
+:root{
+  --v805-blue:#60a5fa;
+  --v805-cyan:#22d3ee;
+  --v805-green:#22c55e;
+  --v805-yellow:#facc15;
+  --v805-red:#ef4444;
+}
+.v805-card{
+  grid-column:span 12;
+  position:relative;
+  overflow:hidden;
+  color:#fff;
+  border:1px solid rgba(96,165,250,.42);
+  border-radius:22px;
+  padding:18px;
+  background:
+    radial-gradient(circle at 86% 8%,rgba(34,211,238,.18),transparent 26%),
+    radial-gradient(circle at 8% 92%,rgba(59,130,246,.18),transparent 30%),
+    linear-gradient(135deg,#061a36 0%,#0c3165 48%,#071a35 100%);
+  box-shadow:0 18px 46px rgba(2,20,48,.34),inset 0 1px rgba(255,255,255,.05);
+  animation:v805CardEnter .72s cubic-bezier(.2,.8,.2,1) both;
+}
+.v805-card:before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  pointer-events:none;
+  background:linear-gradient(110deg,transparent 24%,rgba(255,255,255,.1) 44%,transparent 60%);
+  transform:translateX(-120%);
+  animation:v805Sweep 6.5s ease-in-out infinite;
+}
+.v805-orb{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(1px);
+  pointer-events:none;
+}
+.v805-orb.a{width:220px;height:220px;right:-85px;top:-105px;background:rgba(34,211,238,.13);animation:v805FloatA 7s ease-in-out infinite}
+.v805-orb.b{width:150px;height:150px;left:-60px;bottom:-80px;background:rgba(37,99,235,.16);animation:v805FloatB 8s ease-in-out infinite}
+.v805-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;position:relative;z-index:2}
+.v805-title h2{margin:0;color:#fff;font-size:23px;letter-spacing:.2px}
+.v805-title p{margin:7px 0 0;color:#bfdbfe;font-size:13px}
+.v805-actions{display:flex;gap:8px;flex-wrap:wrap}
+.v805-btn{
+  border:1px solid rgba(125,211,252,.7);
+  border-radius:12px;
+  padding:9px 14px;
+  font-weight:900;
+  cursor:pointer;
+  transition:.2s;
+  background:#eff6ff;
+  color:#1e3a8a;
+  box-shadow:0 6px 18px rgba(2,18,43,.18);
+}
+.v805-btn.dark{background:rgba(4,30,67,.76);color:#dbeafe;border-color:rgba(96,165,250,.45)}
+.v805-btn:hover{transform:translateY(-2px) scale(1.02);filter:brightness(1.08)}
+.v805-btn:active{transform:translateY(0) scale(.98)}
+.v805-health{
+  display:inline-flex;align-items:center;gap:8px;
+  border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900
+}
+.v805-health i{
+  width:8px;height:8px;border-radius:50%;display:inline-block;
+  box-shadow:0 0 0 0 currentColor;
+  animation:v805Pulse 1.8s infinite
+}
+.v805-health.ok{background:#14532d;color:#bbf7d0}
+.v805-health.warn{background:#78350f;color:#fde68a}
+.v805-health.bad{background:#7f1d1d;color:#fecaca}
+.v805-kpis{
+  display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));
+  gap:10px;margin-top:16px;position:relative;z-index:2
+}
+.v805-kpi{
+  appearance:none;width:100%;text-align:left;color:#fff;
+  background:linear-gradient(160deg,rgba(3,17,41,.76),rgba(9,44,87,.64));
+  border:1px solid rgba(147,197,253,.26);border-radius:15px;padding:13px;
+  cursor:pointer;transition:.22s;
+  opacity:0;transform:translateY(18px) scale(.985);
+  animation:v805TileEnter .55s cubic-bezier(.2,.8,.2,1) forwards;
+}
+.v805-kpi:nth-child(1){animation-delay:.05s}
+.v805-kpi:nth-child(2){animation-delay:.11s}
+.v805-kpi:nth-child(3){animation-delay:.17s}
+.v805-kpi:nth-child(4){animation-delay:.23s}
+.v805-kpi:nth-child(5){animation-delay:.29s}
+.v805-kpi:nth-child(6){animation-delay:.35s}
+.v805-kpi:hover,.v805-kpi.active{
+  transform:translateY(-4px) scale(1.015);
+  border-color:#67e8f9;
+  box-shadow:0 12px 26px rgba(0,0,0,.24),0 0 0 1px rgba(34,211,238,.16) inset;
+  background:linear-gradient(160deg,rgba(7,35,76,.95),rgba(15,71,132,.78));
+}
+.v805-kpi span{display:block;color:#bfdbfe;font-size:11px}
+.v805-kpi b{
+  display:block;margin-top:6px;font-size:24px;line-height:1.1;color:#fff;
+  white-space:normal;overflow-wrap:anywhere;text-shadow:0 2px 10px rgba(0,0,0,.24)
+}
+.v805-kpi small{display:block;color:#93c5fd;font-size:10px;margin-top:7px}
+.v805-kpi.version b{font-size:20px}
+.v805-kpi.flash{animation:v805Flash .75s ease}
+.v805-detail{
+  display:grid;grid-template-rows:0fr;
+  opacity:0;margin-top:0;position:relative;z-index:2;
+  transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1),opacity .3s,margin-top .3s
+}
+.v805-detail.open{grid-template-rows:1fr;opacity:1;margin-top:15px}
+.v805-detail-inner{
+  min-height:0;overflow:hidden;background:#fff;color:#172033;border-radius:15px;
+  box-shadow:0 16px 32px rgba(0,0,0,.18)
+}
+.v805-toolbar{padding:11px 12px;border-bottom:1px solid #dbe4f0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.v805-toolbar input{flex:1;min-width:220px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 11px;transition:.2s}
+.v805-toolbar input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.18)}
+.v805-subtitle{font-weight:900;color:#1e3a8a}.v805-count{color:#64748b;font-size:12px}
+.v805-tablewrap{overflow:auto;max-height:410px}
+.v805-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+.v805-table th{position:sticky;top:0;background:#eaf2ff;color:#1e3a8a;padding:9px;border-bottom:1px solid #cbd5e1;text-align:left}
+.v805-table td{padding:9px;border-bottom:1px solid #e2e8f0}
+.v805-table tbody tr{animation:v805RowEnter .34s ease both}
+.v805-table tbody tr:nth-child(1){animation-delay:.02s}
+.v805-table tbody tr:nth-child(2){animation-delay:.04s}
+.v805-table tbody tr:nth-child(3){animation-delay:.06s}
+.v805-table tbody tr:nth-child(4){animation-delay:.08s}
+.v805-table tbody tr:nth-child(5){animation-delay:.10s}
+.v805-table tr:hover td{background:#f0f7ff}
+.v805-empty{padding:30px;text-align:center;color:#64748b}
+.v805-error{padding:18px;color:#991b1b;background:#fee2e2}
+.v805-pagebar{display:flex;gap:8px;align-items:center;margin-left:auto}
+.v805-pagebar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+.v805-pagebar button:disabled{opacity:.45;cursor:not-allowed}
+.v805-loading .v805-kpi b,.v805-loading .v805-kpi small{
+  color:transparent!important;border-radius:6px;
+  background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.24),rgba(255,255,255,.08));
+  background-size:220% 100%;animation:v805Skeleton 1.15s linear infinite
+}
+.v805-sync-badge{display:none;margin-left:8px;color:#67e8f9;font-size:12px;font-weight:800}
+.v805-loading .v805-sync-badge{display:inline-block;animation:v805Blink 1s infinite}
+@keyframes v805CardEnter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes v805TileEnter{to{opacity:1;transform:none}}
+@keyframes v805RowEnter{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@keyframes v805Pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes v805Sweep{0%,55%{transform:translateX(-120%)}78%,100%{transform:translateX(120%)}}
+@keyframes v805FloatA{50%{transform:translate(-16px,18px) scale(1.08)}}
+@keyframes v805FloatB{50%{transform:translate(18px,-14px) scale(.92)}}
+@keyframes v805Skeleton{to{background-position:-220% 0}}
+@keyframes v805Flash{0%{box-shadow:0 0 0 rgba(34,211,238,0)}40%{box-shadow:0 0 28px rgba(34,211,238,.52)}100%{box-shadow:0 0 0 rgba(34,211,238,0)}}
+@keyframes v805Blink{50%{opacity:.35}}
+@media(max-width:1100px){.v805-kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:650px){.v805-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(prefers-reduced-motion:reduce){
+  .v805-card,.v805-kpi,.v805-table tbody tr,.v805-health i,.v805-card:before,.v805-orb{animation:none!important;transition:none!important}
+}
 </style>
 
 
-<script id="v804DataHubDashboardJs">
+<script id="v805CommandCenterJs">
 (function(){
   'use strict';
   var API=window.MES_API_URL||window.API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-  var state={status:null,mode:"",rows:[],total:0,loading:false,filter:"",page:1,pageSize:100,lastLoad:0,error:""};
+  var state={status:null,mode:"",rows:[],total:0,loading:false,filter:"",page:1,pageSize:100,error:"",prevCounts:{}};
 
   function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
+  function num(v){var x=Number(v||0);return isFinite(x)?x:0}
   function api(action,params){
     params=params||{};
     return new Promise(function(resolve,reject){
-      var cb="V804_DH_"+Date.now()+"_"+Math.floor(Math.random()*999999),s=document.createElement("script"),done=false;
+      var cb="V805_"+Date.now()+"_"+Math.floor(Math.random()*999999),s=document.createElement("script"),done=false;
       var timer=setTimeout(function(){finish();reject(new Error("DataHub API 逾時："+action))},60000);
       function finish(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
       window[cb]=function(data){finish();if(data&&data.ok===false)reject(new Error(data.message||data.error||"DataHub API 錯誤"));else resolve(data||{})};
@@ -3024,84 +3156,100 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
       s.src=API+"?"+q.join("&");s.onerror=function(){finish();reject(new Error("DataHub API 連線失敗："+action))};document.head.appendChild(s);
     });
   }
-  function num(v){var x=Number(v||0);return isFinite(x)?x:0}
   function health(st){var h=String((st.status||{}).health||"OK").toUpperCase();if(h==="OK"||h==="HEALTHY")return{cls:"ok",text:"健康"};if(h==="WARN"||h==="WARNING")return{cls:"warn",text:"注意"};return{cls:"bad",text:h||"異常"}}
   function shortVersion(v){v=String(v||"—");var m=v.match(/^V?\d+(?:\.\d+){1,2}/i);return m?m[0]:v}
-  function ageLabel(r){if(r.wait_label)return r.wait_label;return "等待 ERP 吸收"}
-  function modeTitle(){
-    return {workorders:"工單索引",pending:"Pending Key In",history:"History Key In",batch:"ERP 匯入批次"}[state.mode]||"DataHub 明細";
-  }
-  function modeAction(){
-    return {workorders:"datahubworkorders",pending:"datahubkeyinpending",history:"datahubkeyinhistory",batch:"datahubimportlog"}[state.mode]||"";
+  function actionForMode(){return{workorders:"datahubworkorders",pending:"datahubkeyinpending",history:"datahubkeyinhistory",batch:"datahubimportlog"}[state.mode]||""}
+  function titleForMode(){return{workorders:"工單索引",pending:"Pending Key In",history:"History Key In",batch:"ERP 匯入批次"}[state.mode]||"DataHub 明細"}
+  function headers(){
+    if(state.mode==="workorders")return["工單","訂單／命令單","批號","機台","客戶","規格","預交日","來源"];
+    if(state.mode==="pending")return["工單","批號","機台","工號","姓名","產量","單位","回報時間","等待","狀態"];
+    if(state.mode==="history")return["工單","批號","機台","工號","姓名","產量","單位","回報時間","吸收時間","ERP批次"];
+    return["匯入批次","資料日期","上傳時間","截止時間","狀態","檔案數","成功","失敗","總筆數","耗時"];
   }
   function rowHtml(r){
     if(state.mode==="workorders")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.order_no||"-")+'</td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||r.machine||"-")+'</td><td>'+esc(r.customer||"-")+'</td><td>'+esc(r.product_spec||"-")+'</td><td>'+esc(r.due_date||"-")+'</td><td>'+esc(r.source_name||r.source||"-")+'</td></tr>';
-    if(state.mode==="pending")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||"-")+'</td><td>'+esc(r.emp_no||"-")+'</td><td>'+esc(r.emp_name||"-")+'</td><td>'+esc(r.actual_output||0)+'</td><td>'+esc(r.unit||"-")+'</td><td>'+esc(r.created_at||r.report_date||"-")+'</td><td>'+esc(ageLabel(r))+'</td><td><span class="tag yellow">等待 ERP 吸收</span></td></tr>';
+    if(state.mode==="pending")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||"-")+'</td><td>'+esc(r.emp_no||"-")+'</td><td>'+esc(r.emp_name||"-")+'</td><td>'+esc(r.actual_output||0)+'</td><td>'+esc(r.unit||"-")+'</td><td>'+esc(r.created_at||r.report_date||"-")+'</td><td>'+esc(r.wait_label||"等待 ERP")+'</td><td><span class="tag yellow">等待 ERP 吸收</span></td></tr>';
     if(state.mode==="history")return '<tr><td><b>'+esc(r.work_order_no||"-")+'</b></td><td>'+esc(r.batch_no||"-")+'</td><td>'+esc(r.machine_code||"-")+'</td><td>'+esc(r.emp_no||"-")+'</td><td>'+esc(r.emp_name||"-")+'</td><td>'+esc(r.actual_output||0)+'</td><td>'+esc(r.unit||"-")+'</td><td>'+esc(r.created_at||r.report_date||"-")+'</td><td>'+esc(r.absorbed_at||"-")+'</td><td>'+esc(r.absorbed_batch_id||"-")+'</td></tr>';
     return '<tr><td><b>'+esc(r.import_batch_id||"-")+'</b></td><td>'+esc(r.business_date||"-")+'</td><td>'+esc(r.uploaded_at||"-")+'</td><td>'+esc(r.data_cutoff_at||"-")+'</td><td>'+esc(r.status||"-")+'</td><td>'+esc(r.total_files||0)+'</td><td>'+esc(r.success_files||0)+'</td><td>'+esc(r.failed_files||0)+'</td><td>'+num(r.total_rows).toLocaleString()+'</td><td>'+esc(r.duration_seconds||0)+' 秒</td></tr>';
   }
-  function headers(){
-    if(state.mode==="workorders")return ["工單","訂單／命令單","批號","機台","客戶","規格","預交日","來源"];
-    if(state.mode==="pending")return ["工單","批號","機台","工號","姓名","產量","單位","回報時間","等待","狀態"];
-    if(state.mode==="history")return ["工單","批號","機台","工號","姓名","產量","單位","回報時間","吸收時間","ERP批次"];
-    return ["匯入批次","資料日期","上傳時間","截止時間","狀態","檔案數","成功","失敗","總筆數","耗時"];
-  }
   function detailHtml(){
-    if(!state.mode)return "";
-    if(state.error)return '<div class="v804-dh-detail open"><div class="v804-dh-error">'+esc(state.error)+'</div></div>';
-    var head=headers().map(function(h){return"<th>"+esc(h)+"</th>"}).join("");
-    var body=state.rows.length?'<div class="v804-dh-tablewrap"><table class="v804-dh-table"><thead><tr>'+head+'</tr></thead><tbody>'+state.rows.map(rowHtml).join("")+'</tbody></table></div>':'<div class="v804-dh-empty">目前沒有資料。</div>';
+    if(!state.mode)return '<div class="v805-detail"><div class="v805-detail-inner"></div></div>';
     var pages=Math.max(1,Math.ceil(state.total/state.pageSize));
-    return '<div class="v804-dh-detail open"><div class="v804-dh-toolbar"><span class="v804-dh-subtitle">'+esc(modeTitle())+'</span><span class="v804-dh-count">共 '+state.total.toLocaleString()+' 筆</span><input id="v804DhSearch" placeholder="搜尋目前明細" value="'+esc(state.filter)+'"><button class="v804-dh-btn dark" onclick="v804ApplyFilter()">搜尋</button><div class="v804-dh-pagebar"><button onclick="v804Page(-1)" '+(state.page<=1?'disabled':'')+'>上一頁</button><span>'+state.page+' / '+pages+'</span><button onclick="v804Page(1)" '+(state.page>=pages?'disabled':'')+'>下一頁</button></div></div>'+body+'</div>';
+    var body;
+    if(state.error)body='<div class="v805-error">'+esc(state.error)+'</div>';
+    else if(!state.rows.length)body='<div class="v805-empty">目前沒有資料。</div>';
+    else body='<div class="v805-tablewrap"><table class="v805-table"><thead><tr>'+headers().map(function(h){return"<th>"+esc(h)+"</th>"}).join("")+'</tr></thead><tbody>'+state.rows.map(rowHtml).join("")+'</tbody></table></div>';
+    return '<div class="v805-detail open"><div class="v805-detail-inner"><div class="v805-toolbar"><span class="v805-subtitle">'+esc(titleForMode())+'</span><span class="v805-count">共 '+state.total.toLocaleString()+' 筆</span><input id="v805Search" placeholder="搜尋目前明細" value="'+esc(state.filter)+'"><button class="v805-btn dark" onclick="v805ApplyFilter()">搜尋</button><div class="v805-pagebar"><button onclick="v805Page(-1)" '+(state.page<=1?'disabled':'')+'>上一頁</button><span>'+state.page+' / '+pages+'</span><button onclick="v805Page(1)" '+(state.page>=pages?'disabled':'')+'>下一頁</button></div></div>'+body+'</div></div>';
   }
   function cardHtml(){
-    var st=state.status||{},c=st.counts||{},s=st.status||{},h=health(st),version=st.version||s.version||"—";
-    var batch=s.latest_batch_id||st.latestBatchId||"—";
-    return '<div class="v804-dh-head"><div class="v804-dh-title"><h2>🧠 DataHub 控制中心 <span class="v804-dh-health '+h.cls+'">● '+h.text+'</span></h2><p>點擊下方卡片可查看工單、Pending、History 與 ERP 匯入批次明細。</p></div><div class="v804-dh-actions"><button class="v804-dh-btn" onclick="v804RefreshAll()">重新整理</button><button class="v804-dh-btn dark" onclick="v804CloseDetail()">收合明細</button></div></div>'+
-      '<div class="v804-dh-kpis">'+
-      '<button class="v804-dh-kpi v804-dh-version" onclick="v804OpenMode(\'status\')"><span>DataHub 版本</span><b>'+esc(shortVersion(version))+'</b><small title="'+esc(version)+'">'+esc(version)+'</small></button>'+
-      '<button class="v804-dh-kpi '+(state.mode==="workorders"?"active":"")+'" onclick="v804OpenMode(\'workorders\')"><span>工單索引</span><b>'+num(c.workorders).toLocaleString()+'</b><small>點擊查看全部工單</small></button>'+
-      '<button class="v804-dh-kpi '+(state.mode==="pending"?"active":"")+'" onclick="v804OpenMode(\'pending\')"><span>Pending Key In</span><b>'+num(c.pendingKeyin).toLocaleString()+'</b><small>點擊查看待吸收</small></button>'+
-      '<button class="v804-dh-kpi '+(state.mode==="history"?"active":"")+'" onclick="v804OpenMode(\'history\')"><span>History Key In</span><b>'+num(c.historyKeyin).toLocaleString()+'</b><small>點擊查看吸收紀錄</small></button>'+
-      '<button class="v804-dh-kpi '+(state.mode==="batch"?"active":"")+'" onclick="v804OpenMode(\'batch\')"><span>ERP 批次</span><b>'+esc(batch)+'</b><small>點擊查看匯入紀錄</small></button>'+
-      '<button class="v804-dh-kpi" onclick="v804RefreshAll()"><span>最後重建</span><b>'+esc(s.last_rebuild_at||"—")+'</b><small>點擊重新讀取狀態</small></button>'+
+    var st=state.status||{},c=st.counts||{},s=st.status||{},h=health(st),version=st.version||s.version||"—",batch=s.latest_batch_id||st.latestBatchId||"—";
+    return '<span class="v805-orb a"></span><span class="v805-orb b"></span>'+
+      '<div class="v805-head"><div class="v805-title"><h2>🧠 DataHub Command Center <span class="v805-health '+h.cls+'"><i></i>'+h.text+'</span><span class="v805-sync-badge">同步中…</span></h2><p>點擊卡片查看工單、Pending、History 與 ERP 匯入批次。</p></div><div class="v805-actions"><button class="v805-btn" onclick="v805Refresh()">重新整理</button><button class="v805-btn dark" onclick="v805Close()">收合明細</button></div></div>'+
+      '<div class="v805-kpis">'+
+      '<button class="v805-kpi version" data-key="version"><span>DataHub 版本</span><b>'+esc(shortVersion(version))+'</b><small>'+esc(version)+'</small></button>'+
+      '<button class="v805-kpi '+(state.mode==="workorders"?"active":"")+'" data-key="workorders" onclick="v805Open(\'workorders\')"><span>工單索引</span><b data-count="'+num(c.workorders)+'">'+num(c.workorders).toLocaleString()+'</b><small>點擊查看全部工單</small></button>'+
+      '<button class="v805-kpi '+(state.mode==="pending"?"active":"")+'" data-key="pending" onclick="v805Open(\'pending\')"><span>Pending Key In</span><b data-count="'+num(c.pendingKeyin)+'">'+num(c.pendingKeyin).toLocaleString()+'</b><small>點擊查看待吸收</small></button>'+
+      '<button class="v805-kpi '+(state.mode==="history"?"active":"")+'" data-key="history" onclick="v805Open(\'history\')"><span>History Key In</span><b data-count="'+num(c.historyKeyin)+'">'+num(c.historyKeyin).toLocaleString()+'</b><small>點擊查看吸收紀錄</small></button>'+
+      '<button class="v805-kpi '+(state.mode==="batch"?"active":"")+'" data-key="batch" onclick="v805Open(\'batch\')"><span>ERP 批次</span><b>'+esc(batch)+'</b><small>點擊查看匯入紀錄</small></button>'+
+      '<button class="v805-kpi" data-key="rebuild" onclick="v805Refresh()"><span>最後重建</span><b>'+esc(s.last_rebuild_at||"—")+'</b><small>點擊重新讀取狀態</small></button>'+
       '</div>'+detailHtml();
   }
   function inject(){
     var grid=document.getElementById("dashboardGrid");if(!grid)return;
-    var card=document.getElementById("v804DataHubCard");
-    if(!card){card=document.createElement("div");card.id="v804DataHubCard";card.className="v804-dh-card";grid.insertBefore(card,grid.firstChild)}
-    card.classList.toggle("v804-dh-loading",state.loading);card.innerHTML=cardHtml();
+    var card=document.getElementById("v805Card");
+    if(!card){card=document.createElement("div");card.id="v805Card";card.className="v805-card";grid.insertBefore(card,grid.firstChild)}
+    card.classList.toggle("v805-loading",state.loading);
+    card.innerHTML=cardHtml();
+    if(!state.loading)animateCounts(card);
   }
-  function loadStatus(){
-    return api("datahubstatus").then(function(x){state.status=x||{};state.lastLoad=Date.now()});
-  }
-  function loadMode(){
-    var action=modeAction();if(!action){state.rows=[];state.total=0;return Promise.resolve()}
-    return api(action,{q:state.filter,page:state.page,pageSize:state.pageSize}).then(function(x){
-      state.rows=x.rows||[];state.total=Number(x.total!=null?x.total:state.rows.length)||0;
+  function animateCounts(card){
+    Array.prototype.forEach.call(card.querySelectorAll("[data-count]"),function(el){
+      var end=Number(el.getAttribute("data-count")||0),start=0,duration=780,t0=performance.now();
+      function step(now){
+        var p=Math.min(1,(now-t0)/duration),e=1-Math.pow(1-p,3),v=Math.round(start+(end-start)*e);
+        el.textContent=v.toLocaleString();
+        if(p<1)requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
     });
   }
-  function refresh(all){
-    if(state.loading)return;state.loading=true;state.error="";inject();
-    var jobs=[loadStatus()];if(state.mode)jobs.push(loadMode());
-    Promise.all(jobs).catch(function(e){state.error=e.message||String(e)}).then(function(){state.loading=false;inject()});
+  function loadStatus(){
+    return api("datahubstatus").then(function(x){
+      var old=state.status&&state.status.counts?state.status.counts:{};
+      state.prevCounts=old;state.status=x||{};
+    });
   }
-  window.v804OpenMode=function(mode){
-    if(mode==="status"){state.mode="";state.rows=[];state.total=0;inject();return}
-    state.mode=mode;state.page=1;state.filter="";refresh(true);
-  };
-  window.v804CloseDetail=function(){state.mode="";state.rows=[];state.total=0;state.error="";inject()};
-  window.v804RefreshAll=function(){refresh(true)};
-  window.v804ApplyFilter=function(){var x=document.getElementById("v804DhSearch");state.filter=x?x.value:"";state.page=1;refresh(true)};
-  window.v804Page=function(delta){var pages=Math.max(1,Math.ceil(state.total/state.pageSize));state.page=Math.max(1,Math.min(pages,state.page+delta));refresh(true)};
-  document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="v804DhSearch")window.v804ApplyFilter()});
-  function watch(){
-    var grid=document.getElementById("dashboardGrid");if(!grid){setTimeout(watch,300);return}
-    new MutationObserver(function(){if(!document.getElementById("v804DataHubCard"))setTimeout(inject,20)}).observe(grid,{childList:true});
-    refresh(true);setInterval(function(){if(document.visibilityState==="visible"&&!state.loading)loadStatus().then(inject)},60000);
+  function loadMode(){
+    var action=actionForMode();if(!action){state.rows=[];state.total=0;return Promise.resolve()}
+    return api(action,{q:state.filter,page:state.page,pageSize:state.pageSize}).then(function(x){state.rows=x.rows||[];state.total=Number(x.total!=null?x.total:state.rows.length)||0});
   }
-  document.addEventListener("DOMContentLoaded",function(){setTimeout(watch,1200)});
+  function refresh(){
+    if(state.loading)return;
+    state.loading=true;state.error="";inject();
+    Promise.all([loadStatus()].concat(state.mode?[loadMode()]:[])).catch(function(e){state.error=e.message||String(e)}).then(function(){state.loading=false;inject();flashChanged()});
+  }
+  function flashChanged(){
+    var card=document.getElementById("v805Card");if(!card||!state.status)return;
+    var c=state.status.counts||{},old=state.prevCounts||{};
+    [["workorders",c.workorders],["pending",c.pendingKeyin],["history",c.historyKeyin]].forEach(function(pair){
+      if(old[pair[0]]!==undefined&&Number(old[pair[0]])!==Number(pair[1])){
+        var tile=card.querySelector('[data-key="'+pair[0]+'"]');if(tile){tile.classList.add("flash");setTimeout(function(){tile.classList.remove("flash")},850)}
+      }
+    });
+  }
+  window.v805Open=function(mode){state.mode=mode;state.page=1;state.filter="";refresh()};
+  window.v805Close=function(){state.mode="";state.rows=[];state.total=0;state.error="";inject()};
+  window.v805Refresh=function(){refresh()};
+  window.v805ApplyFilter=function(){var x=document.getElementById("v805Search");state.filter=x?x.value:"";state.page=1;refresh()};
+  window.v805Page=function(d){var pages=Math.max(1,Math.ceil(state.total/state.pageSize));state.page=Math.max(1,Math.min(pages,state.page+d));refresh()};
+  document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="v805Search")window.v805ApplyFilter()});
+  function start(){
+    var grid=document.getElementById("dashboardGrid");if(!grid){setTimeout(start,300);return}
+    new MutationObserver(function(){if(!document.getElementById("v805Card"))setTimeout(inject,20)}).observe(grid,{childList:true});
+    refresh();
+    setInterval(function(){if(document.visibilityState==="visible"&&!state.loading)refresh()},60000);
+  }
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(start,1000)});
 })();
 </script>
 
