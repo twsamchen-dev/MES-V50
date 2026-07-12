@@ -1,1 +1,285 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MES Enterprise V82.1｜Schedule Center</title>
+<style>
+:root{
+  --bg:#080c12;--panel:#111820;--panel2:#151f2a;--line:#2b3541;
+  --text:#f5f7fa;--muted:#98a3b2;--blue:#3b82f6;--cyan:#22d3ee;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--gray:#64748b;
+  --corp:#d71920;--corp2:#9f1118;--shadow:0 12px 38px #0008;
+  --machine-col:160px;--hour-width:76px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 88% -10%,#3d1014 0,#10151c 30%,#080c12 66%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif}
+button,input,select{font:inherit}
+header{
+  position:sticky;top:0;z-index:50;height:76px;padding:11px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#0b1016f3;border-bottom:1px solid #3b2022;backdrop-filter:blur(12px)
+}
+.brand{display:flex;align-items:center;gap:15px}
+.logo{width:46px;height:46px;border-radius:11px;background:linear-gradient(145deg,var(--corp),#7c0e13);display:grid;place-items:center;font-weight:900;box-shadow:0 8px 22px #d7192040}
+.brand h1{font-size:22px;margin:0}.brand p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.header-right{display:flex;gap:10px;align-items:center}
+.badge{border:1px solid #843038;background:#361619;color:#ffb8bc;border-radius:999px;padding:7px 11px;font-size:12px}
+.clock{font-variant-numeric:tabular-nums;color:#d7dee8;font-size:13px}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 76px)}
+aside{position:sticky;top:76px;height:calc(100vh - 76px);padding:18px 12px;background:linear-gradient(180deg,#0e151d,#0a0f15);border-right:1px solid #29313b}
+.side-title{font-size:10px;letter-spacing:2px;color:#667382;padding:0 12px 10px}
+.nav{display:grid;gap:6px}
+.nav button{border:1px solid transparent;background:transparent;color:#aeb7c3;text-align:left;padding:11px 12px;border-radius:9px;cursor:pointer}
+.nav button:hover{background:#171f29;color:#fff}
+.nav button.active{background:linear-gradient(90deg,#3a1518,#1c2028);border-color:#6d282d;color:#fff;box-shadow:inset 3px 0 var(--corp)}
+.nav .disabled{opacity:.42;cursor:default}
+.side-foot{position:absolute;left:24px;right:24px;bottom:18px;border-top:1px solid #26303a;padding-top:14px;color:#9da8b5;font-size:12px;line-height:1.7}
+main{padding:18px;min-width:0}
+.toolbar,.summary,.schedule-card{background:linear-gradient(145deg,#131b24f5,#0e151df5);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.toolbar{padding:14px;margin-bottom:13px}
+.toolbar-grid{display:grid;grid-template-columns:150px 150px 150px 1fr auto;gap:10px;align-items:end}
+.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 5px}
+.field input,.field select{width:100%;height:38px;background:#0a121d;color:#eef5fb;border:1px solid #314050;border-radius:8px;padding:0 10px}
+.btn{height:38px;border:0;border-radius:8px;padding:0 14px;color:white;background:linear-gradient(135deg,var(--corp),var(--corp2));font-weight:700;cursor:pointer}
+.btn.ghost{background:#182330;border:1px solid #344352;color:#dce5ee}
+.btn.blue{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;overflow:hidden;margin-bottom:13px;background:#29333d}
+.kpi{background:#111922;padding:12px 14px;min-height:78px}.kpi small{color:var(--muted)}.kpi strong{display:block;font-size:24px;margin-top:8px}.kpi strong.red{color:#ff7d86}.kpi strong.yellow{color:#ffc45b}.kpi strong.green{color:#5ae093}
+.schedule-card{overflow:hidden}
+.schedule-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.schedule-head h2{font-size:17px;margin:0}.legend{display:flex;gap:12px;flex-wrap:wrap;color:#b7c0cb;font-size:11px}.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+.gantt-scroll{overflow:auto;max-height:calc(100vh - 290px);position:relative}
+.gantt{min-width:calc(var(--machine-col) + 24 * var(--hour-width));position:relative}
+.timeline-head{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:var(--machine-col) calc(24 * var(--hour-width));background:#111922;border-bottom:1px solid #394655}
+.machine-title{position:sticky;left:0;z-index:35;background:#111922;padding:13px 12px;font-weight:700;border-right:1px solid #394655}
+.hours{display:grid;grid-template-columns:repeat(24,var(--hour-width));position:relative}
+.hour{padding:10px 0;text-align:center;border-right:1px solid #263341;color:#b9c4d0;font-size:11px}
+.hour.midnight{color:#ff7e86;background:#35181b}.hour.shift{color:#72b6ff}
+.shift-band{display:grid;grid-template-columns:var(--machine-col) calc(24 * var(--hour-width));border-bottom:1px solid #33414f;background:#0d141c}
+.shift-label{position:sticky;left:0;z-index:22;background:#0d141c;border-right:1px solid #33414f}
+.shift-lanes{display:grid;grid-template-columns:1fr 1fr;font-size:11px}
+.shift-lanes div{padding:5px 10px;text-align:center}.shift-lanes div:first-child{background:#17345b55;color:#85bcff}.shift-lanes div:last-child{background:#2b214e55;color:#c1a9ff}
+.machine-row{display:grid;grid-template-columns:var(--machine-col) calc(24 * var(--hour-width));min-height:92px;border-bottom:1px solid #25313d}
+.machine-cell{position:sticky;left:0;z-index:20;background:#101821;border-right:1px solid #34414f;padding:13px 12px}
+.machine-cell b{font-size:17px}.machine-cell span{display:block;color:#7f8b98;font-size:11px;margin-top:7px}.machine-cell em{display:inline-block;margin-top:8px;font-style:normal;font-size:10px;border-radius:999px;padding:3px 7px;background:#18354a;color:#8fd6ff}
+.lanes{position:relative;background:
+ linear-gradient(90deg,transparent calc(var(--hour-width) - 1px),#25313d var(--hour-width)) 0 0/var(--hour-width) 100%,
+ linear-gradient(#14202b 49%,#2a3642 50%,#14202b 51%);}
+.job{position:absolute;height:33px;border-radius:7px;border:1px solid #ffffff24;padding:5px 7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;box-shadow:0 5px 15px #0005;transition:.15s}
+.job:hover{transform:translateY(-1px);filter:brightness(1.12);z-index:9}
+.job.day{top:7px}.job.night{top:51px}
+.job.production{background:linear-gradient(135deg,#137f50,#0d593b)}
+.job.change{background:linear-gradient(135deg,#b86412,#75400d)}
+.job.wait{background:linear-gradient(135deg,#aa7b12,#6f520f)}
+.job.idle{background:linear-gradient(135deg,#4b5968,#34404d);color:#d0d7df}
+.job.urgent{background:linear-gradient(135deg,#c5303e,#7f1f2b)}
+.job.maintenance{background:linear-gradient(135deg,#8b3dc1,#55227a)}
+.job b{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis}.job small{font-size:9px;opacity:.82}
+.now-line{position:absolute;top:0;bottom:0;width:2px;background:#ff3d4d;z-index:18;pointer-events:none;box-shadow:0 0 8px #ff3d4d}.now-line:before{content:"現在";position:absolute;top:0;left:-16px;background:#ff3d4d;color:white;border-radius:4px;padding:2px 5px;font-size:9px}
+.drawer{position:fixed;right:-430px;top:76px;bottom:0;width:420px;background:#111820;border-left:1px solid #384654;z-index:60;box-shadow:-18px 0 40px #0008;transition:.25s;padding:18px;overflow:auto}
+.drawer.open{right:0}.drawer-close{float:right;border:0;background:#202c39;color:#fff;border-radius:7px;width:32px;height:32px;cursor:pointer}
+.drawer h2{margin:4px 0 4px}.drawer .sub{color:var(--muted);font-size:12px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}.detail{background:#0c131c;border:1px solid #2d3946;border-radius:9px;padding:10px}.detail small{display:block;color:#8794a3;font-size:10px}.detail b{display:block;margin-top:6px;font-size:13px}
+.progress{height:8px;background:#26313c;border-radius:999px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:linear-gradient(90deg,#2f80ed,#22c55e)}
+.toast{position:fixed;right:20px;bottom:20px;z-index:100;background:#17212b;border:1px solid #42505f;border-radius:10px;padding:11px 14px;color:#eef5fa;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:none}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}aside{display:none}.toolbar-grid{grid-template-columns:1fr 1fr}.summary{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){header{padding:10px 12px}.brand p,.clock{display:none}main{padding:10px}.toolbar-grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}.drawer{width:100%;right:-100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">SK</div>
+    <div><h1>MES Enterprise V82.1</h1><p>加工課智慧生產管理平台｜Schedule Center</p></div>
+  </div>
+  <div class="header-right"><span class="clock" id="clock"></span><span class="badge">Enterprise Preview｜Build 0040</span></div>
+</header>
 
+<div class="layout">
+<aside>
+  <div class="side-title">SMART FACTORY</div>
+  <div class="nav">
+    <button>⌂　戰情中心</button>
+    <button>⇧　ERP 資料更新</button>
+    <button>▤　工單池</button>
+    <button class="active">▥　Schedule Center</button>
+    <button class="disabled">♙　人力中心</button>
+    <button class="disabled">▣　機台中心</button>
+    <button class="disabled">◇　AI 中心</button>
+    <button class="disabled">▧　報表中心</button>
+  </div>
+  <div class="side-foot">V82.1 基礎排程<br><span style="color:#5ae093">● 前端展示模式</span><br>不影響現有 Key In／Target／Dashboard</div>
+</aside>
+
+<main>
+  <section class="toolbar">
+    <div class="toolbar-grid">
+      <div class="field"><label>排程日期</label><input type="date" id="dateFilter"></div>
+      <div class="field"><label>機台群組</label><select id="groupFilter"><option value="">全部機台</option><option>工業</option><option>保密</option><option>文具</option></select></div>
+      <div class="field"><label>排程狀態</label><select id="statusFilter"><option value="">全部狀態</option><option value="production">正常工單</option><option value="change">換線／調機</option><option value="wait">待料／等待</option><option value="urgent">急單</option><option value="maintenance">保養</option></select></div>
+      <div class="field"><label>搜尋工單／客戶／機台</label><input id="searchInput" placeholder="例如：1B19、WO2607、ABSTO"></div>
+      <div style="display:flex;gap:7px"><button class="btn ghost" id="resetBtn">重設</button><button class="btn blue" id="refreshBtn">重新整理</button></div>
+    </div>
+  </section>
+
+  <section class="summary">
+    <div class="kpi"><small>排程工單</small><strong id="kpiJobs">0</strong></div>
+    <div class="kpi"><small>生產中</small><strong class="green" id="kpiRunning">0</strong></div>
+    <div class="kpi"><small>待開工／空檔</small><strong id="kpiIdle">0</strong></div>
+    <div class="kpi"><small>待料警示</small><strong class="yellow" id="kpiWait">0</strong></div>
+    <div class="kpi"><small>急單／延誤</small><strong class="red" id="kpiUrgent">0</strong></div>
+    <div class="kpi"><small>平均負載率</small><strong id="kpiLoad">0%</strong></div>
+  </section>
+
+  <section class="schedule-card">
+    <div class="schedule-head">
+      <h2>24 小時排程｜08:30 ～ 隔日 08:30</h2>
+      <div class="legend">
+        <span><i style="background:#22c55e"></i>正常工單</span><span><i style="background:#f59e0b"></i>換線／調機</span>
+        <span><i style="background:#d6a51c"></i>待料／等待</span><span><i style="background:#64748b"></i>閒置／空檔</span>
+        <span><i style="background:#ef4444"></i>急單</span><span><i style="background:#9c4dcc"></i>保養</span>
+      </div>
+    </div>
+    <div class="gantt-scroll" id="ganttScroll"><div class="gantt" id="gantt"></div></div>
+  </section>
+</main>
+</div>
+
+<aside class="drawer" id="drawer">
+  <button class="drawer-close" id="drawerClose">×</button>
+  <h2 id="dTitle">工單明細</h2><div class="sub" id="dSub"></div>
+  <div class="detail-grid" id="detailGrid"></div>
+  <div style="margin-top:16px"><small style="color:#8d9aaa">完成進度</small><div class="progress"><i id="progressBar" style="width:0%"></i></div><div id="progressText" style="margin-top:7px;font-size:12px;color:#c9d3dd"></div></div>
+  <div style="margin-top:18px;display:flex;gap:8px"><button class="btn blue" onclick="toast('已定位至此工單')">定位排程</button><button class="btn ghost" onclick="toast('V82.2 將開放編輯排程')">編輯排程</button></div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const MACHINE_GROUPS={
+  工業:["1B02","1B08","1B10","1B19","1S02","1S18"],
+  保密:["1S03","1S07","1S12","1S16","1S19"],
+  文具:["1B22","1V01","1V02","1V09"]
+};
+const jobs=[
+ {machine:"1B02",group:"工業",type:"production",wo:"MM2603190066",customer:"工業客戶A",spec:"50mm × 100M",start:"08:30",end:"14:10",roll:76,target:120,done:42,status:"生產中"},
+ {machine:"1B02",group:"工業",type:"change",wo:"換線",customer:"",spec:"",start:"14:10",end:"14:40",roll:0,target:0,done:0,status:"換線"},
+ {machine:"1B02",group:"工業",type:"production",wo:"MM2607010038",customer:"ABSTO",spec:"18mm × 50M",start:"14:40",end:"20:30",roll:88,target:88,done:0,status:"待開工"},
+ {machine:"1B02",group:"工業",type:"production",wo:"MM2608130055",customer:"工業客戶B",spec:"48mm × 40M",start:"20:30",end:"03:30",roll:56,target:56,done:0,status:"待開工"},
+
+ {machine:"1B08",group:"工業",type:"change",wo:"調機",customer:"",spec:"",start:"08:30",end:"09:10",roll:0,target:0,done:0,status:"調機"},
+ {machine:"1B08",group:"工業",type:"production",wo:"MM2602260002",customer:"SKT",spec:"30mm × 100M",start:"09:10",end:"11:29",roll:38,target:38,done:38,status:"已完成"},
+ {machine:"1B08",group:"工業",type:"idle",wo:"空檔",customer:"",spec:"",start:"11:29",end:"20:30",roll:0,target:0,done:0,status:"空檔"},
+ {machine:"1B08",group:"工業",type:"production",wo:"MM2608130055",customer:"工業客戶B",spec:"25mm × 60M",start:"20:30",end:"03:30",roll:56,target:56,done:0,status:"待開工"},
+
+ {machine:"1B10",group:"工業",type:"change",wo:"換線",customer:"",spec:"",start:"08:30",end:"08:45",roll:0,target:0,done:0,status:"換線"},
+ {machine:"1B10",group:"工業",type:"production",wo:"MM2606120010",customer:"工業客戶C",spec:"12mm × 50M",start:"08:45",end:"11:44",roll:45,target:45,done:45,status:"已完成"},
+ {machine:"1B10",group:"工業",type:"idle",wo:"空檔",customer:"",spec:"",start:"11:44",end:"20:30",roll:0,target:0,done:0,status:"空檔"},
+ {machine:"1B10",group:"工業",type:"urgent",wo:"MM2609101000",customer:"急單客戶",spec:"60mm × 30M",start:"20:30",end:"05:00",roll:82,target:82,done:0,status:"急單"},
+
+ {machine:"1B19",group:"工業",type:"production",wo:"WO2607010234",customer:"ABSTO",spec:"18mm × 50M",start:"08:45",end:"11:32",roll:38,target:38,done:38,status:"已完成"},
+ {machine:"1B19",group:"工業",type:"change",wo:"換線",customer:"",spec:"",start:"11:32",end:"12:02",roll:0,target:0,done:0,status:"換線"},
+ {machine:"1B19",group:"工業",type:"production",wo:"WO2607010388",customer:"文具客戶A",spec:"24mm × 40M",start:"12:02",end:"14:55",roll:45,target:45,done:28,status:"生產中"},
+ {machine:"1B19",group:"工業",type:"wait",wo:"待料",customer:"",spec:"",start:"14:55",end:"15:20",roll:0,target:0,done:0,status:"待料"},
+ {machine:"1B19",group:"工業",type:"production",wo:"WO2608120091",customer:"工業客戶D",spec:"48mm × 50M",start:"15:20",end:"18:45",roll:62,target:62,done:0,status:"待開工"},
+ {machine:"1B19",group:"工業",type:"idle",wo:"空檔",customer:"",spec:"",start:"18:45",end:"20:30",roll:0,target:0,done:0,status:"空檔"},
+ {machine:"1B19",group:"工業",type:"production",wo:"WO2608130055",customer:"工業客戶E",spec:"36mm × 80M",start:"20:40",end:"03:30",roll:56,target:56,done:0,status:"待開工"},
+
+ {machine:"1B22",group:"文具",type:"change",wo:"換線",customer:"",spec:"",start:"08:30",end:"09:50",roll:0,target:0,done:0,status:"換線"},
+ {machine:"1B22",group:"文具",type:"production",wo:"MM2601020034",customer:"文具客戶B",spec:"12mm × 10M",start:"09:52",end:"11:43",roll:25,target:25,done:25,status:"已完成"},
+ {machine:"1B22",group:"文具",type:"production",wo:"MM2601020036",customer:"文具客戶B",spec:"18mm × 15M",start:"11:44",end:"16:44",roll:68,target:68,done:34,status:"生產中"},
+ {machine:"1B22",group:"文具",type:"production",wo:"MM2601020037",customer:"文具客戶C",spec:"24mm × 20M",start:"16:44",end:"20:25",roll:72,target:72,done:0,status:"待開工"},
+ {machine:"1B22",group:"文具",type:"idle",wo:"空檔",customer:"",spec:"",start:"20:30",end:"08:30",roll:0,target:0,done:0,status:"空檔"},
+
+ {machine:"1S03",group:"保密",type:"production",wo:"WO2607020012",customer:"保密客戶A",spec:"25mm × 50M",start:"08:30",end:"10:20",roll:26,target:26,done:26,status:"已完成"},
+ {machine:"1S03",group:"保密",type:"change",wo:"換線",customer:"",spec:"",start:"10:20",end:"10:30",roll:0,target:0,done:0,status:"換線"},
+ {machine:"1S03",group:"保密",type:"production",wo:"WO2607020033",customer:"保密客戶B",spec:"36mm × 100M",start:"10:30",end:"14:15",roll:38,target:38,done:20,status:"生產中"},
+ {machine:"1S03",group:"保密",type:"maintenance",wo:"保養",customer:"",spec:"定期刀具檢查",start:"14:15",end:"14:45",roll:0,target:0,done:0,status:"保養"},
+ {machine:"1S03",group:"保密",type:"production",wo:"WO2607020044",customer:"保密客戶C",spec:"48mm × 50M",start:"14:45",end:"16:50",roll:34,target:34,done:0,status:"待開工"},
+ {machine:"1S03",group:"保密",type:"idle",wo:"空檔",customer:"",spec:"",start:"16:50",end:"20:30",roll:0,target:0,done:0,status:"空檔"},
+ {machine:"1S03",group:"保密",type:"production",wo:"WO2607020055",customer:"保密客戶D",spec:"60mm × 60M",start:"20:30",end:"03:30",roll:60,target:60,done:0,status:"待開工"},
+
+ {machine:"1V09",group:"文具",type:"change",wo:"換線",customer:"",spec:"",start:"08:30",end:"08:45",roll:0,target:0,done:0,status:"換線"},
+ {machine:"1V09",group:"文具",type:"change",wo:"短工單 8筆",customer:"文具群組",spec:"多規格",start:"09:05",end:"10:30",roll:8,target:8,done:8,status:"已完成"},
+ {machine:"1V09",group:"文具",type:"production",wo:"WO2607020011",customer:"文具客戶D",spec:"18mm × 10M",start:"10:45",end:"12:22",roll:32,target:32,done:32,status:"已完成"},
+ {machine:"1V09",group:"文具",type:"idle",wo:"空檔",customer:"",spec:"",start:"12:22",end:"20:30",roll:0,target:0,done:0,status:"空檔"},
+ {machine:"1V09",group:"文具",type:"production",wo:"WO2607020033",customer:"文具客戶E",spec:"24mm × 30M",start:"20:30",end:"03:45",roll:60,target:60,done:0,status:"待開工"}
+];
+
+const allMachines=Object.values(MACHINE_GROUPS).flat();
+const gantt=document.getElementById("gantt");
+function minutes(t){
+  let [h,m]=t.split(":").map(Number);
+  let total=h*60+m;
+  if(total<510) total+=1440;
+  return total-510;
+}
+function render(){
+  const group=document.getElementById("groupFilter").value;
+  const status=document.getElementById("statusFilter").value;
+  const q=document.getElementById("searchInput").value.trim().toUpperCase();
+  let machines=allMachines.filter(m=>!group || MACHINE_GROUPS[group].includes(m));
+  if(q) machines=machines.filter(m=>m.includes(q)||jobs.some(j=>j.machine===m&&[j.wo,j.customer,j.spec].join(" ").toUpperCase().includes(q)));
+  const filteredJobs=jobs.filter(j=>machines.includes(j.machine)&&(!status||j.type===status)&&(!q||[j.machine,j.wo,j.customer,j.spec].join(" ").toUpperCase().includes(q)));
+  if(status) machines=machines.filter(m=>filteredJobs.some(j=>j.machine===m));
+
+  let s='<div class="timeline-head"><div class="machine-title">機台／可用工時</div><div class="hours">';
+  for(let i=0;i<24;i++){
+    const total=(8*60+30+i*60)%(24*60), h=String(Math.floor(total/60)).padStart(2,"0"), m=String(total%60).padStart(2,"0");
+    s+=`<div class="hour ${h==="00"?"midnight":(i===0||i===12?"shift":"")}">${h}:${m}${h==="00"?"<br><small>隔日</small>":""}</div>`;
+  }
+  s+='</div></div><div class="shift-band"><div class="shift-label"></div><div class="shift-lanes"><div>早班 08:30 ～ 20:30</div><div>夜班 20:30 ～ 隔日 08:30</div></div></div>';
+
+  machines.forEach(machine=>{
+    const groupName=Object.keys(MACHINE_GROUPS).find(g=>MACHINE_GROUPS[g].includes(machine));
+    s+=`<div class="machine-row"><div class="machine-cell"><b>${machine}</b><span>可用工時：24.0h</span><em>${groupName}</em></div><div class="lanes">`;
+    filteredJobs.filter(j=>j.machine===machine).forEach((j,idx)=>{
+      let start=minutes(j.start),end=minutes(j.end); if(end<=start)end+=1440;
+      const left=start/60*76,width=Math.max((end-start)/60*76,10),lane=start<720?"day":"night";
+      s+=`<div class="job ${j.type} ${lane}" style="left:${left}px;width:${width}px" data-machine="${machine}" data-index="${jobs.indexOf(j)}"><b>${j.wo}</b><small>${j.start} ~ ${j.end}${j.roll?`（${j.roll}回）`:""}</small></div>`;
+    });
+    s+='</div></div>';
+  });
+  gantt.innerHTML=s;
+  drawNowLine();
+  gantt.querySelectorAll(".job").forEach(el=>el.addEventListener("click",()=>openDetail(jobs[Number(el.dataset.index)])));
+  updateKpi(filteredJobs,machines);
+}
+function updateKpi(rows,machines){
+  const production=rows.filter(j=>j.type==="production"||j.type==="urgent");
+  document.getElementById("kpiJobs").textContent=production.length;
+  document.getElementById("kpiRunning").textContent=rows.filter(j=>j.status==="生產中").length;
+  document.getElementById("kpiIdle").textContent=rows.filter(j=>j.type==="idle"||j.status==="待開工").length;
+  document.getElementById("kpiWait").textContent=rows.filter(j=>j.type==="wait").length;
+  document.getElementById("kpiUrgent").textContent=rows.filter(j=>j.type==="urgent").length;
+  const busy=rows.filter(j=>j.type!=="idle").reduce((a,j)=>{let d=minutes(j.end)-minutes(j.start);if(d<=0)d+=1440;return a+d},0);
+  document.getElementById("kpiLoad").textContent=(machines.length?Math.min(100,Math.round(busy/(machines.length*1440)*100)):0)+"%";
+}
+function drawNowLine(){
+  const old=document.querySelector(".now-line");if(old)old.remove();
+  const d=new Date(),now=d.getHours()*60+d.getMinutes(),base=8*60+30;
+  let diff=now-base;if(diff<0)diff+=1440;
+  const line=document.createElement("div");line.className="now-line";line.style.left=`calc(var(--machine-col) + ${diff/60*76}px)`;
+  gantt.appendChild(line);
+}
+function openDetail(j){
+  document.getElementById("dTitle").textContent=j.wo;
+  document.getElementById("dSub").textContent=`${j.machine}｜${j.start} ～ ${j.end}｜${j.status}`;
+  const items=[["機台",j.machine],["群組",j.group],["客戶",j.customer||"—"],["產品規格",j.spec||"—"],["目標回數",j.target||"—"],["已完成回數",j.done||0],["排程狀態",j.status],["作業類型",typeName(j.type)]];
+  document.getElementById("detailGrid").innerHTML=items.map(x=>`<div class="detail"><small>${x[0]}</small><b>${x[1]}</b></div>`).join("");
+  const pct=j.target?Math.min(100,Math.round(j.done/j.target*100)):0;
+  document.getElementById("progressBar").style.width=pct+"%";document.getElementById("progressText").textContent=`${pct}%（${j.done||0} / ${j.target||0} 回）`;
+  document.getElementById("drawer").classList.add("open");
+}
+function typeName(t){return {production:"正常工單",change:"換線／調機",wait:"待料／等待",idle:"閒置／空檔",urgent:"急單",maintenance:"保養"}[t]||t}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
+document.getElementById("drawerClose").onclick=()=>document.getElementById("drawer").classList.remove("open");
+["groupFilter","statusFilter"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+document.getElementById("searchInput").addEventListener("input",render);
+document.getElementById("resetBtn").onclick=()=>{document.getElementById("groupFilter").value="";document.getElementById("statusFilter").value="";document.getElementById("searchInput").value="";render();};
+document.getElementById("refreshBtn").onclick=()=>{render();toast("排程畫面已重新整理");};
+document.getElementById("dateFilter").value=new Date().toISOString().slice(0,10);
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleString("zh-TW",{hour12:false});},1000);
+render();
+</script>
+</body>
+</html>
