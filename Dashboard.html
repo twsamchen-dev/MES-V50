@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V81.1.2 SEAL KING MES Enterprise｜Production Command Center</title>
+<title>V81.5 SEAL KING MES Enterprise｜Production Command Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 
 <style id="v811-kpi-contrast-fix">
-/* V81.1.2：彩色 KPI 卡文字對比修正，只調整文字顏色，不動資料與版面 */
+/* V81.5：彩色 KPI 卡文字對比修正，只調整文字顏色，不動資料與版面 */
 .kpiCard{color:#fff!important;}
 .kpiCard .name,.kpiCard .num,.kpiCard .hint,.kpiCard .sub,
 .kpiCard div,.kpiCard span,.kpiCard small,.kpiCard b{color:#fff!important;}
@@ -1043,7 +1043,7 @@ header{margin-left:268px;background:linear-gradient(135deg,#081934,#123c8a 55%,#
   window.createEnterpriseSidebar=function(){
     if(document.getElementById('epSidebar')) return;
     var side=document.createElement('aside'); side.id='epSidebar'; side.className='epSidebar';
-    side.innerHTML='<div class="epBrand"><div class="epLogo"><img src="data:image/png;base64,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" alt="SEAL KING Logo"></div><div><b>生產戰情室</b><span>MES Enterprise</span></div></div><div class="epUser"><div class="epAvatar">👷</div><div><b>白班</b><span class="epOnline">● 線上 / Admin</span></div></div><nav class="epNav">'+navItems().map(function(x){return '<button type="button" data-ep-view="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2].split(' ')[0]+'<small>'+x[2].split(' ').slice(1).join(' ')+'</small></span></button>'}).join('')+'<button type="button" data-ep-meeting="1"><span class="ico">📺</span><span>晨會模式<small>Morning Meeting</small></span></button></nav><div class="epFoot">V81.1.2 SEAL KING<br>Corporate Edition</div>';
+    side.innerHTML='<div class="epBrand"><div class="epLogo"><img src="data:image/png;base64,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" alt="SEAL KING Logo"></div><div><b>生產戰情室</b><span>MES Enterprise</span></div></div><div class="epUser"><div class="epAvatar">👷</div><div><b>白班</b><span class="epOnline">● 線上 / Admin</span></div></div><nav class="epNav">'+navItems().map(function(x){return '<button type="button" data-ep-view="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2].split(' ')[0]+'<small>'+x[2].split(' ').slice(1).join(' ')+'</small></span></button>'}).join('')+'<button type="button" data-ep-meeting="1"><span class="ico">📺</span><span>晨會模式<small>Morning Meeting</small></span></button></nav><div class="epFoot">V81.5 SEAL KING<br>Corporate Edition</div>';
     document.body.insertBefore(side,document.body.firstChild);
     side.querySelectorAll('[data-ep-view]').forEach(function(b){b.addEventListener('click',function(){window.switchView(b.getAttribute('data-ep-view'))})});
     var mb=side.querySelector('[data-ep-meeting]'); if(mb)mb.addEventListener('click',function(){ if(window.openMeeting) window.openMeeting(); });
@@ -3408,7 +3408,7 @@ tbody tr:hover{background:#fff2f3!important}
 </style>
 
 <style id="v8112AllPagesContrastFix">
-/* V81.1.2｜全頁文字對比修正。僅補 CSS，不修改 API、資料、DOM 與功能。 */
+/* V81.5｜全頁文字對比修正。僅補 CSS，不修改 API、資料、DOM 與功能。 */
 
 /* 首頁彩色 KPI：標題、數字、副文字一律高對比 */
 .v456Kpi,
@@ -3501,6 +3501,187 @@ input[disabled],select[disabled],textarea[disabled],input[readonly]{color:#3f464
 
 /* 避免瀏覽器選取文字時看起來像文字消失 */
 ::selection{background:#d91f26;color:#fff}
+</style>
+
+
+<style id="v815SealKingEnterpriseUnifiedUI">
+/* V81.5｜SEAL KING Enterprise UI
+   僅覆寫視覺與字體；不修改 API、資料來源、DOM 排序、定時器與功能流程。 */
+:root{
+  --sk-red:#e31b23;
+  --sk-red-dark:#b9131a;
+  --sk-ink:#18202b;
+  --sk-text:#27313d;
+  --sk-muted:#66717d;
+  --sk-line:#dfe4e9;
+  --sk-soft:#f4f6f8;
+  --sk-navy:#182b43;
+  --sk-navy-2:#0f2238;
+}
+html,body{background:#f3f5f7!important;color:var(--sk-text)!important;font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif!important}
+*{animation:none!important;transition:none!important}
+
+/* 全站字級規範 */
+body{font-size:15px!important;line-height:1.55!important}
+h1{font-size:30px!important;line-height:1.2!important;font-weight:950!important}
+h2{font-size:21px!important;line-height:1.35!important;font-weight:950!important}
+h3{font-size:18px!important;line-height:1.4!important;font-weight:900!important}
+.sub,.hint,.meta{font-size:13px!important;line-height:1.6!important}
+button,.btn,input,select,textarea{font-size:14px!important}
+table{font-size:13px!important}
+th{font-size:13px!important;font-weight:950!important}
+td{font-size:13px!important;font-weight:700!important;line-height:1.45!important}
+
+/* 品牌 Header */
+.skMainHeader{background:#fff!important;border-bottom:5px solid var(--sk-red)!important;box-shadow:0 4px 16px rgba(24,32,43,.08)!important}
+.skHeaderBrand h1{color:var(--sk-ink)!important;font-size:30px!important;text-transform:none!important}
+.skHeaderBrand p{color:#596471!important;font-size:14px!important}
+.epBrand{background:#fff!important;border-bottom:4px solid var(--sk-red)!important}
+.epBrand b{font-size:20px!important;color:#171c22!important}
+.epBrand span{font-size:12px!important;color:#65707c!important}
+.epLogo{width:54px!important;height:54px!important;padding:3px!important;background:#fff!important}
+
+/* 左側選單 */
+.epSidebar{background:linear-gradient(180deg,#202a35,#121a23)!important}
+.epNav button{font-size:15px!important;color:#f4f7fa!important;min-height:58px!important}
+.epNav button b{font-size:15px!important}
+.epNav button small{font-size:11px!important;color:#c9d1da!important}
+.epNav button.active{background:linear-gradient(90deg,var(--sk-red),#ef2d35)!important;border-left-color:#fff!important}
+.epNav button:hover{background:#2b3743!important}
+
+/* 主內容與一般卡片 */
+.epContent,.wrap{background:#f3f5f7!important}
+.card,.epPanel,.rankCard,.machineEffCard,.backHomeBar{
+  background:#fff!important;color:var(--sk-text)!important;border:1px solid var(--sk-line)!important;
+  border-radius:14px!important;box-shadow:0 5px 18px rgba(24,32,43,.07)!important;
+}
+.card h2,.epPanel h2,.rankCard h2,.machineEffCard h2{color:var(--sk-ink)!important}
+.card .hint,.card .sub,.epPanel .hint,.epPanel .sub{color:var(--sk-muted)!important}
+
+/* Dashboard 標題與篩選 */
+.v456Top{background:#fff!important;border:1px solid var(--sk-line)!important;border-left:7px solid var(--sk-red)!important;border-radius:14px!important;padding:16px 18px!important}
+.v456Title h1{color:var(--sk-ink)!important;font-size:29px!important}
+.v456Title .meta{color:#65717e!important;font-size:13px!important}
+.v456Tool{background:#fff!important;color:var(--sk-ink)!important;border:1px solid #cfd6dd!important;border-radius:9px!important;font-size:14px!important}
+.v456Tool:hover{background:#f7f8f9!important}
+.v456Filter{background:#fff!important;border:1px solid var(--sk-line)!important;border-radius:14px!important;box-shadow:0 4px 14px rgba(24,32,43,.05)!important}
+.v456Filter input,.v456Filter select{background:#fff!important;color:#202832!important;border:1px solid #cfd6dd!important;font-size:13px!important}
+.v456Filter select option{background:#fff!important;color:#202832!important}
+.v456RangeHint{color:#66717d!important;font-size:12px!important}
+
+/* KPI：維持識別色，但強制高對比字體 */
+.v456Kpi{min-height:138px!important;border-radius:16px!important;padding:16px!important;box-shadow:0 7px 20px rgba(24,32,43,.14)!important}
+.v456Kpi .label{font-size:15px!important;color:#fff!important;font-weight:950!important;text-shadow:0 1px 2px rgba(0,0,0,.35)!important}
+.v456Kpi .num{font-size:42px!important;color:#fff!important;font-weight:950!important;line-height:1!important;margin-top:10px!important;text-shadow:0 2px 4px rgba(0,0,0,.35)!important}
+.v456Kpi .sub{font-size:13px!important;color:#fff!important;font-weight:900!important;opacity:1!important;text-shadow:0 1px 2px rgba(0,0,0,.45)!important}
+.v456Kpi svg{opacity:1!important}
+
+/* Dashboard 分析卡：白卡為主，只有趨勢圖保留深色 */
+.v456Panel{background:#fff!important;color:var(--sk-text)!important;border:1px solid var(--sk-line)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(24,32,43,.07)!important;padding:16px!important}
+.v456Panel h2,.v456Panel h3,.v456Panel b,.v456Panel strong,.v456Panel .caption,.v456Panel .v456Legend,.v456Panel .v456ProcessRow,.v456Panel .v456MachineRow,.v456Panel .v456DonutList,.v456Panel .v456Alert,.v456Panel .v456GanttInfo,.v456Panel .v456GanttInfo div{color:var(--sk-text)!important;text-shadow:none!important}
+.v456Panel h2{font-size:19px!important;color:var(--sk-ink)!important}
+.v456Panel h2 small,.v456Panel .caption{color:var(--sk-muted)!important;font-size:12px!important}
+.v456PanelIcon{background:var(--sk-red)!important;color:#fff!important;box-shadow:none!important}
+.v456Trend{background:linear-gradient(135deg,var(--sk-navy-2),var(--sk-navy))!important;border-color:#263e5a!important;color:#fff!important}
+.v456Trend h2,.v456Trend h3,.v456Trend b,.v456Trend strong,.v456Trend .caption,.v456Trend .v456Legend,.v456Trend small{color:#f8fbff!important}
+.v456Trend svg text{fill:#dbeafe!important}
+
+/* TOP10 表格：白底黑字，紅色表頭 */
+.v456Table{background:#fff!important;font-size:13px!important}
+.v456Table thead th{background:var(--sk-red)!important;color:#fff!important;border-bottom:0!important;padding:10px 8px!important;font-size:13px!important}
+.v456Table tbody td{background:#fff!important;color:#25303b!important;border-bottom:1px solid #e8ebee!important;padding:9px 8px!important;font-size:13px!important;font-weight:700!important}
+.v456Table tbody tr:nth-child(even) td{background:#fafbfc!important}
+.v456Table tbody tr:hover td{background:#fff1f2!important}
+.v456Table td b{color:#202832!important}
+.v456Table td span[style*="#93c5fd"]{color:#1672d4!important}
+.v456Status{background:#f0f2f4!important;color:#424b55!important;border:1px solid #d9dee3!important}
+.v456Priority{color:#fff!important}
+.v456Bar{background:#e4e8ec!important}
+.v456Bar i{background:linear-gradient(90deg,#ef5359,var(--sk-red))!important}
+.v456Bar.warn i{background:linear-gradient(90deg,#ffb020,#f28c00)!important}
+.v456Bar.danger i{background:linear-gradient(90deg,#ff6268,#d8000b)!important}
+
+/* 製程、異常、甘特、機台 */
+.v456ProcessRow{font-size:14px!important}
+.v456ProcessRow b{font-size:14px!important;color:#26313c!important}
+.v456DonutList div,.v456MachineRow,.v456Alert{font-size:13px!important;color:#2b3540!important}
+.v456GanttRow{background:#f7f8fa!important;border:1px solid #e2e6ea!important}
+.v456GanttInfo b{font-size:13px!important;color:#202832!important}
+.v456GanttInfo div{font-size:12px!important;color:#66717d!important}
+.v456GanttLine{background:#e2e6ea!important}
+.v456GanttFill{background:linear-gradient(90deg,#ef5359,var(--sk-red))!important}
+.v456Alert{background:#f8f9fa!important;border-color:#e2e6ea!important}
+.v456Quick{background:#fff!important;color:#202832!important;border:1px solid #dfe4e9!important}
+.v456Quick b{color:#202832!important;font-size:14px!important}
+.v456Quick small{color:#697582!important;font-size:11px!important}
+.v456QuickIcon{background:var(--sk-red)!important;color:#fff!important}
+.v456Footer{color:#75808c!important;font-size:12px!important}
+
+/* 幹部目標 × Key In：改為白底高對比，不再暗字或閃光 */
+.v702-statusCard{background:#fff!important;color:var(--sk-text)!important;border:1px solid var(--sk-line)!important;border-left:7px solid var(--sk-red)!important;border-radius:16px!important;box-shadow:0 6px 20px rgba(24,32,43,.08)!important;padding:20px!important}
+.v702-statusCard:before{display:none!important}
+.v702-statusTop h2{color:var(--sk-ink)!important;font-size:24px!important;text-shadow:none!important}
+.v702-statusTop .meta{color:#5f6b77!important;font-size:14px!important;text-shadow:none!important}
+.v702-periodBtn{background:#fff!important;color:#46515d!important;border:1px solid #ccd3da!important;font-size:13px!important;backdrop-filter:none!important}
+.v702-periodBtn.active{background:var(--sk-red)!important;color:#fff!important;border-color:var(--sk-red)!important;box-shadow:none!important}
+.v702-progressText{color:#3b4651!important;font-size:14px!important}
+.v702-progressText b,.v702-progressText .v702-count{color:var(--sk-red)!important;font-size:30px!important;text-shadow:none!important}
+.v702-progressTrack{background:#e6e9ed!important;border:1px solid #d8dde2!important;height:14px!important}
+.v702-progressFill{background:linear-gradient(90deg,var(--sk-red),#ff6268)!important}
+.v702-kpi{background:#f7f8fa!important;border:1px solid #dfe4e9!important;border-radius:12px!important;padding:14px!important;backdrop-filter:none!important}
+.v702-kpi .name{color:#596572!important;font-size:13px!important;text-shadow:none!important}
+.v702-kpi .num,.v702-kpi .v702-count{color:#18202b!important;font-size:34px!important;font-weight:950!important;text-shadow:none!important}
+.v702-okLine{background:#eef9f2!important;border-color:#95d5aa!important;color:#176b37!important;font-size:14px!important}
+.v702-alertLine{background:#fff4e8!important;border-color:#f6b76d!important;color:#9b4b00!important;font-size:14px!important}
+.v702-footHint{color:#5f6b77!important;font-size:13px!important}
+
+/* 人員效率：白底企業版 */
+.effHero{background:#fff!important;color:var(--sk-text)!important;border:1px solid var(--sk-line)!important;border-left:7px solid var(--sk-red)!important;border-radius:16px!important;box-shadow:0 6px 20px rgba(24,32,43,.08)!important}
+.effHero h2{color:var(--sk-ink)!important;font-size:25px!important;text-shadow:none!important}
+.effHero .hint{color:#5f6b77!important;font-size:14px!important;text-shadow:none!important}
+.effKpi{background:#f7f8fa!important;border:1px solid #dfe4e9!important;border-top:4px solid var(--sk-red)!important;border-radius:12px!important;color:var(--sk-text)!important}
+.effKpi .name{color:#5f6b77!important;font-size:13px!important;text-shadow:none!important}
+.effKpi .num{color:#18202b!important;font-size:36px!important;text-shadow:none!important}
+.rankCard{padding:18px!important;border-top:4px solid var(--sk-red)!important}
+.rankCard .person{font-size:20px!important;color:#18202b!important}
+.rankCard .meta{font-size:13px!important;color:#66717d!important}
+.rankCard .rate{font-size:34px!important}
+.effRow{background:#fff!important;border:1px solid #dfe4e9!important;border-radius:12px!important;padding:12px!important;font-size:14px!important}
+.effRow b{color:#202832!important;font-size:15px!important}
+.effRow .hint{color:#66717d!important;font-size:12px!important}
+.machineEffCard{padding:16px!important;border-top:4px solid var(--sk-red)!important}
+.machineEffCard b{font-size:18px!important;color:#202832!important}
+.machineEffCard .big{font-size:32px!important}
+.effBar{background:#e3e7eb!important;height:12px!important}
+.effFill{background:linear-gradient(90deg,#ef5359,var(--sk-red))!important}
+.effNote{background:#fff5f5!important;border-left:6px solid var(--sk-red)!important;color:#343e49!important;font-size:14px!important}
+
+/* 全分頁表格：高對比 */
+.scroll{background:#fff!important;border-color:#dfe4e9!important}
+table thead th{background:#2c3540!important;color:#fff!important;border-bottom:3px solid var(--sk-red)!important}
+table tbody td{color:#27313d!important;background:#fff!important}
+table tbody tr:nth-child(even) td{background:#fafbfc!important}
+table tbody tr:hover td{background:#fff2f3!important}
+.tableTools{background:#f5f7f8!important;border:1px solid #e0e4e8!important}
+
+/* 深色專用區保持白字 */
+.commandHero,.commandHero *,.v456Trend,.v456Trend *,#meeting,#meeting *{color:#fff!important}
+.commandHero .hint,.commandClock,.meetSub,.meetClock{color:#e6eef7!important}
+
+/* 行動裝置 */
+@media(max-width:1100px){
+  .v456Hero{grid-template-columns:1fr!important}
+  .v456Main,.v456Bottom{grid-template-columns:1fr!important}
+  .v456Kpi .num{font-size:36px!important}
+  .v702-kpiGrid{grid-template-columns:repeat(3,1fr)!important}
+}
+@media(max-width:760px){
+  h1{font-size:24px!important}h2{font-size:19px!important}
+  .v456KpiGrid{grid-template-columns:repeat(2,1fr)!important}
+  .v702-kpiGrid,.effKpiGrid{grid-template-columns:repeat(2,1fr)!important}
+  .v456Kpi .num{font-size:34px!important}
+  .v702-statusTop h2{font-size:21px!important}
+}
 </style>
 
 </body>
