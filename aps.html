@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V82 Enterprise Build 0050</title>
+<title>SEAL KING Smart APS｜Build 0047.1 Stable</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -456,21 +456,22 @@ function anomalyList(value){
 </script>
 
 
-<style>
-/* V82 Enterprise Build 0050｜保留既有分頁與資料邏輯，升級入口與排程視覺 */
-.v82-quickbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 9px;padding:9px 11px;border:1px solid #303d46;border-radius:8px;background:linear-gradient(90deg,#101a20,#0a1217)}
-.v82-quickbar strong{font-size:12px;color:#ff7379;letter-spacing:1px;margin-right:3px}.v82-quickbar button{height:32px;border:1px solid #394a54;border-radius:7px;background:#17232b;color:#e8eef1;padding:0 11px;cursor:pointer;font-weight:700}.v82-quickbar button:hover{border-color:#d8383f;background:#291619}.v82-quickbar .primary{background:linear-gradient(180deg,#bd1a21,#7f1116);border-color:#d83a40}.v82-quickbar small{margin-left:auto;color:#82919a}
-.v82-section-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.v82-title-group .section-kicker{margin-bottom:5px}.v82-title-group h2{margin:0 0 5px;font-size:24px}.v82-modebar{display:flex;gap:6px;flex-wrap:wrap}.v82-modebar button{height:34px;border:1px solid #364751;border-radius:7px;background:#121d24;color:#cbd5da;padding:0 12px;cursor:pointer}.v82-modebar button.active{background:linear-gradient(180deg,#b91b22,#761016);border-color:#d53c42;color:#fff}.v82-schedule-kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin:12px 0}.v82-schedule-kpi{border:1px solid #2d3d46;background:linear-gradient(145deg,#101a20,#0a1318);border-radius:8px;padding:11px 12px}.v82-schedule-kpi span{display:block;color:#98a7af;font-size:11px}.v82-schedule-kpi b{display:block;margin-top:5px;font-size:24px}.v82-schedule-kpi.red b{color:#ff6b72}.v82-schedule-kpi.green b{color:#53d48c}.v82-schedule-kpi.orange b{color:#ff9b43}.v82-enterprise-note{display:flex;gap:10px;align-items:center;margin-top:12px;padding:10px 12px;border-left:4px solid #d71920;border-radius:7px;background:#211215;color:#d9e0e4;font-size:12px}.v82-enterprise-note b{color:#ff757b}.side-nav .tab[data-page="home"],.side-nav .tab[data-page="pool"],.side-nav .tab[data-page="schedule"],.side-nav .tab[data-page="missingSpeed"]{position:relative}.side-nav .tab[data-page="home"]:after,.side-nav .tab[data-page="pool"]:after,.side-nav .tab[data-page="schedule"]:after,.side-nav .tab[data-page="missingSpeed"]:after{content:"★";margin-left:auto;font-size:10px;color:#ffbf4d;opacity:.85}
-#schedule .card:first-child{border-top:3px solid #d71920}#scheduleTimeline{border:1px solid #293b44;border-radius:8px;overflow:hidden;background:#071117}
-@media(max-width:1100px){.v82-schedule-kpis{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:650px){.v82-quickbar small{width:100%;margin-left:0}.v82-schedule-kpis{grid-template-columns:repeat(2,1fr)}.v82-title-group h2{font-size:20px}}
+<style id="apsBuild00471StableStyle">
+body::after{
+  content:"APS Build 0047.1 Stable";
+  position:fixed;right:11px;bottom:10px;z-index:9998;
+  padding:5px 8px;border-radius:6px;border:1px solid #38505e;
+  background:#10191fdc;color:#9fc9da;font-size:10px;
+  pointer-events:none;box-shadow:0 5px 15px #0007
+}
 </style>
+
 </head>
 <body>
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0042</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0047.1 Stable</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -507,10 +508,10 @@ function anomalyList(value){
       <div class="sk-word"><strong>SEAL KING</strong><span>SMART FACTORY</span></div>
     </div>
     <div class="header-divider"></div>
-    <div class="system-title"><h1>SEAL KING Smart APS</h1><p>V82 Enterprise｜加工課智慧排程與決策平台</p></div>
+    <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V82 Enterprise ｜ Build 0050</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Build 0047.1 Stable</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -542,7 +543,7 @@ function anomalyList(value){
 <button class="tab" data-page="speedFeedback"><span>↻</span>產速回饋中心</button>
 <button class="tab" data-page="master"><span>⚙</span>Master 設定</button>
 <button class="tab" data-page="systemSettings"><span>⚙</span>系統設定</button></nav><div class="side-footer"><img src="data:image/png;base64,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" alt="SEAL KING"><div><b>SEAL <em>KING</em></b><small>Smart Factory</small></div></div></aside><main class="workspace">
-<section id="home" class="page active"><div class="v82-quickbar"><strong>★ 常用功能</strong><button data-v82-jump="home">戰情中心</button><button data-v82-jump="pool">工單池</button><button class="primary" data-v82-jump="schedule">APS 排程</button><button data-v82-jump="missingSpeed">AI 缺產速</button><small>所有原有功能分頁完整保留</small></div>
+<section id="home" class="page active">
 <div class="dashboard-kpis">
   <div class="metric-card red"><div class="metric-icon">▣</div><div><span>加工課工單</span><strong id="kpiAll">0</strong><small>4-3 站別＝加工課</small></div></div>
   <div class="metric-card orange"><div class="metric-icon">◉</div><div><span>可排工單</span><strong id="kpiReady">0</strong><small>有剩餘量且找到產速</small></div></div>
@@ -573,11 +574,9 @@ function anomalyList(value){
 <div class="card col12"><h2>資料預覽</h2><div id="preview" class="empty">尚未上傳檔案</div></div>
 </div></section>
 <section id="pool" class="page"><div class="grid"><div class="card col12"><div class="page-toolbar"><div><h2>加工課工單池</h2><div class="sub">C 代表已結案。點擊欄位標題可升冪／降冪排列，搜尋與狀態可同時篩選。</div></div><div class="actions"><button class="btn" id="runSchedule">產生排程</button><button class="btn ghost" id="exportPool">匯出工單池 CSV</button></div></div><div class="filterbar"><input id="poolSearch" placeholder="搜尋工單、客戶、料號、規格、機台…"><select id="poolStatus"><option value="all">全部狀態</option><option value="open">未結案</option><option value="closed">已結案</option><option value="urgent">急單</option><option value="risk">交期風險</option><option value="missing">缺少產速</option></select><select id="poolMachine"><option value="all">全部機台</option></select><button class="btn ghost" id="clearPoolFilters">清除篩選</button><span class="result-count" id="poolCount"></span></div><div id="poolTable" class="empty">尚未建立工單池</div></div></div></section>
-<section id="schedule" class="page"><div class="v82-quickbar"><strong>★ 常用功能</strong><button data-v82-jump="home">戰情中心</button><button data-v82-jump="pool">工單池</button><button class="primary" data-v82-jump="schedule">APS 排程</button><button data-v82-jump="missingSpeed">AI 缺產速</button><small>所有原有功能分頁完整保留</small></div><div class="grid">
-<div class="card col12"><div class="v82-section-head"><div class="v82-title-group"><div class="section-kicker">APS ENTERPRISE COMMAND CENTER</div><h2>APS 排程中心</h2><div class="sub">08:30～隔日 08:30 有限產能排程；保留既有排程引擎、急單、前製程、人力與產速邏輯。</div></div><div><div class="v82-modebar"><button class="active" type="button">今日</button><button type="button" data-v82-info="明日排程將沿用目前日期切換機制">明日</button><button type="button" data-v82-info="本週視圖將於下一功能版串接">本週</button><button type="button" data-v82-info="本月負載將於下一功能版串接">本月</button></div><div class="actions"><button class="btn" id="rerunSchedule">重新排程</button><button class="btn ghost" id="exportSchedule">匯出排程 CSV</button></div></div></div>
-<div class="v82-schedule-kpis"><div class="v82-schedule-kpi"><span>加工課工單</span><b id="v82All">0</b></div><div class="v82-schedule-kpi green"><span>可排工單</span><b id="v82Ready">0</b></div><div class="v82-schedule-kpi"><span>平均機台負荷</span><b id="v82Util">0%</b></div><div class="v82-schedule-kpi red"><span>Delay 工單</span><b id="v82Risk">0</b></div><div class="v82-schedule-kpi orange"><span>缺產速提醒</span><b id="v82Missing">0</b></div><div class="v82-schedule-kpi"><span>排程生產日</span><b id="v82Date" style="font-size:17px">—</b></div></div>
-<div id="scheduleTimeline" style="margin-top:14px"><div class="empty">尚未產生排程</div></div><div class="v82-enterprise-note"><b>V82 Enterprise</b><span>此版只強化介面與入口，不刪除、合併或改寫任何既有功能分頁與資料流程。</span></div></div>
-<div class="card col12"><div class="page-toolbar"><div><h2>排程明細</h2><div class="sub">可追蹤機台、工單、開始／完成時間、交期與風險。</div></div><button class="btn ghost" data-v82-jump="urgent">前往急單／插單</button></div><div id="scheduleTable" class="empty">尚未產生排程</div></div></div></section>
+<section id="schedule" class="page"><div class="grid">
+<div class="card col12"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><h2>有限產能排程結果</h2><div class="sub">以每日時間軸顯示機台安排。綠色為正常工單、紅色為急單、橘色為交期延遲風險。</div></div><div class="actions"><button class="btn" id="rerunSchedule">重新排程</button><button class="btn ghost" id="exportSchedule">匯出排程 CSV</button></div></div><div id="scheduleTimeline" style="margin-top:14px"><div class="empty">尚未產生排程</div></div></div>
+<div class="card col12"><h2>排程明細</h2><div id="scheduleTable" class="empty">尚未產生排程</div></div></div></section>
 
 <section id="urgent" class="page"><div class="grid">
 <div class="card col5"><div class="section-kicker">DYNAMIC RESCHEDULING</div><h2>急單／插單 Key In</h2><div class="sub">先模擬，不直接改動正式排程。系統會比較插單前後完成時間並標出 Delay。</div>
@@ -2085,7 +2084,7 @@ function readCfg(){try{return {...defaults,...JSON.parse(localStorage.getItem(CF
 function writeCfg(c){localStorage.setItem(CFG_KEY,JSON.stringify(c))}
 function cfgFromForm(){return {name:$s('sysName')?.value.trim()||defaults.name,admin:$s('sysAdmin')?.value.trim()||defaults.admin,department:$s('sysDepartment')?.value.trim()||defaults.department,subtitle:$s('sysSubtitle')?.value.trim()||defaults.subtitle,version:$s('sysVersion')?.value.trim()||defaults.version,dataOwner:$s('sysDataOwner')?.value.trim()||'',animations:!!$s('sysAnimations')?.checked,compact:!!$s('sysCompact')?.checked,stickySidebar:!!$s('sysStickySidebar')?.checked,tooltips:!!$s('sysTooltips')?.checked,persistPool:!!$s('sysPersistPool')?.checked,autoLoadPool:!!$s('sysAutoLoadPool')?.checked,persistSchedule:!!$s('sysPersistSchedule')?.checked,autoLoadSchedule:!!$s('sysAutoLoadSchedule')?.checked,missingSpeedAlert:Number($s('sysMissingSpeedAlert')?.value)||0,overdueAlert:Number($s('sysOverdueAlert')?.value)||0,machineLoadAlert:Number($s('sysMachineLoadAlert')?.value)||90,staleHours:Number($s('sysStaleHours')?.value)||24}}
 function fillForm(c){const m={sysName:c.name,sysAdmin:c.admin,sysDepartment:c.department,sysSubtitle:c.subtitle,sysVersion:c.version,sysDataOwner:c.dataOwner,sysMissingSpeedAlert:c.missingSpeedAlert,sysOverdueAlert:c.overdueAlert,sysMachineLoadAlert:c.machineLoadAlert,sysStaleHours:c.staleHours};Object.entries(m).forEach(([id,v])=>{if($s(id))$s(id).value=v});[['sysAnimations','animations'],['sysCompact','compact'],['sysStickySidebar','stickySidebar'],['sysTooltips','tooltips'],['sysPersistPool','persistPool'],['sysAutoLoadPool','autoLoadPool'],['sysPersistSchedule','persistSchedule'],['sysAutoLoadSchedule','autoLoadSchedule']].forEach(([id,k])=>{if($s(id))$s(id).checked=!!c[k]})}
-function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0042`;window.SK_APS_CONFIG=c}
+function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0047.1 Stable`;window.SK_APS_CONFIG=c}
 function toast(t){const old=document.querySelector('.sys-toast');if(old)old.remove();const d=document.createElement('div');d.className='sys-toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
@@ -2094,7 +2093,7 @@ function download(name,obj){const b=new Blob([JSON.stringify(obj,null,2)],{type:
 function saveSnapshots(silent=false){const c=readCfg();if(c.persistPool)localStorage.setItem(POOL_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:window.S?.pool||[]}));if(c.persistSchedule)localStorage.setItem(SCH_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:window.S?.schedule||[],machines:window.S?.machines||{}}));updateSnapshotStatus();renderStats();if(!silent)toast('目前工單池與排程已保存')}
 function restoreSnapshots(){const c=readCfg();try{if(c.autoLoadPool&&!(window.S?.pool||[]).length){const p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');if(p?.rows?.length)window.S.pool=p.rows}if(c.autoLoadSchedule&&!(window.S?.schedule||[]).length){const q=JSON.parse(localStorage.getItem(SCH_KEY)||'null');if(q?.rows?.length){window.S.schedule=q.rows;window.S.machines=q.machines||window.S.machines||{}}}}catch(e){console.warn('snapshot restore failed',e)}try{window.renderPool?.();window.renderSchedule?.();window.updateKpi?.()}catch{}}
 function updateSnapshotStatus(){const e=$s('sysSnapshotStatus');if(!e)return;let p=null,q=null;try{p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');q=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch{};e.textContent=`工單池快照：${p?.rows?.length||0} 筆${p?.savedAt?'（'+new Date(p.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}；排程快照：${q?.rows?.length||0} 段${q?.savedAt?'（'+new Date(q.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}。`}
-function exportAll(){const storage={};apsKeys().forEach(k=>storage[k]=localStorage.getItem(k));download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,{format:'SEAL_KING_APS_BACKUP',build:'0040',exportedAt:new Date().toISOString(),storage,state:{pool:window.S?.pool||[],schedule:window.S?.schedule||[],machines:window.S?.machines||{}}})}
+function exportAll(){const storage={};apsKeys().forEach(k=>storage[k]=localStorage.getItem(k));download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,{format:'SEAL_KING_APS_BACKUP',build:'0047.1',exportedAt:new Date().toISOString(),storage,state:{pool:window.S?.pool||[],schedule:window.S?.schedule||[],machines:window.S?.machines||{}}})}
 async function importAll(file){const txt=await file.text(),obj=JSON.parse(txt);if(obj.format!=='SEAL_KING_APS_BACKUP'&&!obj.storage)throw new Error('不是有效的 APS 完整備份');Object.entries(obj.storage||{}).forEach(([k,v])=>{if(k.startsWith('SK_APS_'))localStorage.setItem(k,String(v))});if(obj.state&&window.S){window.S.pool=obj.state.pool||[];window.S.schedule=obj.state.schedule||[];window.S.machines=obj.state.machines||{}}const c=readCfg();fillForm(c);applyCfg(c);renderStats();updateSnapshotStatus();window.renderPool?.();window.renderSchedule?.();window.updateKpi?.();toast('完整系統備份已匯入')}
 function clearAll(){if(!confirm('確定清除全部 APS 永久資料？此操作無法復原，建議先下載備份。'))return;apsKeys().forEach(k=>localStorage.removeItem(k));if(window.S){window.S.pool=[];window.S.schedule=[];window.S.machines={}}fillForm(defaults);applyCfg(defaults);renderStats();updateSnapshotStatus();toast('全部 APS 永久資料已清除')}
 function hookPersistence(){const wrap=(name,type)=>{const f=window[name];if(typeof f!=='function'||f.__sysWrapped)return;const g=function(...args){const r=f.apply(this,args);setTimeout(()=>{const c=readCfg();if((type==='pool'&&c.persistPool)||(type==='schedule'&&c.persistSchedule))saveSnapshots(true)},0);return r};g.__sysWrapped=true;window[name]=g};wrap('buildPool','pool');wrap('runSchedule','schedule');wrap('renderSchedule','schedule')}
@@ -2525,8 +2524,17 @@ async function bootstrapCloud(){
     CLOUD.loaded=true;
     renderAfterCloudLoad();
 
+    /* Build 0047.1 Stable：
+       雲端資料成功載入後立即建立本機快照。
+       API 暫時逾時時仍可先顯示最近一次可用資料。 */
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
+
     if(loadedCount>0){
-      setCloudStatus("ok","已載入",cloudMetaText(CLOUD.meta));
+      setCloudStatus(
+        "ok",
+        `已載入｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,
+        cloudMetaText(CLOUD.meta)
+      );
       window.log?.(`APS DataCenter 已載入：工單池 ${state.pool.length} 筆、排程 ${state.schedule.length} 段`);
     }else{
       const localCount=(state.pool?.length||0)+(state.schedule?.length||0);
@@ -2539,7 +2547,21 @@ async function bootstrapCloud(){
     }
   }catch(err){
     console.error("APS cloud bootstrap failed",err);
-    setCloudStatus("bad","連線失敗",`${err.message}；已保留瀏覽器本機資料`);
+    try{
+      window.SKAPSSystem?.restoreSnapshots?.();
+      renderAfterCloudLoad();
+    }catch(e){
+      console.warn("APS local fallback failed",e);
+    }
+    const localPool=window.S?.pool?.length||0;
+    const localSchedule=window.S?.schedule?.length||0;
+    setCloudStatus(
+      localPool||localSchedule ? "warn" : "bad",
+      localPool||localSchedule
+        ? `使用本機備援｜工單池 ${localPool}｜排程 ${localSchedule}`
+        : "連線失敗",
+      `${err.message}；已嘗試載入最近一次本機快照`
+    );
   }finally{
     CLOUD.loading=false;
   }
@@ -2560,16 +2582,19 @@ function wrapFunction(name,after){
 
 function installHooks(){
   wrapFunction("buildPool",()=>{
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch{}
     queueSave("workpool",500);
     queueSave("speed",700);
     queueSave("machine",900);
     queueSave("preprocess",1100);
   });
   wrapFunction("schedule",()=>{
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch{}
     queueSave("schedule",600);
     queueSave("machine",800);
   });
   wrapFunction("runSchedule",()=>{
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch{}
     queueSave("schedule",600);
     queueSave("machine",800);
   });
@@ -2650,8 +2675,14 @@ function installHooks(){
   if(status&&!status.dataset.apsCloudHook){
     status.dataset.apsCloudHook="1";
     status.style.cursor="pointer";
-    status.addEventListener("click",()=>saveAllCloud(false));
-    status.title="點一下立即保存全部 APS 資料";
+    status.addEventListener("click",event=>{
+      if(event.altKey){
+        saveAllCloud(false);
+      }else{
+        bootstrapCloud();
+      }
+    });
+    status.title="點一下重新載入 APS 雲端資料；按住 Alt 再點可立即保存全部資料";
   }
 }
 
@@ -2703,29 +2734,4 @@ window.SEAL_KING_SECURITY={
 })();
 </script>
 
-
-<script>
-/* V82 Enterprise Build 0050｜只增加導覽與摘要同步，不改排程核心 */
-(function(){
-  function jump(id){
-    const tab=document.querySelector('.tab[data-page="'+id+'"]');
-    if(tab) tab.click();
-  }
-  function text(id){return document.getElementById(id)?.textContent?.trim()||'0'}
-  function sync(){
-    const map={v82All:'kpiAll',v82Ready:'kpiReady',v82Util:'kpiUtil',v82Risk:'kpiRisk'};
-    Object.entries(map).forEach(([to,from])=>{const e=document.getElementById(to);if(e)e.textContent=text(from)});
-    const ms=document.getElementById('msMissingCount'),vm=document.getElementById('v82Missing');if(vm)vm.textContent=ms?.textContent?.trim()||'0';
-    const d=document.getElementById('dashboardDate'),vd=document.getElementById('v82Date');if(vd)vd.textContent=d?.value||new Date().toISOString().slice(0,10);
-  }
-  document.addEventListener('click',function(e){
-    const b=e.target.closest('[data-v82-jump]');if(b){jump(b.dataset.v82Jump);setTimeout(sync,80)}
-    const info=e.target.closest('[data-v82-info]');if(info){alert(info.dataset.v82Info)}
-  });
-  document.addEventListener('DOMContentLoaded',function(){
-    sync();setInterval(sync,1200);
-    const root=document.body;new MutationObserver(sync).observe(root,{subtree:true,childList:true,characterData:true});
-  });
-})();
-</script>
 </body></html>
