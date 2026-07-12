@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V81.5.1 SEAL KING MES Enterprise｜Production Command Center</title>
+<title>V81.5.2 SEAL KING MES Enterprise｜Production Command Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -3717,6 +3717,34 @@ table tbody tr:hover td{background:#fff2f3!important}
   .v702-kpiGrid,.effKpiGrid{grid-template-columns:repeat(2,1fr)!important}
   .v456Kpi .num{font-size:34px!important}
   .v702-statusTop h2{font-size:21px!important}
+}
+</style>
+
+
+<style id="v8152-overview-dark-text-fix">
+/* V81.5.2｜生產總覽白底 KPI 高對比修正（置於全站樣式最後，避免再被白字規則覆蓋） */
+#overview #overviewGrid > .kpiCard,
+#overview #overviewGrid > .kpiCard *{
+  color:#2f343a!important;
+  text-shadow:none!important;
+  opacity:1!important;
+}
+#overview #overviewGrid > .kpiCard{
+  background:#ffffff!important;
+  border:1px solid #d9dee4!important;
+  border-top:4px solid #e41f26!important;
+  box-shadow:0 5px 16px rgba(24,32,43,.08)!important;
+}
+#overview #overviewGrid > .kpiCard .name{
+  color:#555d66!important;
+  font-size:14px!important;
+  font-weight:900!important;
+}
+#overview #overviewGrid > .kpiCard .num{
+  color:#242a31!important;
+  font-size:38px!important;
+  line-height:1.08!important;
+  font-weight:950!important;
 }
 </style>
 
