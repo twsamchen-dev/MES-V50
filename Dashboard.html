@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V81.5 SEAL KING MES Enterprise｜Production Command Center</title>
+<title>V81.5.1 SEAL KING MES Enterprise｜Production Command Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -96,6 +96,42 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 .kpiCard .name{opacity:1!important;font-weight:900!important;text-shadow:0 1px 2px rgba(0,0,0,.28)!important;}
 .kpiCard .num{opacity:1!important;text-shadow:0 2px 4px rgba(0,0,0,.28)!important;}
 .kpiCard .hint,.kpiCard .sub,.kpiCard small{opacity:.88!important;font-weight:700!important;}
+</style>
+
+<style id="v8151-final-dark-text-fix">
+/* V81.5.1｜最終文字對比修正：僅處理白底 KPI 與「離開晨會」按鈕 */
+.epKpi,
+.epKpi .name,
+.epKpi .num,
+.epKpi .sub,
+.epKpi div,
+.epKpi span,
+.epKpi small,
+.epKpi b,
+.epKpi strong{
+  color:#34383d!important;
+  text-shadow:none!important;
+  opacity:1!important;
+}
+.epKpi .name{font-weight:900!important;}
+.epKpi .num{font-weight:950!important;}
+.epKpi .sub{color:#62676d!important;font-weight:800!important;}
+
+#meeting #meetClose,
+#meeting.meetingPlus #meetClose,
+#meeting.meetingV454LTS #meetClose,
+#meeting.meetingV45Charts #meetClose{
+  background:#ffffff!important;
+  color:#34383d!important;
+  border:1px solid #cfd3d8!important;
+  text-shadow:none!important;
+  font-weight:950!important;
+}
+#meeting #meetClose:hover{
+  background:#f2f3f4!important;
+  color:#20242a!important;
+  filter:none!important;
+}
 </style>
 </head>
 <body>
@@ -1043,7 +1079,7 @@ header{margin-left:268px;background:linear-gradient(135deg,#081934,#123c8a 55%,#
   window.createEnterpriseSidebar=function(){
     if(document.getElementById('epSidebar')) return;
     var side=document.createElement('aside'); side.id='epSidebar'; side.className='epSidebar';
-    side.innerHTML='<div class="epBrand"><div class="epLogo"><img src="data:image/png;base64,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" alt="SEAL KING Logo"></div><div><b>生產戰情室</b><span>MES Enterprise</span></div></div><div class="epUser"><div class="epAvatar">👷</div><div><b>白班</b><span class="epOnline">● 線上 / Admin</span></div></div><nav class="epNav">'+navItems().map(function(x){return '<button type="button" data-ep-view="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2].split(' ')[0]+'<small>'+x[2].split(' ').slice(1).join(' ')+'</small></span></button>'}).join('')+'<button type="button" data-ep-meeting="1"><span class="ico">📺</span><span>晨會模式<small>Morning Meeting</small></span></button></nav><div class="epFoot">V81.5 SEAL KING<br>Corporate Edition</div>';
+    side.innerHTML='<div class="epBrand"><div class="epLogo"><img src="data:image/png;base64,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" alt="SEAL KING Logo"></div><div><b>生產戰情室</b><span>MES Enterprise</span></div></div><div class="epUser"><div class="epAvatar">👷</div><div><b>白班</b><span class="epOnline">● 線上 / Admin</span></div></div><nav class="epNav">'+navItems().map(function(x){return '<button type="button" data-ep-view="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2].split(' ')[0]+'<small>'+x[2].split(' ').slice(1).join(' ')+'</small></span></button>'}).join('')+'<button type="button" data-ep-meeting="1"><span class="ico">📺</span><span>晨會模式<small>Morning Meeting</small></span></button></nav><div class="epFoot">V81.5.1 SEAL KING<br>Corporate Edition</div>';
     document.body.insertBefore(side,document.body.firstChild);
     side.querySelectorAll('[data-ep-view]').forEach(function(b){b.addEventListener('click',function(){window.switchView(b.getAttribute('data-ep-view'))})});
     var mb=side.querySelector('[data-ep-meeting]'); if(mb)mb.addEventListener('click',function(){ if(window.openMeeting) window.openMeeting(); });
