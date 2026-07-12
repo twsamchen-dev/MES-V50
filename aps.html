@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0046-3</title>
+<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0046-4</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -426,6 +426,35 @@ html.aps-locked body{overflow:auto!important}
 <style id="build0046-1-missing-speed-css">
 .missing-speed-kpis{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0}.missing-speed-kpi{border:1px solid #30414b;background:#0b151c;border-radius:9px;padding:14px}.missing-speed-kpi span{display:block;color:#9caab4;font-size:12px}.missing-speed-kpi b{display:block;font-size:28px;margin-top:6px}.missing-speed-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.missing-speed-toolbar input,.missing-speed-toolbar select{background:#0a151d;color:#f5f7fa;border:1px solid #344954;border-radius:7px;padding:9px 10px}.missing-speed-toolbar input[type=search]{min-width:280px;flex:1}.missing-speed-summary{border-left:4px solid #f59e0b;background:#2d210c66;border-radius:8px;padding:11px 13px;color:#f5d98f;line-height:1.55;margin-bottom:12px}.missing-speed-table td{vertical-align:top}.missing-speed-table .spec{max-width:260px;white-space:normal;line-height:1.45}.missing-speed-reason{font-size:11px;color:#f6c76b;line-height:1.45;max-width:220px;white-space:normal}.missing-speed-actions{display:flex;gap:6px;flex-wrap:wrap}.missing-speed-actions .btn{padding:7px 10px;font-size:11px}.missing-speed-empty{padding:36px;text-align:center;color:#9aa8b2}@media(max-width:900px){.missing-speed-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.missing-speed-kpis{grid-template-columns:1fr}.missing-speed-toolbar input[type=search]{min-width:100%}}
 </style>
+
+<script>
+/* Build 0046-4｜雲端 anomalies 資料格式相容修正 */
+function anomalyList(value){
+  if(Array.isArray(value)){
+    return value.map(function(v){
+      return String(v == null ? "" : v).trim();
+    }).filter(Boolean);
+  }
+  if(value === undefined || value === null || value === "") return [];
+  if(typeof value === "string"){
+    var s = value.trim();
+    if(!s) return [];
+    try{
+      var parsed = JSON.parse(s);
+      if(Array.isArray(parsed)){
+        return parsed.map(function(v){
+          return String(v == null ? "" : v).trim();
+        }).filter(Boolean);
+      }
+    }catch(err){}
+    return s.split(/\r?\n|、|；/).map(function(v){
+      return v.trim();
+    }).filter(Boolean);
+  }
+  return [String(value).trim()].filter(Boolean);
+}
+</script>
+
 </head>
 <body>
 
@@ -1111,12 +1140,12 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   window.renderPool=function(){
     const data=typeof filterPoolRows==='function'?filterPoolRows():S.pool;if(!S.pool.length){$('poolTable').className='empty';$('poolTable').textContent='沒有工單資料';$('poolCount').textContent='';return}
     $('poolCount').textContent=`顯示 ${data.length} / ${S.pool.length} 筆`;
-    $('poolTable').className='tablewrap';$('poolTable').innerHTML=`<table><thead><tr><th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th><th>所需回數</th><th>單回產量</th><th>單回時間</th><th>準備</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th><th>產速來源</th><th>檢核</th></tr></thead><tbody>${data.map(x=>`<tr class="${x.closed?'closed-row':''}"><td><span class="tag ${x.closed?'gray':x.urgent?'red':x.risk?'yellow':'blue'}">${x.closed?'已結案':x.urgent?'急單':x.risk?'風險':'一般'}</span></td><td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.machine||'—')}</td><td>${Number(x.remaining).toLocaleString('zh-TW',{maximumFractionDigits:2})}</td><td>${esc(x.unit)}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString('zh-TW'):'—'}</td><td>${x.perRound?Number(x.perRound).toLocaleString('zh-TW',{maximumFractionDigits:3}):'—'}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+'m':'—'}</td><td>${x.setupMinutes||0}m</td><td>${x.firstArticleMinutes||0}m</td><td>${x.productionMinutes?Math.ceil(x.productionMinutes)+'m':'—'}</td><td>${x.cleanupMinutes||0}m</td><td><b>${x.minutes?Math.ceil(x.minutes)+'m':'—'}</b></td><td><span class="tag ${x.match==='無產速'?'red':x.match==='現場回饋'?'purple':x.match==='完整條件匹配'?'green':'yellow'}">${esc(x.match)}</span></td><td>${x.anomalies?.length?`<span class="tag yellow" title="${esc(x.anomalies.join('\n'))}">需確認 ${x.anomalies.length}</span>`:'<span class="tag green">正常</span>'}</td></tr>`).join('')}</tbody></table>`;
+    $('poolTable').className='tablewrap';$('poolTable').innerHTML=`<table><thead><tr><th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th><th>所需回數</th><th>單回產量</th><th>單回時間</th><th>準備</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th><th>產速來源</th><th>檢核</th></tr></thead><tbody>${data.map(x=>`<tr class="${x.closed?'closed-row':''}"><td><span class="tag ${x.closed?'gray':x.urgent?'red':x.risk?'yellow':'blue'}">${x.closed?'已結案':x.urgent?'急單':x.risk?'風險':'一般'}</span></td><td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.machine||'—')}</td><td>${Number(x.remaining).toLocaleString('zh-TW',{maximumFractionDigits:2})}</td><td>${esc(x.unit)}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString('zh-TW'):'—'}</td><td>${x.perRound?Number(x.perRound).toLocaleString('zh-TW',{maximumFractionDigits:3}):'—'}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+'m':'—'}</td><td>${x.setupMinutes||0}m</td><td>${x.firstArticleMinutes||0}m</td><td>${x.productionMinutes?Math.ceil(x.productionMinutes)+'m':'—'}</td><td>${x.cleanupMinutes||0}m</td><td><b>${x.minutes?Math.ceil(x.minutes)+'m':'—'}</b></td><td><span class="tag ${x.match==='無產速'?'red':x.match==='現場回饋'?'purple':x.match==='完整條件匹配'?'green':'yellow'}">${esc(x.match)}</span></td><td>${anomalyList(x.anomalies).length?`<span class="tag yellow" title="${esc(anomalyList(x.anomalies).join('\n'))}">需確認 ${anomalyList(x.anomalies).length}</span>`:'<span class="tag green">正常</span>'}</td></tr>`).join('')}</tbody></table>`;
   };
   const oldRunScheduler=window.runScheduler||runScheduler;
   window.runScheduler=function(pool){
     const out=oldRunScheduler(pool);
-    out.forEach(seg=>{const j=S.pool.find(x=>x.wo===seg.wo);if(j){seg.reason=`${seg.reason||''}｜${j.cycles}回；準備${j.setupMinutes}m＋首件${j.firstArticleMinutes}m＋生產${Math.ceil(j.productionMinutes)}m＋收尾${j.cleanupMinutes}m；${j.match}${j.anomalies?.length?'；需確認：'+j.anomalies.join('、'):''}`;}});
+    out.forEach(seg=>{const j=S.pool.find(x=>x.wo===seg.wo);if(j){seg.reason=`${seg.reason||''}｜${j.cycles}回；準備${j.setupMinutes}m＋首件${j.firstArticleMinutes}m＋生產${Math.ceil(j.productionMinutes)}m＋收尾${j.cleanupMinutes}m；${j.match}${anomalyList(j.anomalies).length?'；需確認：'+anomalyList(j.anomalies).join('、'):''}`;}});
     return out;
   };
   const bind=()=>{if($('buildPool'))$('buildPool').onclick=window.buildPool};bind();
@@ -1285,7 +1314,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
     const kpi=document.getElementById('speedMissingCount');if(kpi)kpi.textContent=all.length;
     if(!el)return;if(!all.length){el.className='empty';el.textContent=S.pool?.length?'目前未發現缺少產速的工單。':'請先建立工單池。';return}
     if(!rows.length){el.className='empty';el.textContent='目前篩選沒有資料。';return}
-    el.className='tablewrap master-alert';el.innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>料號</th><th>品名／規格</th><th>製程</th><th>建議機台</th><th>預交日</th><th>缺少原因</th><th>處理</th></tr></thead><tbody>${rows.map((x,i)=>{const st=dueStatus(x),dc=st==='overdue'?'speed-due-overdue':st==='soon'?'speed-due-soon':'';return `<tr class="missing-speed-row" data-detail-index="${i}"><td><strong>${esc(x.wo)}</strong></td><td>${esc(x.customer||'—')}</td><td>${esc(x.part||'—')}</td><td>${esc(x.name||x.spec||'—')}</td><td>${esc(x.process||'—')}</td><td>${esc(x.sourceMachine||x.machine||'—')}</td><td class="${dc}">${esc(dueText(x))}</td><td class="speed-reason">${esc((x.anomalies&&x.anomalies.join('、'))||'找不到符合料號／機台／規格的產速')}</td><td><button class="btn ghost missing-action" data-fill-index="${i}">補產速</button></td></tr>`}).join('')}</tbody></table>`;
+    el.className='tablewrap master-alert';el.innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>料號</th><th>品名／規格</th><th>製程</th><th>建議機台</th><th>預交日</th><th>缺少原因</th><th>處理</th></tr></thead><tbody>${rows.map((x,i)=>{const st=dueStatus(x),dc=st==='overdue'?'speed-due-overdue':st==='soon'?'speed-due-soon':'';return `<tr class="missing-speed-row" data-detail-index="${i}"><td><strong>${esc(x.wo)}</strong></td><td>${esc(x.customer||'—')}</td><td>${esc(x.part||'—')}</td><td>${esc(x.name||x.spec||'—')}</td><td>${esc(x.process||'—')}</td><td>${esc(x.sourceMachine||x.machine||'—')}</td><td class="${dc}">${esc(dueText(x))}</td><td class="speed-reason">${esc(anomalyList(x.anomalies).join('、')||'找不到符合料號／機台／規格的產速')}</td><td><button class="btn ghost missing-action" data-fill-index="${i}">補產速</button></td></tr>`}).join('')}</tbody></table>`;
     el.querySelectorAll('[data-fill-index]').forEach(b=>b.onclick=e=>{e.stopPropagation();fillForm(rows[Number(b.dataset.fillIndex)])});el.querySelectorAll('[data-detail-index]').forEach(r=>r.onclick=()=>fillForm(rows[Number(r.dataset.detailIndex)]));
   }
   function jumpMissing(){if(typeof showPage==='function')showPage('speedFeedback');setTimeout(()=>{document.getElementById('missingSpeedTools')?.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('missingSpeedSearch')?.focus()},50)}
@@ -1382,7 +1411,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   const pool=()=>((window.S&&Array.isArray(window.S.pool))?window.S.pool:(typeof S!=='undefined'&&Array.isArray(S.pool)?S.pool:[]));
   const missing=()=>pool().filter(x=>!x.closed&&!x.ready);
   const dval=x=>{const d=x?.due instanceof Date?x.due:new Date(x?.due||'');return Number.isNaN(d.getTime())?0:d.getTime()};
-  const reason=x=>(x.anomalies&&x.anomalies.length?x.anomalies.join('、'):'找不到符合料號／機台／規格的產速');
+  const reason=x=>(anomalyList(x.anomalies).length?anomalyList(x.anomalies).join('、'):'找不到符合料號／機台／規格的產速');
   const dueLabel=x=>{if(!x.due)return '未提供';const d=x.due instanceof Date?x.due:new Date(x.due);if(Number.isNaN(d.getTime()))return '未提供';const now=new Date();now.setHours(0,0,0,0);d.setHours(0,0,0,0);const diff=Math.round((d-now)/86400000);const base=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;return diff<0?`${base}（逾期 ${Math.abs(diff)} 天）`:diff===0?`${base}（今天）`:`${base}（剩 ${diff} 天）`};
   const val=(x,k)=>({wo:x.wo,customer:x.customer,part:x.part,name:x.name||x.spec,process:x.process,machine:x.sourceMachine||x.machine,due:dval(x),reason:reason(x)})[k]??'';
   function filtered(){
