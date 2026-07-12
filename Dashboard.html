@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V80.6 MES Enterprise｜Production Command Center</title>
+<title>V80.6.1 MES Enterprise｜Production Command Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>MES Enterprise｜V80.6 Production Command Center</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：加工課戰情中心 / ศูนย์ควบคุมการผลิต：營運 KPI 優先顯示，DataHub 預設收合，維持手動更新模式。</p></header>
+<header><h1>MES Enterprise｜V80.6.1 Production Command Center</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：加工課戰情中心 / ศูนย์ควบคุมการผลิต：營運 KPI 優先顯示，DataHub 預設收合，維持手動更新模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -3307,18 +3307,36 @@ header h1{letter-spacing:.3px} .wrap{max-width:1550px}
    var actions=card.querySelector('.v805-actions');if(actions&&!card.querySelector('.v806-command-toggle')){var b=document.createElement('button');b.className='v806-toggle v806-command-toggle';b.type='button';b.onclick=function(){commandOpen=!commandOpen;apply()};actions.insertBefore(b,actions.firstChild)}
    var b=card.querySelector('.v806-command-toggle');if(b)b.textContent=commandOpen?'▲ 收合 DataHub':'▼ 展開 DataHub';
  }
+ function placeOnce(grid,node,beforeNode){
+   if(!node)return;
+   if(beforeNode){if(node.nextSibling!==beforeNode)grid.insertBefore(node,beforeNode);}
+   else if(node.parentNode!==grid||node!==grid.lastElementChild)grid.appendChild(node);
+ }
  function reorder(grid){
    var strip=E('v806CommandStrip'),dash=grid.querySelector('.v455Dash'),status=E('v702TargetKeyinStatus'),hub=E('v541DataHub'),cmd=E('v805Card');
-   [strip,dash,status].forEach(function(n){if(n)grid.appendChild(n)});
-   Array.from(grid.children).filter(function(n){return n!==strip&&n!==dash&&n!==status&&n!==hub&&n!==cmd}).forEach(function(n){grid.appendChild(n)});
-   if(hub)grid.appendChild(hub);if(cmd)grid.appendChild(cmd);
+   var firstNormal=Array.from(grid.children).find(function(n){return n!==strip&&n!==dash&&n!==status&&n!==hub&&n!==cmd})||hub||cmd||null;
+   if(strip&&grid.firstElementChild!==strip)grid.insertBefore(strip,grid.firstElementChild);
+   if(dash&&dash.previousElementSibling!==strip)grid.insertBefore(dash,strip?strip.nextSibling:grid.firstChild);
+   if(status&&status.previousElementSibling!==dash)grid.insertBefore(status,dash?dash.nextSibling:(strip?strip.nextSibling:grid.firstChild));
+   if(hub&&cmd){if(hub.nextElementSibling!==cmd){grid.appendChild(hub);grid.appendChild(cmd)}}
+   else{if(hub&&hub!==grid.lastElementChild)grid.appendChild(hub);if(cmd&&cmd!==grid.lastElementChild)grid.appendChild(cmd)}
  }
  function apply(){
    if(observerBusy)return;observerBusy=true;
-   var grid=E('dashboardGrid');if(grid){ensureStrip(grid);addHubToggle(E('v541DataHub'));addCommandToggle(E('v805Card'));reorder(grid)}
+   var grid=E('dashboardGrid');
+   if(grid){ensureStrip(grid);addHubToggle(E('v541DataHub'));addCommandToggle(E('v805Card'));reorder(grid)}
    observerBusy=false;
  }
- function start(){var grid=E('dashboardGrid');if(!grid){setTimeout(start,300);return}apply();new MutationObserver(function(){setTimeout(apply,20)}).observe(grid,{childList:true,subtree:true});setInterval(clock,1000);clock();setInterval(apply,1800)}
+ function start(){
+   var grid=E('dashboardGrid');if(!grid){setTimeout(start,300);return}
+   apply();clock();setInterval(clock,1000);
+   var timer=null;
+   new MutationObserver(function(mutations){
+     var needsApply=mutations.some(function(m){return m.type==='childList'&&m.target===grid});
+     if(!needsApply)return;
+     clearTimeout(timer);timer=setTimeout(apply,120);
+   }).observe(grid,{childList:true});
+ }
  document.addEventListener('DOMContentLoaded',function(){setTimeout(start,1300)});
 })();
 </script>
