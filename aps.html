@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0046-1</title>
+<title>SEAL KING Smart APS｜Enterprise Preview 2 Build 0046-2</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -598,7 +598,7 @@ html.aps-locked body{overflow:auto!important}
 
 
 <section id="workforce" class="page"><div class="grid">
-<div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">WORKFORCE CAPACITY</div><h2>人力中心</h2><div class="sub">管理早班／夜班可用人力、機台需求人數，並檢查目前排程是否有人力缺口。</div></div><div class="actions"><button class="btn" id="wfAnalyze">重新分析</button><button class="btn ghost" id="wfExport">匯出人力分析 CSV</button></div></div>
+<div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">WORKFORCE CAPACITY</div><h2>人力中心</h2><div class="sub">管理早班／夜班操作員與幹部人數，設定各機台需求人數，並依目前排程自動計算人力缺口。</div></div><div class="actions"><button class="btn" id="wfAnalyze">重新分析</button><button class="btn ghost" id="wfExport">匯出人力分析 CSV</button></div></div>
 <div class="center-kpis"><div class="center-kpi"><span>早班可用人力</span><b id="wfDayTotal">0</b></div><div class="center-kpi"><span>夜班可用人力</span><b id="wfNightTotal">0</b></div><div class="center-kpi"><span>人力不足時段</span><b id="wfShortage">0</b></div><div class="center-kpi"><span>目前排程需求</span><b id="wfDemand">0</b></div></div></div>
 <div class="card col6"><h2>班別人力設定</h2><div class="center-form"><div class="field"><label>早班操作員</label><input id="wfDayOps" type="number" min="0" value="12"></div><div class="field"><label>早班幹部</label><input id="wfDayLead" type="number" min="0" value="2"></div><div class="field"><label>夜班操作員</label><input id="wfNightOps" type="number" min="0" value="8"></div><div class="field"><label>夜班幹部</label><input id="wfNightLead" type="number" min="0" value="1"></div></div><div class="actions"><button class="btn green" id="wfSave">儲存人力設定</button></div><div id="wfMsg" class="hint"></div></div>
 <div class="card col6"><h2>機台需求人數設定</h2><div class="sub">預設每台運轉機台需要 1 人；特殊機台可單獨調整。</div><div id="wfMachineReq" class="tablewrap" style="margin-top:12px;max-height:340px"></div><div class="actions"><button class="btn green" id="wfSaveMachine">儲存需求設定</button></div></div>
@@ -1802,11 +1802,81 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  const dt=v=>v?new Date(v):null, dstr=v=>{const d=dt(v);return d&&!isNaN(d)?d.toLocaleDateString('zh-TW'):''};
  function allMachines(){const set=new Set(Object.keys(window.S?.machines||{}));(window.S?.pool||[]).forEach(x=>x.machine&&set.add(x.machine));(window.S?.schedule||[]).forEach(x=>x.machine&&set.add(x.machine));return [...set].filter(Boolean).sort()}
  // workforce
- function loadWF(){return read(WF_KEY,{dayOps:12,dayLead:2,nightOps:8,nightLead:1,machineReq:{}})}
- function renderWFSettings(){const x=loadWF();['DayOps','DayLead','NightOps','NightLead'].forEach(k=>{const map={DayOps:'dayOps',DayLead:'dayLead',NightOps:'nightOps',NightLead:'nightLead'};$e('wf'+k).value=x[map[k]]});const ms=allMachines();$e('wfMachineReq').innerHTML=ms.length?`<table><thead><tr><th>機台</th><th>需求人數</th><th>備註</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(m)}</td><td><input type="number" min="0" max="10" step="1" value="${x.machineReq[m]?.people??1}" data-wf-people="${esc(m)}" style="width:85px"></td><td><input value="${esc(x.machineReq[m]?.note||'')}" data-wf-note="${esc(m)}" placeholder="特殊需求"></td></tr>`).join('')}</tbody></table>`:'<div class="empty">請先匯入產速或建立工單池。</div>';analyzeWF()}
+ function loadWF(){
+   const raw=read(WF_KEY,{});
+   const num=(v,d)=>{const x=Number(v);return Number.isFinite(x)?x:d};
+   return {
+     dayOps:num(raw.dayOps,12),
+     dayLead:num(raw.dayLead,2),
+     nightOps:num(raw.nightOps,8),
+     nightLead:num(raw.nightLead,1),
+     machineReq:(raw.machineReq&&typeof raw.machineReq==='object')?raw.machineReq:{}
+   };
+ }
+ function renderWFSettings(){const x=loadWF();['DayOps','DayLead','NightOps','NightLead'].forEach(k=>{const map={DayOps:'dayOps',DayLead:'dayLead',NightOps:'nightOps',NightLead:'nightLead'};$e('wf'+k).value=x[map[k]]});const ms=allMachines();$e('wfMachineReq').innerHTML=ms.length?`<table><thead><tr><th>機台</th><th>需求人數</th><th>備註</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(m)}</td><td><input type="number" min="0" max="10" step="1" value="${x.machineReq[m]?.people??1}" data-wf-people="${esc(m)}" style="width:85px"></td><td><input value="${esc(x.machineReq[m]?.note||'')}" data-wf-note="${esc(m)}" placeholder="特殊需求"></td></tr>`).join('')}</tbody></table>`:'<div class="empty">目前沒有可設定的機台。請先建立工單池或載入排程資料。</div>';analyzeWF()}
  function saveWF(){const x=loadWF();x.dayOps=n($e('wfDayOps').value);x.dayLead=n($e('wfDayLead').value);x.nightOps=n($e('wfNightOps').value);x.nightLead=n($e('wfNightLead').value);save(WF_KEY,x);$e('wfMsg').textContent='人力設定已永久儲存。';analyzeWF()}
  function saveWFMachine(){const x=loadWF();document.querySelectorAll('[data-wf-people]').forEach(i=>{const m=i.dataset.wfPeople;x.machineReq[m]={people:n(i.value),note:document.querySelector(`[data-wf-note="${CSS.escape(m)}"]`)?.value||''}});save(WF_KEY,x);analyzeWF();alert('機台需求人數已儲存')}
- function analyzeWF(){if(!$e('wfAnalysis'))return;const x=loadWF(), sch=window.S?.schedule||[], shifts=window.loadShiftSettings?window.loadShiftSettings():{dayStart:'08:30',dayEnd:'20:30',nightStart:'20:30',nightEnd:'08:30'};const rows=[];let demand=0,short=0;for(const shift of ['早班','夜班']){const jobs=sch.filter(j=>{const h=new Date(j.start).getHours()+new Date(j.start).getMinutes()/60;const ds=parseInt(shifts.dayStart)+parseInt(shifts.dayStart.slice(3))/60,de=parseInt(shifts.dayEnd)+parseInt(shifts.dayEnd.slice(3))/60;return shift==='早班'?h>=ds&&h<de:!(h>=ds&&h<de)});const machines=[...new Set(jobs.map(j=>j.machine))];const req=machines.reduce((a,m)=>a+(x.machineReq[m]?.people??1),0);const avail=shift==='早班'?x.dayOps:x.nightOps;demand+=req;if(req>avail)short++;rows.push([shift,machines.length,req,avail,Math.max(0,req-avail),machines.join('、')||'—'])}$e('wfDayTotal').textContent=x.dayOps+x.dayLead;$e('wfNightTotal').textContent=x.nightOps+x.nightLead;$e('wfShortage').textContent=short;$e('wfDemand').textContent=demand;$e('wfAnalysis').className='tablewrap';$e('wfAnalysis').innerHTML=tableHtml(['班別','運轉機台','需求操作員','可用操作員','缺口','機台'],rows,{4:v=>`<span class="tag ${v>0?'red':'green'}">${v}</span>`})}
+ function analyzeWF(){
+   if(!$e('wfAnalysis'))return;
+   const x=loadWF(), sch=window.S?.schedule||[],
+     shifts=window.loadShiftSettings?window.loadShiftSettings():{dayStart:'08:30',dayEnd:'20:30',nightStart:'20:30',nightEnd:'08:30'};
+
+   const toMinutes=v=>{
+     const s=String(v||'00:00').split(':');
+     return (Number(s[0])||0)*60+(Number(s[1])||0);
+   };
+   const dayStart=toMinutes(shifts.dayStart||'08:30');
+   const dayEnd=toMinutes(shifts.dayEnd||'20:30');
+
+   const rows=[];
+   let demand=0,short=0;
+
+   for(const shift of ['早班','夜班']){
+     const jobs=sch.filter(j=>{
+       const d=new Date(j.start);
+       if(Number.isNaN(d.getTime()))return false;
+       const m=d.getHours()*60+d.getMinutes();
+       return shift==='早班' ? (m>=dayStart&&m<dayEnd) : !(m>=dayStart&&m<dayEnd);
+     });
+
+     const machines=[...new Set(jobs.map(j=>String(j.machine||'').trim()).filter(Boolean))];
+     const req=machines.reduce((a,m)=>{
+       const people=Number(x.machineReq[m]?.people);
+       return a+(Number.isFinite(people)?people:1);
+     },0);
+
+     const operators=shift==='早班'?x.dayOps:x.nightOps;
+     const leaders=shift==='早班'?x.dayLead:x.nightLead;
+     const totalAvailable=operators+leaders;
+     const gap=Math.max(0,req-totalAvailable);
+
+     demand+=req;
+     if(gap>0)short++;
+
+     rows.push([
+       shift,
+       machines.length,
+       req,
+       operators,
+       leaders,
+       totalAvailable,
+       gap,
+       machines.join('、')||'—'
+     ]);
+   }
+
+   $e('wfDayTotal').textContent=String(x.dayOps+x.dayLead);
+   $e('wfNightTotal').textContent=String(x.nightOps+x.nightLead);
+   $e('wfShortage').textContent=String(short);
+   $e('wfDemand').textContent=String(demand);
+
+   $e('wfAnalysis').className='tablewrap';
+   $e('wfAnalysis').innerHTML=tableHtml(
+     ['班別','運轉機台','需求人數','操作員','幹部','可用總人力','缺口','機台'],
+     rows,
+     {6:v=>`<span class="tag ${Number(v)>0?'red':'green'}">${v}</span>`}
+   );
+ }
  function exportWF(){const x=loadWF();csv('人力分析.csv',['班別','操作員','幹部'],[['早班',x.dayOps,x.dayLead],['夜班',x.nightOps,x.nightLead]])}
  // preprocess
  function preMap(){return read(PRE_KEY,{})}
@@ -1826,6 +1896,8 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  $e('preSearch')?.addEventListener('input',renderPre);$e('preStatusFilter')?.addEventListener('change',renderPre);$e('preClear')?.addEventListener('click',()=>{$e('preSearch').value='';$e('preStatusFilter').value='all';renderPre()});$e('preSaveAll')?.addEventListener('click',savePre);$e('preExport')?.addEventListener('click',exportPre);
  $e('mcSearch')?.addEventListener('input',renderMC);$e('mcStatus')?.addEventListener('change',renderMC);$e('mcClear')?.addEventListener('click',()=>{$e('mcSearch').value='';$e('mcStatus').value='all';renderMC()});$e('mcSave')?.addEventListener('click',saveMC);$e('mcExport')?.addEventListener('click',exportMC);
  $e('rpRefresh')?.addEventListener('click',renderReports);$e('rpExport')?.addEventListener('click',exportReport);$e('rpPrint')?.addEventListener('click',()=>window.print());if($e('rpDate'))$e('rpDate').value=new Date().toISOString().slice(0,10);
+ window.renderWFSettings=renderWFSettings;
+ window.analyzeWF=analyzeWF;
  const oldShow=window.showPage;window.showPage=function(id){oldShow?.(id);if(id==='workforce')renderWFSettings();if(id==='preprocess')renderPre();if(id==='machineCenter')renderMC();if(id==='reports')renderReports()};
  setTimeout(()=>{renderWFSettings();renderPre();renderMC();renderReports()},300);
 })();
@@ -2224,6 +2296,7 @@ function renderAfterCloudLoad(){
   try{window.renderMachineSettings?.()}catch(e){console.warn(e)}
   try{window.renderSpeedCenter?.()}catch(e){console.warn(e)}
   try{window.renderPreprocessCenter?.()}catch(e){console.warn(e)}
+  try{window.renderWFSettings?.()}catch(e){console.warn(e)}
   try{window.updateKpi?.()}catch(e){console.warn(e)}
   try{window.renderFiles?.()}catch(e){console.warn(e)}
   try{window.SKAPSSystem?.renderStats?.()}catch(e){console.warn(e)}
