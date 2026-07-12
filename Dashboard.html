@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V80.5 MES Command Center｜Animated DataHub</title>
+<title>V80.6 MES Enterprise｜Production Command Center</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </style>
 </head>
 <body>
-<header><h1>生產戰情室 | V70.4 Fast Dashboard UI</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：Dashboard 首頁改為手動更新，避免進入頁面自動重抓大資料造成長時間轉圈。</p></header>
+<header><h1>MES Enterprise｜V80.6 Production Command Center</h1><p>加工課戰情中心 / ศูนย์ควบคุมการผลิต：加工課戰情中心 / ศูนย์ควบคุมการผลิต：營運 KPI 優先顯示，DataHub 預設收合，維持手動更新模式。</p></header>
 <div class="wrap">
 <div class="tabs" id="adminTabs">
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
@@ -3253,5 +3253,74 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 })();
 </script>
 
+
+<!-- V80.6 Enterprise Dashboard UI patch｜只調整首頁視覺與互動，不修改 API / Key In / Target 資料邏輯 -->
+<style id="v806EnterprisePatchCss">
+:root{--v806-navy:#06162f;--v806-blue:#123b7a;--v806-cyan:#22d3ee;--v806-glass:rgba(8,28,59,.82)}
+body{background:
+ radial-gradient(circle at 82% 8%,rgba(37,99,235,.16),transparent 28%),
+ radial-gradient(circle at 12% 28%,rgba(34,211,238,.09),transparent 25%),
+ linear-gradient(180deg,#061326 0,#0a1f3e 45%,#07162d 100%);background-attachment:fixed}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.22;background-image:linear-gradient(rgba(96,165,250,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.11) 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(to bottom,#000,transparent 78%)}
+header{position:sticky;top:0;z-index:80;background:linear-gradient(115deg,rgba(5,20,48,.98),rgba(20,65,143,.96));border-bottom:1px solid rgba(96,165,250,.28);box-shadow:0 10px 34px rgba(2,6,23,.32);backdrop-filter:blur(16px)}
+header h1{letter-spacing:.3px} .wrap{max-width:1550px}
+#dashboardGrid{display:flex!important;flex-direction:column;gap:14px}
+#dashboardGrid>*{width:100%;animation:v806Enter .42s ease both}
+.v806-command-strip{order:-100;background:linear-gradient(135deg,rgba(8,30,67,.96),rgba(20,67,139,.88));border:1px solid rgba(103,232,249,.24);border-radius:22px;padding:16px 18px;color:#fff;box-shadow:0 16px 38px rgba(2,6,23,.28);display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;overflow:hidden}
+.v806-command-strip:after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 25%,rgba(255,255,255,.08) 48%,transparent 70%);transform:translateX(-120%);animation:v806Sweep 7s ease-in-out infinite}
+.v806-command-strip h2{margin:0;color:#fff;font-size:25px}.v806-command-strip p{margin:5px 0 0;color:#bfdbfe;font-size:13px}.v806-clock{text-align:right;position:relative;z-index:1}.v806-clock b{display:block;font-size:24px}.v806-clock span{font-size:12px;color:#a5f3fc}
+.v455Dash{order:-90}.v455KpiGrid{grid-template-columns:repeat(6,1fr)!important}.v455Kpi{min-height:118px!important;transition:transform .22s ease,box-shadow .22s ease}.v455Kpi:hover{transform:translateY(-5px) scale(1.015);box-shadow:0 18px 42px rgba(2,6,23,.38),0 0 28px rgba(34,211,238,.12)}
+#v702TargetKeyinStatus{order:-80}
+#v541DataHub{order:80!important;margin:0!important;border-radius:20px!important;transition:.32s ease;overflow:hidden}
+#v541DataHub .v541-hubTop{padding:14px 16px!important}#v541DataHub .v541-hubTop h2{font-size:20px!important;margin:0!important}
+#v541DataHub .v541-sourceGrid,#v541DataHub .v541-bar{transition:max-height .42s ease,opacity .25s ease,margin .3s ease,padding .3s ease}
+#v541DataHub.v806-collapsed .v541-sourceGrid,#v541DataHub.v806-collapsed .v541-bar{max-height:0!important;opacity:0!important;margin:0!important;padding-top:0!important;padding-bottom:0!important;overflow:hidden!important}
+#v541DataHub:not(.v806-collapsed) .v541-sourceGrid{max-height:240px;opacity:1}
+.v806-toggle{border:1px solid rgba(191,219,254,.36);background:rgba(255,255,255,.12);color:#fff;border-radius:12px;padding:9px 13px;font-weight:900;cursor:pointer;transition:.2s}.v806-toggle:hover{transform:translateY(-1px);background:rgba(34,211,238,.18)}
+#v805Card{order:90!important;transition:.35s ease}
+#v805Card.v806-collapsed{padding:15px 18px!important;min-height:0!important}
+#v805Card.v806-collapsed .v805-kpis,#v805Card.v806-collapsed .v805-detail,#v805Card.v806-collapsed .v805-orb{display:none!important}
+#v805Card.v806-collapsed .v805-title p{margin-bottom:0}.v805-head{align-items:center!important}
+.v805-actions .v806-toggle{margin-left:4px}
+.v541-source,.v805-kpi,.v702-kpi,.card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}.v541-source:hover,.v702-kpi:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(2,6,23,.2)}
+.v541-fill{position:relative;overflow:hidden}.v541-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.58),transparent);animation:v806Progress 2.8s linear infinite}
+@keyframes v806Enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes v806Sweep{0%,55%{transform:translateX(-120%)}80%,100%{transform:translateX(120%)}}@keyframes v806Progress{from{transform:translateX(-110%)}to{transform:translateX(110%)}}
+@media(max-width:1200px){.v455KpiGrid{grid-template-columns:repeat(3,1fr)!important}}@media(max-width:720px){.v806-command-strip{align-items:flex-start;flex-direction:column}.v806-clock{text-align:left}.v455KpiGrid{grid-template-columns:repeat(2,1fr)!important}}
+</style>
+<script id="v806EnterprisePatchJs">
+(function(){
+ 'use strict';
+ var hubOpen=false,commandOpen=false,observerBusy=false;
+ function E(id){return document.getElementById(id)}
+ function ensureStrip(grid){
+   var x=E('v806CommandStrip');
+   if(!x){x=document.createElement('div');x.id='v806CommandStrip';x.className='v806-command-strip';x.innerHTML='<div><h2>🏭 MES Enterprise｜Production Command Center</h2><p>加工課即時營運總覽 · KPI、排程、異常與機台狀態優先顯示</p></div><div class="v806-clock"><b id="v806Clock">--:--:--</b><span id="v806Shift">班別判定中</span></div>';grid.insertBefore(x,grid.firstChild)}
+ }
+ function clock(){var d=new Date(),h=d.getHours(),m=d.getMinutes(),shift=(h>8||(h===8&&m>=30))&& (h<20||(h===20&&m<30))?'早班 08:30–20:30':'夜班 20:30–08:30';var c=E('v806Clock'),s=E('v806Shift');if(c)c.textContent=d.toLocaleTimeString('zh-TW',{hour12:false});if(s)s.textContent=d.toLocaleDateString('zh-TW')+'｜'+shift}
+ function addHubToggle(hub){
+   if(!hub)return;hub.classList.toggle('v806-collapsed',!hubOpen);
+   var actions=hub.querySelector('.v541-actions');if(actions&&!hub.querySelector('.v806-hub-toggle')){var b=document.createElement('button');b.className='v541-btn v806-hub-toggle';b.type='button';b.onclick=function(){hubOpen=!hubOpen;apply()};actions.insertBefore(b,actions.firstChild)}
+   var b=hub.querySelector('.v806-hub-toggle');if(b)b.textContent=hubOpen?'▲ 收合資料卡':'▼ 展開五份資料';
+ }
+ function addCommandToggle(card){
+   if(!card)return;card.classList.toggle('v806-collapsed',!commandOpen);
+   var actions=card.querySelector('.v805-actions');if(actions&&!card.querySelector('.v806-command-toggle')){var b=document.createElement('button');b.className='v806-toggle v806-command-toggle';b.type='button';b.onclick=function(){commandOpen=!commandOpen;apply()};actions.insertBefore(b,actions.firstChild)}
+   var b=card.querySelector('.v806-command-toggle');if(b)b.textContent=commandOpen?'▲ 收合 DataHub':'▼ 展開 DataHub';
+ }
+ function reorder(grid){
+   var strip=E('v806CommandStrip'),dash=grid.querySelector('.v455Dash'),status=E('v702TargetKeyinStatus'),hub=E('v541DataHub'),cmd=E('v805Card');
+   [strip,dash,status].forEach(function(n){if(n)grid.appendChild(n)});
+   Array.from(grid.children).filter(function(n){return n!==strip&&n!==dash&&n!==status&&n!==hub&&n!==cmd}).forEach(function(n){grid.appendChild(n)});
+   if(hub)grid.appendChild(hub);if(cmd)grid.appendChild(cmd);
+ }
+ function apply(){
+   if(observerBusy)return;observerBusy=true;
+   var grid=E('dashboardGrid');if(grid){ensureStrip(grid);addHubToggle(E('v541DataHub'));addCommandToggle(E('v805Card'));reorder(grid)}
+   observerBusy=false;
+ }
+ function start(){var grid=E('dashboardGrid');if(!grid){setTimeout(start,300);return}apply();new MutationObserver(function(){setTimeout(apply,20)}).observe(grid,{childList:true,subtree:true});setInterval(clock,1000);clock();setInterval(apply,1800)}
+ document.addEventListener('DOMContentLoaded',function(){setTimeout(start,1300)});
+})();
+</script>
 </body>
 </html>
