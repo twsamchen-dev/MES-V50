@@ -2888,7 +2888,7 @@ window.SEAL_KING_SECURITY={
       const timer = setTimeout(() => {
         cleanup();
         reject(new Error("DataHub API 讀取逾時：" + action));
-      }, 30000);
+      }, 60000);
 
       function cleanup() {
         clearTimeout(timer);
@@ -2926,7 +2926,7 @@ window.SEAL_KING_SECURITY={
     do {
       const res = await jsonp("datahubworkorders", {
         page,
-        pageSize: 500
+        pageSize: 200
       });
       const rows = Array.isArray(res.rows) ? res.rows : [];
       total = Number(res.total || rows.length || 0);
@@ -3222,17 +3222,31 @@ window.SEAL_KING_SECURITY={
     let page = 1;
     let total = 0;
 
+    async function fetchPage(pageNo, attempt = 1){
+      try{
+        return await jsonp("datahubworkorders", {
+          page: pageNo,
+          pageSize: 200
+        });
+      }catch(err){
+        if(attempt < 3){
+          await new Promise(resolve => setTimeout(resolve, 1200 * attempt));
+          return fetchPage(pageNo, attempt + 1);
+        }
+        throw err;
+      }
+    }
+
     do{
-      const res = await jsonp("datahubworkorders", {
-        page,
-        pageSize: 500
-      });
+      const res = await fetchPage(page);
       const rows = Array.isArray(res.rows) ? res.rows : [];
       total = Number(res.total || rows.length || 0);
       all.push(...rows);
       page++;
+
       if(!rows.length) break;
-    }while(all.length < total && page <= 30);
+      if(page > 30) throw new Error("DataHub 分頁超過安全上限");
+    }while(all.length < total);
 
     return all;
   }
@@ -3561,6 +3575,18 @@ window.SEAL_KING_SECURITY={
     findFlexibleSpeed
   };
 })();
+</script>
+
+
+<script id="build0052-label">
+document.addEventListener("DOMContentLoaded",function(){
+  document.title="SEAL KING Smart APS｜Build 0052 DataHub Fast";
+  document.querySelectorAll(".header-time small,.version").forEach(function(el){
+    if(/Build\s*0042|Enterprise Preview/i.test(el.textContent||"")){
+      el.textContent="Enterprise Preview 2｜Build 0052";
+    }
+  });
+});
 </script>
 
 </body></html>
