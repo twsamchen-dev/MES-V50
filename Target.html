@@ -2,15 +2,23 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V83.5 MES Target Enterprise｜Smart Multi-Day Plan</title>
+<title>V83.5.1 MES Target Enterprise｜Smart Multi-Day Target</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
-.scheduleBox{grid-column:span 12;border:1px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff,#f8fbff);border-radius:14px;padding:12px;margin-top:2px}.scheduleTop{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.scheduleGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.scheduleGrid .field label{margin-top:0}.scheduleHidden{display:none!important}.searchProgress{margin-top:10px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:14px;padding:12px;display:none}.searchProgress.show{display:block;animation:fadeIn .2s ease}.progressHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.spinner{width:19px;height:19px;border:3px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .75s linear infinite;display:inline-block;vertical-align:middle;margin-right:7px}.progressTrack{height:9px;background:#dbeafe;border-radius:99px;overflow:hidden;margin:10px 0}.progressBar{height:100%;width:8%;background:linear-gradient(90deg,#2563eb,#38bdf8);border-radius:99px;transition:width .3s ease}.progressSteps{font-size:13px;line-height:1.7;color:#475569}.progressDone{border-color:#86efac;background:#f0fdf4}.progressDone .progressBar{background:#16a34a}.progressError{border-color:#fdba74;background:#fff7ed}.empHint{font-size:12px;margin-top:5px;color:#64748b}.empHint.ok{color:#15803d;font-weight:800}.empHint.bad{color:#b45309;font-weight:800}.saveOverlay{position:fixed;inset:0;background:#02061799;display:none;align-items:center;justify-content:center;z-index:10000}.saveOverlay.show{display:flex}.saveCard{width:min(460px,90vw);background:white;border-radius:18px;padding:24px;text-align:center;box-shadow:0 25px 80px #0007}.saveIcon{font-size:52px}.saveTitle{font-size:24px;font-weight:900;margin:8px 0}.saveSub{color:#64748b;line-height:1.7}.btn[disabled]{opacity:.55;cursor:not-allowed}@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}@media(max-width:900px){.scheduleGrid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.scheduleGrid{grid-template-columns:1fr}}
+/* V83.5.1 Smart Target additions */
+.scheduleModeBox{grid-column:span 12;border:1px solid #bfdbfe;background:#eff6ff;border-radius:14px;padding:12px;margin:2px 0 4px}
+.modeButtons{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.modeBtn{border:1px solid #bfdbfe;background:#fff;color:#1e3a8a;border-radius:10px;padding:9px 14px;font-weight:900;cursor:pointer}.modeBtn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.multiFields{display:none;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.multiFields.show{display:grid}.multiHint{grid-column:span 4;color:#475569;font-size:13px;line-height:1.6}.checkLine{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13px}.checkLine input{width:auto;min-height:0}
+.searchProgress{margin-top:8px;border:1px solid #bfdbfe;border-radius:12px;padding:10px;background:#f8fbff}.searchHead{display:flex;align-items:center;gap:9px;font-weight:900;color:#1d4ed8}.spinner{width:17px;height:17px;border:3px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .75s linear infinite}.progressTrack{height:8px;background:#dbeafe;border-radius:99px;overflow:hidden;margin:9px 0}.progressBar{height:100%;width:0;background:linear-gradient(90deg,#2563eb,#38bdf8);transition:width .35s ease}.searchSteps{font-size:12px;color:#64748b}.searchDone{animation:successPulse .5s ease}.fieldFlash{animation:fieldFlash .65s ease}
+.empStatus{font-size:12px;margin-top:4px;color:#64748b;min-height:18px}.empStatus.ok{color:#15803d;font-weight:800}.empStatus.bad{color:#b91c1c;font-weight:800}
+.saveOverlay{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10000;align-items:center;justify-content:center}.saveOverlay.show{display:flex}.savePanel{width:min(520px,92vw);background:#fff;border-radius:18px;padding:22px;box-shadow:0 25px 70px #0006}.savePanel h3{margin:0 0 10px;font-size:22px}.previewList{max-height:260px;overflow:auto;border:1px solid #dbe4f0;border-radius:12px;margin:10px 0}.previewRow{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eef2f7}.previewRow:last-child{border-bottom:0}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes successPulse{0%{transform:scale(.98);opacity:.65}100%{transform:scale(1);opacity:1}}@keyframes fieldFlash{0%,100%{background:#fff}50%{background:#dcfce7}}
+@media(max-width:900px){.multiFields{grid-template-columns:1fr 1fr}.multiHint{grid-column:span 2}}@media(max-width:560px){.multiFields{grid-template-columns:1fr}.multiHint{grid-column:span 1}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.5 Smart Multi-Day Plan</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。V83.5 智慧多日目標；支援工號自動帶入、統一訂單搜尋進度與同工單連續多日建立，不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.5.1 Smart Multi-Day Target</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -44,25 +52,26 @@
     <div class="card col8"><h2>新增 / 修改幹部目標 / เพิ่มหรือแก้ไขเป้าหมาย</h2><div class="section-note">左側集中輸入目標，右側快速選取五份資料工單。</div><div class="grid">
       <div class="col4"><label>目標日期 / วันที่เป้าหมาย</label><input id="report_date" type="date" onchange="syncPlannedDate();syncMultiStart()"></div>
       <div class="col4"><label>班別 / กะ</label><select id="shift"><option>早班 / กะเช้า</option><option>中班 / กะกลาง</option><option>晚班 / กะดึก</option></select></div>
-      <div class="col4"><label>工號 / รหัสพนักงาน</label><input id="emp_no" placeholder="例如 11035" oninput="fillEmp()"><div id="empHint" class="empHint">輸入工號後自動帶入姓名與角色 / กรอกรหัสแล้วระบบจะแสดงชื่อและตำแหน่ง</div></div>
+      <div class="col4"><label>工號 / รหัสพนักงาน</label><input id="emp_no" placeholder="例如 41420" oninput="fillEmp()"><div id="empStatus" class="empStatus">輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง</div></div>
+      <div class="scheduleModeBox">
+        <b>排程方式 / วิธีการวางแผน</b>
+        <div class="modeButtons">
+          <button type="button" id="modeSingle" class="modeBtn active" onclick="setScheduleMode('single')">單日 / วันเดียว</button>
+          <button type="button" id="modeMulti" class="modeBtn" onclick="setScheduleMode('multi')">連續多日 / หลายวันต่อเนื่อง</button>
+        </div>
+        <div id="multiFields" class="multiFields">
+          <div><label>開始日期 / วันที่เริ่ม</label><input id="multi_start" type="date" onchange="updateMultiSummary()"></div>
+          <div><label>結束日期 / วันที่สิ้นสุด</label><input id="multi_end" type="date" onchange="updateMultiSummary()"></div>
+          <div><label>分配方式 / วิธีแบ่งเป้าหมาย</label><select id="multi_alloc" onchange="updateMultiSummary()"><option value="daily">每日固定目標 / เป้าหมายต่อวัน</option><option value="total">總目標平均分配 / แบ่งเป้าหมายรวมเฉลี่ย</option></select></div>
+          <div><label>建立天數 / จำนวนวัน</label><input id="multi_days" readonly value="1"></div>
+          <div class="multiHint" id="multiSummary">請選擇開始與結束日期。/ กรุณาเลือกวันเริ่มและวันสิ้นสุด</div>
+        </div>
+      </div>
       <div class="col4"><label>幹部角色 / ตำแหน่ง</label><select id="leader_role"><option>課長 / หัวหน้าแผนก</option><option>副課長 / รองหัวหน้าแผนก</option><option>組長 / หัวหน้ากลุ่ม</option><option>班長 / หัวหน้ากะ</option><option>代理 / รักษาการ</option></select></div>
-      <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入 / แสดงอัตโนมัติ"></div>
-      <div class="col4"><label>工單／訂單／命令單／日報／批號</label><input id="work_order_no" oninput="debouncedLookup()" placeholder="例如 MM2605060026 或 202607010036"></div>
+      <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入"></div>
+      <div class="col4"><label>工單／訂單／命令單／日報／批號</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">停止輸入約 0.5 秒後自動搜尋 / ค้นหาอัตโนมัติหลังหยุดพิมพ์</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
-      <div class="scheduleBox">
-        <div class="scheduleTop"><b>排程方式 / วิธีการวางแผน</b>
-          <select id="schedule_mode" style="width:auto;min-width:210px" onchange="toggleScheduleMode()"><option value="single">單日 / วันเดียว</option><option value="multi">連續多日 / หลายวันต่อเนื่อง</option></select>
-          <span id="scheduleSummary" class="pill">單日目標</span>
-        </div>
-        <div id="multiFields" class="scheduleGrid scheduleHidden">
-          <div class="field"><label>開始日期 / วันที่เริ่ม</label><input id="multi_start" type="date" onchange="updateSchedulePreview()"></div>
-          <div class="field"><label>結束日期 / วันที่สิ้นสุด</label><input id="multi_end" type="date" onchange="updateSchedulePreview()"></div>
-          <div class="field"><label>分配方式 / วิธีแบ่งเป้าหมาย</label><select id="allocation_mode" onchange="toggleAllocationMode()"><option value="daily">每日固定目標 / เป้าหมายต่อวันคงที่</option><option value="average">總量平均分配 / แบ่งยอดรวมเฉลี่ย</option></select></div>
-          <div class="field" id="totalTargetField"><label>總目標 R / เป้าหมายรวม (ม้วน)</label><input id="multi_total_roll" type="number" step="0.01" placeholder="平均分配時輸入" oninput="updateSchedulePreview()" disabled></div>
-        </div>
-        <div id="schedulePreview" class="muted" style="margin-top:8px">目前為單日建立 / ขณะนี้สร้างเป้าหมายวันเดียว</div>
-      </div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
       <div class="col4"><label>料號 / รหัสสินค้า</label><input id="part_no" placeholder="由工單或 SL31A 帶入"></div>
       <div class="col4"><label>生產批號 / ล็อตผลิต</label><input id="batch_no" placeholder="可空白"></div>
@@ -79,24 +88,29 @@
       <div class="col3"><label>預計完成 / วันที่คาดว่าจะเสร็จ</label><input id="planned_finish" type="date"></div>
       <div class="col3"><label>狀態 / สถานะ</label><select id="status"><option>未完成 / ยังไม่เสร็จ</option><option>進行中 / กำลังทำ</option><option>已完成 / เสร็จแล้ว</option></select></div>
       <div class="col12"><label>備註 / หมายเหตุ</label><textarea id="note" rows="3"></textarea></div>
-    </div>
-      <div id="searchProgress" class="searchProgress">
-        <div class="progressHead"><b id="searchProgressTitle"><span class="spinner"></span>正在搜尋 / กำลังค้นหา</b><span id="searchProgressPct" class="pill">0%</span></div>
-        <div class="progressTrack"><div id="searchProgressBar" class="progressBar"></div></div>
-        <div id="searchProgressSteps" class="progressSteps">等待輸入資料 / รอข้อมูล</div>
-      </div>
-      <div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號或料號後才查資料。</div><button class="btn ok" id="saveTargetBtn" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
+    </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號或料號後才查資料。</div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
 
     <div class="card col4"><h2><span id="quickTitle">五份資料工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋工單／訂單／命令單／日報／批號／投入產出料號製號／客戶／規格／機台" oninput="debouncedOrderList()"><div id="quickList" class="found" style="max-height:620px;overflow:auto">讀取後顯示</div></div>
     <div class="card col12"><h2><span id="targetTitle">今日目標清單</span> / รายการเป้าหมาย</h2><div class="muted">依幹部目標 × 人員 Key In × 五份檔案比對。/ เทียบเป้าหมายหัวหน้า × รายงาน Key In × ข้อมูล 5 ไฟล์</div><div id="targetTable"></div></div>
   </div>
 </div>
-<div id="saveOverlay" class="saveOverlay"><div class="saveCard"><div id="saveOverlayIcon" class="saveIcon">⏳</div><div id="saveOverlayTitle" class="saveTitle">正在建立目標</div><div id="saveOverlaySub" class="saveSub">กำลังบันทึก กรุณารอสักครู่</div></div></div><div id="toast" class="toast"></div>
+<div id="toast" class="toast"></div>
+<div id="saveOverlay" class="saveOverlay"><div class="savePanel">
+  <h3 id="saveOverlayTitle">建立多日目標 / สร้างเป้าหมายหลายวัน</h3>
+  <div id="saveOverlayText" class="muted"></div>
+  <div id="savePreviewList" class="previewList"></div>
+  <div class="progressTrack"><div id="saveProgressBar" class="progressBar"></div></div>
+  <div class="toolbar" style="justify-content:flex-end">
+    <button id="cancelSaveBtn" class="btn ghost" onclick="closeSaveOverlay()">取消 / ยกเลิก</button>
+    <button id="confirmSaveBtn" class="btn ok" onclick="confirmMultiSave()">確認建立 / ยืนยัน</button>
+  </div>
+</div></div>
+
 <script>
 const API_URL=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
 let ALL_TARGETS=[],TARGETS=[],MATCH_ROWS=[],EMPLOYEES=[],EMPIDX={},ORDER_LIST=[],lookupTimer=null,orderTimer=null,currentRange='today',LAST_LOOKUP=null;
 let __bgMatchTimer=null,__bgOrderTimer=null,__orderCacheKey='',__lastOrderSearch='';
-let __orderReqSeq=0,__matchReqSeq=0,__loadingOrder=false,__loadingMatch=false,__rebuildingCache=false,__lookupSeq=0,__savingTarget=false;
+let __orderReqSeq=0,__matchReqSeq=0,__loadingOrder=false,__loadingMatch=false,__rebuildingCache=false;
 function $(id){return document.getElementById(id)}
 function toast(s){let t=$('toast');t.textContent=s;t.className='toast show';setTimeout(()=>t.className='toast',2500)}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -139,20 +153,17 @@ function scheduleBackgroundLoads(){
 function normalizeEmployees(rows){EMPLOYEES=rows||[];EMPIDX={};EMPLOYEES.forEach(e=>{let no=norm(e.emp_no||e['工號']||e.employee_no||'');if(no)EMPIDX[no]=e})}
 function fillEmp(){
   const no=norm($('emp_no').value);
-  const hint=$('empHint');
-  if(!no){$('leader_name').value='';hint.className='empHint';hint.textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสแล้วระบบจะแสดงชื่อและตำแหน่ง';return}
+  const status=$('empStatus');
+  if(!no){$('leader_name').value='';status.className='empStatus';status.textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';return}
   const e=EMPIDX[no];
-  if(!e){$('leader_name').value='';hint.className='empHint bad';hint.textContent='查無此工號，請確認人員資料 / ไม่พบรหัสพนักงาน กรุณาตรวจสอบ';return}
-  const status=String(e.status||e['狀態']||'').trim();
+  if(!e){$('leader_name').value='';status.className='empStatus bad';status.textContent='尚未找到工號，請確認人員資料已讀取 / ไม่พบรหัสพนักงาน';return}
+  const active=String(e.status||e['狀態']||'').trim();
   const name=e.emp_name||e['姓名']||e.name||'';
-  const role=e.role||e['角色']||e['職務']||e.job_title||'';
-  if(name)$('leader_name').value=name;
-  if(role){const sel=$('leader_role');let matched=false;for(let i=0;i<sel.options.length;i++){const zh=sel.options[i].text.split('/')[0].trim();if(sel.options[i].text.includes(role)||role.includes(zh)){sel.selectedIndex=i;matched=true;break}}if(!matched&&role.includes('副課長')){for(let i=0;i<sel.options.length;i++){if(sel.options[i].text.includes('副課長'))sel.selectedIndex=i}}}
-  const inactive=status&&(status.includes('停')||status.toLowerCase()==='inactive');
-  hint.className='empHint '+(inactive?'bad':'ok');
-  hint.textContent=inactive?'此人員目前為停用狀態 / พนักงานถูกระงับ':'✓ 已帶入：'+name+'｜'+(role||$('leader_role').value.split('/')[0].trim());
+  const role=e.role||e['角色']||e['職務']||e['職稱']||'';
+  if(name){$('leader_name').value=name;$('leader_name').classList.add('fieldFlash');setTimeout(()=>$('leader_name').classList.remove('fieldFlash'),700)}
+  if(role){const sel=$('leader_role');for(let i=0;i<sel.options.length;i++){const zh=sel.options[i].text.split('/')[0].trim();if(sel.options[i].text.includes(role)||role.includes(zh)||zh.includes(role)){sel.selectedIndex=i;break}}sel.classList.add('fieldFlash');setTimeout(()=>sel.classList.remove('fieldFlash'),700)}
+  status.className='empStatus ok';status.textContent='✓ 已帶入：'+(name||no)+'｜'+(role||$('leader_role').value)+(active?'｜'+active:'');
 }
-
 
 async function rebuildOrderCache(){
   if(__rebuildingCache){toast('快取正在建立中，請稍候');return;}
@@ -225,12 +236,7 @@ async function rebuildOrderCache(){
     btn.textContent='重建五份資料快取';
   }
 }
-function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value;updateSchedulePreview()}
-function syncMultiStart(){if(!$('multi_start').value||$('schedule_mode').value==='single')$('multi_start').value=$('report_date').value||today();if(!$('multi_end').value)$('multi_end').value=$('multi_start').value;updateSchedulePreview()}
-function toggleScheduleMode(){const multi=$('schedule_mode').value==='multi';$('multiFields').classList.toggle('scheduleHidden',!multi);$('scheduleSummary').textContent=multi?'連續多日 / หลายวัน':'單日目標 / วันเดียว';if(multi){syncMultiStart();if(!$('multi_end').value)$('multi_end').value=$('multi_start').value}updateSchedulePreview()}
-function toggleAllocationMode(){const avg=$('allocation_mode').value==='average';$('multi_total_roll').disabled=!avg;$('target_roll').disabled=avg;if(!avg)$('multi_total_roll').value='';updateSchedulePreview()}
-function enumerateDates(start,end){const out=[];let a=dateKey(start),b=dateKey(end);if(!a||!b||a>b)return out;let d=new Date(a+'T00:00:00');const stop=new Date(b+'T00:00:00');while(d<=stop&&out.length<366){out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));d.setDate(d.getDate()+1)}return out}
-function updateSchedulePreview(){if(!$('schedulePreview'))return;if($('schedule_mode').value!=='multi'){$('schedulePreview').textContent='目前為單日建立 / ขณะนี้สร้างเป้าหมายวันเดียว';return}const dates=enumerateDates($('multi_start').value,$('multi_end').value);if(!dates.length){$('schedulePreview').textContent='請確認開始與結束日期 / กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด';return}const avg=$('allocation_mode').value==='average';const total=num($('multi_total_roll').value);const daily=num($('target_roll').value);const qty=avg?(total/dates.length):(daily);$('schedulePreview').textContent='將建立 '+dates.length+' 天｜'+dates[0]+' ～ '+dates[dates.length-1]+'｜'+(qty?('每日約 '+qty.toFixed(2)+' R'):'請輸入目標數量')+' / สร้าง '+dates.length+' วัน'}
+function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value}
 async function loadBootstrap(){
   try{
     $('loadBtn').textContent='讀取中...';
@@ -263,43 +269,47 @@ async function loadBootstrap(){
   }
 }
 
-function debouncedLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(lookupOrder,500)}
+let __lookupSeq=0;
+function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();return}lookupTimer=setTimeout(lookupOrder,550)}
+function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號或料號後才查資料。'}
+function renderSearchProgress(percent,step){
+  $('lookupBox').className='found';
+  $('lookupBox').innerHTML='<div class="searchProgress"><div class="searchHead"><span class="spinner"></span>正在搜尋統一訂單索引 / กำลังค้นหาฐานข้อมูล</div><div class="progressTrack"><div class="progressBar" style="width:'+percent+'%"></div></div><div class="searchSteps">'+esc(step)+'｜'+percent+'%</div></div>';
+}
 async function lookupOrder(){
+  clearTimeout(lookupTimer);
+  const seq=++__lookupSeq;
   const q=queryNorm($('work_order_no').value);
   $('work_order_no').value=q;
-  const seq=++__lookupSeq;
-  if(!q){hideSearchProgress();$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號或料號後才查資料。';return}
+  if(!q){renderSearchIdle();return}
   try{
-    setSearchProgress(12,'正在搜尋統一訂單索引 / กำลังค้นหาฐานข้อมูล','步驟 1/3：比對工單、訂單與命令單<br>ขั้นตอน 1/3: ตรวจสอบใบงานและออเดอร์');
-    $('lookupBox').className='found';$('lookupBox').innerHTML='搜尋中，請稍候 / กำลังค้นหา กรุณารอสักครู่...';
+    renderSearchProgress(15,'步驟 1/3：準備搜尋工單、訂單與命令單');
+    await new Promise(r=>setTimeout(r,120));
+    if(seq!==__lookupSeq)return;
+    renderSearchProgress(38,'步驟 2/3：比對日報、批號與料號');
     let rows=[];
     try{
-      setSearchProgress(38,'正在讀取雲端索引 / กำลังอ่านข้อมูลคลาวด์','✓ 已接收搜尋條件<br>步驟 2/3：比對日報、批號與料號');
       const list=await apiGetRetry('targetorderlist',{start:'2000-01-01',end:'2099-12-31',q:q,limit:500,_:Date.now()},1);
       if(seq!==__lookupSeq)return;
       rows=list.rows||list.data||list.items||[];
     }catch(_e){}
+    renderSearchProgress(72,'步驟 3/3：整理關聯資料與去除重複');
     if(!rows.length){
-      setSearchProgress(68,'主要索引無結果，正在使用備援搜尋 / ใช้การค้นหาสำรอง','✓ 已完成主要索引<br>步驟 3/3：搜尋關聯資料');
       const res=await apiGetRetry('targetlookup',{q:q,_:Date.now()},1);
       if(seq!==__lookupSeq)return;
       rows=res.rows||res.data||res.items||(res.row?[res.row]:[]);
     }
-    setSearchProgress(88,'正在整理關聯資料 / กำลังจัดเรียงข้อมูล','✓ 工單／訂單／命令單<br>✓ 日報／批號／料號<br>⏳ 移除重複資料');
     rows=(rows||[]).map(normalizeClientOrder).filter(r=>localOrderMatch(r,q));
-    const seen=new Set();rows=rows.filter(r=>{const k=[r.work_order_no,r.command_no,r.order_no,r.report_no,r.batch_no,r.part_no].map(norm).join('|');if(seen.has(k))return false;seen.add(k);return true});
+    const seen=new Set();
+    rows=rows.filter(r=>{const k=[r.work_order_no,r.command_no,r.order_no,r.report_no,r.batch_no,r.part_no].map(norm).join('|');if(seen.has(k))return false;seen.add(k);return true});
     if(seq!==__lookupSeq)return;
-    if(!rows.length){finishSearchProgress(false,'搜尋完成，查無資料 / ไม่พบข้อมูล','可繼續手動輸入，或確認編號後重新搜尋');$('lookupBox').className='found warn';$('lookupBox').innerHTML='查無資料：'+esc(q)+'<br><button class="btn ghost" style="margin-top:8px" onclick="lookupOrder()">重新搜尋 / ค้นหาอีกครั้ง</button>';return}
-    if(rows.length===1){LAST_LOOKUP=rows[0];fillFromOrder(rows[0]);renderLookupSummary(rows[0],1);finishSearchProgress(true,'搜尋完成，資料已自動帶入','找到 1 筆關聯資料 / พบข้อมูล 1 รายการ');return}
+    if(!rows.length){$('lookupBox').className='found warn searchDone';$('lookupBox').innerHTML='<b>⚠ 查無資料 / ไม่พบข้อมูล：</b>'+esc(q)+'<br><span class="muted">仍可手動輸入，或確認右側工單清單是否已更新。</span><br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>';return}
+    if(rows.length===1){LAST_LOOKUP=rows[0];fillFromOrder(rows[0]);renderLookupSummary(rows[0],1);$('lookupBox').classList.add('searchDone');toast('搜尋完成，資料已自動帶入');return}
     window.__TARGET_LOOKUP_ROWS=rows;
-    $('lookupBox').className='found';$('lookupBox').innerHTML='<b>找到 '+rows.length+' 筆關聯資料，請選擇正確工單：</b><div style="max-height:300px;overflow:auto;margin-top:8px">'+rows.slice(0,100).map((r,i)=>'<div class="listitem" onclick="selectLookupRow('+i+')"><b>'+esc(r.work_order_no||r.command_no||r.order_no||r.report_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'</span><br><span class="muted">料號：'+esc(r.part_no||r.output_part_no||r.input_part_no||'-')+'｜客戶：'+esc(r.customer||'-')+'｜規格：'+esc(r.product_spec||'-')+'</span></div>').join('')+'</div>';
-    finishSearchProgress(true,'搜尋完成，共找到 '+rows.length+' 筆','請從下方清單選擇 / กรุณาเลือกรายการด้านล่าง');
-  }catch(e){if(seq!==__lookupSeq)return;finishSearchProgress(false,'搜尋失敗 / ค้นหาล้มเหลว',e.message);$('lookupBox').className='found warn';$('lookupBox').innerHTML='查詢失敗：'+esc(e.message)+'<br><button class="btn ghost" style="margin-top:8px" onclick="lookupOrder()">重新搜尋 / ค้นหาอีกครั้ง</button>'}
+    $('lookupBox').className='found searchDone';
+    $('lookupBox').innerHTML='<b>✓ 搜尋完成，共找到 '+rows.length+' 筆關聯資料，請選擇：</b><div style="max-height:300px;overflow:auto;margin-top:8px">'+rows.slice(0,100).map((r,i)=>'<div class="listitem" onclick="selectLookupRow('+i+')"><b>'+esc(r.work_order_no||r.command_no||r.order_no||r.report_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'</span><br><span class="muted">料號：'+esc(r.part_no||r.output_part_no||r.input_part_no||'-')+'｜客戶：'+esc(r.customer||'-')+'｜規格：'+esc(r.product_spec||'-')+'</span></div>').join('')+'</div>';
+  }catch(e){if(seq!==__lookupSeq)return;$('lookupBox').className='found warn';$('lookupBox').innerHTML='<b>搜尋失敗：</b>'+esc(e.message)+'<br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>'}
 }
-function setSearchProgress(pct,title,steps){const box=$('searchProgress');box.className='searchProgress show';$('searchProgressTitle').innerHTML='<span class="spinner"></span>'+title;$('searchProgressPct').textContent=Math.max(0,Math.min(100,pct))+'%';$('searchProgressBar').style.width=Math.max(8,Math.min(100,pct))+'%';$('searchProgressSteps').innerHTML=steps}
-function finishSearchProgress(ok,title,detail){const box=$('searchProgress');box.className='searchProgress show '+(ok?'progressDone':'progressError');$('searchProgressTitle').innerHTML=(ok?'✓ ':'⚠ ')+title;$('searchProgressPct').textContent='100%';$('searchProgressBar').style.width='100%';$('searchProgressSteps').textContent=detail;setTimeout(()=>{if(box)box.classList.remove('show')},ok?2200:4500)}
-function hideSearchProgress(){const box=$('searchProgress');if(box)box.className='searchProgress'}
-
 function selectLookupRow(i){
   const rows=window.__TARGET_LOOKUP_ROWS||[];
   const r=rows[i];if(!r)return;
@@ -534,45 +544,56 @@ function updateKpi(){
   $('kpiPair').textContent=rows.length?Math.round(paired/rows.length*100)+'%':'0%';
 }
 
-function clearForm(){['emp_no','leader_name','note'].forEach(id=>$(id).value='');clearOrderFields();$('empHint').className='empHint';$('empHint').textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสแล้วระบบจะแสดงชื่อและตำแหน่ง';$('schedule_mode').value='single';$('allocation_mode').value='daily';$('multi_total_roll').value='';$('target_roll').disabled=false;toggleScheduleMode();hideSearchProgress();$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號或料號後才查資料。'}
-function buildTargetBase(){return {shift:$('shift').value,emp_no:$('emp_no').value,leader_emp_no:$('emp_no').value,leader_role:$('leader_role').value,leader_name:$('leader_name').value,work_order_no:wo12($('work_order_no').value),order_no:$('order_no').value,command_no:$('command_no').value||wo12($('work_order_no').value),report_no:$('report_no').value,daily_report_no:$('daily_report_no').value,part_no:$('part_no').value,input_part_no:$('input_part_no').value,output_part_no:$('output_part_no').value,batch_no:$('batch_no').value,input_lot_no:$('input_lot_no').value,output_lot_no:$('output_lot_no').value,process_site:$('process_site').value,machine_code:$('machine_code').value,customer:$('customer').value,product_spec:$('product_spec').value,planned_finish:$('planned_finish').value,status:$('status').value,note:$('note').value}}
-async function saveTarget(){
-  if(__savingTarget)return;
-  const base=buildTargetBase();
-  if(!base.work_order_no){toast('請先查詢並選擇工單 / กรุณาเลือกใบงาน');return}
-  if(!base.emp_no||!base.leader_name){toast('請輸入有效工號，帶入幹部姓名與角色');return}
-  let dates=[];const multi=$('schedule_mode').value==='multi';
-  if(multi){dates=enumerateDates($('multi_start').value,$('multi_end').value);if(!dates.length){toast('請確認多日開始與結束日期');return}}else dates=[$('report_date').value||today()];
-  const avg=multi&&$('allocation_mode').value==='average';const total=num($('multi_total_roll').value);const daily=num($('target_roll').value);
-  if(avg&&total<=0){toast('請輸入總目標 R');return}if(!avg&&daily<=0){toast('請輸入每日目標 R');return}
-  const qty=avg?total/dates.length:daily;const baseM2=num($('target_m2').value);const ratio=daily>0?baseM2/daily:0;
-  const preview=dates.slice(0,12).map(d=>d+'　'+qty.toFixed(2)+' R').join('\n')+(dates.length>12?'\n…其餘 '+(dates.length-12)+' 天':'');
-  if(!confirm('將建立 '+dates.length+' 筆目標：\n\n'+preview+'\n\n確認建立？ / ยืนยันการสร้างหรือไม่'))return;
-  __savingTarget=true;const btn=$('saveTargetBtn');btn.disabled=true;btn.textContent='建立中... / กำลังบันทึก';showSaveOverlay('⏳','正在建立 '+dates.length+' 筆目標','กำลังบันทึก กรุณาอย่าปิดหน้าจอ');
-  try{
-    for(let i=0;i<dates.length;i++){
-      const d=dates[i];const data=Object.assign({},base,{report_date:d,week_no:isoWeek(d),target_roll:Number(qty.toFixed(2)),target_m2:Number((ratio?qty*ratio:(dates.length===1?baseM2:0)).toFixed(2)),planned_finish:base.planned_finish||d,target_plan_id:'TP_'+d.replace(/-/g,'')+'_'+Date.now()+'_'+i});
-      showSaveOverlay('⏳','正在建立目標 '+(i+1)+' / '+dates.length,d+'｜'+data.target_roll+' R');
-      await apiPost('savetargetplan',data);
-      await new Promise(r=>setTimeout(r,120));
-    }
-    $('saveMsg').textContent='已建立 '+dates.length+' 筆目標';showSaveOverlay('✅','建立成功','已建立 '+dates.length+' 筆 Target，資料已送至雲端 / บันทึกสำเร็จ');toast('目標建立成功：'+dates.length+' 筆');setTimeout(()=>{$('saveOverlay').classList.remove('show');loadBootstrap()},1400)
-  }catch(e){showSaveOverlay('⚠️','建立失敗',e.message);setTimeout(()=>$('saveOverlay').classList.remove('show'),3000);alert('儲存失敗：'+e.message)}finally{__savingTarget=false;btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย'}
+let SCHEDULE_MODE='single',PENDING_MULTI_ROWS=[];
+function setScheduleMode(mode){
+  SCHEDULE_MODE=mode==='multi'?'multi':'single';
+  $('modeSingle').className='modeBtn'+(SCHEDULE_MODE==='single'?' active':'');
+  $('modeMulti').className='modeBtn'+(SCHEDULE_MODE==='multi'?' active':'');
+  $('multiFields').className='multiFields'+(SCHEDULE_MODE==='multi'?' show':'');
+  if(SCHEDULE_MODE==='multi'){syncMultiStart();updateMultiSummary()}
 }
-function showSaveOverlay(icon,title,sub){$('saveOverlayIcon').textContent=icon;$('saveOverlayTitle').textContent=title;$('saveOverlaySub').textContent=sub;$('saveOverlay').classList.add('show')}
+function syncMultiStart(){if(!$('multi_start'))return;const d=$('report_date').value||today();if(!$('multi_start').value)$('multi_start').value=d;if(!$('multi_end').value)$('multi_end').value=d;updateMultiSummary()}
+function enumerateDates(start,end){const a=dateKey(start),b=dateKey(end);if(!a||!b||a>b)return[];const rows=[];let d=a;while(d<=b&&rows.length<366){rows.push(d);d=addDays(d,1)}return rows}
+function updateMultiSummary(){if(!$('multi_start'))return;const dates=enumerateDates($('multi_start').value,$('multi_end').value);$('multi_days').value=dates.length||0;const value=num($('target_roll').value);const mode=$('multi_alloc').value;if(!dates.length){$('multiSummary').textContent='日期範圍不正確 / ช่วงวันที่ไม่ถูกต้อง';return}if(mode==='total'){$('multiSummary').textContent='總目標 '+value+' R 將平均分配至 '+dates.length+' 天，每日約 '+(dates.length?value/dates.length:0).toFixed(2)+' R。'}else{$('multiSummary').textContent='將建立 '+dates.length+' 天，每天 '+value+' R，共 '+(value*dates.length).toFixed(2)+' R。'}}
+function buildBaseTargetData(){
+ return {report_date:$('report_date').value||today(),week_no:isoWeek($('report_date').value||today()),shift:$('shift').value,emp_no:$('emp_no').value,leader_emp_no:$('emp_no').value,leader_role:$('leader_role').value,leader_name:$('leader_name').value,work_order_no:wo12($('work_order_no').value),order_no:$('order_no').value,command_no:$('command_no').value||wo12($('work_order_no').value),report_no:$('report_no').value,daily_report_no:$('daily_report_no').value,part_no:$('part_no').value,input_part_no:$('input_part_no').value,output_part_no:$('output_part_no').value,batch_no:$('batch_no').value,input_lot_no:$('input_lot_no').value,output_lot_no:$('output_lot_no').value,process_site:$('process_site').value,machine_code:$('machine_code').value,customer:$('customer').value,product_spec:$('product_spec').value,target_roll:$('target_roll').value,target_m2:$('target_m2').value,planned_finish:$('planned_finish').value,status:$('status').value,note:$('note').value};
+}
+function closeSaveOverlay(){if($('confirmSaveBtn').disabled)return;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[]}
+function prepareMultiRows(base){
+ const dates=enumerateDates($('multi_start').value,$('multi_end').value);if(!dates.length)throw new Error('請確認開始與結束日期');
+ const totalRoll=num(base.target_roll),totalM2=num(base.target_m2),alloc=$('multi_alloc').value;
+ return dates.map((d,i)=>{const r=Object.assign({},base);r.report_date=d;r.week_no=isoWeek(d);r.planned_finish=d;r.target_plan_id='TP-'+d.replace(/-/g,'')+'-'+Date.now()+'-'+String(i+1).padStart(3,'0');if(alloc==='total'){r.target_roll=(totalRoll/dates.length).toFixed(3);r.target_m2=(totalM2/dates.length).toFixed(3)}return r});
+}
+function showMultiPreview(rows){PENDING_MULTI_ROWS=rows;$('saveOverlay').className='saveOverlay show';$('saveOverlayTitle').textContent='建立多日目標 / สร้างเป้าหมายหลายวัน';$('saveOverlayText').textContent='將建立 '+rows.length+' 筆目標，確認日期與數量後再寫入雲端。';$('savePreviewList').innerHTML=rows.map(r=>'<div class="previewRow"><b>'+esc(r.report_date)+'</b><span>'+esc(r.target_roll)+' R｜'+esc(r.machine_code||'未指定機台')+'</span></div>').join('');$('saveProgressBar').style.width='0%';$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('confirmSaveBtn').textContent='確認建立 / ยืนยัน'}
+async function confirmMultiSave(){if(!PENDING_MULTI_ROWS.length)return;const rows=PENDING_MULTI_ROWS.slice();$('confirmSaveBtn').disabled=true;$('cancelSaveBtn').disabled=true;try{for(let i=0;i<rows.length;i++){$('saveOverlayText').textContent='正在建立第 '+(i+1)+' / '+rows.length+' 筆… / กำลังบันทึก';$('saveProgressBar').style.width=Math.round((i/rows.length)*100)+'%';await apiPost('savetargetplan',rows[i]);await new Promise(r=>setTimeout(r,120))}$('saveProgressBar').style.width='100%';$('saveOverlayTitle').textContent='✅ 建立成功';$('saveOverlayText').textContent='已建立 '+rows.length+' 筆多日目標並同步至雲端。';$('confirmSaveBtn').textContent='完成';setTimeout(()=>{$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[];loadBootstrap()},1000)}catch(e){$('saveOverlayText').textContent='建立失敗：'+e.message;$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false}}
+function clearForm(){['emp_no','leader_name','note'].forEach(id=>$(id).value='');clearOrderFields();$('empStatus').className='empStatus';$('empStatus').textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';renderSearchIdle();setScheduleMode('single')}
+async function saveTarget(){
+  const data=buildBaseTargetData();
+  if(!data.emp_no){toast('請輸入幹部工號');return}
+  if(!data.leader_name){toast('請確認幹部姓名已自動帶入');return}
+  if(!data.work_order_no){toast('請先查詢並選擇工單');return}
+  if(!num(data.target_roll)&&!num(data.target_m2)){toast('請輸入目標卷數或目標㎡');return}
+  if(SCHEDULE_MODE==='multi'){
+    try{const rows=prepareMultiRows(data);showMultiPreview(rows)}catch(e){toast(e.message)}
+    return;
+  }
+  const btn=$('saveTargetBtn');btn.disabled=true;btn.textContent='儲存中… / กำลังบันทึก';$('saveMsg').textContent='正在同步雲端…';
+  try{data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();await apiPost('savetargetplan',data);$('saveMsg').textContent='✓ 已儲存並同步雲端';toast('目標已儲存');setTimeout(loadBootstrap,700)}catch(e){alert('儲存失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย'}
+}
 
 document.addEventListener('DOMContentLoaded',()=>{
   $('report_date').value=today();
+  $('multi_start').value=today();
+  $('multi_end').value=today();
   $('planned_finish').value=today();
   $('due_date_display').value='';
   $('rangeStart').value=today();
   $('rangeEnd').value=today();
-  $('multi_start').value=today();
-  $('multi_end').value=today();
-  toggleScheduleMode();
   ['Today','Week','Month','Custom'].forEach(x=>{$('btn'+x).className='btn ghost'});
   $('btnToday').className='btn active';
   $('rangeHint').textContent='目前：今日 '+$('rangeStart').value+' ~ '+$('rangeEnd').value;
+  setScheduleMode('single');
+  updateMultiSummary();
   loadBootstrap();
 });
 
