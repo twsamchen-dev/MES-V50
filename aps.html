@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V85 AI Scheduler Core Build 0063</title>
+<title>SEAL KING Smart APS｜V86 APS Turbo Engine Build 0064</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0063 V85 AI Scheduler Core";
+  content:"APS Build 0061 V84.7 APS Core";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -3207,7 +3207,7 @@ window.SEAL_KING_SECURITY={
 <script id="build0048-v825-marker">
 (()=>{
   window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
-  console.info("SEAL KING Smart APS Build 0063｜V85 AI Scheduler Core loaded");
+  console.info("SEAL KING Smart APS Build 0061｜V84.7 APS Core loaded");
 })();
 </script>
 
@@ -5354,92 +5354,65 @@ document.addEventListener("DOMContentLoaded",function(){
   obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['disabled'],childList:true,characterData:true});
   document.addEventListener('DOMContentLoaded',()=>{
     document.title='SEAL KING Smart APS｜V84.7 Enterprise AI APS';
-    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0063 V85';});
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0061 V84.7';});
   });
 })();
 </script>
 
 
-<!-- Build 0063｜V85 AI Scheduler Core：有限搜尋、防死循環、可中止 -->
-<script id="build0063-v85-ai-scheduler-core">
+<style id="v86-turbo-style">
+#v86TurboDialog{position:fixed;inset:0;z-index:100000;background:rgba(2,7,11,.78);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px}
+#v86TurboDialog.show{display:flex}.v86-box{width:min(620px,94vw);background:#0b1820;border:1px solid #385360;border-radius:16px;padding:24px;box-shadow:0 28px 80px #000b}.v86-title{font-size:23px;font-weight:900}.v86-stage{margin-top:8px;color:#a9bdc7;min-height:22px}.v86-track{height:13px;margin-top:18px;border-radius:999px;background:#172a34;border:1px solid #314852;overflow:hidden}.v86-bar{height:100%;width:0;background:linear-gradient(90deg,#18bd72,#2bb9d8);transition:width .18s ease}.v86-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.v86-meta div{background:#0e2029;border:1px solid #2a414c;border-radius:9px;padding:10px}.v86-meta span{display:block;color:#91a6b0;font-size:11px}.v86-meta b{display:block;margin-top:4px;font-size:16px}.v86-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.v86-note{font-size:12px;color:#89a0aa;margin-top:10px}.v86-error{color:#ff8f97}.v86-ok{color:#73e6ae}
+@media(max-width:640px){.v86-meta{grid-template-columns:1fr}.v86-box{padding:18px}}
+</style>
+<div id="v86TurboDialog" role="dialog" aria-modal="true" aria-labelledby="v86TurboTitle">
+ <div class="v86-box">
+  <div class="v86-title" id="v86TurboTitle">V86 APS Turbo Engine</div>
+  <div class="v86-stage" id="v86TurboStage">準備排程資料…</div>
+  <div class="v86-track"><div class="v86-bar" id="v86TurboBar"></div></div>
+  <div class="v86-meta">
+   <div><span>處理進度</span><b id="v86TurboCount">0 / 0</b></div>
+   <div><span>目前工單</span><b id="v86TurboWo">—</b></div>
+   <div><span>耗時</span><b id="v86TurboElapsed">0.0 秒</b></div>
+  </div>
+  <div class="v86-note" id="v86TurboNote">記憶體排程 → UI 預覽 → 採用後一次批次同步 APS_Schedule</div>
+  <div class="v86-actions"><button class="btn red" id="v86TurboCancel">中止模擬</button></div>
+ </div>
+</div>
+<script id="v86-turbo-core">
+/* Build 0064｜V86 APS Turbo Engine：Web Worker 記憶體排程、有限搜尋、一次批次同步 */
 (()=>{
-'use strict';
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
-const normV=v=>String(v??'').trim().toUpperCase().replace(/\s+/g,'');
-let runId=0, proposal=null, backup=null;
-
-function family(p){return normV(p).split(/[-_*\/]/)[0].slice(0,8)}
-function changeCost(a,b){if(!a||!b)return 0;if(normV(a.part)===normV(b.part))return 0;let c=30;if(family(a.part)&&family(a.part)===family(b.part))c=12;else if(a.process&&b.process&&a.process===b.process)c=20;if(a.customer&&b.customer&&a.customer===b.customer)c=Math.max(5,c-5);return c}
-function dayStart(date){const sh=(typeof getShiftSettings==='function'?getShiftSettings():{earlyStart:'08:30'}).earlyStart||'08:30';const [h,m]=String(sh).split(':').map(Number);const d=new Date(date);d.setHours(h||0,m||0,0,0);return d}
-function dueEnd(d){if(!d)return null;const x=new Date(d);if(Number.isNaN(x.getTime()))return null;x.setHours(23,59,59,999);return x}
-function cloneSchedule(a){return (a||[]).map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):x.due}))}
-function selectedJobs(){const scope=$('autoScope')?.value||'ready';if(scope==='scheduled'){const map={};(S.schedule||[]).forEach(x=>{if(!x.wo)return;const j=map[x.wo]??={wo:x.wo,part:x.part,customer:x.customer,process:x.process,due:x.due?new Date(x.due):null,urgent:!!x.urgent,machine:x.machine,minutes:0,ready:true,closed:false,match:'既有排程'};j.minutes+=n(x.minutes)});return Object.values(map)}return (S.pool||[]).filter(x=>!x.closed&&(scope==='allopen'||x.ready)).map(x=>({...x,minutes:n(x.minutes)}))}
-function enabledMachines(){return Object.keys(S.machines||{}).filter(m=>S.machines[m]?.enabled!==false&&n(S.machines[m]?.hours)>0)}
-function candidateMachines(job,machines){let list=(S.rows?.speed||[]).filter(r=>normV(r.part)===normV(job.part)).map(r=>String(r.machine||'').trim()).filter(m=>machines.includes(m));list=[...new Set(list)];if(job.machine&&machines.includes(job.machine))list=[job.machine,...list.filter(m=>m!==job.machine)];return list.length?list:machines.slice()}
-function yieldUI(){return new Promise(r=>setTimeout(r,0))}
-
-function ensureMonitor(){let box=$('v85Monitor');if(box)return box;box=document.createElement('div');box.id='v85Monitor';box.style.cssText='position:fixed;inset:0;z-index:100000;background:#02080fcc;display:none;align-items:center;justify-content:center;padding:18px';box.innerHTML=`<div style="width:min(680px,96vw);background:#0b1824;border:1px solid #31516d;border-radius:18px;padding:22px;color:#eaf6ff;box-shadow:0 24px 80px #000a"><div style="display:flex;justify-content:space-between;gap:14px"><div><div style="font-size:12px;letter-spacing:.15em;color:#ff5264;font-weight:900">V85 AI SCHEDULER CORE</div><h2 style="margin:7px 0 4px">有限搜尋排程監控</h2><div id="v85Stage" style="color:#9db3c7">準備中…</div></div><button id="v85Cancel" class="btn red" type="button">中止模擬</button></div><div style="height:12px;background:#17283a;border-radius:999px;overflow:hidden;margin:18px 0 8px"><i id="v85Bar" style="display:block;height:100%;width:0;background:linear-gradient(90deg,#2868ff,#23c7d9);transition:width .12s"></i></div><div style="display:flex;justify-content:space-between;color:#9db3c7;font-size:13px"><span id="v85Count">0 / 0</span><span id="v85Pct">0%</span></div><div id="v85Current" style="margin-top:14px;padding:12px;border:1px solid #223b50;border-radius:12px;background:#07131e;min-height:48px"></div><div id="v85Stats" style="margin-top:8px;color:#7890a5;font-size:12px"></div></div>`;document.body.appendChild(box);$('v85Cancel').onclick=()=>{runId++;$('v85Stage').textContent='正在安全中止…';$('v85Cancel').disabled=true};return box}
-function openMonitor(total){const b=ensureMonitor();b.style.display='flex';$('v85Bar').style.width='0%';$('v85Count').textContent=`0 / ${total}`;$('v85Pct').textContent='0%';$('v85Stage').textContent='整理工單與機台容量…';$('v85Current').textContent='準備開始';$('v85Stats').textContent='';$('v85Cancel').disabled=false}
-function updateMonitor(done,total,current,started,ops,skipped){const pct=total?Math.round(done/total*100):0;$('v85Bar').style.width=pct+'%';$('v85Count').textContent=`${done} / ${total}`;$('v85Pct').textContent=pct+'%';$('v85Stage').textContent=done>=total?'整理排程結果…':'AI 正在配置工單';$('v85Current').textContent=current;$('v85Stats').textContent=`耗時 ${((performance.now()-started)/1000).toFixed(1)} 秒｜評估 ${ops.toLocaleString()} 次｜跳過 ${skipped} 張`}
-function closeMonitor(ms=800){setTimeout(()=>{const b=$('v85Monitor');if(b)b.style.display='none'},ms)}
-
-async function buildV85(token,started){
-  openMonitor(0); await yieldUI();
-  const jobs=selectedJobs().filter(j=>j.minutes>0); const machines=enabledMachines();
-  if(!jobs.length)throw Error('目前沒有可排工單'); if(!machines.length)throw Error('沒有啟用機台');
-  openMonitor(jobs.length); await yieldUI();
-  const days=Math.max(1,Math.min(60,n($('days')?.value)||14));
-  const start=dayStart(new Date((($('startDate')?.value)||new Date().toISOString().slice(0,10))+'T00:00:00'));
-  const cap={}; for(const m of machines){cap[m]=[];for(let d=0;d<days;d++){const st=new Date(start);st.setDate(st.getDate()+d);cap[m].push({start:st,used:0,limit:Math.max(1,n(S.machines[m]?.hours)||24)*60,last:null})}}
-  const wDue=n($('autoDueWeight')?.value),wChange=n($('autoChangeWeight')?.value),wBalance=n($('autoBalanceWeight')?.value),wMachine=n($('autoMachineWeight')?.value),strict=$('autoUrgentGuard')?.value==='strict';
-  jobs.sort((a,b)=>(strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due):new Date(8640000000000000))-(b.due?new Date(b.due):new Date(8640000000000000)))||(b.minutes-a.minutes));
-  const out=[], skipped=[]; let operations=0;
-  const MAX_OPS=150000, MAX_JOB_MS=1800, MAX_TOTAL_MS=30000;
-  for(let ji=0;ji<jobs.length;ji++){
-    if(token!==runId)throw Error('AI 模擬已由使用者中止');
-    const job=jobs[ji], cands=candidateMachines(job,machines), jobStarted=performance.now();
-    let remain=Math.max(0,n(job.minutes)), segments=0;
-    const maxSegments=Math.max(1,Math.min(days*Math.max(1,cands.length),120));
-    while(remain>.01 && segments<maxSegments){
-      if(token!==runId)throw Error('AI 模擬已由使用者中止');
-      if(performance.now()-jobStarted>MAX_JOB_MS){skipped.push({wo:job.wo,reason:'單筆工單超過 1.8 秒'});break}
-      if(performance.now()-started>MAX_TOTAL_MS)throw Error(`AI 模擬超過 30 秒，已安全停止。最後處理：${job.wo}`);
-      let best=null;
-      for(const m of cands){for(let d=0;d<days;d++){
-        if(++operations>MAX_OPS)throw Error(`排程評估已達安全上限 ${MAX_OPS.toLocaleString()} 次。最後處理：${job.wo}`);
-        const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;
-        if(free<=.01)continue;
-        const st=new Date(c.start.getTime()+(c.used+chg)*60000),take=Math.min(remain,free),finish=new Date(st.getTime()+take*60000),due=dueEnd(job.due);
-        let score=d*100000+c.used+chg*wChange*15+(c.used/c.limit)*wBalance*1000;
-        if(job.machine&&m!==job.machine)score+=wMachine*500;
-        if(due&&finish>due)score+=((finish-due)/60000)*wDue*100;
-        if(job.urgent)score-=strict?1e9:1e6;
-        if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score};
-      }}
-      if(!best){skipped.push({wo:job.wo,reason:'無可用機台容量'});break}
-      if(!(best.take>0)){skipped.push({wo:job.wo,reason:'可排分鐘為 0'});break}
-      if(best.chg>0)best.c.used+=best.chg;
-      const pd=new Date(best.c.start);pd.setHours(0,0,0,0);
-      out.push({machine:best.m,date:pd,start:best.st,end:best.finish,minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due?new Date(job.due):null,urgent:!!job.urgent,reason:`V85有限搜尋；${job.urgent?'急單優先；':''}${job.machine?'建議機台 '+job.machine+'；':''}交期 ${job.due?(typeof fmtDate==='function'?fmtDate(job.due):String(job.due)):'未提供'}；換線 ${best.chg} 分`});
-      best.c.used+=best.take;best.c.last=job;remain-=best.take;segments++;
-    }
-    if(remain>.01&&!skipped.some(x=>x.wo===job.wo))skipped.push({wo:job.wo,reason:`超過最大 ${maxSegments} 段，剩餘 ${Math.round(remain)} 分鐘`});
-    updateMonitor(ji+1,jobs.length,`工單 ${job.wo}｜候選 ${cands.length} 台｜排程段 ${segments}｜剩餘 ${Math.max(0,Math.round(remain))} 分鐘`,started,operations,skipped.length);
-    await yieldUI();
-  }
-  return {schedule:out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||a.start-b.start),skipped,operations};
-}
-function metrics(schedule){const completion={},seq={};let max=null;(schedule||[]).forEach(x=>{if(!completion[x.wo]||x.end>completion[x.wo])completion[x.wo]=new Date(x.end);(seq[x.machine]??=[]).push(x);if(!max||x.end>max)max=new Date(x.end)});let late=0,lateMin=0;Object.entries(completion).forEach(([wo,end])=>{const p=(S.pool||[]).find(x=>x.wo===wo),due=dueEnd(p?.due);if(due&&end>due){late++;lateMin+=Math.round((end-due)/60000)}});let change=0;Object.values(seq).forEach(a=>{const jobs=[];a.sort((x,y)=>x.start-y.start).forEach(x=>{if(!jobs.length||jobs.at(-1).wo!==x.wo)jobs.push(x)});for(let i=1;i<jobs.length;i++)change+=changeCost(jobs[i-1],jobs[i])});const loads=Object.fromEntries(Object.entries(seq).map(([m,a])=>[m,a.reduce((s,x)=>s+n(x.minutes),0)]));return{late,lateMin,change,max,loads,completion}}
-function dateShort(d){return d?new Date(d).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'—'}
-function renderV85(){const p=proposal;if(!p)return;$('autoLateBefore').textContent=p.before.late;$('autoLateAfter').textContent=p.after.late;$('autoChangeBefore').textContent=Math.round(p.before.change);$('autoChangeAfter').textContent=Math.round(p.after.change);$('autoFinishBefore').textContent=dateShort(p.before.max);$('autoFinishAfter').textContent=dateShort(p.after.max);$('applyAutoSchedule').disabled=false;const savedLate=p.before.late-p.after.late,savedChange=p.before.change-p.after.change,finishDiff=p.before.max&&p.after.max?Math.round((p.before.max-p.after.max)/60000):0;$('autoScheduleInsights').className='';$('autoScheduleInsights').innerHTML=`<div class="auto-insight ${savedLate>=0?'good':'bad'}"><b>交期風險</b>${savedLate>0?`減少 ${savedLate} 張延遲工單`:savedLate===0?'延遲工單數持平':`增加 ${Math.abs(savedLate)} 張延遲工單`}</div><div class="auto-insight ${savedChange>=0?'good':'warn'}"><b>換線改善</b>${savedChange>=0?`預估節省 ${Math.round(savedChange)} 分鐘`:`增加 ${Math.abs(Math.round(savedChange))} 分鐘`}</div><div class="auto-insight ${finishDiff>=0?'good':'warn'}"><b>最晚完成</b>${finishDiff>=0?`提前 ${finishDiff} 分鐘`:`延後 ${Math.abs(finishDiff)} 分鐘`}</div><div class="auto-insight"><b>排程規模</b>${p.schedule.length} 個區段｜跳過 ${p.skipped.length} 張｜評估 ${p.operations.toLocaleString()} 次</div>`;$('autoSchedulePreview').className='auto-preview-wrap';$('autoSchedulePreview').innerHTML=`<table class="auto-preview-table"><thead><tr><th>機台</th><th>工單</th><th>開始</th><th>完成</th><th>分鐘</th><th>狀態</th></tr></thead><tbody>${p.schedule.slice(0,250).map(x=>{const due=dueEnd(x.due),late=due&&x.end>due;return`<tr><td>${esc(x.machine)}</td><td>${esc(x.wo)}</td><td>${esc(dateShort(x.start))}</td><td>${esc(dateShort(x.end))}</td><td>${Math.round(x.minutes)}</td><td><span class="tag ${late?'red':'green'}">${late?'Delay':'準時'}</span></td></tr>`}).join('')}</tbody></table>${p.skipped.length?`<div class="notice" style="margin-top:10px">未排成功 ${p.skipped.length} 張：${p.skipped.slice(0,12).map(x=>esc(x.wo+'（'+x.reason+'）')).join('、')}</div>`:''}`}
-async function simulateV85(){const btn=$('runAutoSchedule'),old=btn?.textContent||'開始 AI 模擬',token=++runId,started=performance.now();try{if(btn){btn.disabled=true;btn.textContent='V85 排程中…'}openMonitor(0);await yieldUI();const r=await buildV85(token,started);if(token!==runId)throw Error('AI 模擬已中止');$('v85Stage').textContent='計算延遲、換線與負載…';await yieldUI();proposal={schedule:r.schedule,before:metrics(S.schedule||[]),after:metrics(r.schedule),skipped:r.skipped,operations:r.operations};renderV85();$('v85Stage').textContent='✓ V85 模擬完成';$('v85Current').textContent=`完成 ${r.schedule.length} 個排程區段，跳過 ${r.skipped.length} 張工單`;$('v85Bar').style.width='100%';$('v85Pct').textContent='100%';closeMonitor(900)}catch(err){const msg=err?.message||String(err);if($('v85Stage'))$('v85Stage').textContent='模擬停止';if($('v85Current'))$('v85Current').textContent=msg;closeMonitor(1800);if(!/使用者中止|已中止/.test(msg))alert(msg)}finally{if(btn){btn.disabled=false;btn.textContent=old}}}
-async function applyV85(){if(!proposal)return;backup=cloneSchedule(S.schedule||[]);S.schedule=cloneSchedule(proposal.schedule);if(typeof renderSchedule==='function')renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();$('restoreAutoSchedule').disabled=false;$('applyAutoSchedule').disabled=true;if(typeof log==='function')log(`V85 AI排程已套用：${S.schedule.length} 個區段`);try{if(typeof saveDataset==='function')await saveDataset('schedule',true)}catch(e){console.warn(e)}alert(`V85 最佳排程已套用，共 ${S.schedule.length} 個區段；未排成功 ${proposal.skipped.length} 張。`);if(typeof showPage==='function')showPage('schedule')}
-function restoreV85(){if(!backup)return;S.schedule=cloneSchedule(backup);if(typeof renderSchedule==='function')renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();backup=null;$('restoreAutoSchedule').disabled=true}
-function install(){const old=$('runAutoSchedule');if(old&&!old.dataset.v85){const neo=old.cloneNode(true);neo.dataset.v85='1';old.replaceWith(neo);neo.addEventListener('click',simulateV85)}const a=$('applyAutoSchedule');if(a&&!a.dataset.v85){const neo=a.cloneNode(true);neo.dataset.v85='1';a.replaceWith(neo);neo.addEventListener('click',applyV85)}const r=$('restoreAutoSchedule');if(r&&!r.dataset.v85){const neo=r.cloneNode(true);neo.dataset.v85='1';r.replaceWith(neo);neo.addEventListener('click',restoreV85)}document.title='SEAL KING Smart APS｜V85 AI Scheduler Core Build 0063';document.querySelectorAll('.header-time small,.version').forEach(x=>{if(/Build|APS Core|Enterprise Preview/i.test(x.textContent||''))x.textContent='Enterprise Preview 2｜Build 0063 V85 AI Scheduler Core'});document.querySelectorAll('.side-footer small').forEach(x=>{if(/APS Core|Build/i.test(x.textContent||''))x.textContent='Build 0063｜V85 AI Scheduler Core'})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0));else setTimeout(install,0);setTimeout(install,1800);
-window.APS_V85={version:'V85',build:'0063',simulate:simulateV85};
+ 'use strict';
+ const BUILD='Build 0064 V86 APS Turbo Engine';
+ const $=id=>document.getElementById(id);
+ let worker=null,proposal=null,backup=null,started=0,tick=null;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const toDate=v=>v?new Date(v):null;
+ const dateShort=v=>{if(!v)return'—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})};
+ const dueEnd=v=>{if(!v)return null;const d=new Date(v);if(Number.isNaN(d.getTime()))return null;d.setHours(23,59,59,999);return d};
+ function setVersion(){document.title='SEAL KING Smart APS｜V86 APS Turbo Engine';document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜'+BUILD});const all=[...document.querySelectorAll('body *')].filter(el=>el.children.length===0&&/APS Build \d+|V8\d(?:\.\d)? APS Core/i.test(el.textContent||''));all.forEach(el=>el.textContent='APS '+BUILD)}
+ function showDialog(total){started=performance.now();$('v86TurboDialog').classList.add('show');$('v86TurboStage').textContent='建立記憶體排程模型…';$('v86TurboBar').style.width='2%';$('v86TurboCount').textContent='0 / '+total;$('v86TurboWo').textContent='—';$('v86TurboNote').className='v86-note';$('v86TurboNote').textContent='排程運算在背景 Worker 執行，不會逐筆寫入 Google Sheet。';clearInterval(tick);tick=setInterval(()=>{$('v86TurboElapsed').textContent=((performance.now()-started)/1000).toFixed(1)+' 秒'},150)}
+ function updateDialog(done,total,wo,stage){const pct=total?Math.max(2,Math.min(98,Math.round(done/total*100))):2;$('v86TurboBar').style.width=pct+'%';$('v86TurboCount').textContent=done+' / '+total;$('v86TurboWo').textContent=wo||'—';$('v86TurboStage').textContent=stage||'背景排程運算中…'}
+ function finishDialog(msg,ok=true,delay=850){clearInterval(tick);$('v86TurboBar').style.width=ok?'100%':'100%';$('v86TurboStage').textContent=msg;$('v86TurboNote').className='v86-note '+(ok?'v86-ok':'v86-error');$('v86TurboNote').textContent=ok?'記憶體排程已完成，尚未寫入正式排程。':msg;setTimeout(()=>$('v86TurboDialog').classList.remove('show'),delay)}
+ function cancel(){if(worker){worker.terminate();worker=null}clearInterval(tick);finishDialog('已由使用者中止 AI 模擬',false,900);const b=$('runAutoSchedule');if(b){b.disabled=false;b.textContent='開始 AI 模擬'}}
+ function normalizeJobs(){const scope=$('autoScope')?.value||'ready';let rows=[];if(scope==='scheduled'){const map={};(window.S?.schedule||[]).forEach(x=>{if(!x.wo)return;const j=map[x.wo]??={wo:x.wo,part:x.part||'',customer:x.customer||'',process:x.process||'',due:x.due||null,urgent:!!x.urgent,machine:x.machine||'',minutes:0,ready:true,closed:false};j.minutes+=Number(x.minutes)||Math.max(0,(new Date(x.end)-new Date(x.start))/60000);map[x.wo]=j});rows=Object.values(map)}else rows=(window.S?.pool||[]).filter(x=>!x.closed&&(scope==='allopen'||x.ready)).map(x=>({...x}));return rows.map(x=>({wo:String(x.wo||''),part:String(x.part||''),customer:String(x.customer||''),process:String(x.process||''),due:x.due?new Date(x.due).toISOString():null,urgent:!!x.urgent,machine:String(x.machine||''),minutes:Number(x.minutes)||0})).filter(x=>x.wo&&x.minutes>0)}
+ function normalizeMachines(){const out={};Object.entries(window.S?.machines||{}).forEach(([m,v])=>{if(v?.enabled===false)return;const hours=Number(v?.hours);if(hours>0)out[m]={hours}});return out}
+ function speedMap(){const map={};(window.S?.rows?.speed||[]).forEach(r=>{const p=String(r.part||'').trim().toUpperCase(),m=String(r.machine||'').trim();if(!p||!m)return;(map[p]??=[]).push(m)});Object.keys(map).forEach(k=>map[k]=[...new Set(map[k])]);return map}
+ function config(){const date=$('startDate')?.value||new Date().toISOString().slice(0,10);return{days:Math.max(1,Math.min(31,Number($('days')?.value)||14)),startDate:date,startTime:(typeof getShiftSettings==='function'?(getShiftSettings().earlyStart||'08:30'):'08:30'),dueWeight:Number($('autoDueWeight')?.value)||0,changeWeight:Number($('autoChangeWeight')?.value)||0,balanceWeight:Number($('autoBalanceWeight')?.value)||0,machineWeight:Number($('autoMachineWeight')?.value)||0,strict:$('autoUrgentGuard')?.value==='strict',maxSegments:5000,maxEvaluations:250000,maxMs:25000}}
+ function workerSource(){return `
+ const norm=v=>String(v||'').trim().toUpperCase();
+ const family=p=>norm(p).replace(/\\s/g,'').split(/[-_*\\/]/)[0].slice(0,8);
+ const changeCost=(a,b)=>{if(!a||!b)return 0;if(a.part&&a.part===b.part)return 0;let c=30;if(family(a.part)&&family(a.part)===family(b.part))c=12;else if(a.process&&b.process&&a.process===b.process)c=20;if(a.customer&&b.customer&&a.customer===b.customer)c=Math.max(5,c-5);return c};
+ const dueEnd=v=>{if(!v)return null;const d=new Date(v);if(isNaN(d))return null;d.setHours(23,59,59,999);return d};
+ onmessage=e=>{const {jobs,machines,speeds,cfg}=e.data;const begun=Date.now();try{const names=Object.keys(machines);if(!jobs.length)throw Error('目前沒有可排工單');if(!names.length)throw Error('沒有啟用機台');const [hh,mm]=String(cfg.startTime||'08:30').split(':').map(Number);const base=new Date(cfg.startDate+'T00:00:00');base.setHours(hh||0,mm||0,0,0);const cap={};for(const m of names){cap[m]=[];for(let d=0;d<cfg.days;d++){const st=new Date(base);st.setDate(st.getDate()+d);cap[m].push({start:st.getTime(),used:0,limit:(Number(machines[m].hours)||24)*60,last:null})}}jobs.sort((a,b)=>(cfg.strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due).getTime():8640000000000000)-(b.due?new Date(b.due).getTime():8640000000000000))||(b.minutes-a.minutes));const out=[],skipped=[];let evaluations=0;for(let ji=0;ji<jobs.length;ji++){if(Date.now()-begun>cfg.maxMs)throw Error('AI 排程超過 '+Math.round(cfg.maxMs/1000)+' 秒，已安全停止。最後工單：'+jobs[ji].wo);const job=jobs[ji];let remain=job.minutes;let cands=(speeds[norm(job.part)]||[]).filter(m=>names.includes(m));cands=[...new Set(cands)];if(job.machine&&names.includes(job.machine))cands=[job.machine,...cands.filter(m=>m!==job.machine)];if(!cands.length)cands=names.slice();let seg=0;while(remain>.01&&seg<cfg.days*Math.max(1,cands.length)){let best=null;for(const m of cands){for(let d=0;d<cfg.days;d++){if(++evaluations>cfg.maxEvaluations)throw Error('排程評估次數超過安全上限，最後工單：'+job.wo);const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;if(free<=.01)continue;const st=c.start+(c.used+chg)*60000,take=Math.min(remain,free),finish=st+take*60000,due=dueEnd(job.due);let score=d*100000+c.used+chg*cfg.changeWeight*15+(c.used/c.limit)*cfg.balanceWeight*1000;if(job.machine&&m!==job.machine)score+=cfg.machineWeight*500;if(due&&finish>due.getTime())score+=((finish-due.getTime())/60000)*cfg.dueWeight*100;if(job.urgent)score-=cfg.strict?1e9:1e6;if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score}}}if(!best)break;if(best.chg>0)best.c.used+=best.chg;const pd=new Date(best.c.start);pd.setHours(0,0,0,0);out.push({machine:best.m,date:pd.toISOString(),start:new Date(best.st).toISOString(),end:new Date(best.finish).toISOString(),minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,reason:'V86記憶體排程；'+(job.urgent?'急單優先；':'')+(job.machine?'建議機台 '+job.machine+'；':'')+'換線 '+best.chg+' 分'});best.c.used+=best.take;best.c.last=job;remain-=best.take;seg++;if(out.length>cfg.maxSegments)throw Error('排程區段超過安全上限 '+cfg.maxSegments+'，最後工單：'+job.wo)}if(remain>.01)skipped.push({wo:job.wo,remain:Math.round(remain),reason:'排程期間或可用產能不足'});postMessage({type:'progress',done:ji+1,total:jobs.length,wo:job.wo,segments:out.length,evaluations})}out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||new Date(a.start)-new Date(b.start));postMessage({type:'done',schedule:out,skipped,evaluations,elapsed:Date.now()-begun})}catch(err){postMessage({type:'error',message:err?.message||String(err)})}};`}
+ function metrics(schedule){const completion={},loads={};let change=0,max=null,late=0;const by={};for(const x of schedule){const st=new Date(x.start),en=new Date(x.end);loads[x.machine]=(loads[x.machine]||0)+(Number(x.minutes)||Math.max(0,(en-st)/60000));if(!completion[x.wo]||en>completion[x.wo])completion[x.wo]=en;if(!max||en>max)max=en;(by[x.machine]??=[]).push(x)}for(const arr of Object.values(by)){arr.sort((a,b)=>new Date(a.start)-new Date(b.start));for(let i=1;i<arr.length;i++){if(arr[i-1].wo!==arr[i].wo)change+=30}}for(const [wo,en] of Object.entries(completion)){const j=(window.S?.pool||[]).find(x=>x.wo===wo),due=dueEnd(j?.due);if(due&&en>due)late++}return{completion,loads,change,max,late}}
+ function renderProposal(){if(!proposal)return;const p=proposal;const set=(id,v)=>{const el=$(id);if(el)el.textContent=v};set('autoLateBefore',p.before.late);set('autoLateAfter',p.after.late);set('autoChangeBefore',Math.round(p.before.change));set('autoChangeAfter',Math.round(p.after.change));set('autoFinishBefore',dateShort(p.before.max));set('autoFinishAfter',dateShort(p.after.max));const apply=$('applyAutoSchedule');if(apply)apply.disabled=false;const savedLate=p.before.late-p.after.late,savedChange=p.before.change-p.after.change,finishDiff=p.before.max&&p.after.max?Math.round((p.before.max-p.after.max)/60000):0;if($('autoScheduleInsights')){$('autoScheduleInsights').className='';$('autoScheduleInsights').innerHTML=`<div class="auto-insight ${savedLate>=0?'good':'bad'}"><b>交期風險</b>${savedLate>0?'減少 '+savedLate+' 張延遲工單':savedLate===0?'延遲工單數持平':'增加 '+Math.abs(savedLate)+' 張延遲工單'}</div><div class="auto-insight ${savedChange>=0?'good':'warn'}"><b>換線改善</b>${savedChange>=0?'預估節省 '+Math.round(savedChange)+' 分鐘':'增加 '+Math.abs(Math.round(savedChange))+' 分鐘'}</div><div class="auto-insight ${finishDiff>=0?'good':'warn'}"><b>最晚完成</b>${finishDiff>=0?'提前 '+finishDiff+' 分鐘':'延後 '+Math.abs(finishDiff)+' 分鐘'}</div><div class="auto-insight"><b>Turbo 摘要</b>${p.schedule.length} 區段｜跳過 ${p.skipped.length} 張｜評估 ${p.evaluations.toLocaleString()} 次</div>`}if($('autoSchedulePreview')){$('autoSchedulePreview').className='auto-preview-wrap';$('autoSchedulePreview').innerHTML=`<table class="auto-preview-table"><thead><tr><th>機台</th><th>工單</th><th>開始</th><th>完成</th><th>分鐘</th><th>預交日</th><th>狀態</th></tr></thead><tbody>${p.schedule.slice(0,250).map(x=>{const due=dueEnd(x.due),late=due&&new Date(x.end)>due;return`<tr><td>${esc(x.machine)}</td><td>${esc(x.wo)}</td><td>${esc(dateShort(x.start))}</td><td>${esc(dateShort(x.end))}</td><td>${Math.round(x.minutes)}</td><td>${esc(x.due?new Date(x.due).toLocaleDateString('zh-TW'):'—')}</td><td><span class="tag ${late?'red':'green'}">${late?'Delay':'準時'}</span></td></tr>`}).join('')}</tbody></table>${p.skipped.length?`<div class="notice" style="margin-top:10px">未排成功 ${p.skipped.length} 張：${p.skipped.slice(0,8).map(x=>esc(x.wo)+'（剩 '+x.remain+' 分）').join('、')}${p.skipped.length>8?'…':''}</div>`:''}`}}
+ async function simulate(){const b=$('runAutoSchedule');if(worker)return;const jobs=normalizeJobs(),machines=normalizeMachines();if(!jobs.length){alert('目前沒有可排工單');return}if(!Object.keys(machines).length){alert('沒有啟用機台');return}showDialog(jobs.length);if(b){b.disabled=true;b.textContent='Turbo 模擬中…'}await new Promise(r=>setTimeout(r,50));const blob=new Blob([workerSource()],{type:'text/javascript'});worker=new Worker(URL.createObjectURL(blob));worker.onmessage=e=>{const m=e.data||{};if(m.type==='progress')updateDialog(m.done,m.total,m.wo,`背景排程中｜${m.segments} 區段｜${Number(m.evaluations).toLocaleString()} 次評估`);else if(m.type==='done'){const schedule=m.schedule.map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):null}));proposal={schedule,skipped:m.skipped||[],evaluations:m.evaluations||0,before:metrics(window.S?.schedule||[]),after:metrics(schedule)};renderProposal();worker.terminate();worker=null;if(b){b.disabled=false;b.textContent='開始 AI 模擬'}finishDialog(`✓ Turbo 模擬完成：${schedule.length} 個區段`,true,1000)}else if(m.type==='error'){worker.terminate();worker=null;if(b){b.disabled=false;b.textContent='開始 AI 模擬'}finishDialog(m.message||'排程失敗',false,1600);alert(m.message||'排程失敗')}};worker.onerror=e=>{const msg=e.message||'Worker 執行失敗';worker?.terminate();worker=null;if(b){b.disabled=false;b.textContent='開始 AI 模擬'}finishDialog(msg,false,1600);alert(msg)};worker.postMessage({jobs,machines,speeds:speedMap(),cfg:config()})}
+ async function apply(){if(!proposal)return;const b=$('applyAutoSchedule');if(b){b.disabled=true;b.textContent='批次同步中…'}backup=(window.S?.schedule||[]).map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):x.due}));window.S.schedule=proposal.schedule.map(x=>({...x}));try{if(typeof renderSchedule==='function')renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();showDialog(window.S.schedule.length);updateDialog(window.S.schedule.length,window.S.schedule.length,'APS_Schedule','一次批次同步雲端…');await new Promise(r=>setTimeout(r,30));if(typeof saveDataset==='function')await saveDataset('schedule',true);finishDialog(`✓ 已一次批次同步 ${window.S.schedule.length} 個排程區段`,true,1000);const rb=$('restoreAutoSchedule');if(rb)rb.disabled=false;proposal=null;alert(`V86 最佳排程已採用並批次同步，共 ${window.S.schedule.length} 個排程區段。`);if(typeof showPage==='function')showPage('schedule')}catch(err){finishDialog('雲端同步失敗：'+(err?.message||err),false,1800);alert('排程已套用於畫面，但雲端同步失敗：'+(err?.message||err))}finally{if(b){b.disabled=false;b.textContent='採用最佳排程'}}}
+ function restore(){if(!backup)return;window.S.schedule=backup.map(x=>({...x}));if(typeof renderSchedule==='function')renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();backup=null;const rb=$('restoreAutoSchedule');if(rb)rb.disabled=true}
+ function replaceButton(id,handler){const old=$(id);if(!old)return null;const neo=old.cloneNode(true);old.replaceWith(neo);neo.addEventListener('click',handler);return neo}
+ function install(){setVersion();replaceButton('runAutoSchedule',simulate);replaceButton('applyAutoSchedule',apply);replaceButton('restoreAutoSchedule',restore);$('v86TurboCancel')?.addEventListener('click',cancel);window.V86_APS_TURBO={simulate,apply,restore,cancel,get proposal(){return proposal}}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,50));else setTimeout(install,50);
 })();
 </script>
 
