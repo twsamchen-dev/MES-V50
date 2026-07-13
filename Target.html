@@ -18,7 +18,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.5.5 Role Sync Fix</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.5.6 Role & Department Clean</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -170,8 +170,13 @@ function employeeRole_(e,no){
   if(source.includes('代理')) return '代理';
   return '';
 }
-function employeeDept_(e){
-  return String(e.dept||e.department||e['部門']||e['課別']||'').trim();
+function employeeDept_(e,no,role){
+  let dept=String(e.dept||e.department||e['部門']||e['課別']||'').trim();
+  const knownDept={
+    '11035':'加工課','10385':'加工課','10974':'加工課','10649':'加工課','41440':'加工課'
+  };
+  if(!dept || dept===role || /^(課長|副課長|組長|班長|代理)$/.test(dept)) dept=knownDept[no]||'';
+  return dept;
 }
 function selectLeaderRole_(role){
   const sel=$('leader_role');
@@ -193,12 +198,15 @@ function fillEmp(){
   const active=String(e.status||e['狀態']||'').trim();
   const name=String(e.emp_name||e['姓名']||e.name||'').trim();
   const role=employeeRole_(e,no);
-  const dept=employeeDept_(e);
+  const dept=employeeDept_(e,no,role);
   if(name){$('leader_name').value=name;$('leader_name').classList.add('fieldFlash');setTimeout(()=>$('leader_name').classList.remove('fieldFlash'),700)}
   if(role){selectLeaderRole_(role);$('leader_role').classList.add('fieldFlash');setTimeout(()=>$('leader_role').classList.remove('fieldFlash'),700)}
   else{status.className='empStatus bad';status.textContent='已找到 '+(name||no)+'，但 Employee 尚未設定幹部職稱 / พบพนักงานแล้วแต่ยังไม่ได้ตั้งตำแหน่งหัวหน้า';return}
   status.className='empStatus ok';
-  status.textContent='✓ 已帶入：'+(name||no)+'｜'+role+(dept?'｜'+dept:'')+(active?'｜'+active:'');
+  const parts=[name||no,role];
+  if(dept && dept!==role) parts.push(dept);
+  if(active && active!==role && active!==dept) parts.push(active);
+  status.textContent='✓ 已帶入：'+parts.join('｜');
 }
 
 async function rebuildOrderCache(){
