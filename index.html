@@ -55,14 +55,14 @@
     <h2>工單資料 / ข้อมูลงาน</h2>
     <label>回報日期 / วันที่รายงาน</label><input id="report_date" type="date" onchange="onReportDateChange()">
     <label>製程站點 / จุดกระบวนการ</label>
-    <select id="site">
+    <select id="site" onchange="applyHistoricalSpeed()">
       <option value="開料">開料 / ตัดวัตถุดิบ</option>
       <option value="清洗">清洗 / ล้าง</option>
       <option value="退火">退火 / อบคืนตัว</option>
       <option value="軋延">軋延 / รีด</option>
       <option value="上膠">上膠 / เคลือบกาว</option>
       <option value="覆卷">覆卷 / ม้วนซ้ำ</option>
-      <option value="線軸">線軸 / แกนม้วน</option>
+      <option value="線軸覆卷">線軸覆卷機台 / เครื่องกรอม้วนแกน</option>
       <option value="分條" selected>分條 / ตัดแบ่งม้วน</option>
       <option value="複捲">複捲 / กรอกลับ</option>
       <option value="對貼">對貼 / ประกบ</option>
@@ -91,7 +91,7 @@
     <h2>人員與產出 / พนักงานและผลผลิต</h2>
     <label>工號（可輸入多位，用逗號或空白分隔）/ รหัสพนักงาน</label><input id="emp_no" placeholder="例如 41420,41433" oninput="fillName()">
     <label>姓名 / ชื่อ</label><input id="emp_name" placeholder="依工號自動帶入，可手動補充">
-    <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02">
+    <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02" oninput="applyHistoricalSpeed()">
     <div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單 / งานของฉัน</button><button class="btn ghost" onclick="nextOrder()">下一張工單 / งานถัดไป</button></div>
     <div class="fastPanel">
       <div class="fastTitle">快速連續輸入 / ป้อนข้อมูลเร็ว</div>
@@ -108,6 +108,14 @@
     </div>
     <label>實際產量 / ผลผลิตจริง</label><input id="actual_output" type="number" step="0.01">
     <label>單位 / หน่วย</label><select id="unit"><option>R / ม้วน</option><option>㎡</option><option>KG</option><option>M</option></select>
+    <div class="fastPanel" id="speedMeasurePanel" style="margin-top:14px;background:#fff7ed;border-color:#fed7aa">
+      <div class="fastTitle" style="color:#9a3412">現場實測產速（選填） / บันทึกความเร็วจริงหน้างาน (ไม่บังคับ)</div>
+      <div class="miniText">有歷史資料時會依「料號＋製程＋機台」自動帶出；本次有重新量測再修改後送出。 / หากมีข้อมูลเดิม ระบบจะกรอกให้อัตโนมัติตาม รหัสสินค้า＋กระบวนการ＋เครื่องจักร</div>
+      <label>一回產出數量 / จำนวนที่ได้ต่อ 1 รอบ</label><input id="speed_qty_round" type="number" min="0" step="0.01" placeholder="例如 20 卷或 20 片 / เช่น 20 ม้วน หรือ 20 ชิ้น">
+      <label>產出單位 / หน่วยต่อรอบ</label><select id="speed_unit"><option value="R">卷 / ม้วน</option><option value="PCS">片 / ชิ้น</option></select>
+      <label>一回花費時間（分鐘） / เวลาที่ใช้ต่อ 1 รอบ (นาที)</label><input id="speed_minutes_round" type="number" min="0" step="0.01" placeholder="例如 3.5 分鐘 / เช่น 3.5 นาที">
+      <div id="speedHint" class="miniText" style="margin-top:8px">尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม</div>
+    </div>
     <label>備註 / หมายเหตุ</label><textarea id="process_note"></textarea>
     <button class="btn ok" id="submitBtn" onclick="submitKeyin()">送出回報 / ส่งรายงาน</button>
   </div>
@@ -126,7 +134,7 @@
 </div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
 const LS_PROFILE='MES_KEYIN_FAST_PROFILE_V70';
 const LS_RECENT='MES_KEYIN_RECENT_V70';
 function rowsOf(r){if(Array.isArray(r))return r;if(Array.isArray(r?.rows))return r.rows;if(Array.isArray(r?.data))return r.data;if(Array.isArray(r?.list))return r.list;if(Array.isArray(r?.items))return r.items;return []}
@@ -215,9 +223,10 @@ async function postApi(action,data){if(window.MES&&typeof MES.post==='function')
 async function loadStartup(){
   qs('loadStatus').textContent='讀取基本資料...';
   try{
-    const [e,p]=await Promise.all([getApi('listEmployees'),getApi('listTargetPlans')]);
+    const [e,p,sf]=await Promise.all([getApi('listEmployees'),getApi('listTargetPlans'),getApi('speedfeedback')]);
     App.employees=rowsOf(e);
     App.plans=rowsOf(p);
+    App.speedFeedback=rowsOf(sf);
     App.idx=-1;
     renderPlansHint();
     await loadKeyin(false);
@@ -290,6 +299,28 @@ function sourceMatch(x,key){
   return nrm(hay).includes(nrm(key));
 }
 let __lookupTimer=null;
+function speedNorm(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,'')}
+function currentMatchedOrder(){const w=wo(safeGet('work_order_no'));return App.source.find(x=>sourceMatch(x,w))||{}}
+function applyHistoricalSpeed(){
+  const m=currentMatchedOrder();
+  const part=firstNonEmpty(m.part_no,m['料號']);
+  const process=safeGet('site');
+  const machine=safeGet('machine_code');
+  const candidates=(App.speedFeedback||[]).filter(x=>{
+    const partOk=!part||speedNorm(x.part||x.part_no)===speedNorm(part);
+    const procOk=!process||speedNorm(x.process||x.process_site)===speedNorm(process);
+    const machOk=!machine||speedNorm(x.machine||x.machine_code)===speedNorm(machine);
+    return partOk&&procOk&&machOk;
+  }).sort((a,b)=>String(b.updated_at||b.created_at||b.date||'').localeCompare(String(a.updated_at||a.created_at||a.date||'')));
+  const x=candidates[0];
+  const hint=qs('speedHint');
+  if(!x){if(hint)hint.textContent='尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม';return}
+  safeSet('speed_qty_round',x.qtyRound||x.qty_per_cycle||'');
+  safeSet('speed_unit',x.unit||x.cycle_unit||'R');
+  safeSet('speed_minutes_round',x.minutesRound||x.minutes_per_cycle||'');
+  const q=Number(x.qtyRound||x.qty_per_cycle||0),min=Number(x.minutesRound||x.minutes_per_cycle||0),uph=min>0?q*60/min:0;
+  if(hint)hint.textContent='已帶出歷史資料：一回 '+q+' '+(String(x.unit||'R').toUpperCase()==='PCS'?'片':'卷')+'，'+min+' 分鐘；約 '+uph.toFixed(1)+'/小時 / โหลดข้อมูลเดิมแล้ว';
+}
 function lookupWO(){clearTimeout(__lookupTimer);__lookupTimer=setTimeout(()=>lookupWOAsync(),350)}
 async function lookupWOAsync(){
   const key=nrm(safeGet('work_order_no'));
@@ -349,7 +380,7 @@ async function lookupWOAsync(){
 }
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
 function renderPlansHint(){const r=rangeObj();qs('planRangeText').textContent=r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';const list=currentPlans();qs('todayPlans').innerHTML=list.length?list.slice(0,20).map((p,i)=>{const o=sourceObj(p);const st=matchStatus(p);return '<div class="planItem" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' / '+(st.target?st.target.toLocaleString():'未設目標')+'</div></div></div></div>'}).join(''):'查無'+r.label+'幹部目標工單。'}
-function pickPlan(i){const p=currentPlans()[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);lookupWO()}
+function pickPlan(i){const p=currentPlans()[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);lookupWO();setTimeout(applyHistoricalSpeed,120)}
 function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+rangeObj().label+'幹部目標工單')}
 function nextOrder(){const list=currentPlans();if(!list.length){if(window.MES)MES.toast('沒有可跳轉工單');return}App.idx=(App.idx+1)%list.length;pickPlan(App.idx)}
 
@@ -364,11 +395,11 @@ function copyLastSubmit(){const r=App.lastSubmit||getRecentList()[0];if(!r){if(w
 function clearCurrentInput(){safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');const w=qs('work_order_no');if(w)w.focus()}
 function saveQuickProfile(){const d={emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),machine_code:safeGet('machine_code'),site:safeGet('site'),unit:safeGet('unit')};localStorage.setItem(LS_PROFILE,JSON.stringify(d));if(window.MES)MES.toast('已記住常用工號/機台')}
 function loadQuickProfile(){try{const d=JSON.parse(localStorage.getItem(LS_PROFILE)||'{}');if(d.emp_no)safeSet('emp_no',d.emp_no);if(d.emp_name)safeSet('emp_name',d.emp_name);if(d.machine_code)safeSet('machine_code',d.machine_code);if(d.site)safeSet('site',d.site);if(d.unit)safeSet('unit',d.unit)}catch(e){}renderRecentBox()}
-function afterSubmitClear(){if(qs('fastMode')&&qs('fastMode').checked){safeSet('actual_output','');safeSet('process_note','');if(qs('autoNext')&&qs('autoNext').checked)nextOrder();else safeSet('work_order_no',''),safeSet('batch_no','');setTimeout(()=>{const target=safeGet('work_order_no')?qs('actual_output'):qs('work_order_no');if(target)target.focus()},80)}else{safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','')}}
+function afterSubmitClear(){if(qs('fastMode')&&qs('fastMode').checked){safeSet('actual_output','');safeSet('process_note','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(qs('autoNext')&&qs('autoNext').checked)nextOrder();else safeSet('work_order_no',''),safeSet('batch_no','');setTimeout(()=>{const target=safeGet('work_order_no')?qs('actual_output'):qs('work_order_no');if(target)target.focus()},80)}else{safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','')}}
 function setupFastInputKeys(){['work_order_no','actual_output'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();setTimeout(()=>qs('actual_output')&&qs('actual_output').focus(),80)}else if(id==='actual_output'){submitKeyin()}})})}
 async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
 const submitWO=wo(matched.command_no||matched.work_order_no||w);
-const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),input_source:'github_v70_3_keyin'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v82_7_keyin'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
 function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
