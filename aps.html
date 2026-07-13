@@ -2869,4 +2869,268 @@ window.SEAL_KING_SECURITY={
 })();
 </script>
 
+
+<!-- Build 0050｜APS 工單池直接改讀 DataHub_WorkOrder -->
+<script id="build0050-aps-datahub-workorder">
+(function(){
+  "use strict";
+
+  const API_URL =
+    window.MES_API_URL ||
+    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  let syncing = false;
+
+  function jsonp(action, params = {}) {
+    return new Promise((resolve, reject) => {
+      const cb = "APS_DH_WO_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
+      const script = document.createElement("script");
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("DataHub API 讀取逾時：" + action));
+      }, 30000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cb] = function(res) {
+        cleanup();
+        if (res && res.ok === false) reject(new Error(res.message || res.error || "DataHub API error"));
+        else resolve(res || {});
+      };
+
+      script.onerror = function() {
+        cleanup();
+        reject(new Error("DataHub API 連線失敗：" + action));
+      };
+
+      const qs = new URLSearchParams(Object.assign({
+        action,
+        callback: cb,
+        _: Date.now()
+      }, params)).toString();
+
+      script.src = API_URL + "?" + qs;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function fetchAll() {
+    const all = [];
+    let page = 1;
+    let total = 0;
+
+    do {
+      const res = await jsonp("datahubworkorders", {
+        page,
+        pageSize: 500
+      });
+      const rows = Array.isArray(res.rows) ? res.rows : [];
+      total = Number(res.total || rows.length || 0);
+      all.push(...rows);
+      page += 1;
+      if (!rows.length) break;
+    } while (all.length < total && page <= 20);
+
+    return all;
+  }
+
+  function n(v) {
+    const x = Number(String(v ?? "").replace(/,/g, "").trim());
+    return Number.isFinite(x) ? x : 0;
+  }
+
+  function d(v) {
+    if (!v) return null;
+    const x = new Date(v);
+    return Number.isNaN(x.getTime()) ? null : x;
+  }
+
+  function text(v) {
+    return String(v ?? "").trim();
+  }
+
+  function inferMode(process) {
+    const p = text(process).toUpperCase();
+    if (p.includes("裁切") || p.includes("分條")) return "FIXED";
+    if (p.includes("覆卷") || p.includes("複捲")) return "LENGTH";
+    return "ROUND";
+  }
+
+  function convert(rows) {
+    let speeds = [];
+    try {
+      if (typeof window.buildSpeed === "function") speeds = window.buildSpeed() || [];
+    } catch (_) {}
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    return rows.map(r => {
+      const remainingRaw = n(r.erp_remaining_qty);
+      const target = n(r.target_qty);
+      const remaining = remainingRaw > 0 ? remainingRaw : target;
+      const process = text(r.process);
+      const sourceMachine = text(r.machine || r.machine_code);
+      const part = text(r.part_no);
+      const mode = inferMode(process);
+
+      let minutes = 0;
+      let cycles = 0;
+      let match = "無產速";
+      let ready = false;
+      let machine = sourceMachine;
+
+      try {
+        if (typeof window.matchSpeed === "function" && speeds.length) {
+          const ms = window.matchSpeed(part, process, sourceMachine, speeds);
+          if (ms && ms.row) {
+            const s = ms.row;
+            machine = text(s.machine || sourceMachine);
+            match = ms.level || "已配對";
+            ready = true;
+
+            if (mode === "FIXED") {
+              minutes = n(s.total || s.fixedRunTime || s.run) +
+                        n(s.unloadTime || s.unload || 0) +
+                        n(s.changeTime || s.change || 0);
+            } else if (mode === "LENGTH") {
+              const speed = n(s.speed || s.speedMpm || s.standardSpeed);
+              const eff = n(s.efficiencyFactor || s.efficiency || 1) || 1;
+              if (speed > 0) minutes = remaining / (speed * eff);
+            } else {
+              let perCycle = 1;
+              if (n(s.outw) && n(s.len)) perCycle = (n(s.outw) / 1000) * n(s.len) || 1;
+              cycles = remaining / perCycle;
+              minutes = cycles * n(s.total || 0);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Build0050 speed match skipped", err);
+      }
+
+      const due = d(r.due_date);
+      const diff = due ? Math.ceil((due.getTime() - today.getTime()) / 86400000) : 999;
+
+      return {
+        wo: text(r.work_order_no || r.order_no),
+        order: text(r.order_no),
+        command_no: text(r.work_order_no),
+        report_no: text(r.daily_report_no),
+        batch: text(r.batch_no),
+        part,
+        name: text(r.product_spec),
+        spec: text(r.product_spec),
+        customer: text(r.customer),
+        process,
+        machine,
+        sourceMachine,
+        due,
+        planned: target,
+        output: Math.max(0, target - remaining),
+        remaining,
+        unit: "m²",
+        minutes,
+        cycles,
+        match,
+        urgent: diff <= Number(document.getElementById("urgentDays")?.value || 3),
+        risk: diff <= Number(document.getElementById("riskDays")?.value || 7),
+        ready,
+        status: text(r.status),
+        preprocess: "待確認",
+        closed: /C|結案|完成|已結/i.test(text(r.status)),
+        source: text(r.source_list || "DataHub_WorkOrder"),
+        aliases: [
+          r.work_order_no, r.order_no, r.daily_report_no, r.batch_no,
+          r.part_no, r.customer, r.product_spec, r.process, r.machine,
+          r.source_list
+        ].filter(Boolean).map(String),
+        apsMode: mode
+      };
+    }).filter(x => x.wo && !x.closed);
+  }
+
+  async function syncDataHubPool(showPageAfter = true) {
+    if (syncing) return;
+    syncing = true;
+
+    const btn = document.getElementById("buildPool");
+    const oldText = btn ? btn.textContent : "";
+
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "同步 DataHub 中...";
+      }
+      window.log?.("正在從 DataHub_WorkOrder 讀取工單...");
+
+      const rows = await fetchAll();
+      const pool = convert(rows);
+
+      if (!window.S) window.S = {};
+      window.S.pool = pool;
+
+      try {
+        const speeds = typeof window.buildSpeed === "function" ? window.buildSpeed() : [];
+        if (speeds?.length) {
+          window.S.rows = window.S.rows || {};
+          window.S.rows.speed = speeds;
+          if (typeof window.initMachines === "function") window.initMachines(speeds);
+        }
+      } catch (_) {}
+
+      window.renderPool?.();
+      window.updateKpi?.();
+      window.renderQuality?.();
+      window.APSMissingSpeed?.scan?.();
+
+      try { window.SKAPSSystem?.saveSnapshots?.(true); } catch (_) {}
+
+      if (typeof window.saveDataset === "function") {
+        try { await window.saveDataset("workpool", true); } catch (_) {}
+      }
+
+      window.log?.(`DataHub 工單池建立完成：${pool.length} 筆`);
+      if (showPageAfter && typeof window.showPage === "function") window.showPage("pool");
+    } catch (err) {
+      console.error("Build0050 APS DataHub sync failed:", err);
+      alert("DataHub 工單池同步失敗：" + (err.message || err));
+    } finally {
+      syncing = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = oldText || "建立工單池";
+      }
+    }
+  }
+
+  function install() {
+    const btn = document.getElementById("buildPool");
+    if (btn && !btn.dataset.dh0050) {
+      btn.dataset.dh0050 = "1";
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        syncDataHubPool(true);
+      }, true);
+      btn.textContent = "從 DataHub 建立工單池";
+    }
+
+    // 雲端 APS 舊工單池載入完成後，以最新 DataHub 自動同步一次。
+    setTimeout(() => syncDataHubPool(false), 2200);
+  }
+
+  document.addEventListener("DOMContentLoaded", install);
+  setTimeout(install, 1400);
+
+  window.Build0050APSDataHub = {
+    sync: syncDataHubPool
+  };
+})();
+</script>
+
 </body></html>
