@@ -3757,5 +3757,205 @@ table tbody tr:hover td{background:#fff2f3!important}
 }
 </style>
 
+
+<!-- Build 0050｜Dashboard 工單搜尋改讀 DataHub_WorkOrder -->
+<script id="build0050-dashboard-datahub-workorder">
+(function(){
+  "use strict";
+
+  const API_URL =
+    window.MES_API_URL ||
+    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  let loading = false;
+  let loaded = false;
+
+  function jsonp(action, params = {}) {
+    return new Promise((resolve, reject) => {
+      const cb = "MES_DH_WO_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
+      const script = document.createElement("script");
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("DataHub API 讀取逾時：" + action));
+      }, 30000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cb] = function(res) {
+        cleanup();
+        if (res && res.ok === false) reject(new Error(res.message || res.error || "DataHub API error"));
+        else resolve(res || {});
+      };
+
+      script.onerror = function() {
+        cleanup();
+        reject(new Error("DataHub API 連線失敗：" + action));
+      };
+
+      const qs = new URLSearchParams(Object.assign({
+        action,
+        callback: cb,
+        _: Date.now()
+      }, params)).toString();
+
+      script.src = API_URL + "?" + qs;
+      document.head.appendChild(script);
+    });
+  }
+
+  function normalizeRow(r) {
+    return {
+      source: r.source_list || r.source || "DataHub_WorkOrder",
+      work_order_no: r.work_order_no || r.order_no || "",
+      order_no: r.order_no || "",
+      part_no: r.part_no || "",
+      batch_no: r.batch_no || r.daily_report_no || "",
+      product_spec: r.product_spec || "",
+      target_qty: Number(r.erp_remaining_qty || r.target_qty || 0),
+      process: r.process || "",
+      customer: r.customer || "",
+      machine: r.machine || r.machine_code || "",
+      plan_date: r.plan_date || "",
+      due_date: r.due_date || "",
+      status: r.status || "",
+      issue_status: "",
+      material_status: "",
+      warehouse_status: "",
+      stockin_date: "",
+      finish_date: "",
+      pick_date: "",
+      priority: "",
+      raw: r
+    };
+  }
+
+  async function fetchAll(q = "") {
+    const all = [];
+    let page = 1;
+    let total = 0;
+
+    do {
+      const res = await jsonp("datahubworkorders", {
+        q,
+        page,
+        pageSize: 500
+      });
+      const rows = Array.isArray(res.rows) ? res.rows : [];
+      total = Number(res.total || rows.length || 0);
+      all.push(...rows);
+      page += 1;
+      if (!rows.length) break;
+    } while (all.length < total && page <= 20);
+
+    return all;
+  }
+
+  function mergeIntoDashboard(rows) {
+    if (!window.AppState) window.AppState = {};
+    if (!Array.isArray(AppState.source)) AppState.source = [];
+
+    const map = new Map();
+    AppState.source.forEach(r => {
+      const key = String(r.work_order_no || r.order_no || "").trim().toUpperCase();
+      if (key) map.set(key, r);
+    });
+
+    rows.map(normalizeRow).forEach(r => {
+      const key = String(r.work_order_no || r.order_no || "").trim().toUpperCase();
+      if (!key) return;
+
+      if (!map.has(key)) {
+        AppState.source.push(r);
+        map.set(key, r);
+      } else {
+        const old = map.get(key);
+        Object.keys(r).forEach(k => {
+          if (old[k] === undefined || old[k] === null || old[k] === "" || old[k] === 0) {
+            old[k] = r[k];
+          }
+        });
+        const oldSource = String(old.source || "");
+        if (String(r.source || "") && !oldSource.includes(String(r.source))) {
+          old.source = oldSource ? oldSource + "+" + r.source : r.source;
+        }
+      }
+    });
+
+    if (typeof window.buildIndex === "function") window.buildIndex();
+    if (typeof window.renderWorkOrderSearch === "function") window.renderWorkOrderSearch();
+  }
+
+  async function loadDataHubWorkOrders(force = false) {
+    if (loading || (loaded && !force)) return;
+    loading = true;
+
+    try {
+      const rows = await fetchAll("");
+      mergeIntoDashboard(rows);
+      loaded = true;
+      console.log("Build0050 Dashboard DataHub_WorkOrder loaded:", rows.length);
+    } catch (err) {
+      console.error("Build0050 Dashboard DataHub load failed:", err);
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function searchLive() {
+    const input = document.getElementById("woSearchInput");
+    const q = String(input?.value || "").trim();
+    if (!q) {
+      await loadDataHubWorkOrders(false);
+      return;
+    }
+
+    try {
+      const rows = await fetchAll(q);
+      mergeIntoDashboard(rows);
+    } catch (err) {
+      console.error("Build0050 Dashboard live search failed:", err);
+    }
+  }
+
+  function install() {
+    loadDataHubWorkOrders(false);
+
+    const btn = document.getElementById("woSearchBtn");
+    if (btn && !btn.dataset.dh0050) {
+      btn.dataset.dh0050 = "1";
+      btn.addEventListener("click", () => {
+        searchLive().then(() => {
+          if (typeof window.renderWorkOrderSearch === "function") window.renderWorkOrderSearch();
+        });
+      }, true);
+    }
+
+    const input = document.getElementById("woSearchInput");
+    if (input && !input.dataset.dh0050) {
+      input.dataset.dh0050 = "1";
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          searchLive().then(() => {
+            if (typeof window.renderWorkOrderSearch === "function") window.renderWorkOrderSearch();
+          });
+        }
+      }, true);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", install);
+  setTimeout(install, 1500);
+
+  window.Build0050DashboardDataHub = {
+    reload: () => loadDataHubWorkOrders(true),
+    search: searchLive
+  };
+})();
+</script>
+
 </body>
 </html>
