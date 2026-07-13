@@ -301,25 +301,34 @@ function sourceMatch(x,key){
 let __lookupTimer=null;
 function speedNorm(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,'')}
 function currentMatchedOrder(){const w=wo(safeGet('work_order_no'));return App.source.find(x=>sourceMatch(x,w))||{}}
+function median(nums){const a=nums.filter(n=>Number.isFinite(n)&&n>0).sort((x,y)=>x-y);if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2}
 function applyHistoricalSpeed(){
   const m=currentMatchedOrder();
   const part=firstNonEmpty(m.part_no,m['料號']);
+  const spec=firstNonEmpty(m.product_spec,m['規格']);
   const process=safeGet('site');
   const machine=safeGet('machine_code');
-  const candidates=(App.speedFeedback||[]).filter(x=>{
-    const partOk=!part||speedNorm(x.part||x.part_no)===speedNorm(part);
-    const procOk=!process||speedNorm(x.process||x.process_site)===speedNorm(process);
-    const machOk=!machine||speedNorm(x.machine||x.machine_code)===speedNorm(machine);
-    return partOk&&procOk&&machOk;
-  }).sort((a,b)=>String(b.updated_at||b.created_at||b.date||'').localeCompare(String(a.updated_at||a.created_at||a.date||'')));
-  const x=candidates[0];
+  const all=(App.speedFeedback||[]).map(x=>({...x,_date:String(x.updated_at||x.created_at||x.date||'')}));
+  const same=(a,b)=>speedNorm(a)===speedNorm(b)&&speedNorm(a)!=='';
+  const levels=[
+    {name:'料號＋製程＋機台',score:4,fn:x=>same(x.part||x.part_no,part)&&same(x.process||x.process_site,process)&&same(x.machine||x.machine_code,machine)},
+    {name:'料號＋製程',score:3,fn:x=>same(x.part||x.part_no,part)&&same(x.process||x.process_site,process)},
+    {name:'規格＋製程＋機台',score:2,fn:x=>same(x.name||x.product_spec,spec)&&same(x.process||x.process_site,process)&&same(x.machine||x.machine_code,machine)},
+    {name:'規格',score:1,fn:x=>same(x.name||x.product_spec,spec)}
+  ];
+  let hit=null,level=null;
+  for(const lv of levels){const rows=all.filter(lv.fn).sort((a,b)=>b._date.localeCompare(a._date));if(rows.length){hit=rows.slice(0,10);level=lv;break}}
   const hint=qs('speedHint');
-  if(!x){if(hint)hint.textContent='尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม';return}
-  safeSet('speed_qty_round',x.qtyRound||x.qty_per_cycle||'');
-  safeSet('speed_unit',x.unit||x.cycle_unit||'R');
-  safeSet('speed_minutes_round',x.minutesRound||x.minutes_per_cycle||'');
-  const q=Number(x.qtyRound||x.qty_per_cycle||0),min=Number(x.minutesRound||x.minutes_per_cycle||0),uph=min>0?q*60/min:0;
-  if(hint)hint.textContent='已帶出歷史資料：一回 '+q+' '+(String(x.unit||'R').toUpperCase()==='PCS'?'片':'卷')+'，'+min+' 分鐘；約 '+uph.toFixed(1)+'/小時 / โหลดข้อมูลเดิมแล้ว';
+  if(!hit||!hit.length){safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(hint)hint.textContent='尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม';return}
+  const approved=hit.filter(x=>String(x.is_standard||x.approved||'').toLowerCase()==='true'||String(x.is_standard||'')==='1');
+  const sample=(approved.length?approved:hit).slice(0,10);
+  const q=median(sample.map(x=>Number(x.qtyRound||x.qty_per_cycle||0)));
+  const min=median(sample.map(x=>Number(x.minutesRound||x.minutes_per_cycle||0)));
+  const unit=(sample[0]&&String(sample[0].unit||sample[0].cycle_unit||'R'))||'R';
+  safeSet('speed_qty_round',q||'');safeSet('speed_unit',unit);safeSet('speed_minutes_round',min||'');
+  const uph=min>0?q*60/min:0;
+  const confidence=Math.min(99,55+level.score*8+Math.min(sample.length,10)*2+(approved.length?8:0));
+  if(hint)hint.textContent='✓ 已自動帶出（'+level.name+'，'+sample.length+' 筆'+(approved.length?'，課長已確認':'')+'）：一回 '+Number(q.toFixed(2))+' '+(unit.toUpperCase()==='PCS'?'片':'卷')+'，中位數 '+Number(min.toFixed(2))+' 分鐘；約 '+uph.toFixed(1)+'/小時，可信度 '+confidence+'% / ระบบกรอกข้อมูลเดิมให้อัตโนมัติ';
 }
 function lookupWO(){clearTimeout(__lookupTimer);__lookupTimer=setTimeout(()=>lookupWOAsync(),350)}
 async function lookupWOAsync(){
@@ -376,6 +385,7 @@ async function lookupWOAsync(){
     +'規格：'+html(r.product_spec||'-')+'<br>'
     +'站點：'+html(r.process||'-')+'｜機台：'+html(r.machine_code||'-')
     +(matches&&matches.length>1?'<br><b>此識別碼共對應 '+matches.length+' 筆資料，已優先帶入命令單；可繼續輸入完整工單縮小結果。</b>':'');
+  applyHistoricalSpeed();
   setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},50)
 }
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
@@ -399,7 +409,7 @@ function afterSubmitClear(){if(qs('fastMode')&&qs('fastMode').checked){safeSet('
 function setupFastInputKeys(){['work_order_no','actual_output'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();setTimeout(()=>qs('actual_output')&&qs('actual_output').focus(),80)}else if(id==='actual_output'){submitKeyin()}})})}
 async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
 const submitWO=wo(matched.command_no||matched.work_order_no||w);
-const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v82_7_keyin'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note'),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v83_keyin_speed_learning'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
 function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
