@@ -22,7 +22,7 @@
 <meta name="mes-build" content="V83.5.2">
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.5.3 Smart Multi-Day Target</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.5.4 Smart Multi-Day Target</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -169,7 +169,27 @@ function fillEmp(){
   if(!e){$('leader_name').value='';status.className='empStatus bad';status.textContent='查無工號 '+no+'，請確認 Employee 分頁 / ไม่พบรหัสพนักงาน';return}
   const active=String(e.status||e['狀態']||'').trim();
   const name=e.emp_name||e['姓名']||e.name||'';
-  const role=String(e.role||e['角色']||e['職務']||e['職稱']||'').trim();
+  const dept=String(e.dept||e.department||e['部門']||e['單位']||e['課別']||'').trim();
+  // 職稱與部門必須分開：只接受幹部職稱，不再把「加工課」帶入幹部角色。
+  const leaderWords=['副課長','課長','組長','班長','代理'];
+  const explicitCandidates=[
+    e.job_title,e.position,e.title,e.leader_role,
+    e['職稱'],e['職務'],e['職位'],e['幹部角色'],e['角色'],e.role
+  ].map(v=>String(v||'').trim()).filter(Boolean);
+  let role='';
+  for(const candidate of explicitCandidates){
+    role=leaderWords.find(word=>candidate.includes(word))||'';
+    if(role)break;
+  }
+  // Employee 舊資料若只有部門而沒有正確職稱，使用已確認的幹部工號補正。
+  const knownLeaderRole={
+    '11035':'課長',
+    '10385':'副課長',
+    '10974':'班長',
+    '10649':'班長',
+    '41440':'班長'
+  };
+  if(!role)role=knownLeaderRole[no]||'';
   if(name){$('leader_name').value=name;$('leader_name').classList.add('fieldFlash');setTimeout(()=>$('leader_name').classList.remove('fieldFlash'),700)}
   if(role){
     const sel=$('leader_role');let matched=false;
@@ -182,7 +202,13 @@ function fillEmp(){
     }
     sel.classList.add('fieldFlash');setTimeout(()=>sel.classList.remove('fieldFlash'),700)
   }
-  status.className='empStatus ok';status.textContent='✓ 已帶入：'+(name||no)+'｜'+(role||$('leader_role').value)+(active?'｜'+active:'');
+  if(!role){
+    status.className='empStatus bad';
+    status.textContent='已找到 '+(name||no)+'，但 Employee 未設定幹部職稱，請補上課長／副課長／組長／班長 / พบชื่อแล้วแต่ยังไม่มีตำแหน่งหัวหน้า';
+    return;
+  }
+  status.className='empStatus ok';
+  status.textContent='✓ 已帶入：'+(name||no)+'｜'+role+(dept?'｜'+dept:'')+(active?'｜'+active:'');
 }
 
 async function rebuildOrderCache(){
