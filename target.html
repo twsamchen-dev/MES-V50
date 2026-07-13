@@ -2,11 +2,11 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V83.5.2 MES Target Enterprise｜Smart Multi-Day Target</title>
+<title>V83.5.5 MES Target Enterprise｜Role Sync Fix</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
-/* V83.5.2 Smart Target additions */
+/* V83.5.1 Smart Target additions */
 .scheduleModeBox{grid-column:span 12;border:1px solid #bfdbfe;background:#eff6ff;border-radius:14px;padding:12px;margin:2px 0 4px}
 .modeButtons{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.modeBtn{border:1px solid #bfdbfe;background:#fff;color:#1e3a8a;border-radius:10px;padding:9px 14px;font-weight:900;cursor:pointer}.modeBtn.active{background:#2563eb;color:#fff;border-color:#2563eb}
 .multiFields{display:none;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.multiFields.show{display:grid}.multiHint{grid-column:span 4;color:#475569;font-size:13px;line-height:1.6}.checkLine{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13px}.checkLine input{width:auto;min-height:0}
@@ -15,14 +15,10 @@
 .saveOverlay{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10000;align-items:center;justify-content:center}.saveOverlay.show{display:flex}.savePanel{width:min(520px,92vw);background:#fff;border-radius:18px;padding:22px;box-shadow:0 25px 70px #0006}.savePanel h3{margin:0 0 10px;font-size:22px}.previewList{max-height:260px;overflow:auto;border:1px solid #dbe4f0;border-radius:12px;margin:10px 0}.previewRow{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eef2f7}.previewRow:last-child{border-bottom:0}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes successPulse{0%{transform:scale(.98);opacity:.65}100%{transform:scale(1);opacity:1}}@keyframes fieldFlash{0%,100%{background:#fff}50%{background:#dcfce7}}
 @media(max-width:900px){.multiFields{grid-template-columns:1fr 1fr}.multiHint{grid-column:span 2}}@media(max-width:560px){.multiFields{grid-template-columns:1fr}.multiHint{grid-column:span 1}}
-
-.modeBtn{position:relative}.modeBtn.active:after{content:"✓";margin-left:7px;font-weight:900}.multiFields.show{animation:multiOpen .28s ease both;border-top:1px dashed #93c5fd;padding-top:12px}.multiModeNotice{display:none;margin-top:10px;padding:9px 11px;border-radius:10px;background:#dbeafe;color:#1e3a8a;font-weight:800;font-size:13px}.multiModeNotice.show{display:block;animation:successPulse .45s ease}@keyframes multiOpen{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
-.empStatus.loading{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}.empStatus.loading:before{content:"";display:inline-block;width:12px;height:12px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;margin-right:6px;vertical-align:-2px;animation:spin .7s linear infinite}
 </style>
-<meta name="mes-build" content="V83.5.2">
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.5.4 Smart Multi-Day Target</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.5.5 Role Sync Fix</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -70,11 +66,10 @@
           <div><label>建立天數 / จำนวนวัน</label><input id="multi_days" readonly value="1"></div>
           <div class="multiHint" id="multiSummary">請選擇開始與結束日期。/ กรุณาเลือกวันเริ่มและวันสิ้นสุด</div>
         </div>
-        <div id="multiModeNotice" class="multiModeNotice">✓ 已切換為連續多日模式，請設定開始日期、結束日期及分配方式。 / เปลี่ยนเป็นโหมดหลายวันแล้ว</div>
       </div>
       <div class="col4"><label>幹部角色 / ตำแหน่ง</label><select id="leader_role"><option>課長 / หัวหน้าแผนก</option><option>副課長 / รองหัวหน้าแผนก</option><option>組長 / หัวหน้ากลุ่ม</option><option>班長 / หัวหน้ากะ</option><option>代理 / รักษาการ</option></select></div>
       <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入"></div>
-      <div class="col4"><label>工單／訂單／命令單／日報／批號</label><div style="display:flex;gap:7px"><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><button id="lookupNowBtn" type="button" class="btn ghost" style="white-space:nowrap" onclick="lookupOrder()">搜尋 / ค้นหา</button></div><div class="muted">停止輸入約 0.5 秒後自動搜尋；也可按搜尋 / ค้นหาอัตโนมัติหลังหยุดพิมพ์</div></div>
+      <div class="col4"><label>工單／訂單／命令單／日報／批號</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">停止輸入約 0.5 秒後自動搜尋 / ค้นหาอัตโนมัติหลังหยุดพิมพ์</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
@@ -156,57 +151,52 @@ function scheduleBackgroundLoads(){
 }
 
 function normalizeEmployees(rows){EMPLOYEES=rows||[];EMPIDX={};EMPLOYEES.forEach(e=>{let no=norm(e.emp_no||e['工號']||e.employee_no||'');if(no)EMPIDX[no]=e})}
-function fillEmp(){
-  const no=norm($('emp_no').value);
-  const status=$('empStatus');
-  if(!no){$('leader_name').value='';status.className='empStatus';status.textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';return}
-  if(!Object.keys(EMPIDX).length){
-    status.className='empStatus loading';
-    status.textContent='正在讀取人員資料，完成後會自動帶入 / กำลังโหลดข้อมูลพนักงาน';
-    return;
-  }
-  const e=EMPIDX[no];
-  if(!e){$('leader_name').value='';status.className='empStatus bad';status.textContent='查無工號 '+no+'，請確認 Employee 分頁 / ไม่พบรหัสพนักงาน';return}
-  const active=String(e.status||e['狀態']||'').trim();
-  const name=e.emp_name||e['姓名']||e.name||'';
-  const dept=String(e.dept||e.department||e['部門']||e['單位']||e['課別']||'').trim();
-  // 職稱與部門必須分開：只接受幹部職稱，不再把「加工課」帶入幹部角色。
-  const leaderWords=['副課長','課長','組長','班長','代理'];
-  const explicitCandidates=[
-    e.job_title,e.position,e.title,e.leader_role,
-    e['職稱'],e['職務'],e['職位'],e['幹部角色'],e['角色'],e.role
-  ].map(v=>String(v||'').trim()).filter(Boolean);
-  let role='';
-  for(const candidate of explicitCandidates){
-    role=leaderWords.find(word=>candidate.includes(word))||'';
-    if(role)break;
-  }
-  // Employee 舊資料若只有部門而沒有正確職稱，使用已確認的幹部工號補正。
-  const knownLeaderRole={
+function employeeRole_(e,no){
+  const fixed={
     '11035':'課長',
     '10385':'副課長',
     '10974':'班長',
     '10649':'班長',
     '41440':'班長'
   };
-  if(!role)role=knownLeaderRole[no]||'';
+  if(fixed[no]) return fixed[no];
+  const candidates=[e['職稱'],e.job_title,e.title,e['職務'],e['角色'],e.role,e.position];
+  const all=Object.values(e||{}).map(v=>String(v||'').trim()).filter(Boolean);
+  const source=candidates.concat(all).join('｜');
+  if(source.includes('副課長')) return '副課長';
+  if(source.includes('課長')) return '課長';
+  if(source.includes('組長')) return '組長';
+  if(source.includes('班長')) return '班長';
+  if(source.includes('代理')) return '代理';
+  return '';
+}
+function employeeDept_(e){
+  return String(e.dept||e.department||e['部門']||e['課別']||'').trim();
+}
+function selectLeaderRole_(role){
+  const sel=$('leader_role');
+  if(!sel||!role)return false;
+  for(let i=0;i<sel.options.length;i++){
+    const zh=sel.options[i].text.split('/')[0].trim();
+    if(zh===role){sel.selectedIndex=i;sel.value=sel.options[i].value;return true}
+  }
+  const opt=document.createElement('option');
+  opt.textContent=role;opt.value=role;sel.appendChild(opt);sel.value=role;
+  return true;
+}
+function fillEmp(){
+  const no=norm($('emp_no').value);
+  const status=$('empStatus');
+  if(!no){$('leader_name').value='';status.className='empStatus';status.textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';return}
+  const e=EMPIDX[no];
+  if(!e){$('leader_name').value='';status.className='empStatus bad';status.textContent='尚未找到工號，請確認人員資料已讀取 / ไม่พบรหัสพนักงาน';return}
+  const active=String(e.status||e['狀態']||'').trim();
+  const name=String(e.emp_name||e['姓名']||e.name||'').trim();
+  const role=employeeRole_(e,no);
+  const dept=employeeDept_(e);
   if(name){$('leader_name').value=name;$('leader_name').classList.add('fieldFlash');setTimeout(()=>$('leader_name').classList.remove('fieldFlash'),700)}
-  if(role){
-    const sel=$('leader_role');let matched=false;
-    for(let i=0;i<sel.options.length;i++){
-      const zh=sel.options[i].text.split('/')[0].trim();
-      if(sel.options[i].text.includes(role)||role.includes(zh)||zh.includes(role)){sel.selectedIndex=i;matched=true;break}
-    }
-    if(!matched){
-      const opt=document.createElement('option');opt.textContent=role+' / ตำแหน่ง';opt.value=role;sel.appendChild(opt);sel.value=role;
-    }
-    sel.classList.add('fieldFlash');setTimeout(()=>sel.classList.remove('fieldFlash'),700)
-  }
-  if(!role){
-    status.className='empStatus bad';
-    status.textContent='已找到 '+(name||no)+'，但 Employee 未設定幹部職稱，請補上課長／副課長／組長／班長 / พบชื่อแล้วแต่ยังไม่มีตำแหน่งหัวหน้า';
-    return;
-  }
+  if(role){selectLeaderRole_(role);$('leader_role').classList.add('fieldFlash');setTimeout(()=>$('leader_role').classList.remove('fieldFlash'),700)}
+  else{status.className='empStatus bad';status.textContent='已找到 '+(name||no)+'，但 Employee 尚未設定幹部職稱 / พบพนักงานแล้วแต่ยังไม่ได้ตั้งตำแหน่งหัวหน้า';return}
   status.className='empStatus ok';
   status.textContent='✓ 已帶入：'+(name||no)+'｜'+role+(dept?'｜'+dept:'')+(active?'｜'+active:'');
 }
@@ -304,7 +294,6 @@ async function loadBootstrap(){
     ]);
     ALL_TARGETS=t.targets||t.rows||t.data||t.list||[];
     normalizeEmployees(e.employees||e.rows||e.data||e.list||[]);
-    if($('emp_no').value) fillEmp();
     applyRange();
     $('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆；配對與工單清單背景載入中。';
     toast('目標/人員讀取完成');
@@ -317,7 +306,7 @@ async function loadBootstrap(){
 }
 
 let __lookupSeq=0;
-function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();if(searchBtn){searchBtn.disabled=false;searchBtn.textContent='搜尋 / ค้นหา'}return}lookupTimer=setTimeout(lookupOrder,550)}
+function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();return}lookupTimer=setTimeout(lookupOrder,550)}
 function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號或料號後才查資料。'}
 function renderSearchProgress(percent,step){
   $('lookupBox').className='found';
@@ -355,7 +344,7 @@ async function lookupOrder(){
     window.__TARGET_LOOKUP_ROWS=rows;
     $('lookupBox').className='found searchDone';
     $('lookupBox').innerHTML='<b>✓ 搜尋完成，共找到 '+rows.length+' 筆關聯資料，請選擇：</b><div style="max-height:300px;overflow:auto;margin-top:8px">'+rows.slice(0,100).map((r,i)=>'<div class="listitem" onclick="selectLookupRow('+i+')"><b>'+esc(r.work_order_no||r.command_no||r.order_no||r.report_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'</span><br><span class="muted">料號：'+esc(r.part_no||r.output_part_no||r.input_part_no||'-')+'｜客戶：'+esc(r.customer||'-')+'｜規格：'+esc(r.product_spec||'-')+'</span></div>').join('')+'</div>';
-  }catch(e){if(seq!==__lookupSeq)return;$('lookupBox').className='found warn';$('lookupBox').innerHTML='<b>搜尋失敗：</b>'+esc(e.message)+'<br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>'}finally{if(searchBtn){searchBtn.disabled=false;searchBtn.textContent='搜尋 / ค้นหา'}}
+  }catch(e){if(seq!==__lookupSeq)return;$('lookupBox').className='found warn';$('lookupBox').innerHTML='<b>搜尋失敗：</b>'+esc(e.message)+'<br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>'}
 }
 function selectLookupRow(i){
   const rows=window.__TARGET_LOOKUP_ROWS||[];
@@ -596,14 +585,8 @@ function setScheduleMode(mode){
   SCHEDULE_MODE=mode==='multi'?'multi':'single';
   $('modeSingle').className='modeBtn'+(SCHEDULE_MODE==='single'?' active':'');
   $('modeMulti').className='modeBtn'+(SCHEDULE_MODE==='multi'?' active':'');
-  $('modeSingle').setAttribute('aria-pressed',SCHEDULE_MODE==='single'?'true':'false');
-  $('modeMulti').setAttribute('aria-pressed',SCHEDULE_MODE==='multi'?'true':'false');
   $('multiFields').className='multiFields'+(SCHEDULE_MODE==='multi'?' show':'');
-  const notice=$('multiModeNotice');if(notice)notice.className='multiModeNotice'+(SCHEDULE_MODE==='multi'?' show':'');
-  if(SCHEDULE_MODE==='multi'){
-    syncMultiStart();updateMultiSummary();
-    setTimeout(()=>{const box=$('multiFields');if(box)box.scrollIntoView({behavior:'smooth',block:'nearest'})},80);
-  }
+  if(SCHEDULE_MODE==='multi'){syncMultiStart();updateMultiSummary()}
 }
 function syncMultiStart(){if(!$('multi_start'))return;const d=$('report_date').value||today();if(!$('multi_start').value)$('multi_start').value=d;if(!$('multi_end').value)$('multi_end').value=d;updateMultiSummary()}
 function enumerateDates(start,end){const a=dateKey(start),b=dateKey(end);if(!a||!b||a>b)return[];const rows=[];let d=a;while(d<=b&&rows.length<366){rows.push(d);d=addDays(d,1)}return rows}
@@ -647,9 +630,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('rangeHint').textContent='目前：今日 '+$('rangeStart').value+' ~ '+$('rangeEnd').value;
   setScheduleMode('single');
   updateMultiSummary();
-  $('modeSingle').addEventListener('click',()=>setScheduleMode('single'));
-  $('modeMulti').addEventListener('click',()=>setScheduleMode('multi'));
-  $('emp_no').addEventListener('change',fillEmp);
   loadBootstrap();
 });
 
