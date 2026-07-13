@@ -4074,17 +4074,17 @@ document.addEventListener("DOMContentLoaded",function(){
 </style>
 
 
-<!-- Build 0054｜核心缺產速判斷修正 -->
+<!-- Build 0055｜核心缺產速判斷修正 -->
 <script id="build0054-core-missing-speed">
 (function(){
   "use strict";
 
   function updateBuildLabel(){
-    document.title = "SEAL KING Smart APS｜Build 0054";
+    document.title = "SEAL KING Smart APS｜Build 0055";
     document.querySelectorAll(".header-time small,.version").forEach(function(el){
       const t = String(el.textContent || "");
       if(/Build\s*00\d+|Enterprise Preview/i.test(t)){
-        el.textContent = "Enterprise Preview 2｜Build 0054";
+        el.textContent = "Enterprise Preview 2｜Build 0055";
       }
     });
   }
@@ -5132,52 +5132,38 @@ document.addEventListener("DOMContentLoaded",function(){
 .ml-bar{width:90px;height:7px;background:#26343e;border-radius:99px;overflow:hidden;display:inline-block}.ml-bar i{display:block;height:100%;background:linear-gradient(90deg,#ef7d13,#3c9d45)}
 .ml-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.ml-status.high{background:#123a2b;color:#79e2af}.ml-status.ai{background:#17324e;color:#9bceff}.ml-status.pending{background:#49360e;color:#ffd77a}
 .ml-machine-detail{font-size:11px;color:#9eabb9;margin-top:4px;white-space:normal;line-height:1.5}
+
+.ml-decision{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.ml-decision.accepted{background:#123a2b;color:#79e2af}.ml-decision.ignored{background:#3b2327;color:#ff9ba3}.ml-decision.auto{background:#17324e;color:#9bceff}
+.ml-auto-box{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#0b141d;border:1px solid #303d4b;border-radius:10px;padding:11px 13px;margin:12px 0}.ml-auto-box input[type=number]{width:90px;background:#071526;color:#fff;border:1px solid #354555;border-radius:8px;padding:8px}.ml-auto-box label{margin:0;color:#dbe5ec}
 </style>
 <script id="v84-machine-learning-script">
 (function(){
-  const ML={rows:[],filter:"all",loading:false};
+  const ML={rows:[],decisions:{},filter:"all",loading:false,settings:{enabled:false,threshold:90}};
   const API=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  function jsonp(action,params={}){return new Promise((resolve,reject)=>{const cb="ML84_"+Date.now()+"_"+Math.floor(Math.random()*999999);const s=document.createElement("script");const timer=setTimeout(()=>{cleanup();reject(new Error("讀取逾時"));},45000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=r=>{cleanup();r&&r.ok===false?reject(new Error(r.message||"API error")):resolve(r||{})};s.onerror=()=>{cleanup();reject(new Error("雲端連線失敗"))};s.src=API+"?"+new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params));document.head.appendChild(s);});}
+  function jsonp(action,params={}){return new Promise((resolve,reject)=>{const cb="ML843_"+Date.now()+"_"+Math.floor(Math.random()*999999);const s=document.createElement("script");const timer=setTimeout(()=>{cleanup();reject(new Error("讀取逾時"));},45000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=r=>{cleanup();r&&r.ok===false?reject(new Error(r.message||"API error")):resolve(r||{})};s.onerror=()=>{cleanup();reject(new Error("雲端連線失敗"))};s.src=API+"?"+new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params));document.head.appendChild(s);});}
   function statusClass(s){return s==="高信心建議"?"high":s==="AI 建議"?"ai":"pending"}
+  function decisionBadge(key){const d=ML.decisions[key];if(!d)return "";if(d.decision==="accepted")return '<span class="ml-decision accepted">課長已接受</span>';if(d.decision==="auto_applied")return '<span class="ml-decision auto">系統已套用</span>';if(d.decision==="ignored")return '<span class="ml-decision ignored">已忽略</span>';return "";}
+  function ensureAutoBox(){const card=$("machineLearningCard");if(!card||$("mlAutoBox"))return;const box=document.createElement("div");box.id="mlAutoBox";box.className="ml-auto-box";box.innerHTML='<label><input id="mlAutoEnabled" type="checkbox"> 高信心建議自動建立正式規則</label><label>門檻 <input id="mlAutoThreshold" type="number" min="50" max="100" value="90"> %</label><button class="btn ghost" id="mlSaveAuto">儲存設定</button><button class="btn yellow" id="mlAutoApplyNow">立即套用符合條件項目</button><span id="mlAutoMsg" class="hint"></span>';const k=card.querySelector('.center-kpis');card.insertBefore(box,k||card.firstChild);$("mlSaveAuto").onclick=saveAutoSettings;$("mlAutoApplyNow").onclick=autoApplyNow;}
   function render(){
-    const box=$("mlTable");if(!box)return;
-    let rows=ML.rows.slice();
+    const box=$("mlTable");if(!box)return;let rows=ML.rows.slice();
     if(ML.filter==="high")rows=rows.filter(r=>r.status==="高信心建議");
     if(ML.filter==="pending")rows=rows.filter(r=>r.status==="待累積");
     if(!rows.length){box.className="empty";box.textContent="目前沒有符合條件的機台學習資料";return;}
     box.className="tablewrap";
-    box.innerHTML='<table><thead><tr><th>料號／規格</th><th>製程</th><th>主機台</th><th>可共用機台</th><th>樣本</th><th>實測產速</th><th>信心值</th><th>狀態</th><th>最近使用</th><th>操作</th></tr></thead><tbody>'+rows.map((r,i)=>{
-      const detail=(r.machine_detail||[]).map(m=>esc(m.machine)+" "+m.count+"次").join("、");
-      return '<tr><td><b>'+esc(r.part_no||"-")+'</b><div class="ml-machine-detail">'+esc(r.product_spec||"")+'</div></td><td>'+esc(r.process||"-")+'</td><td><b>'+esc(r.primary_machine||"-")+'</b><div class="ml-machine-detail">主機 '+Number(r.primary_count||0)+' 次</div></td><td>'+esc(r.shared_machines||"-")+'<div class="ml-machine-detail">'+detail+'</div></td><td>'+Number(r.total_samples||0)+' 筆<div class="ml-machine-detail">Target '+Number(r.target_samples||0)+'／Key In '+Number(r.keyin_samples||0)+'</div></td><td><div class="ml-confidence"><b>'+Number(r.confidence||0)+'%</b><span class="ml-bar"><i style="width:'+Math.max(0,Math.min(100,Number(r.confidence||0)))+'%"></i></span></div></td><td><span class="ml-status '+statusClass(r.status)+'">'+esc(r.status||"-")+'</span></td><td>'+esc(r.last_used_date||"-")+'</td><td><button class="btn ghost" data-ml-use="'+i+'">帶入規則</button></td></tr>';
-    }).join("")+'</tbody></table>';
-    box.querySelectorAll("[data-ml-use]").forEach((b,idx)=>b.addEventListener("click",()=>useAsRule(rows[Number(b.dataset.mlUse)])));
+    box.innerHTML='<table><thead><tr><th>料號／規格</th><th>製程</th><th>主機台</th><th>可共用機台</th><th>樣本</th><th>實測產速</th><th>信心值</th><th>學習狀態</th><th>確認狀態</th><th>最近使用</th><th>操作</th></tr></thead><tbody>'+rows.map((r,i)=>{const detail=(r.machine_detail||[]).map(m=>esc(m.machine)+" "+m.count+"次").join("、");const speed=Number(r.cycle_output||0)>0&&Number(r.cycle_minutes||0)>0?(Number(r.cycle_output).toLocaleString()+" "+esc(r.cycle_unit||"R")+" / "+Number(r.cycle_minutes).toFixed(2)+" 分<br><span class=\"ml-machine-detail\">約 "+Number(r.output_per_hour||0).toFixed(1)+" /小時</span>"):"—";const d=ML.decisions[r.learning_key];let ops='';if(d&&d.decision==="ignored")ops='<button class="btn ghost" data-ml-restore="'+i+'">恢復建議</button>';else if(d&&(d.decision==="accepted"||d.decision==="auto_applied"))ops='<button class="btn ghost" data-ml-restore="'+i+'">重新評估</button>';else ops='<button class="btn green" data-ml-accept="'+i+'">接受並建立規則</button><button class="btn ghost" data-ml-use="'+i+'">先帶入表單</button><button class="btn red" data-ml-ignore="'+i+'">忽略</button>';return '<tr><td><b>'+esc(r.part_no||"-")+'</b><div class="ml-machine-detail">'+esc(r.product_spec||"")+'</div></td><td>'+esc(r.process||"-")+'</td><td><b>'+esc(r.primary_machine||"-")+'</b><div class="ml-machine-detail">主機 '+Number(r.primary_count||0)+' 次</div></td><td>'+esc(r.shared_machines||"-")+'<div class="ml-machine-detail">'+detail+'</div></td><td>'+Number(r.total_samples||0)+' 筆<div class="ml-machine-detail">Target '+Number(r.target_samples||0)+'／Key In '+Number(r.keyin_samples||0)+'</div></td><td>'+speed+'</td><td><div class="ml-confidence"><b>'+Number(r.confidence||0)+'%</b><span class="ml-bar"><i style="width:'+Math.max(0,Math.min(100,Number(r.confidence||0)))+'%"></i></span></div></td><td><span class="ml-status '+statusClass(r.status)+'">'+esc(r.status||"-")+'</span></td><td>'+decisionBadge(r.learning_key)+'</td><td>'+esc(r.last_used_date||"-")+'</td><td><div class="actions" style="margin:0">'+ops+'</div></td></tr>';}).join("")+'</tbody></table>';
+    box.querySelectorAll('[data-ml-use]').forEach(b=>b.onclick=()=>useAsRule(rows[Number(b.dataset.mlUse)]));box.querySelectorAll('[data-ml-accept]').forEach(b=>b.onclick=()=>accept(rows[Number(b.dataset.mlAccept)],b));box.querySelectorAll('[data-ml-ignore]').forEach(b=>b.onclick=()=>ignore(rows[Number(b.dataset.mlIgnore)],b));box.querySelectorAll('[data-ml-restore]').forEach(b=>b.onclick=()=>restore(rows[Number(b.dataset.mlRestore)],b));
   }
-  function useAsRule(r){
-    if(!r)return;
-    const set=(id,v)=>{const e=$(id);if(e)e.value=v??""};
-    set("mrName",(r.part_no||r.product_spec||"現場學習")+" "+(r.process||"")+" 共用規則");
-    set("mrMatchType",r.part_no?"exact":"contains");set("mrPartPattern",r.part_no||r.product_spec||"");set("mrProcess",r.process||"其他");set("mrPrimaryMachine",r.primary_machine||"");
-    const shared=[r.primary_machine].concat(String(r.shared_machines||"").split(",")).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);set("mrSharedMachines",shared.join(","));
-    set("mrNote","由 V84 現場學習建議帶入；樣本 "+Number(r.total_samples||0)+" 筆，信心值 "+Number(r.confidence||0)+"%。請課長確認後儲存。");
-    const card=$("mrFormCard");if(card)card.scrollIntoView({behavior:"smooth",block:"start"});
-    const msg=$("mrFormMsg");if(msg)msg.textContent="已帶入現場學習建議，請檢查限制後再儲存正式規則。";
-  }
-  async function refreshCloud(){
-    const p=$("mlProgress"),btn=$("mlRefreshCloud");if(btn){btn.disabled=true;btn.textContent="更新中…"}if(p)p.textContent="正在重建 Machine_Learning 雲端彙整表…";
-    try{const res=await jsonp("machinelearningrefresh",{});if(p)p.textContent="雲端學習表更新完成：寫入 "+Number(res.written||0)+" 個群組。";await load();}
-    catch(e){if(p)p.textContent="更新失敗："+e.message;}
-    finally{if(btn){btn.disabled=false;btn.textContent="更新雲端學習表"}}
-  }
-  async function load(){
-    if(ML.loading)return;ML.loading=true;const p=$("mlProgress");const btn=$("mlReload");if(btn){btn.disabled=true;btn.textContent="讀取中…"}if(p)p.textContent="正在彙整 Target 與 Key In 機台歷史…";
-    try{const res=await jsonp("machinelearningsummary",{limit:500,min_samples:1});ML.rows=Array.isArray(res.rows)?res.rows:[];const s=res.summary||{};if($("mlHistoryRows"))$("mlHistoryRows").textContent=Number(s.history_rows||0);if($("mlGroups"))$("mlGroups").textContent=Number(s.learning_groups||ML.rows.length);if($("mlHigh"))$("mlHigh").textContent=Number(s.high_confidence||0);if($("mlPending"))$("mlPending").textContent=Number(s.pending||0);if(p)p.textContent="學習完成：共 "+ML.rows.length+" 個料號／規格製程群組。";render();}
-    catch(e){if(p)p.textContent="讀取失敗："+e.message;const box=$("mlTable");if(box){box.className="empty";box.textContent="無法讀取雲端學習資料，請確認 Apps Script 已更新並重新部署。"}}
-    finally{ML.loading=false;if(btn){btn.disabled=false;btn.textContent="重新讀取學習資料"}}
-  }
-  document.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{const b=$("mlReload");if(b)b.addEventListener("click",load);const rb=$("mlRefreshCloud");if(rb)rb.addEventListener("click",refreshCloud);document.querySelectorAll(".ml-filter").forEach(x=>x.addEventListener("click",()=>{document.querySelectorAll(".ml-filter").forEach(y=>y.classList.remove("active"));x.classList.add("active");ML.filter=x.dataset.mlFilter||"all";render();}));load();},1800);});
-  window.APSMachineLearningV84={load,refreshCloud,render,state:ML};
+  function useAsRule(r){if(!r)return;const set=(id,v)=>{const e=$(id);if(e)e.value=v??""};set("mrName",(r.part_no||r.product_spec||"現場學習")+" "+(r.process||"")+" 共用規則");set("mrMatchType",r.part_no?"exact":"contains");set("mrPartPattern",r.part_no||r.product_spec||"");set("mrProcess",r.process||"其他");set("mrPrimaryMachine",r.primary_machine||"");const shared=[r.primary_machine].concat(String(r.shared_machines||"").split(",")).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);set("mrSharedMachines",shared.join(","));set("mrNote","由 V84.3 現場學習建議帶入；樣本 "+Number(r.total_samples||0)+" 筆，信心值 "+Number(r.confidence||0)+"%。請課長確認後儲存。");const card=$("mrFormCard");if(card)card.scrollIntoView({behavior:"smooth",block:"start"});const msg=$("mrFormMsg");if(msg)msg.textContent="已帶入現場學習建議，請檢查限制後再儲存正式規則。";}
+  async function accept(r,b){if(!r||!confirm("接受此 AI 建議並建立正式共用規則？"))return;const old=b.textContent;b.disabled=true;b.textContent="建立中…";try{await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});await load();if(window.loadMachineRules)window.loadMachineRules();}catch(e){alert("建立失敗："+e.message);}finally{b.disabled=false;b.textContent=old;}}
+  async function ignore(r,b){if(!r||!confirm("忽略此建議？之後可恢復。"))return;b.disabled=true;try{await jsonp("machinelearningignore",{learning_key:r.learning_key,by:"11035"});await load();}catch(e){alert("忽略失敗："+e.message);}finally{b.disabled=false;}}
+  async function restore(r,b){if(!r)return;b.disabled=true;try{await jsonp("machinelearningrestore",{learning_key:r.learning_key});await load();}catch(e){alert("恢復失敗："+e.message);}finally{b.disabled=false;}}
+  async function refreshCloud(){const p=$("mlProgress"),btn=$("mlRefreshCloud");if(btn){btn.disabled=true;btn.textContent="更新中…"}if(p)p.textContent="正在重建 Machine_Learning 雲端彙整表…";try{const res=await jsonp("machinelearningrefresh",{});if(p)p.textContent="雲端學習表更新完成：寫入 "+Number(res.written||0)+" 個群組。";await load();}catch(e){if(p)p.textContent="更新失敗："+e.message;}finally{if(btn){btn.disabled=false;btn.textContent="更新雲端學習表"}}}
+  async function load(){if(ML.loading)return;ML.loading=true;ensureAutoBox();const p=$("mlProgress"),btn=$("mlReload");if(btn){btn.disabled=true;btn.textContent="讀取中…"}if(p)p.textContent="正在彙整 Target 與 Key In 機台歷史…";try{const [res,dec,set]=await Promise.all([jsonp("machinelearningsummary",{limit:500,min_samples:1}),jsonp("machinelearningdecisions",{}),jsonp("machinelearningautosettings",{})]);ML.rows=Array.isArray(res.rows)?res.rows:[];ML.decisions={};(dec.rows||[]).forEach(x=>ML.decisions[x.learning_key]=x);ML.settings={enabled:!!set.enabled,threshold:Number(set.threshold||90)};if($("mlAutoEnabled"))$("mlAutoEnabled").checked=ML.settings.enabled;if($("mlAutoThreshold"))$("mlAutoThreshold").value=ML.settings.threshold;const s=res.summary||{};if($("mlHistoryRows"))$("mlHistoryRows").textContent=Number(s.history_rows||0);if($("mlGroups"))$("mlGroups").textContent=Number(s.learning_groups||ML.rows.length);if($("mlHigh"))$("mlHigh").textContent=Number(s.high_confidence||0);if($("mlPending"))$("mlPending").textContent=Number(s.pending||0);if(p)p.textContent="學習完成：共 "+ML.rows.length+" 個料號／規格製程群組。";render();}catch(e){if(p)p.textContent="讀取失敗："+e.message;const box=$("mlTable");if(box){box.className="empty";box.textContent="無法讀取雲端學習資料，請確認 Apps Script 已更新並重新部署。"}}finally{ML.loading=false;if(btn){btn.disabled=false;btn.textContent="重新讀取學習資料"}}}
+  async function saveAutoSettings(){const msg=$("mlAutoMsg"),btn=$("mlSaveAuto");btn.disabled=true;try{const res=await jsonp("machinelearningsaveautosettings",{enabled:$("mlAutoEnabled").checked?"Y":"N",threshold:$("mlAutoThreshold").value});msg.textContent="已儲存："+(res.enabled?"開啟":"關閉")+"，門檻 "+res.threshold+"%。";}catch(e){msg.textContent="儲存失敗："+e.message;}finally{btn.disabled=false;}}
+  async function autoApplyNow(){if(!confirm("立即依目前門檻建立符合條件的正式規則？"))return;const msg=$("mlAutoMsg"),btn=$("mlAutoApplyNow");btn.disabled=true;btn.textContent="套用中…";try{const res=await jsonp("machinelearningautoapplynow",{force:"Y",threshold:$("mlAutoThreshold").value});msg.textContent="完成：套用 "+Number(res.applied||0)+" 筆，略過 "+Number(res.skipped||0)+" 筆。";await load();if(window.loadMachineRules)window.loadMachineRules();}catch(e){msg.textContent="套用失敗："+e.message;}finally{btn.disabled=false;btn.textContent="立即套用符合條件項目";}}
+  document.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{ensureAutoBox();const b=$("mlReload");if(b)b.addEventListener("click",load);const rb=$("mlRefreshCloud");if(rb)rb.addEventListener("click",refreshCloud);document.querySelectorAll(".ml-filter").forEach(x=>x.addEventListener("click",()=>{document.querySelectorAll(".ml-filter").forEach(y=>y.classList.remove("active"));x.classList.add("active");ML.filter=x.dataset.mlFilter||"all";render();}));load();},1800);});window.APSMachineLearningV843={load,refreshCloud,render,state:ML};
 })();
 </script>
 
