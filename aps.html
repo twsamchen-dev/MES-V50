@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SEAL KING Smart APS｜Build 0048 V82.5 APS Core</title>
 <style>
-:root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
+:root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;-a-purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
 header{position:sticky;top:0;z-index:10;background:#07111fe8;border-bottom:1px solid var(--line);backdrop-filter:blur(12px);padding:15px 22px;display:flex;justify-content:space-between;align-items:center}.brand h1{font-size:22px;margin:0}.brand p{margin:4px 0 0;color:var(--muted);font-size:12px}.version{background:#183b63;border:1px solid #2e5b87;border-radius:999px;padding:7px 12px;font-size:12px}
 main{max-width:1550px;margin:auto;padding:18px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tab{border:1px solid var(--line);background:#0b1728;color:var(--muted);padding:10px 14px;border-radius:10px;cursor:pointer}.tab.active{background:linear-gradient(135deg,#1b62a5,#17467a);color:white;border-color:#3b83c5}.page{display:none}.page.active{display:block}
@@ -892,7 +892,7 @@ body::after{
 
 <section id="speedFeedback" class="page"><div class="grid">
   <div class="card col12 speed-health">
-    <div class="page-toolbar"><div><div class="section-kicker">SPEED MASTER HEALTH</div><h2>產速主檔／回數回饋中心</h2><div class="sub">排程以「所需回數 × 每回時間」計算。ERP 出現新料號或產速資料不足時，會自動加入待測清單。</div></div><div class="actions"><button class="btn ghost" id="exportSpeedFeedback">匯出產速備份 CSV</button><button class="btn ghost" id="exportSpeedJSON">匯出永久備份</button><button class="btn ghost" id="importSpeedJSON">匯入永久備份</button><input id="importSpeedJSONFile" type="file" accept=".json" hidden><button class="btn" id="refreshSpeedFeedback">重新檢查</button></div></div>
+    <div class="page-toolbar"><div><div class="section-kicker">SPEED MASTER HEALTH</div><h2>產速主檔／Key In 共用回數回饋中心</h2><div class="sub">排程以「所需回數 × 每回時間」計算。Key In 現場輸入的一回產量與每回分鐘數會寫入同一雲端資料，APS 開啟後自動載入。</div></div><div class="actions"><button class="btn ghost" id="exportSpeedFeedback">匯出產速備份 CSV</button><button class="btn ghost" id="exportSpeedJSON">匯出永久備份</button><button class="btn ghost" id="importSpeedJSON">匯入永久備份</button><input id="importSpeedJSONFile" type="file" accept=".json" hidden><button class="btn" id="refreshSpeedFeedback">重新檢查</button></div></div>
     <div class="speed-kpis"><div><span>產速主檔</span><b id="speedMasterCount">0</b><small>有效料號＋機台組合</small></div><div><span>缺少產速</span><b id="speedMissingCount" class="danger-text">0</b><small>目前不可自動排程</small></div><div><span>現場回饋</span><b id="speedFeedbackCount">0</b><small>永久保留，可修改</small></div><div><span>可排率</span><b id="speedCoverage">0%</b><small>未結案工單產速覆蓋率</small></div></div>
   </div>
   <div class="card col12" id="missingSpeedCard"><h2>待測／缺少產速清單</h2><div class="sub">點「帶入回饋」會把工單的料號、製程與建議機台填入右側表單。</div><div id="missingSpeedTable" class="empty">請先上傳資料並建立工單池。</div></div>
