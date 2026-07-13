@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V70.3 MES 生產 Key In Enterprise Stable</title>
+<title>V82.6 MES 生產 Key In｜Unified Order Index</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -36,7 +36,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V70.3 MES Enterprise Stable</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V82.6 Unified Order Index</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -73,7 +73,7 @@
       <option value="重工">重工 / งานแก้ไข</option>
       <option value="其他">其他 / อื่นๆ</option>
     </select>
-    <label>工單號（12碼主工單）/ เลขที่ใบงาน</label><input id="work_order_no" placeholder="例如 MM2605060026" oninput="lookupWO()">
+    <label>工單／訂單／命令單／日報／批號 / เลขที่งาน</label><input id="work_order_no" placeholder="例如 MM2605060026 或 202607010036" oninput="lookupWO()">
     <label>生產批號 / Lot / ล็อตผลิต</label><input id="batch_no" disabled placeholder="由工單自動帶入">
     <div id="woMsg" class="alert">請先讀取最新工單，再輸入工單號。 / กรุณาโหลดงานล่าสุดก่อน แล้วกรอกเลขที่ใบงาน</div>
     <div class="okbox">
@@ -176,8 +176,12 @@ function sourceObj(r){
   const command = firstNonEmpty(r.command_no,r.work_order_no,r['命令單號'],r['工單號'],r['單號']);
   const orderNo = firstNonEmpty(r.order_no,r['訂單單號'],r['訂單號'],r['客戶訂單']);
   const reportNo = firstNonEmpty(r.daily_report_no,r.report_no,r['日報號'],r['日報單號'],r['部門日報號']);
-  const partNo = firstNonEmpty(r.part_no,r['料號'],r['品號'],r['產出料號'],r['投入料號']);
-  const batchNo = firstNonEmpty(r.batch_no,r['生產批號'],r['批號'],r['製號'],r['產出製號'],r['投入製號']);
+  const inputPartNo = firstNonEmpty(r.input_part_no,r['投入料號'],r['耗用料號']);
+  const outputPartNo = firstNonEmpty(r.output_part_no,r['產出料號'],r['料品編號'],r['產品料號']);
+  const partNo = firstNonEmpty(r.part_no,r['料號'],r['品號'],outputPartNo,inputPartNo);
+  const inputLotNo = firstNonEmpty(r.input_lot_no,r['投入製號'],r['耗用製號']);
+  const outputLotNo = firstNonEmpty(r.output_lot_no,r['產出製號'],r['製號']);
+  const batchNo = firstNonEmpty(r.batch_no,r['生產批號'],r['批號'],outputLotNo,inputLotNo);
   const customer = firstNonEmpty(r.customer,r['客戶'],r['客戶別'],r['客戶名稱']);
   const spec = firstNonEmpty(r.product_spec,r['產品規格'],r['規格'],r['品名規格'],r['品名']);
   const machine = firstNonEmpty(r.machine,r.machine_code,r['機台'],r['機台編號'],r['設備']);
@@ -189,6 +193,10 @@ function sourceObj(r){
     daily_report_no: String(reportNo||'').trim(),
     report_no: String(reportNo||'').trim(),
     part_no: String(partNo||'').trim(),
+    input_part_no: String(inputPartNo||'').trim(),
+    output_part_no: String(outputPartNo||'').trim(),
+    input_lot_no: String(inputLotNo||'').trim(),
+    output_lot_no: String(outputLotNo||'').trim(),
     batch_no: String(batchNo||'').trim(),
     customer: String(customer||'').trim(),
     product_spec: String(spec||'').trim(),
@@ -278,7 +286,7 @@ function parseRawSourceToObj(r){
   };
 }
 function sourceMatch(x,key){
-  const hay=[x.work_order_no,x.command_no,x.order_no,x.daily_report_no,x.report_no,x.part_no,x.batch_no,x.customer,x.product_spec,x.process,x.machine_code,x.raw_text].join('｜');
+  const hay=[x.work_order_no,x.command_no,x.order_no,x.daily_report_no,x.report_no,x.part_no,x.input_part_no,x.output_part_no,x.batch_no,x.input_lot_no,x.output_lot_no,x.customer,x.product_spec,x.process,x.machine_code,x.raw_text].join('｜');
   return nrm(hay).includes(nrm(key));
 }
 let __lookupTimer=null;
@@ -292,7 +300,8 @@ async function lookupWOAsync(){
     box.innerHTML='工單資料尚未載入。請先按「讀取最新工單」。';
     return;
   }
-  let r=App.source.find(x=>sourceMatch(x,key));
+  let matches=App.source.filter(x=>sourceMatch(x,key));
+  let r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0];
 
   if(!r && key.length>=8){
     try{
@@ -302,7 +311,7 @@ async function lookupWOAsync(){
       const rows=rowsOf(res).map(x=>sourceObj(parseRawSourceToObj(x)));
       if(rows.length){
         rows.forEach(x=>App.source.push(x));
-        r=rows.find(x=>sourceMatch(x,key))||rows[0];
+        matches=rows.filter(x=>sourceMatch(x,key));r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0]||rows[0];
       }
     }catch(e){
       console.warn('targetorderlist fallback failed',e);
@@ -334,7 +343,8 @@ async function lookupWOAsync(){
     +'命令單：'+html(r.command_no||r.work_order_no||'-')+'｜訂單：'+html(r.order_no||'-')+'｜日報：'+html(r.daily_report_no||'-')+'<br>'
     +'客戶：'+html(r.customer||'-')+'｜料號：'+html(r.part_no||'-')+'<br>'
     +'規格：'+html(r.product_spec||'-')+'<br>'
-    +'站點：'+html(r.process||'-')+'｜機台：'+html(r.machine_code||'-');
+    +'站點：'+html(r.process||'-')+'｜機台：'+html(r.machine_code||'-')
+    +(matches&&matches.length>1?'<br><b>此識別碼共對應 '+matches.length+' 筆資料，已優先帶入命令單；可繼續輸入完整工單縮小結果。</b>':'');
   setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},50)
 }
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
