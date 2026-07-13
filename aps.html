@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Build 0048 V82.5 APS Core</title>
+<title>SEAL KING Smart APS｜V84 Smart Learning Build 0060</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -719,6 +719,31 @@ body::after{
       </div>
     </div>
     <div id="mrTable" class="empty">尚未建立機台共用規則</div>
+  </div>
+
+
+  <div class="card col12" id="machineLearningCard">
+    <div class="page-toolbar">
+      <div>
+        <div class="section-kicker">FIELD EXPERIENCE LEARNING</div>
+        <h2>現場機台學習建議</h2>
+        <div class="sub">彙整 Target 與 Key In 實際輸入的料號、規格、製程與機台紀錄。建議只供判斷，不會自動覆蓋課長確認的正式規則。</div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost ml-filter active" data-ml-filter="all">全部</button>
+        <button class="btn ghost ml-filter" data-ml-filter="high">高信心</button>
+        <button class="btn ghost ml-filter" data-ml-filter="pending">待累積</button>
+        <button class="btn" id="mlReload">重新讀取學習資料</button>
+      </div>
+    </div>
+    <div class="center-kpis" style="margin-top:12px">
+      <div class="center-kpi"><span>歷史使用筆數</span><b id="mlHistoryRows">0</b></div>
+      <div class="center-kpi"><span>學習群組</span><b id="mlGroups">0</b></div>
+      <div class="center-kpi"><span>高信心建議</span><b id="mlHigh">0</b></div>
+      <div class="center-kpi"><span>待累積</span><b id="mlPending">0</b></div>
+    </div>
+    <div id="mlProgress" class="hint" style="margin:12px 0">尚未讀取學習資料</div>
+    <div id="mlTable" class="empty">讀取後顯示 Target／Key In 的機台學習結果。</div>
   </div>
 
   <div class="card col12">
@@ -4660,10 +4685,10 @@ document.addEventListener("DOMContentLoaded",function(){
   document.addEventListener("DOMContentLoaded",()=>setTimeout(initialLoad,1800));
   setTimeout(installButtons,2600);
 
-  document.title="SEAL KING Smart APS｜Build 0056 Cloud Knowledge";
+  document.title="SEAL KING Smart APS｜Build 0060 Smart Learning APS";
   document.querySelectorAll(".header-time small,.version").forEach(el=>{
     if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-      el.textContent="Enterprise Preview 2｜Build 0056";
+      el.textContent="V84 Smart Learning｜Build 0060";
     }
   });
 
@@ -5100,4 +5125,54 @@ document.addEventListener("DOMContentLoaded",function(){
   function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 })();
 </script>
+
+<style id="v84-machine-learning-style">
+#machineLearningCard .ml-filter.active{background:linear-gradient(135deg,#d71920,#8b0f15);color:#fff;border-color:#d71920}
+.ml-confidence{display:inline-flex;align-items:center;gap:6px}.ml-confidence b{min-width:44px}
+.ml-bar{width:90px;height:7px;background:#26343e;border-radius:99px;overflow:hidden;display:inline-block}.ml-bar i{display:block;height:100%;background:linear-gradient(90deg,#ef7d13,#3c9d45)}
+.ml-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.ml-status.high{background:#123a2b;color:#79e2af}.ml-status.ai{background:#17324e;color:#9bceff}.ml-status.pending{background:#49360e;color:#ffd77a}
+.ml-machine-detail{font-size:11px;color:#9eabb9;margin-top:4px;white-space:normal;line-height:1.5}
+</style>
+<script id="v84-machine-learning-script">
+(function(){
+  const ML={rows:[],filter:"all",loading:false};
+  const API=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  function jsonp(action,params={}){return new Promise((resolve,reject)=>{const cb="ML84_"+Date.now()+"_"+Math.floor(Math.random()*999999);const s=document.createElement("script");const timer=setTimeout(()=>{cleanup();reject(new Error("讀取逾時"));},45000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=r=>{cleanup();r&&r.ok===false?reject(new Error(r.message||"API error")):resolve(r||{})};s.onerror=()=>{cleanup();reject(new Error("雲端連線失敗"))};s.src=API+"?"+new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params));document.head.appendChild(s);});}
+  function statusClass(s){return s==="高信心建議"?"high":s==="AI 建議"?"ai":"pending"}
+  function render(){
+    const box=$("mlTable");if(!box)return;
+    let rows=ML.rows.slice();
+    if(ML.filter==="high")rows=rows.filter(r=>r.status==="高信心建議");
+    if(ML.filter==="pending")rows=rows.filter(r=>r.status==="待累積");
+    if(!rows.length){box.className="empty";box.textContent="目前沒有符合條件的機台學習資料";return;}
+    box.className="tablewrap";
+    box.innerHTML='<table><thead><tr><th>料號／規格</th><th>製程</th><th>主機台</th><th>可共用機台</th><th>樣本</th><th>信心值</th><th>狀態</th><th>最近使用</th><th>操作</th></tr></thead><tbody>'+rows.map((r,i)=>{
+      const detail=(r.machine_detail||[]).map(m=>esc(m.machine)+" "+m.count+"次").join("、");
+      return '<tr><td><b>'+esc(r.part_no||"-")+'</b><div class="ml-machine-detail">'+esc(r.product_spec||"")+'</div></td><td>'+esc(r.process||"-")+'</td><td><b>'+esc(r.primary_machine||"-")+'</b><div class="ml-machine-detail">主機 '+Number(r.primary_count||0)+' 次</div></td><td>'+esc(r.shared_machines||"-")+'<div class="ml-machine-detail">'+detail+'</div></td><td>'+Number(r.total_samples||0)+' 筆<div class="ml-machine-detail">Target '+Number(r.target_samples||0)+'／Key In '+Number(r.keyin_samples||0)+'</div></td><td><div class="ml-confidence"><b>'+Number(r.confidence||0)+'%</b><span class="ml-bar"><i style="width:'+Math.max(0,Math.min(100,Number(r.confidence||0)))+'%"></i></span></div></td><td><span class="ml-status '+statusClass(r.status)+'">'+esc(r.status||"-")+'</span></td><td>'+esc(r.last_used_date||"-")+'</td><td><button class="btn ghost" data-ml-use="'+i+'">帶入規則</button></td></tr>';
+    }).join("")+'</tbody></table>';
+    box.querySelectorAll("[data-ml-use]").forEach((b,idx)=>b.addEventListener("click",()=>useAsRule(rows[Number(b.dataset.mlUse)])));
+  }
+  function useAsRule(r){
+    if(!r)return;
+    const set=(id,v)=>{const e=$(id);if(e)e.value=v??""};
+    set("mrName",(r.part_no||r.product_spec||"現場學習")+" "+(r.process||"")+" 共用規則");
+    set("mrMatchType",r.part_no?"exact":"contains");set("mrPartPattern",r.part_no||r.product_spec||"");set("mrProcess",r.process||"其他");set("mrPrimaryMachine",r.primary_machine||"");
+    const shared=[r.primary_machine].concat(String(r.shared_machines||"").split(",")).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);set("mrSharedMachines",shared.join(","));
+    set("mrNote","由 V84 現場學習建議帶入；樣本 "+Number(r.total_samples||0)+" 筆，信心值 "+Number(r.confidence||0)+"%。請課長確認後儲存。");
+    const card=$("mrFormCard");if(card)card.scrollIntoView({behavior:"smooth",block:"start"});
+    const msg=$("mrFormMsg");if(msg)msg.textContent="已帶入現場學習建議，請檢查限制後再儲存正式規則。";
+  }
+  async function load(){
+    if(ML.loading)return;ML.loading=true;const p=$("mlProgress");const btn=$("mlReload");if(btn){btn.disabled=true;btn.textContent="讀取中…"}if(p)p.textContent="正在彙整 Target 與 Key In 機台歷史…";
+    try{const res=await jsonp("machinelearningsummary",{limit:500,min_samples:1});ML.rows=Array.isArray(res.rows)?res.rows:[];const s=res.summary||{};if($("mlHistoryRows"))$("mlHistoryRows").textContent=Number(s.history_rows||0);if($("mlGroups"))$("mlGroups").textContent=Number(s.learning_groups||ML.rows.length);if($("mlHigh"))$("mlHigh").textContent=Number(s.high_confidence||0);if($("mlPending"))$("mlPending").textContent=Number(s.pending||0);if(p)p.textContent="學習完成：共 "+ML.rows.length+" 個料號／規格製程群組。";render();}
+    catch(e){if(p)p.textContent="讀取失敗："+e.message;const box=$("mlTable");if(box){box.className="empty";box.textContent="無法讀取雲端學習資料，請確認 Apps Script 已更新並重新部署。"}}
+    finally{ML.loading=false;if(btn){btn.disabled=false;btn.textContent="重新讀取學習資料"}}
+  }
+  document.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{const b=$("mlReload");if(b)b.addEventListener("click",load);document.querySelectorAll(".ml-filter").forEach(x=>x.addEventListener("click",()=>{document.querySelectorAll(".ml-filter").forEach(y=>y.classList.remove("active"));x.classList.add("active");ML.filter=x.dataset.mlFilter||"all";render();}));load();},1800);});
+  window.APSMachineLearningV84={load,render,state:ML};
+})();
+</script>
+
 </body></html>
