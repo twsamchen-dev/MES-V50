@@ -3610,9 +3610,13 @@ document.addEventListener("DOMContentLoaded",function(){
   function getFilteredPool(){
     const pool = Array.isArray(window.S?.pool) ? window.S.pool : [];
     const ep = window.EP || {};
+    const searchInputValue =
+      document.getElementById("poolSearch")?.value ||
+      ep.poolSearch ||
+      "";
     const q = typeof window.norm === "function"
-      ? window.norm(ep.poolSearch || "")
-      : String(ep.poolSearch || "").trim().toUpperCase();
+      ? window.norm(searchInputValue)
+      : String(searchInputValue).trim().toUpperCase();
 
     return pool.filter(x=>{
       const hayRaw = [
@@ -3633,7 +3637,17 @@ document.addEventListener("DOMContentLoaded",function(){
         case "closed": return !!x.closed;
         case "urgent": return !!x.urgent;
         case "risk": return !!x.risk;
-        case "missing": return !x.closed && !x.ready;
+        case "missing": {
+          const mt = String(x.match || "");
+          return !x.closed && (
+            !x.ready ||
+            !(Number(x.minutes) > 0) ||
+            !mt ||
+            mt === "無產速" ||
+            mt.includes("缺少產速") ||
+            mt.includes("參數不足")
+          );
+        }
         default: return true;
       }
     });
@@ -3668,11 +3682,18 @@ document.addEventListener("DOMContentLoaded",function(){
     if(count) count.textContent = `顯示 ${data.length} / ${all.length} 筆`;
 
     const rows = data.map((x, idx)=>{
-      const missing = !x.ready || x.match === "無產速";
+      const matchTextRaw = String(x.match || "").trim();
+      const noSpeedMatch =
+        !matchTextRaw ||
+        matchTextRaw === "無產速" ||
+        matchTextRaw.includes("缺少產速") ||
+        matchTextRaw.includes("參數不足");
+      const noCalculatedTime = !(Number(x.minutes) > 0);
+      const missing = !x.ready || noSpeedMatch || noCalculatedTime;
       const mode = missing ? "待補產速" : (x.apsMode || "ROUND");
       const matchClass = missing ? "red" :
-        x.match === "現場回饋" ? "purple" :
-        String(x.match || "").includes("精確") ? "green" : "yellow";
+        matchTextRaw === "現場回饋" ? "purple" :
+        matchTextRaw.includes("精確") ? "green" : "yellow";
 
       const action = missing
         ? `<button class="btn red" style="padding:5px 9px;font-size:12px"
@@ -3807,5 +3828,49 @@ document.addEventListener("DOMContentLoaded",function(){
 #poolTable .btn.red{white-space:nowrap}
 #poolTable .hint{font-size:11px;color:#fca5a5}
 </style>
+
+
+<!-- Build 0054｜核心缺產速判斷修正 -->
+<script id="build0054-core-missing-speed">
+(function(){
+  "use strict";
+
+  function updateBuildLabel(){
+    document.title = "SEAL KING Smart APS｜Build 0054";
+    document.querySelectorAll(".header-time small,.version").forEach(function(el){
+      const t = String(el.textContent || "");
+      if(/Build\s*00\d+|Enterprise Preview/i.test(t)){
+        el.textContent = "Enterprise Preview 2｜Build 0054";
+      }
+    });
+  }
+
+  function syncSearchBinding(){
+    const input = document.getElementById("poolSearch");
+    if(input && !input.dataset.build0054){
+      input.dataset.build0054 = "1";
+      input.addEventListener("input", function(){
+        if(window.EP) window.EP.poolSearch = input.value;
+        window.renderPool?.();
+      });
+    }
+  }
+
+  function install(){
+    updateBuildLabel();
+    syncSearchBinding();
+    setTimeout(function(){
+      updateBuildLabel();
+      syncSearchBinding();
+      window.renderPool?.();
+    }, 3800);
+  }
+
+  document.addEventListener("DOMContentLoaded", install);
+  setTimeout(install, 1800);
+
+  window.Build0054CoreMissingSpeed = { install };
+})();
+</script>
 
 </body></html>
