@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0067 V87 APS Core Stable";
+  content:"APS Build 0061 V84.7 APS Core";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -511,7 +511,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Build 0067 V87 APS Core Stable</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Build 0061 V84.7 APS Core</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -5807,130 +5807,132 @@ document.addEventListener("DOMContentLoaded",function(){
 </div>
 
 
-<script id="apsV87CoreStablePatch">
-/* Build 0067｜V87 APS Core Stable
- * 修正：雲端排程已載入但戰情中心／APS 排程中心未顯示。
- * 原則：不改 UI、不重建工單池，只統一排程欄位、日期與重新渲染流程。
- */
-(()=>{
+
+<!-- Build 0068｜V87.1 APS Scheduler Sync：AI 最佳排程 → 正式排程 → 戰情中心同步 -->
+<script id="build0068-v871-scheduler-sync">
+(function(){
   'use strict';
-  const BUILD='Build 0067 V87 APS Core Stable';
-  const $id=id=>document.getElementById(id);
-  const pick=(obj,keys)=>{for(const k of keys){const v=obj?.[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return ''};
-  const toDate=v=>{
-    if(v instanceof Date)return Number.isNaN(v.getTime())?null:new Date(v.getTime());
-    if(v===undefined||v===null||v==='')return null;
-    if(typeof v==='number'){
-      const n=v<1e12?v*1000:v,d=new Date(n);return Number.isNaN(d.getTime())?null:d;
-    }
-    const s=String(v).trim();
-    const d=new Date(s.includes('T')||/[Z+-]\d\d:?\d\d$/.test(s)?s:s.replace(/\//g,'-').replace(' ','T'));
-    return Number.isNaN(d.getTime())?null:d;
-  };
-  const productionDay=d=>{
-    const x=new Date(d);x.setSeconds(0,0);
-    const mins=x.getHours()*60+x.getMinutes();
-    if(mins<510)x.setDate(x.getDate()-1); // 08:30 前屬於前一生產日
-    x.setHours(0,0,0,0);return x;
-  };
-  const ymd=d=>{
-    const x=toDate(d);if(!x)return'';
-    return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
-  };
-  function normalizeScheduleRows(rows){
-    if(!Array.isArray(rows))return[];
-    return rows.map((row,index)=>{
-      const x={...row};
-      x.machine=String(pick(x,['machine','machine_code','machineCode','機台','機台編號'])||'').trim();
-      x.wo=String(pick(x,['wo','work_order_no','workOrderNo','order_no','工單','工單號','單號'])||'').trim();
-      x.part=String(pick(x,['part','part_no','partNo','料號','產品料號'])||'').trim();
-      x.customer=String(pick(x,['customer','customer_name','客戶','客戶簡稱'])||'').trim();
-      x.process=String(pick(x,['process','process_site','製程','站別'])||'').trim();
-      x.reason=String(pick(x,['reason','schedule_reason','排程原因'])||'').trim();
-      x.start=toDate(pick(x,['start','start_time','startTime','開始','開始時間']));
-      x.end=toDate(pick(x,['end','end_time','endTime','完成','結束','完成時間']));
-      x.due=toDate(pick(x,['due','due_date','dueDate','預交日']));
-      let minutes=Number(pick(x,['minutes','duration_minutes','duration','分鐘','工時分鐘']));
-      if(!Number.isFinite(minutes)||minutes<=0){minutes=x.start&&x.end?Math.max(0,(x.end-x.start)/60000):0}
-      x.minutes=minutes;
-      const rawDate=toDate(pick(x,['date','schedule_date','production_date','排程日期','生產日']));
-      x.date=rawDate?productionDay(rawDate):(x.start?productionDay(x.start):null);
-      x.urgent=x.urgent===true||String(x.urgent).toLowerCase()==='true'||String(x.priority||'').includes('急');
-      x.__v87Index=index;
-      return x;
-    }).filter(x=>x.machine&&x.wo&&x.start&&x.end&&x.minutes>0);
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+  function validDate(v){
+    const d = v instanceof Date ? new Date(v) : new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
   }
-  function syncMachines(rows){
-    if(!window.S)return;
-    window.S.machines=window.S.machines||{};
-    rows.forEach(x=>{if(!window.S.machines[x.machine])window.S.machines[x.machine]={hours:24,enabled:true}});
+
+  function productionDay(v){
+    const d = validDate(v);
+    if(!d) return null;
+    const shift = typeof window.getShiftSettings === 'function'
+      ? window.getShiftSettings()
+      : {earlyStart:'08:30'};
+    const [h,m] = String(shift?.earlyStart || '08:30').split(':').map(Number);
+    if(d.getHours()*60 + d.getMinutes() < h*60 + m) d.setDate(d.getDate()-1);
+    d.setHours(0,0,0,0);
+    return d;
   }
-  function alignDateToLoadedSchedule(rows){
-    if(!rows.length)return;
-    const available=[...new Set(rows.map(x=>ymd(x.date||x.start)).filter(Boolean))].sort();
-    if(!available.length)return;
-    const start=$id('startDate'),dash=$id('dashboardDate');
-    const current=(dash?.value||start?.value||'').trim();
-    if(!available.includes(current)){
-      const chosen=available[0];
-      if(start)start.value=chosen;
-      if(dash)dash.value=chosen;
-    }
-  }
-  let rendering=false,lastSignature='';
-  function recoverAndRender(force=false){
-    if(rendering||!window.S)return false;
-    const raw=Array.isArray(window.S.schedule)?window.S.schedule:[];
-    if(!raw.length)return false;
-    const normalized=normalizeScheduleRows(raw);
-    if(!normalized.length)return false;
-    const sig=`${normalized.length}|${normalized[0]?.start?.getTime()||0}|${normalized.at(-1)?.end?.getTime()||0}`;
-    if(force||sig!==lastSignature||raw.some(x=>!(x.start instanceof Date)||!(x.end instanceof Date)||!x.date)){
-      window.S.schedule=normalized;
-      syncMachines(normalized);
-      alignDateToLoadedSchedule(normalized);
-      lastSignature=sig;
-    }
-    rendering=true;
-    try{
-      const fn=window.__APS_V87_ORIGINAL_RENDER_SCHEDULE__;
-      if(typeof fn==='function')fn();
-      try{window.updateKpi?.()}catch(_){ }
-      try{window.SKAPSSystem?.renderStats?.()}catch(_){ }
-      return true;
-    }catch(err){
-      console.error('V87 schedule recovery render failed',err);
-      return false;
-    }finally{rendering=false}
-  }
-  function install(){
-    if(!window.S)return setTimeout(install,120);
-    if(!window.__APS_V87_ORIGINAL_RENDER_SCHEDULE__&&typeof window.renderSchedule==='function'){
-      window.__APS_V87_ORIGINAL_RENDER_SCHEDULE__=window.renderSchedule;
-      window.renderSchedule=function(){
-        const ok=recoverAndRender(true);
-        if(!ok)return window.__APS_V87_ORIGINAL_RENDER_SCHEDULE__.apply(this,arguments);
+
+  function normalizeSchedule(rows){
+    return (rows || []).map((x,index)=>{
+      const start = validDate(x.start || x.start_time || x.begin || x.begin_at);
+      const end = validDate(x.end || x.end_time || x.finish || x.finish_at);
+      if(!start || !end) return null;
+      const date = productionDay(x.date || start) || productionDay(start);
+      const minutes = Number(x.minutes) || Math.max(0,(end-start)/60000);
+      return {
+        ...x,
+        machine:String(x.machine || x.machine_code || x.machine_no || '未指定').trim(),
+        wo:String(x.wo || x.work_order_no || x.order_no || `APS-${index+1}`).trim(),
+        part:x.part || x.part_no || x.product_no || '',
+        customer:x.customer || x.customer_name || '',
+        process:x.process || x.process_site || '',
+        date,
+        start,
+        end,
+        due:x.due ? validDate(x.due) : (x.due_date ? validDate(x.due_date) : null),
+        minutes
       };
-      try{renderSchedule=window.renderSchedule}catch(_){ }
-    }
-    const originalAfter=window.renderAfterCloudLoad;
-    if(typeof originalAfter==='function'&&!originalAfter.__v87){
-      const wrapped=function(){const r=originalAfter.apply(this,arguments);setTimeout(()=>recoverAndRender(true),0);setTimeout(()=>recoverAndRender(true),350);return r};
-      wrapped.__v87=true;window.renderAfterCloudLoad=wrapped;
-      try{renderAfterCloudLoad=wrapped}catch(_){ }
-    }
-    document.querySelectorAll('.header-time small').forEach(el=>el.textContent=BUILD);
-    document.querySelectorAll('.side-footer small').forEach(el=>{if(/Build|APS Core/i.test(el.textContent))el.textContent=BUILD});
-    const cfg=window.SK_APS_CONFIG;if(cfg)cfg.version='V87 Core Stable';
-    recoverAndRender(true);
-    let tries=0;const timer=setInterval(()=>{tries++;recoverAndRender(false);if(tries>=30||((window.S?.schedule||[]).length&&lastSignature))clearInterval(timer)},500);
-    console.info('SEAL KING Smart APS '+BUILD+' loaded');
+    }).filter(Boolean).sort((a,b)=>
+      String(a.machine).localeCompare(String(b.machine)) || a.start-b.start
+    );
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  window.addEventListener('load',()=>setTimeout(()=>recoverAndRender(true),250),{once:true});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>recoverAndRender(false),80)});
-  window.APSV87={normalizeScheduleRows,recoverAndRender,alignDateToLoadedSchedule};
+
+  function firstProductionDate(rows){
+    const dates=(rows||[]).map(x=>productionDay(x.date || x.start)).filter(Boolean).sort((a,b)=>a-b);
+    return dates[0] || null;
+  }
+
+  function refreshAll(){
+    try{ window.renderSchedule?.(); }catch(e){ console.warn('V87.1 renderSchedule',e); }
+    try{ window.updateKpi?.(); }catch(e){ console.warn('V87.1 updateKpi',e); }
+    try{ window.updateDueKpi?.(); }catch(e){ console.warn('V87.1 updateDueKpi',e); }
+    try{ window.renderReports?.(); }catch(e){ console.warn('V87.1 renderReports',e); }
+    try{ window.SKAPSSystem?.renderStats?.(); }catch(e){ console.warn('V87.1 renderStats',e); }
+  }
+
+  async function synchronizeAppliedSchedule(){
+    if(!window.S) return;
+    const normalized = normalizeSchedule(window.S.schedule || []);
+    if(!normalized.length) return;
+
+    window.S.schedule = normalized;
+    window.apsSchedule = normalized;
+    window.currentSchedule = normalized;
+
+    const first = firstProductionDate(normalized);
+    if(first){
+      const value=ymd(first);
+      if($('startDate')) $('startDate').value=value;
+      if($('dashboardDate')) $('dashboardDate').value=value;
+    }
+
+    refreshAll();
+
+    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(_){ }
+    try{
+      if(typeof window.saveDataset === 'function') await window.saveDataset('schedule',true);
+    }catch(err){
+      console.warn('V87.1 雲端排程同步失敗',err);
+    }
+
+    refreshAll();
+    try{ window.log?.(`V87.1 最佳排程同步完成：${normalized.length} 個區段`); }catch(_){ }
+  }
+
+  function install(){
+    const apply=$('applyAutoSchedule');
+    if(apply && !apply.dataset.v871Sync){
+      apply.dataset.v871Sync='1';
+      apply.addEventListener('click',()=>{
+        // 原 AI Core 會先把 proposal 套入 S.schedule；延後同步可避免讀到舊排程。
+        setTimeout(synchronizeAppliedSchedule,80);
+        setTimeout(synchronizeAppliedSchedule,700);
+      });
+    }
+
+    const restore=$('restoreAutoSchedule');
+    if(restore && !restore.dataset.v871Sync){
+      restore.dataset.v871Sync='1';
+      restore.addEventListener('click',()=>setTimeout(()=>{
+        if(window.S) window.S.schedule=normalizeSchedule(window.S.schedule||[]);
+        refreshAll();
+      },80));
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    install();
+    setTimeout(install,500);
+    setTimeout(install,1800);
+  });
+
+  window.APSV871Sync={
+    sync:synchronizeAppliedSchedule,
+    normalize:normalizeSchedule,
+    refresh:refreshAll
+  };
 })();
 </script>
-
 </body></html>
