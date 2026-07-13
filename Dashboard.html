@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V81.5.2 SEAL KING MES Enterprise｜Production Command Center</title>
+<title>V82.6 SEAL KING MES Enterprise｜Unified Order Index</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <section id="dashboard" class="view active"><div class="grid" id="dashboardGrid"></div></section>
 <section id="command" class="view"><div class="grid" id="commandGrid"></div></section>
 <section id="datacenter" class="view"><div class="grid"><div class="card col12"><h2>Data Center 資料中心</h2><div class="sub">所有分頁共用同一份整合資料；此頁用來確認資料來源、筆數、更新時間與整合狀態。</div></div><div class="grid col12" id="dataCenterGrid"></div><div class="card col12"><h2>資料來源明細</h2><div id="dataCenterTableBox"></div></div></div></section>
-<section id="workorder" class="view"><div class="grid"><div class="card col12"><h2>工單搜尋中心</h2><div class="row"><input id="woSearchInput" placeholder="輸入工單、客戶、料號、規格、機台、製程關鍵字"><button class="btn ok" id="woSearchBtn">搜尋</button><button class="btn ghost" id="woClearBtn">清除</button></div><div class="sub">可快速查詢：工單、客戶、規格、目前狀態、預交日、達成率、來源。</div></div><div class="card col12"><div id="woSearchResult"></div></div></div></section>
+<section id="workorder" class="view"><div class="grid"><div class="card col12"><h2>工單搜尋中心</h2><div class="row"><input id="woSearchInput" placeholder="輸入工單、訂單、命令單、日報、批號、料號、客戶、規格、機台"><button class="btn ok" id="woSearchBtn">搜尋</button><button class="btn ghost" id="woClearBtn">清除</button></div><div class="sub">可快速查詢：工單、訂單、命令單、日報號、生產批號、投入／產出料號、客戶、規格、機台與來源。</div></div><div class="card col12"><div id="woSearchResult"></div></div></div></section>
 
 <section id="setup" class="view">
   <div class="grid">
@@ -528,7 +528,16 @@ async function bindFile(id,key,stat,kpi){
     alert("讀取 "+f.name+" 失敗："+(e.message||e));
   }
 }
-function buildIndex(){AppState.idx={};AppState.source.forEach(function(r){var wo=wo12(r.work_order_no||r.order_no);if(!wo)return;var o=AppState.idx[wo]=AppState.idx[wo]||{wo:wo,from:{},target:0,actual:0};o.from[r.source||"source"]=true;o.order=o.order||r.order_no;o.part=o.part||r.part_no;o.batch=o.batch||r.batch_no;o.spec=o.spec||r.product_spec;o.customer=o.customer||r.customer;o.process=o.process||r.process;o.machine=o.machine||r.machine;o.plan=o.plan||r.plan_date;o.due=o.due||r.due_date;o.rawStatus=o.rawStatus||r.status;o.issueStatus=o.issueStatus||r.issue_status;o.materialStatus=o.materialStatus||r.material_status;o.warehouseStatus=o.warehouseStatus||r.warehouse_status;o.stockin=o.stockin||r.stockin_date;o.finish=o.finish||r.finish_date;o.pick=o.pick||r.pick_date;var tg=num(r.target_qty);if(tg&&!o.target)o.target=tg});calcActual();if(el("kpiIdx"))el("kpiIdx").textContent=Object.keys(AppState.idx).length}
+function buildIndex(){
+ AppState.idx={};
+ AppState.source.forEach(function(r){
+  var raw=r.raw||r;var get=function(keys){for(var i=0;i<keys.length;i++){var v=raw[keys[i]];if(v!==undefined&&v!==null&&String(v).trim()!=="")return v}return""};
+  var realWo=r.work_order_no||get(["命令單號","工單號","工單","單號","製令單號"]);var key=wo12(realWo||r.order_no);if(!key)return;
+  var o=AppState.idx[key]=AppState.idx[key]||{wo:wo12(realWo)||key,from:{},target:0,actual:0,aliases:[]};
+  o.from[r.source||"source"]=true;o.order=o.order||r.order_no||get(["訂單單號","訂單號","客戶訂單"]);o.command=o.command||get(["命令單號","製令單號"])||realWo;o.report=o.report||get(["日報號","日報單號","部門日報號"]);o.part=o.part||r.part_no;o.inputPart=o.inputPart||get(["投入料號","耗用料號"]);o.outputPart=o.outputPart||get(["產出料號","料品編號","產品料號"]);o.batch=o.batch||r.batch_no;o.inputLot=o.inputLot||get(["投入製號","耗用製號"]);o.outputLot=o.outputLot||get(["產出製號","製號"]);o.spec=o.spec||r.product_spec;o.customer=o.customer||r.customer;o.process=o.process||r.process;o.machine=o.machine||r.machine;o.plan=o.plan||r.plan_date;o.due=o.due||r.due_date;o.rawStatus=o.rawStatus||r.status;o.issueStatus=o.issueStatus||r.issue_status;o.materialStatus=o.materialStatus||r.material_status;o.warehouseStatus=o.warehouseStatus||r.warehouse_status;o.stockin=o.stockin||r.stockin_date;o.finish=o.finish||r.finish_date;o.pick=o.pick||r.pick_date;
+  var vals=[o.wo,o.order,o.command,o.report,o.part,o.inputPart,o.outputPart,o.batch,o.inputLot,o.outputLot,o.customer,o.spec,o.machine,o.process].concat(Object.values(raw||{}));o.aliases=Array.from(new Set((o.aliases||[]).concat(vals.filter(function(v){return String(v==null?"":v).trim()!==""}).map(String))));var tg=num(r.target_qty);if(tg&&!o.target)o.target=tg;
+ });calcActual();if(el("kpiIdx"))el("kpiIdx").textContent=Object.keys(AppState.idx).length
+}
 function calcActual(){Object.values(AppState.idx).forEach(function(o){o.actual=0});AppState.keyin.forEach(function(r){if(AppState.idx[r.wo])AppState.idx[r.wo].actual+=num(r.actual)})}
 function orderStatus(o){var all=String([o.rawStatus,o.issueStatus,o.materialStatus,o.warehouseStatus].join(" ")).toLowerCase();if(o.stockin||o.finish||all.indexOf("入庫")>=0||all.indexOf("完工")>=0||all.indexOf("結案")>=0)return"已入庫";if(num(o.target)&&num(o.actual)>=num(o.target))return"已入庫";if(all.indexOf("待料")>=0||all.indexOf("缺料")>=0)return"待料";if(o.pick||all.indexOf("領料")>=0)return"已領料";if(o.due&&o.due<today())return"逾期";if(num(o.actual)>0||all.indexOf("生產")>=0||all.indexOf("開工")>=0)return"生產中";return"未開工"}
 function getStats(){
@@ -971,12 +980,12 @@ function renderWorkOrderSearch(){
   var q=(el("woSearchInput")&&el("woSearchInput").value||"").trim().toUpperCase();
   var rows=Object.values(AppState.idx).filter(function(o){
     if(!q)return true;
-    return [o.wo,o.customer,o.part,o.spec,o.machine,o.process,o.batch,o.due].join(" ").toUpperCase().indexOf(q)>=0;
+    return [o.wo,o.order,o.command,o.report,o.customer,o.part,o.inputPart,o.outputPart,o.batch,o.inputLot,o.outputLot,o.spec,o.machine,o.process,o.due].concat(o.aliases||[]).join(" ").toUpperCase().indexOf(q)>=0;
   }).slice(0,300).map(function(o){
     var st=orderStatus(o);
-    return [o.wo,o.customer||"",o.part||"",o.batch||"",o.spec||"",o.machine||"",o.process||"",o.due||"",o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+"%":"-",Object.keys(o.from||{}).join("/"),statusBadge(st)];
+    return [o.wo,o.order||"",o.command||"",o.report||"",o.customer||"",o.part||o.outputPart||o.inputPart||"",o.batch||o.outputLot||o.inputLot||"",o.spec||"",o.machine||"",o.process||"",o.due||"",o.target||0,o.actual||0,o.target?Math.round(o.actual/o.target*100)+"%":"-",Object.keys(o.from||{}).join("/"),statusBadge(st)];
   });
-  makeTable("woSearchResult",["工單","客戶","料號","批號","規格","機台","製程","預交","目標","實績","達成","來源","狀態"],rows);
+  makeTable("woSearchResult",["工單","訂單","命令單","日報號","客戶","料號","批號","規格","機台","製程","預交","目標","實績","達成","來源","狀態"],rows);
 }
 
 var R={dashboard:renderDashboard,command:renderCommandCenter,datacenter:renderDataCenter,workorder:renderWorkOrderSearch,setup:function(){},keyin:renderKeyin,overview:renderOverview,schedule:renderSchedule,machine:renderMachine,alert:renderAlert,warehouse:renderWarehouse,trend:renderTrend,history:renderHistory,match:renderMatch,eff:renderEff};
