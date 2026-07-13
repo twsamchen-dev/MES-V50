@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0061 V84.7 APS Core";
+  content:"APS Build 0069 V87.2 Canonical Sync";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -471,7 +471,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0061 V84.7 APS Core</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0069 V87.2 Canonical Sync</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -511,7 +511,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Build 0061 V84.7 APS Core</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Build 0069 V87.2 Canonical Sync</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -2735,22 +2735,73 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
   async function applyProposal(){
     const st = state();
     if(!proposal || !st) return;
+
     backup = cloneSchedule(st.schedule || []);
-    st.schedule = cloneSchedule(proposal.schedule);
+    const accepted = cloneSchedule(proposal.schedule).map(x => {
+      const start = x.start ? new Date(x.start) : null;
+      const productionDate = start && !Number.isNaN(start.getTime())
+        ? new Date(start.getTime() - 8.5 * 60 * 60 * 1000)
+        : (x.date ? new Date(x.date) : null);
+      if(productionDate) productionDate.setHours(0,0,0,0);
+      return {
+        ...x,
+        machine:String(x.machine || x.machine_code || x.machineCode || '').trim(),
+        wo:String(x.wo || x.work_order_no || x.workOrderNo || '').trim(),
+        part:x.part || x.part_no || x.partNo || '',
+        customer:x.customer || x.customer_name || '',
+        process:x.process || x.process_site || '',
+        date:productionDate,
+        start,
+        end:x.end ? new Date(x.end) : null,
+        due:x.due ? new Date(x.due) : null,
+        minutes:Number(x.minutes) || (x.end && x.start ? (new Date(x.end)-new Date(x.start))/60000 : 0)
+      };
+    }).filter(x => x.machine && x.wo && x.start && x.end && !Number.isNaN(x.start.getTime()) && !Number.isNaN(x.end.getTime()));
+
+    st.schedule = accepted;
+    window.apsSchedule = st.schedule;
+    window.currentSchedule = st.schedule;
+    try{
+      localStorage.setItem('SK_APS_ACCEPTED_SCHEDULE_V872', JSON.stringify(st.schedule.map(x => ({
+        ...x,
+        date:x.date?.toISOString?.() || x.date,
+        start:x.start?.toISOString?.() || x.start,
+        end:x.end?.toISOString?.() || x.end,
+        due:x.due?.toISOString?.() || x.due
+      }))));
+    }catch(_){ }
+
+    const first = st.schedule.slice().sort((a,b)=>a.start-b.start)[0];
+    if(first && $('startDate')) $('startDate').value = first.date.toISOString().slice(0,10);
 
     if(typeof renderSchedule === 'function') renderSchedule();
     if(typeof updateKpi === 'function') updateKpi();
     if(typeof updateDueKpi === 'function') updateDueKpi();
+    if(typeof renderReports === 'function') renderReports();
+    if(typeof renderRoundUtil === 'function') renderRoundUtil();
 
     $('restoreAutoSchedule').disabled = false;
     $('applyAutoSchedule').disabled = true;
 
     try{
       if(typeof saveDataset === 'function') await saveDataset('schedule',true);
+      // 雲端同步結束後再次以剛採用的正式排程為準，避免舊雲端資料覆蓋畫面。
+      st.schedule = accepted;
+      window.apsSchedule = st.schedule;
+      window.currentSchedule = st.schedule;
+      if(typeof renderSchedule === 'function') renderSchedule();
+      if(typeof updateKpi === 'function') updateKpi();
+      if(typeof updateDueKpi === 'function') updateDueKpi();
       if(typeof log === 'function') log(`AI 排程已採用並同步：${st.schedule.length} 個區段`);
+      if(window.V845_STATUS) window.V845_STATUS(`✓ <b>最佳排程已採用</b><br>${st.schedule.length} 個區段已同步戰情中心`,5000);
+      alert(`最佳排程已採用。\n已同步 ${st.schedule.length} 個排程區段到戰情中心。`);
     }catch(err){
       console.warn(err);
-      alert('排程已套用至畫面，但雲端同步失敗。');
+      st.schedule = accepted;
+      window.apsSchedule = st.schedule;
+      window.currentSchedule = st.schedule;
+      if(typeof renderSchedule === 'function') renderSchedule();
+      alert('排程已套用至戰情中心，但雲端同步失敗。');
     }
   }
 
@@ -3049,7 +3100,7 @@ function readCfg(){try{return {...defaults,...JSON.parse(localStorage.getItem(CF
 function writeCfg(c){localStorage.setItem(CFG_KEY,JSON.stringify(c))}
 function cfgFromForm(){return {name:$s('sysName')?.value.trim()||defaults.name,admin:$s('sysAdmin')?.value.trim()||defaults.admin,department:$s('sysDepartment')?.value.trim()||defaults.department,subtitle:$s('sysSubtitle')?.value.trim()||defaults.subtitle,version:$s('sysVersion')?.value.trim()||defaults.version,dataOwner:$s('sysDataOwner')?.value.trim()||'',animations:!!$s('sysAnimations')?.checked,compact:!!$s('sysCompact')?.checked,stickySidebar:!!$s('sysStickySidebar')?.checked,tooltips:!!$s('sysTooltips')?.checked,persistPool:!!$s('sysPersistPool')?.checked,autoLoadPool:!!$s('sysAutoLoadPool')?.checked,persistSchedule:!!$s('sysPersistSchedule')?.checked,autoLoadSchedule:!!$s('sysAutoLoadSchedule')?.checked,missingSpeedAlert:Number($s('sysMissingSpeedAlert')?.value)||0,overdueAlert:Number($s('sysOverdueAlert')?.value)||0,machineLoadAlert:Number($s('sysMachineLoadAlert')?.value)||90,staleHours:Number($s('sysStaleHours')?.value)||24}}
 function fillForm(c){const m={sysName:c.name,sysAdmin:c.admin,sysDepartment:c.department,sysSubtitle:c.subtitle,sysVersion:c.version,sysDataOwner:c.dataOwner,sysMissingSpeedAlert:c.missingSpeedAlert,sysOverdueAlert:c.overdueAlert,sysMachineLoadAlert:c.machineLoadAlert,sysStaleHours:c.staleHours};Object.entries(m).forEach(([id,v])=>{if($s(id))$s(id).value=v});[['sysAnimations','animations'],['sysCompact','compact'],['sysStickySidebar','stickySidebar'],['sysTooltips','tooltips'],['sysPersistPool','persistPool'],['sysAutoLoadPool','autoLoadPool'],['sysPersistSchedule','persistSchedule'],['sysAutoLoadSchedule','autoLoadSchedule']].forEach(([id,k])=>{if($s(id))$s(id).checked=!!c[k]})}
-function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0061 V84.7 APS Core`;window.SK_APS_CONFIG=c}
+function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0069 V87.2 Canonical Sync`;window.SK_APS_CONFIG=c}
 function toast(t){const old=document.querySelector('.sys-toast');if(old)old.remove();const d=document.createElement('div');d.className='sys-toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
@@ -5807,132 +5858,29 @@ document.addEventListener("DOMContentLoaded",function(){
 </div>
 
 
-
-<!-- Build 0068｜V87.1 APS Scheduler Sync：AI 最佳排程 → 正式排程 → 戰情中心同步 -->
-<script id="build0068-v871-scheduler-sync">
-(function(){
-  'use strict';
-
-  const $ = id => document.getElementById(id);
-  const pad = n => String(n).padStart(2,'0');
-  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-
-  function validDate(v){
-    const d = v instanceof Date ? new Date(v) : new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d;
+<script id="v872-canonical-schedule-sync">
+/* Build 0069｜V87.2 Canonical Scheduler Sync */
+(()=>{
+  const KEY='SK_APS_ACCEPTED_SCHEDULE_V872';
+  const dt=v=>{if(v instanceof Date)return new Date(v);if(v===null||v===undefined||v==='')return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d};
+  function productionDate(start,fallback){const d=dt(start)||dt(fallback);if(!d)return null;const p=new Date(d.getTime()-8.5*60*60*1000);p.setHours(0,0,0,0);return p}
+  function normalize(rows){return (Array.isArray(rows)?rows:[]).map(x=>{
+    const start=dt(x.start||x.start_time||x.startTime||x.begin_time);
+    const end=dt(x.end||x.end_time||x.endTime||x.finish_time);
+    return {...x,machine:String(x.machine||x.machine_code||x.machineCode||'').trim(),wo:String(x.wo||x.work_order_no||x.workOrderNo||x.order_no||'').trim(),part:x.part||x.part_no||x.partNo||'',customer:x.customer||x.customer_name||'',process:x.process||x.process_site||'',start,end,date:productionDate(start,x.date||x.schedule_date),due:dt(x.due||x.due_date||x.delivery_date),minutes:Number(x.minutes)||((start&&end)?(end-start)/60000:0)}
+  }).filter(x=>x.machine&&x.wo&&x.start&&x.end&&x.date&&x.end>x.start)}
+  function sync(rows){const st=window.S||(typeof S!=='undefined'?S:null);if(!st)return[];const fixed=normalize(rows===undefined?st.schedule:rows);st.schedule=fixed;window.apsSchedule=fixed;window.currentSchedule=fixed;return fixed}
+  const oldRender=window.renderSchedule;
+  if(typeof oldRender==='function'&&!oldRender.__v872){
+    window.renderSchedule=function(){const fixed=sync();const input=document.getElementById('startDate');if(fixed.length&&input){const keys=[...new Set(fixed.map(x=>x.date.toISOString().slice(0,10)))].sort();if(!keys.includes(input.value))input.value=keys[0]}return oldRender.apply(this,arguments)};
+    window.renderSchedule.__v872=true;
   }
-
-  function productionDay(v){
-    const d = validDate(v);
-    if(!d) return null;
-    const shift = typeof window.getShiftSettings === 'function'
-      ? window.getShiftSettings()
-      : {earlyStart:'08:30'};
-    const [h,m] = String(shift?.earlyStart || '08:30').split(':').map(Number);
-    if(d.getHours()*60 + d.getMinutes() < h*60 + m) d.setDate(d.getDate()-1);
-    d.setHours(0,0,0,0);
-    return d;
-  }
-
-  function normalizeSchedule(rows){
-    return (rows || []).map((x,index)=>{
-      const start = validDate(x.start || x.start_time || x.begin || x.begin_at);
-      const end = validDate(x.end || x.end_time || x.finish || x.finish_at);
-      if(!start || !end) return null;
-      const date = productionDay(x.date || start) || productionDay(start);
-      const minutes = Number(x.minutes) || Math.max(0,(end-start)/60000);
-      return {
-        ...x,
-        machine:String(x.machine || x.machine_code || x.machine_no || '未指定').trim(),
-        wo:String(x.wo || x.work_order_no || x.order_no || `APS-${index+1}`).trim(),
-        part:x.part || x.part_no || x.product_no || '',
-        customer:x.customer || x.customer_name || '',
-        process:x.process || x.process_site || '',
-        date,
-        start,
-        end,
-        due:x.due ? validDate(x.due) : (x.due_date ? validDate(x.due_date) : null),
-        minutes
-      };
-    }).filter(Boolean).sort((a,b)=>
-      String(a.machine).localeCompare(String(b.machine)) || a.start-b.start
-    );
-  }
-
-  function firstProductionDate(rows){
-    const dates=(rows||[]).map(x=>productionDay(x.date || x.start)).filter(Boolean).sort((a,b)=>a-b);
-    return dates[0] || null;
-  }
-
-  function refreshAll(){
-    try{ window.renderSchedule?.(); }catch(e){ console.warn('V87.1 renderSchedule',e); }
-    try{ window.updateKpi?.(); }catch(e){ console.warn('V87.1 updateKpi',e); }
-    try{ window.updateDueKpi?.(); }catch(e){ console.warn('V87.1 updateDueKpi',e); }
-    try{ window.renderReports?.(); }catch(e){ console.warn('V87.1 renderReports',e); }
-    try{ window.SKAPSSystem?.renderStats?.(); }catch(e){ console.warn('V87.1 renderStats',e); }
-  }
-
-  async function synchronizeAppliedSchedule(){
-    if(!window.S) return;
-    const normalized = normalizeSchedule(window.S.schedule || []);
-    if(!normalized.length) return;
-
-    window.S.schedule = normalized;
-    window.apsSchedule = normalized;
-    window.currentSchedule = normalized;
-
-    const first = firstProductionDate(normalized);
-    if(first){
-      const value=ymd(first);
-      if($('startDate')) $('startDate').value=value;
-      if($('dashboardDate')) $('dashboardDate').value=value;
-    }
-
-    refreshAll();
-
-    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(_){ }
-    try{
-      if(typeof window.saveDataset === 'function') await window.saveDataset('schedule',true);
-    }catch(err){
-      console.warn('V87.1 雲端排程同步失敗',err);
-    }
-
-    refreshAll();
-    try{ window.log?.(`V87.1 最佳排程同步完成：${normalized.length} 個區段`); }catch(_){ }
-  }
-
-  function install(){
-    const apply=$('applyAutoSchedule');
-    if(apply && !apply.dataset.v871Sync){
-      apply.dataset.v871Sync='1';
-      apply.addEventListener('click',()=>{
-        // 原 AI Core 會先把 proposal 套入 S.schedule；延後同步可避免讀到舊排程。
-        setTimeout(synchronizeAppliedSchedule,80);
-        setTimeout(synchronizeAppliedSchedule,700);
-      });
-    }
-
-    const restore=$('restoreAutoSchedule');
-    if(restore && !restore.dataset.v871Sync){
-      restore.dataset.v871Sync='1';
-      restore.addEventListener('click',()=>setTimeout(()=>{
-        if(window.S) window.S.schedule=normalizeSchedule(window.S.schedule||[]);
-        refreshAll();
-      },80));
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    install();
-    setTimeout(install,500);
-    setTimeout(install,1800);
-  });
-
-  window.APSV871Sync={
-    sync:synchronizeAppliedSchedule,
-    normalize:normalizeSchedule,
-    refresh:refreshAll
-  };
+  function restoreAccepted(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(Array.isArray(raw)&&raw.length){const fixed=sync(raw);if(fixed.length){window.renderSchedule?.();window.updateKpi?.();window.updateDueKpi?.();}}}catch(e){console.warn('V87.2 accepted schedule restore failed',e)}}
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{sync();window.renderSchedule?.();restoreAccepted();},2200));
+  window.APSCanonicalScheduleV872={normalize,sync,restoreAccepted};
+  document.title='SEAL KING Smart APS｜Build 0069 V87.2 Canonical Sync';
+  document.querySelectorAll('.header-time small').forEach(el=>el.textContent='Enterprise Preview 2｜Build 0069 V87.2');
 })();
 </script>
+
 </body></html>
