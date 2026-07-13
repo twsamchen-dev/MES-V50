@@ -3589,4 +3589,223 @@ document.addEventListener("DOMContentLoaded",function(){
 });
 </script>
 
+
+<!-- Build 0053｜缺產速導引與一鍵帶入回饋 -->
+<script id="build0053-missing-speed-action">
+(function(){
+  "use strict";
+
+  function esc(v){
+    return String(v ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function fmt(v, digits = 2){
+    const n = Number(v);
+    if(!Number.isFinite(n) || n === 0) return "—";
+    return n.toLocaleString("zh-TW", {maximumFractionDigits: digits});
+  }
+
+  function getFilteredPool(){
+    const pool = Array.isArray(window.S?.pool) ? window.S.pool : [];
+    const ep = window.EP || {};
+    const q = typeof window.norm === "function"
+      ? window.norm(ep.poolSearch || "")
+      : String(ep.poolSearch || "").trim().toUpperCase();
+
+    return pool.filter(x=>{
+      const hayRaw = [
+        x.wo,x.order,x.command_no,x.report_no,x.batch,x.part,
+        x.customer,x.name,x.spec,x.process,x.machine,x.status,
+        ...(Array.isArray(x.aliases) ? x.aliases : [])
+      ].join("|");
+
+      const hay = typeof window.norm === "function"
+        ? window.norm(hayRaw)
+        : hayRaw.toUpperCase();
+
+      if(q && !hay.includes(q)) return false;
+      if(ep.poolMachine && ep.poolMachine !== "all" && x.machine !== ep.poolMachine) return false;
+
+      switch(ep.poolStatus){
+        case "open": return !x.closed;
+        case "closed": return !!x.closed;
+        case "urgent": return !!x.urgent;
+        case "risk": return !!x.risk;
+        case "missing": return !x.closed && !x.ready;
+        default: return true;
+      }
+    });
+  }
+
+  function renderPool0053(){
+    const box = document.getElementById("poolTable");
+    const count = document.getElementById("poolCount");
+    if(!box) return;
+
+    const all = Array.isArray(window.S?.pool) ? window.S.pool : [];
+    if(!all.length){
+      box.className = "empty";
+      box.textContent = "沒有工單資料";
+      if(count) count.textContent = "";
+      return;
+    }
+
+    let data = getFilteredPool();
+    const ep = window.EP || {};
+    const key = ep.poolSort?.key || "priority";
+    const dir = ep.poolSort?.dir || 1;
+
+    if(typeof window.poolValue === "function"){
+      data.sort((a,b)=>{
+        const av = window.poolValue(a,key);
+        const bv = window.poolValue(b,key);
+        return (av > bv ? 1 : av < bv ? -1 : 0) * dir;
+      });
+    }
+
+    if(count) count.textContent = `顯示 ${data.length} / ${all.length} 筆`;
+
+    const rows = data.map((x, idx)=>{
+      const missing = !x.ready || x.match === "無產速";
+      const mode = missing ? "待補產速" : (x.apsMode || "ROUND");
+      const matchClass = missing ? "red" :
+        x.match === "現場回饋" ? "purple" :
+        String(x.match || "").includes("精確") ? "green" : "yellow";
+
+      const action = missing
+        ? `<button class="btn red" style="padding:5px 9px;font-size:12px"
+             data-build0053-fill="${idx}"
+             data-work-order="${esc(x.wo)}"
+             data-part="${esc(x.part)}"
+             data-name="${esc(x.name || x.spec)}"
+             data-machine="${esc(x.machine || x.sourceMachine)}"
+             data-process="${esc(x.process)}"
+             data-remaining="${esc(x.remaining)}">補產速</button>`
+        : `<span class="tag green">正常</span>`;
+
+      return `<tr class="${x.closed ? "closed-row" : ""}">
+        <td><span class="tag ${x.closed ? "gray" : x.urgent ? "red" : x.risk ? "yellow" : "blue"}">
+          ${x.closed ? "已結案" : x.urgent ? "急單" : x.risk ? "風險" : "一般"}
+        </span></td>
+        <td>${esc(x.wo)}</td>
+        <td>${esc(x.part)}</td>
+        <td>${esc(x.machine || "—")}</td>
+        <td>${fmt(x.remaining)}</td>
+        <td>${esc(x.unit || "")}</td>
+        <td>${x.cycles ? Math.ceil(x.cycles).toLocaleString("zh-TW") : "—"}</td>
+        <td>${fmt(x.qtyPerRound || x.perRound, 3)}</td>
+        <td>${x.roundMinutes ? Number(x.roundMinutes).toFixed(2) + "m" : "—"}</td>
+        <td><span class="tag ${missing ? "red" : "blue"}">${esc(mode)}</span></td>
+        <td>${fmt(x.setupMinutes,1) === "—" ? "0m" : fmt(x.setupMinutes,1) + "m"}</td>
+        <td>${fmt(x.firstArticleMinutes,1) === "—" ? "0m" : fmt(x.firstArticleMinutes,1) + "m"}</td>
+        <td>${x.pureMinutes || x.productionMinutes ? Math.ceil(x.pureMinutes || x.productionMinutes) + "m" : "—"}</td>
+        <td>${fmt(x.cleanupMinutes,1) === "—" ? "0m" : fmt(x.cleanupMinutes,1) + "m"}</td>
+        <td><b>${x.minutes ? Math.ceil(x.minutes) + "m" : "—"}</b></td>
+        <td>
+          <span class="tag ${matchClass}">${esc(missing ? "缺少產速" : x.match)}</span>
+          ${missing ? `<div class="hint" style="margin-top:5px">需建立料號＋製程＋機台產速</div>` : ""}
+        </td>
+        <td>${action}</td>
+      </tr>`;
+    }).join("");
+
+    box.className = "";
+    box.innerHTML = `<div class="tablewrap"><table>
+      <thead><tr>
+        <th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th>
+        <th>所需回數</th><th>單回產量</th><th>單回時間</th><th>APS模式</th>
+        <th>準備／換料</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th>
+        <th>產速來源</th><th>處理</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="17">沒有符合篩選的工單</td></tr>`}</tbody>
+    </table></div>`;
+  }
+
+  function fillSpeedForm(btn){
+    const wo = btn.dataset.workOrder || "";
+    const part = btn.dataset.part || "";
+    const name = btn.dataset.name || "";
+    const machine = btn.dataset.machine || "";
+    const process = btn.dataset.process || "";
+    const remaining = btn.dataset.remaining || "";
+
+    if(typeof window.showPage === "function"){
+      window.showPage("speedFeedback");
+    }else{
+      document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+      document.getElementById("speedFeedback")?.classList.add("active");
+    }
+
+    const set = (id, value)=>{
+      const el = document.getElementById(id);
+      if(el) el.value = value || "";
+    };
+
+    set("sfPart", part);
+    set("sfName", name);
+    set("sfMachine", machine);
+    set("sfProcess", process);
+    set("sfNote", `來源工單：${wo}；剩餘需求：${remaining} m²；請依現場實測填寫每回產量與每回時間。`);
+
+    const msg = document.getElementById("speedFormMsg");
+    if(msg){
+      msg.innerHTML = `<span class="warntext">已帶入工單 ${esc(wo)}。請補齊機台、製程、每回產量與每回時間後儲存。</span>`;
+    }
+
+    setTimeout(()=>{
+      document.getElementById("speedFeedbackFormCard")?.scrollIntoView({behavior:"smooth", block:"start"});
+      document.getElementById("sfMachine")?.focus();
+    }, 120);
+
+    window.log?.(`Build0053：已將工單 ${wo} 帶入產速回饋中心`);
+  }
+
+  function install(){
+    // 以 Build0053 表格取代舊工單池表格顯示。
+    window.renderPool = renderPool0053;
+
+    const box = document.getElementById("poolTable");
+    if(box && !box.dataset.build0053){
+      box.dataset.build0053 = "1";
+      box.addEventListener("click", e=>{
+        const btn = e.target.closest("[data-build0053-fill]");
+        if(btn) fillSpeedForm(btn);
+      });
+    }
+
+    // 儲存產速後，重新執行 DataHub＋產速引擎，讓工單立即重算。
+    const save = document.getElementById("saveSpeedFeedback");
+    if(save && !save.dataset.build0053){
+      save.dataset.build0053 = "1";
+      save.addEventListener("click", ()=>{
+        setTimeout(()=>{
+          if(window.Build0051APSSpeedEngine?.sync){
+            window.Build0051APSSpeedEngine.sync(false);
+          }else if(window.Build0050APSDataHub?.sync){
+            window.Build0050APSDataHub.sync(false);
+          }
+        }, 1200);
+      });
+    }
+
+    renderPool0053();
+  }
+
+  document.addEventListener("DOMContentLoaded", install);
+  setTimeout(install, 1800);
+
+  window.Build0053MissingSpeed = {
+    render: renderPool0053,
+    fill: fillSpeedForm
+  };
+})();
+</script>
+
+<style id="build0053-style">
+#poolTable .btn.red{white-space:nowrap}
+#poolTable .hint{font-size:11px;color:#fca5a5}
+</style>
+
 </body></html>
