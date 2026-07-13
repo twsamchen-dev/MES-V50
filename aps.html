@@ -3133,4 +3133,434 @@ window.SEAL_KING_SECURITY={
 })();
 </script>
 
+
+<!-- Build 0051｜APS Speed Engine：DataHub 工單自動推導製程、機台與產速 -->
+<script id="build0051-aps-speed-engine">
+(function(){
+  "use strict";
+
+  const API_URL =
+    window.MES_API_URL ||
+    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  let syncing = false;
+
+  function text(v){ return String(v ?? "").trim(); }
+  function number(v){
+    const n = Number(String(v ?? "").replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n : 0;
+  }
+  function normalize(v){
+    return text(v)
+      .toUpperCase()
+      .replace(/[＊﹡]/g, "*")
+      .replace(/[×Ｘ]/g, "X")
+      .replace(/\s+/g, "")
+      .replace(/[‐‑‒–—―]/g, "-");
+  }
+  function partCanonical(v){
+    return normalize(v).replace(/[^A-Z0-9]/g, "");
+  }
+  function partBase(v){
+    const s = normalize(v);
+    return partCanonical(s.replace(/[*#/_-][A-Z0-9]{1,5}$/i, ""));
+  }
+  function dateValue(v){
+    if(!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  function inferMode(process, explicitMode){
+    const m = normalize(explicitMode);
+    if(["FIXED","LENGTH","AREA","ROLL","ROUND"].includes(m)) return m;
+    const p = normalize(process);
+    if(p.includes("裁切") || p.includes("分條")) return "FIXED";
+    if(p.includes("覆卷") || p.includes("複捲")) return "LENGTH";
+    if(p.includes("塗佈") || p.includes("上膠")) return "AREA";
+    return "ROUND";
+  }
+
+  function jsonp(action, params = {}){
+    return new Promise((resolve, reject)=>{
+      const cb = "APS0051_" + Date.now() + "_" + Math.floor(Math.random()*999999);
+      const s = document.createElement("script");
+      const timer = setTimeout(()=>{
+        cleanup();
+        reject(new Error("DataHub API 讀取逾時：" + action));
+      }, 30000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        try{ delete window[cb]; }catch(_){ window[cb] = undefined; }
+        if(s.parentNode) s.parentNode.removeChild(s);
+      }
+
+      window[cb] = res=>{
+        cleanup();
+        if(res && res.ok === false) reject(new Error(res.message || res.error || "DataHub API error"));
+        else resolve(res || {});
+      };
+
+      s.onerror = ()=>{
+        cleanup();
+        reject(new Error("DataHub API 連線失敗：" + action));
+      };
+
+      const qs = new URLSearchParams(Object.assign({
+        action,
+        callback: cb,
+        _: Date.now()
+      }, params)).toString();
+
+      s.src = API_URL + "?" + qs;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function fetchAllWorkOrders(){
+    const all = [];
+    let page = 1;
+    let total = 0;
+
+    do{
+      const res = await jsonp("datahubworkorders", {
+        page,
+        pageSize: 500
+      });
+      const rows = Array.isArray(res.rows) ? res.rows : [];
+      total = Number(res.total || rows.length || 0);
+      all.push(...rows);
+      page++;
+      if(!rows.length) break;
+    }while(all.length < total && page <= 30);
+
+    return all;
+  }
+
+  function speedQuality(s){
+    let score = 0;
+    if(text(s.machine)) score += 8;
+    if(text(s.process)) score += 8;
+    if(text(s.mode)) score += 5;
+    if(number(s.total) > 0) score += 5;
+    if(number(s.speed) > 0 || number(s.speedMpm) > 0) score += 5;
+    if(number(s.outw) > 0) score += 2;
+    if(number(s.len) > 0) score += 2;
+    if(s._feedback) score += 4;
+    return score;
+  }
+
+  function findFlexibleSpeed(part, process, machine, speeds){
+    const p = partCanonical(part);
+    const pb = partBase(part);
+    const pr = normalize(process);
+    const mc = normalize(machine);
+
+    if(!p) return null;
+
+    const candidates = (speeds || []).filter(s=>{
+      if(s.enabled === false) return false;
+      const sp = partCanonical(s.part);
+      const sb = partBase(s.part);
+      return sp === p ||
+             (pb && sb === pb) ||
+             (p.length >= 8 && sp.length >= 8 && (p.startsWith(sp) || sp.startsWith(p)));
+    });
+
+    if(!candidates.length) return null;
+
+    candidates.sort((a,b)=>{
+      function rank(s){
+        const sp = partCanonical(s.part);
+        const sb = partBase(s.part);
+        let r = 0;
+        if(sp === p) r += 100;
+        else if(pb && sb === pb) r += 80;
+        else r += 40;
+
+        if(pr && normalize(s.process) === pr) r += 30;
+        if(mc && normalize(s.machine) === mc) r += 25;
+        r += speedQuality(s);
+        return r;
+      }
+      return rank(b) - rank(a);
+    });
+
+    const row = candidates[0];
+    let level = "料號近似";
+    if(partCanonical(row.part) === p) level = "料號精確";
+    if(pr && normalize(row.process) === pr) level += "＋製程";
+    if(mc && normalize(row.machine) === mc) level += "＋機台";
+
+    return {row, level, candidates: candidates.length};
+  }
+
+  function calculateJob(row, speed){
+    const remainingRaw = number(row.erp_remaining_qty);
+    const target = number(row.target_qty);
+    const remaining = remainingRaw > 0 ? remainingRaw : target;
+
+    const process = text(row.process || speed?.process);
+    const machine = text(row.machine || row.machine_code || speed?.machine);
+    const mode = inferMode(process, speed?.mode);
+
+    const unload = number(speed?.down ?? speed?.unloadTime);
+    const change = number(speed?.change ?? speed?.changeTime);
+    const setup = number(speed?.setup ?? speed?.setupTime);
+    const efficiency = number(speed?.efficiency ?? speed?.efficiencyFactor) || 1;
+
+    let runMinutes = 0;
+    let totalMinutes = 0;
+    let cycles = 0;
+    let perRound = 0;
+    let calculationNote = "";
+
+    if(speed){
+      if(mode === "FIXED"){
+        const fixedRun = number(speed.run ?? speed.fixedRunTime);
+        const fixedTotal = number(speed.total);
+        runMinutes = fixedRun || Math.max(0, fixedTotal - unload - change - setup);
+        totalMinutes = fixedTotal || (runMinutes + unload + change + setup);
+        cycles = 1;
+        calculationNote = "固定工時";
+      }
+      else if(mode === "LENGTH"){
+        const speedMpm = number(speed.speed ?? speed.speedMpm);
+        const widthMm = number(speed.outw || speed.outputWidthMm);
+        let outputLengthM = number(row.output_length || row.outputLength);
+
+        // DataHub 3-9 通常提供 m²；若無米數，依產出寬度換算成米。
+        if(outputLengthM <= 0 && remaining > 0 && widthMm > 0){
+          outputLengthM = remaining / (widthMm / 1000);
+        }
+
+        if(speedMpm > 0 && outputLengthM > 0){
+          runMinutes = outputLengthM / (speedMpm * efficiency);
+          totalMinutes = runMinutes + unload + change + setup;
+          calculationNote = widthMm > 0 ? "米數（由㎡換算）" : "米數";
+        }
+      }
+      else if(mode === "AREA"){
+        const areaPerMin = number(speed.speedAreaPerMin || speed.areaSpeed || speed.speed);
+        if(areaPerMin > 0 && remaining > 0){
+          runMinutes = remaining / (areaPerMin * efficiency);
+          totalMinutes = runMinutes + unload + change + setup;
+          calculationNote = "面積";
+        }
+      }
+      else if(mode === "ROLL"){
+        const rollPerMin = number(speed.speedRollPerMin || speed.rollSpeed || speed.speed);
+        if(rollPerMin > 0 && remaining > 0){
+          runMinutes = remaining / (rollPerMin * efficiency);
+          totalMinutes = runMinutes + unload + change + setup;
+          calculationNote = "卷數";
+        }
+      }
+      else{
+        // 舊版回數模式相容
+        if(number(speed.qtyPerRound) > 0){
+          perRound = number(speed.qtyPerRound);
+        }else if(number(speed.outw) > 0 && number(speed.len) > 0){
+          perRound = (number(speed.outw) / 1000) * number(speed.len);
+        }else if(number(speed.len) > 0){
+          perRound = number(speed.len);
+        }
+
+        const roundMinutes = number(speed.total);
+        if(perRound > 0 && roundMinutes > 0 && remaining > 0){
+          cycles = Math.ceil(remaining / perRound);
+          runMinutes = cycles * roundMinutes;
+          totalMinutes = runMinutes;
+          calculationNote = "回數";
+        }
+      }
+    }
+
+    return {
+      remaining,
+      target,
+      process,
+      machine,
+      mode,
+      runMinutes,
+      totalMinutes,
+      cycles,
+      perRound,
+      unload,
+      change,
+      setup,
+      calculationNote
+    };
+  }
+
+  function convert(rows){
+    let speeds = [];
+    try{
+      speeds = typeof window.buildSpeed === "function" ? (window.buildSpeed() || []) : [];
+    }catch(err){
+      console.warn("Build0051 buildSpeed failed", err);
+    }
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    return rows.map(r=>{
+      const part = text(r.part_no);
+      const originalProcess = text(r.process);
+      const originalMachine = text(r.machine || r.machine_code);
+
+      const matched = findFlexibleSpeed(part, originalProcess, originalMachine, speeds);
+      const speed = matched?.row || null;
+      const calc = calculateJob(r, speed);
+
+      const due = dateValue(r.due_date);
+      const diff = due ? Math.ceil((due.getTime() - today.getTime()) / 86400000) : 999;
+      const status = text(r.status);
+      const closed = /(^C$)|結案|完成|已結/i.test(status);
+
+      const ready = !!speed && calc.totalMinutes > 0;
+      const matchText = speed
+        ? (ready ? (matched.level + "｜" + calc.calculationNote) : matched.level + "｜參數不足")
+        : "無產速";
+
+      return {
+        wo: text(r.work_order_no || r.order_no),
+        order: text(r.order_no),
+        command_no: text(r.work_order_no),
+        report_no: text(r.daily_report_no),
+        batch: text(r.batch_no),
+        part,
+        name: text(r.product_spec),
+        spec: text(r.product_spec),
+        customer: text(r.customer),
+        process: calc.process,
+        machine: calc.machine,
+        sourceMachine: originalMachine,
+        due,
+        planned: calc.target,
+        output: Math.max(0, calc.target - calc.remaining),
+        remaining: calc.remaining,
+        unit: "m²",
+        minutes: calc.totalMinutes,
+        pureMinutes: calc.runMinutes,
+        cycles: calc.cycles,
+        qtyPerRound: calc.perRound,
+        roundMinutes: calc.cycles > 0 ? calc.runMinutes / calc.cycles : 0,
+        setupMinutes: calc.setup,
+        unloadMinutes: calc.unload,
+        changeMinutes: calc.change,
+        match: matchText,
+        urgent: diff <= Number(document.getElementById("urgentDays")?.value || 3),
+        risk: diff <= Number(document.getElementById("riskDays")?.value || 7),
+        ready,
+        status,
+        preprocess: "待確認",
+        closed,
+        source: text(r.source_list || "DataHub_WorkOrder"),
+        aliases: [
+          r.work_order_no, r.order_no, r.daily_report_no, r.batch_no,
+          r.part_no, r.customer, r.product_spec, r.process, r.machine,
+          r.source_list
+        ].filter(Boolean).map(String),
+        apsMode: calc.mode,
+        speedVersion: text(speed?.version),
+        speedPart: text(speed?.part),
+        speedProcess: text(speed?.process),
+        speedMachine: text(speed?.machine)
+      };
+    }).filter(x=>x.wo && !x.closed);
+  }
+
+  async function sync(showPageAfter = true){
+    if(syncing) return;
+    syncing = true;
+
+    const btn = document.getElementById("buildPool");
+    const oldText = btn ? btn.textContent : "";
+
+    try{
+      if(btn){
+        btn.disabled = true;
+        btn.textContent = "產速配對中...";
+      }
+
+      window.log?.("Build0051：從 DataHub 讀取工單並執行智慧產速配對...");
+      const rows = await fetchAllWorkOrders();
+      const pool = convert(rows);
+
+      if(!window.S) window.S = {};
+      window.S.pool = pool;
+
+      try{
+        const speeds = typeof window.buildSpeed === "function" ? window.buildSpeed() : [];
+        window.S.rows = window.S.rows || {};
+        window.S.rows.speed = speeds || [];
+        if(typeof window.initMachines === "function") window.initMachines(speeds || []);
+      }catch(_){}
+
+      window.renderPool?.();
+      window.updateKpi?.();
+      window.renderQuality?.();
+      window.APSMissingSpeed?.scan?.();
+
+      try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(_){}
+      try{
+        if(typeof window.saveDataset === "function"){
+          await window.saveDataset("workpool", true);
+        }
+      }catch(_){}
+
+      const readyCount = pool.filter(x=>x.ready).length;
+      const inferredCount = pool.filter(x=>x.ready && (!x.sourceMachine || !x.process)).length;
+
+      window.log?.(
+        `Build0051 工單池完成：${pool.length} 筆，可排 ${readyCount} 筆，` +
+        `由產速主檔補齊製程／機台 ${inferredCount} 筆`
+      );
+
+      if(showPageAfter && typeof window.showPage === "function"){
+        window.showPage("pool");
+      }
+    }catch(err){
+      console.error("Build0051 sync failed", err);
+      alert("APS 產速引擎同步失敗：" + (err.message || err));
+    }finally{
+      syncing = false;
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = oldText || "從 DataHub 建立工單池";
+      }
+    }
+  }
+
+  function install(){
+    const old = document.getElementById("buildPool");
+    if(old && !old.dataset.speed0051){
+      const btn = old.cloneNode(true);
+      btn.dataset.dh0050 = "1";
+      btn.dataset.speed0051 = "1";
+      btn.textContent = "DataHub＋產速引擎";
+      old.parentNode.replaceChild(btn, old);
+
+      btn.addEventListener("click", e=>{
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        sync(true);
+      }, true);
+    }
+
+    // 等舊版雲端快照完成後，以 Build0051 結果覆蓋。
+    setTimeout(()=>sync(false), 3200);
+  }
+
+  document.addEventListener("DOMContentLoaded", install);
+  setTimeout(install, 1600);
+
+  window.Build0051APSSpeedEngine = {
+    sync,
+    findFlexibleSpeed
+  };
+})();
+</script>
+
 </body></html>
