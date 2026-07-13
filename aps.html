@@ -5074,4 +5074,30 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
+<script>
+(function(){
+  const oldJsonp=window.jsonp;
+  if(typeof oldJsonp!=="function") return;
+  window.__MES_LEARNED_MACHINE_RULES=[];
+  const old=window.jsonp;
+  window.jsonp=async function(action,params){
+    const res=await old(action,params);
+    if(action==="apsbootstrap" && res){
+      window.__MES_LEARNED_MACHINE_RULES=res.learned_machine_rules||[];
+      setTimeout(renderLearnedMachineRulesV833,300);
+    }
+    return res;
+  };
+  function renderLearnedMachineRulesV833(){
+    const page=document.getElementById("machineRules"); if(!page)return;
+    let box=document.getElementById("learnedMachineRulesV833");
+    if(!box){box=document.createElement("div");box.id="learnedMachineRulesV833";box.className="card col12";page.querySelector(".grid")?.appendChild(box);}
+    const rows=window.__MES_LEARNED_MACHINE_RULES||[];
+    box.innerHTML='<h2>雲端機台學習建議</h2><div class="sub">依 Target 與 Key In 實際輸入機台統計；正式共用規則仍由課長確認。</div>'+
+      (rows.length?'<div class="tablewrap"><table><thead><tr><th>料號/規格</th><th>製程</th><th>主要機台</th><th>曾用共用機台</th><th>樣本</th><th>可信度</th><th>狀態</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+escHtml(r.part_no||r.product_spec||'-')+'</td><td>'+escHtml(r.process||'-')+'</td><td>'+escHtml(r.primary_machine||'-')+'</td><td>'+escHtml((r.shared_machines||[]).join('、')||'-')+'</td><td>'+Number(r.sample_count||0)+'</td><td>'+Number(r.confidence||0)+'%</td><td><span class="tag '+(r.status==='AI 建議'?'yellow':'blue')+'">'+escHtml(r.status||'現場學習')+'</span></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">尚無 Target / Key In 機台學習資料</div>');
+  }
+  function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+})();
+</script>
 </body></html>
