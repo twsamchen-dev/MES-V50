@@ -32,6 +32,25 @@
 .recentBox{display:grid;gap:6px;margin-top:8px}
 .recentItem{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #dbe4f0;background:white;border-radius:12px;padding:8px 10px;font-size:13px}
 .recentItem b{color:#0f172a}.miniText{font-size:12px;color:#64748b}.opBtn{border:0;border-radius:10px;padding:5px 8px;font-weight:900;cursor:pointer;background:#eef2ff;color:#1e40af}
+
+/* V83.2：讀取按鈕動畫與明確操作回饋 */
+.hero .btn{position:relative;min-width:245px;transition:transform .16s ease,box-shadow .2s ease,filter .2s ease}
+.hero .btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(37,99,235,.22)}
+.hero .btn:active{transform:scale(.96);box-shadow:0 2px 7px rgba(15,23,42,.2)}
+.hero .btn.is-loading{pointer-events:none;filter:saturate(.78);padding-left:46px;animation:btnPulse 1.15s ease-in-out infinite}
+.hero .btn.is-loading::before{content:"";position:absolute;left:18px;top:50%;width:18px;height:18px;margin-top:-9px;border:3px solid rgba(255,255,255,.42);border-top-color:#fff;border-radius:50%;animation:btnSpin .75s linear infinite}
+.hero .btn.ghost.is-loading::before{border-color:rgba(30,64,175,.25);border-top-color:#1e40af}
+.hero .btn.is-success{animation:btnSuccess .55s ease}
+.hero .btn.is-error{animation:btnError .42s ease}
+#loadStatus.status-loading{background:#fff7ed;color:#c2410c;animation:statusBlink 1s ease-in-out infinite}
+#loadStatus.status-success{background:#dcfce7;color:#166534}
+#loadStatus.status-error{background:#fee2e2;color:#b91c1c}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.2)}50%{box-shadow:0 0 0 8px rgba(37,99,235,0)}}
+@keyframes btnSuccess{0%{transform:scale(1)}45%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes btnError{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.62}}
+
 </style>
 </head>
 <body>
@@ -45,8 +64,8 @@
     <h2>手機 / 電腦 Key In</h2>
     <div class="sub">啟動先讀人員/回報/幹部目標；工單資料量大，請需要查工單時再按「讀取最新工單」。</div>
     <div class="row" style="margin-top:12px">
-      <button class="btn" onclick="loadAll()">讀取最新工單 / โหลดงานล่าสุด</button>
-      <button class="btn ghost" onclick="loadKeyin()">讀取回報資料 / โหลดรายงาน</button>
+      <button id="loadOrdersBtn" class="btn" onclick="loadAll()">讀取最新工單 / โหลดงานล่าสุด</button>
+      <button id="loadReportsBtn" class="btn ghost" onclick="loadKeyin()">讀取回報資料 / โหลดรายงาน</button>
       <span id="loadStatus" class="pill">啟動中...</span>
     </div>
   </div>
@@ -218,6 +237,25 @@ function sourceObj(r){
     raw_text: raw
   }
 }
+
+function setLoadStatus(text,type=''){
+  const el=qs('loadStatus');
+  if(!el)return;
+  el.textContent=text;
+  el.classList.remove('status-loading','status-success','status-error');
+  if(type)el.classList.add('status-'+type);
+}
+function setButtonState(id,state,loadingText,doneText){
+  const btn=qs(id);if(!btn)return;
+  if(!btn.dataset.originalText)btn.dataset.originalText=btn.textContent.trim();
+  btn.classList.remove('is-loading','is-success','is-error');
+  btn.disabled=false;
+  if(state==='loading'){btn.disabled=true;btn.classList.add('is-loading');btn.textContent=loadingText||'讀取中... / กำลังโหลด...';}
+  else if(state==='success'){btn.classList.add('is-success');btn.textContent=doneText||'讀取完成 / โหลดสำเร็จ';setTimeout(()=>{btn.classList.remove('is-success');btn.textContent=btn.dataset.originalText},1400);}
+  else if(state==='error'){btn.classList.add('is-error');btn.textContent='讀取失敗 / โหลดไม่สำเร็จ';setTimeout(()=>{btn.classList.remove('is-error');btn.textContent=btn.dataset.originalText},1800);}
+  else btn.textContent=btn.dataset.originalText;
+}
+
 async function getApi(action,params){if(window.MES&&typeof MES.get==='function')return MES.get(action,[],params||{});throw new Error('MES API 未載入')}
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
 async function loadStartup(){
@@ -237,22 +275,34 @@ async function loadStartup(){
   }
 }
 async function loadAll(){
-  qs('loadStatus').textContent='讀取工單中...資料量大請稍候';
+  setButtonState('loadOrdersBtn','loading','讀取工單中... / กำลังโหลดใบงาน...');
+  setLoadStatus('讀取工單中…資料量大請稍候 / กำลังโหลดใบงาน กรุณารอสักครู่','loading');
   try{
     const s=await getApi('keyinsource');
     App.source=rowsOf(s).map(sourceObj).filter(r=>{
       return [r.work_order_no,r.command_no,r.order_no,r.daily_report_no,r.report_no,r.part_no,r.batch_no,r.customer,r.product_spec,r.raw_text].some(v=>String(v||'').trim()!=='')
     });
     App.idx=-1;
-    qs('loadStatus').textContent='已讀取 '+App.source.length+' 筆工單';
+    setLoadStatus('已讀取 '+App.source.length+' 筆工單 / โหลดแล้ว '+App.source.length+' รายการ','success');
+    setButtonState('loadOrdersBtn','success','', '✓ 讀取完成 / โหลดสำเร็จ');
     renderPlansHint();
     if(window.MES)MES.toast('工單資料已讀取');
   }catch(err){
-    qs('loadStatus').textContent='工單讀取失敗';
+    setLoadStatus('工單讀取失敗 / โหลดใบงานไม่สำเร็จ','error');
+    setButtonState('loadOrdersBtn','error');
     alert('讀取雲端工單失敗：'+err.message);
   }
 }
-async function loadKeyin(show=true){try{const r=await getApi('listKeyin');App.keyin=rowsOf(r);renderKeyin();if(show&&window.MES)MES.toast('已讀取回報資料')}catch(e){if(window.MES)MES.toast('讀取回報失敗：'+e.message)}}
+async function loadKeyin(show=true){
+  if(show){setButtonState('loadReportsBtn','loading','讀取回報中... / กำลังโหลดรายงาน...');setLoadStatus('讀取回報資料中… / กำลังโหลดรายงาน','loading')}
+  try{
+    const r=await getApi('listKeyin');App.keyin=rowsOf(r);renderKeyin();
+    if(show){setButtonState('loadReportsBtn','success','', '✓ 讀取完成 / โหลดสำเร็จ');setLoadStatus('已讀取 '+App.keyin.length+' 筆回報 / โหลดรายงานแล้ว '+App.keyin.length+' รายการ','success');if(window.MES)MES.toast('已讀取回報資料')}
+  }catch(e){
+    if(show){setButtonState('loadReportsBtn','error');setLoadStatus('回報資料讀取失敗 / โหลดรายงานไม่สำเร็จ','error')}
+    if(window.MES)MES.toast('讀取回報失敗：'+e.message)
+  }
+}
 function onReportDateChange(){App.idx=-1;renderPlansHint();renderKeyin()}
 function setPlanRange(mode){App.range=mode;App.idx=-1;['today','week','month'].forEach(m=>{const b=qs('range_'+m);if(b)b.classList.toggle('active',m===mode)});renderPlansHint()}
 function keyinRangeObj(){const base=dk(safeGet('report_date'))||isoDate();if(App.keyinRange==='week')return{start:weekStart(base),end:weekEnd(base),label:'一周'};if(App.keyinRange==='month')return{start:base.slice(0,7)+'-01',end:monthEnd(base),label:'本月'};return{start:base,end:base,label:'今日'}}
