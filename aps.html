@@ -4391,4 +4391,215 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
+<style id="build0056-cloud-style">
+.cloud-state{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid #31527d;font-size:12px}
+.cloud-state.ok{color:#86efac;background:#0b2a21}
+.cloud-state.warn{color:#fde68a;background:#30250b}
+.cloud-state.bad{color:#fecaca;background:#3b1115}
+</style>
+
+<script id="build0056-machine-rules-cloud">
+(function(){
+  "use strict";
+
+  const API_URL =
+    window.MES_API_URL ||
+    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+
+  let cloudRules = [];
+  let syncBusy = false;
+
+  function $(id){return document.getElementById(id)}
+  function setState(text, cls){
+    let el=$("mrCloudState");
+    if(!el){
+      const host=document.querySelector("#machineRules .page-toolbar .actions");
+      if(!host)return;
+      el=document.createElement("span");
+      el.id="mrCloudState";
+      el.className="cloud-state";
+      host.prepend(el);
+    }
+    el.className="cloud-state "+(cls||"");
+    el.textContent=text;
+  }
+
+  function jsonp(action, params={}){
+    return new Promise((resolve,reject)=>{
+      const cb="MR_CLOUD_"+Date.now()+"_"+Math.floor(Math.random()*999999);
+      const s=document.createElement("script");
+      const timer=setTimeout(()=>{cleanup();reject(new Error("雲端讀取逾時："+action));},30000);
+      function cleanup(){
+        clearTimeout(timer);
+        try{delete window[cb]}catch(_){window[cb]=undefined}
+        if(s.parentNode)s.parentNode.removeChild(s);
+      }
+      window[cb]=res=>{
+        cleanup();
+        if(res&&res.ok===false)reject(new Error(res.message||res.error||"Cloud API error"));
+        else resolve(res||{});
+      };
+      s.onerror=()=>{cleanup();reject(new Error("雲端連線失敗："+action));};
+      const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();
+      s.src=API_URL+"?"+qs;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function post(action, body){
+    const res=await fetch(API_URL+"?action="+encodeURIComponent(action)+"&_="+Date.now(),{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(body||{})
+    });
+    try{return await res.json()}catch(_){return {ok:true}}
+  }
+
+  async function loadCloudRules(){
+    if(syncBusy)return;
+    syncBusy=true;
+    setState("雲端同步中…","warn");
+    try{
+      const res=await jsonp("apsmachinelistrules");
+      cloudRules=Array.isArray(res.rows)?res.rows:[];
+      localStorage.setItem("SK_APS_MACHINE_RULES_V1",JSON.stringify(cloudRules));
+      setState(`雲端已同步 ${cloudRules.length} 筆`,"ok");
+      location.reload();
+    }catch(err){
+      console.error(err);
+      setState("雲端失敗，使用本機備援","bad");
+    }finally{
+      syncBusy=false;
+    }
+  }
+
+  async function saveRuleCloud(rule){
+    setState("規則上傳中…","warn");
+    const res=await post("apsmachinesaverule",rule);
+    if(res&&res.ok===false)throw new Error(res.message||"儲存失敗");
+    setState("規則已保存雲端","ok");
+    return res;
+  }
+
+  async function deleteRuleCloud(id){
+    setState("雲端刪除中…","warn");
+    const res=await post("apsmachinedeleterule",{id});
+    if(res&&res.ok===false)throw new Error(res.message||"刪除失敗");
+    setState("雲端已刪除","ok");
+    return res;
+  }
+
+  async function replaceAllCloud(rows){
+    setState("批次同步雲端中…","warn");
+    const res=await post("apsmachinereplaceallrules",{rows});
+    if(res&&res.ok===false)throw new Error(res.message||"批次同步失敗");
+    setState(`雲端已保存 ${rows.length} 筆`,"ok");
+    return res;
+  }
+
+  function installButtons(){
+    const actions=document.querySelector("#machineRules .page-toolbar .actions");
+    if(actions&&!$("mrCloudReload")){
+      const b=document.createElement("button");
+      b.id="mrCloudReload";
+      b.className="btn ghost";
+      b.textContent="從雲端重新載入";
+      b.addEventListener("click",loadCloudRules);
+      actions.appendChild(b);
+    }
+
+    // 攔截儲存按鈕：先讓原本 localStorage 儲存完成，再同步最新規則到雲端。
+    const save=$("mrSave");
+    if(save&&!save.dataset.cloud0056){
+      save.dataset.cloud0056="1";
+      save.addEventListener("click",()=>{
+        setTimeout(async()=>{
+          try{
+            const rows=window.APSMachineRules?.getRules?.()||[];
+            const newest=rows.slice().sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")))[0];
+            if(newest)await saveRuleCloud(newest);
+          }catch(err){
+            setState("雲端保存失敗，本機已保留","bad");
+            alert("規則已保存在此電腦，但雲端保存失敗："+err.message);
+          }
+        },300);
+      });
+    }
+
+    // 匯入 JSON 後同步整批。
+    const imp=$("mrImportFile");
+    if(imp&&!imp.dataset.cloud0056){
+      imp.dataset.cloud0056="1";
+      imp.addEventListener("change",()=>{
+        setTimeout(async()=>{
+          try{
+            const rows=window.APSMachineRules?.getRules?.()||[];
+            await replaceAllCloud(rows);
+          }catch(err){
+            setState("匯入後雲端同步失敗","bad");
+          }
+        },800);
+      });
+    }
+
+    // 刪除：監聽表格點擊，取得 id 後同步刪除。
+    const table=$("mrTable");
+    if(table&&!table.dataset.cloud0056){
+      table.dataset.cloud0056="1";
+      table.addEventListener("click",e=>{
+        const btn=e.target.closest("[data-mr-del]");
+        if(!btn)return;
+        const id=btn.dataset.mrDel;
+        setTimeout(()=>deleteRuleCloud(id).catch(err=>setState("雲端刪除失敗","bad")),400);
+      },true);
+    }
+  }
+
+  async function initialLoad(){
+    installButtons();
+    setState("讀取雲端規則…","warn");
+    try{
+      const res=await jsonp("apsmachinelistrules");
+      cloudRules=Array.isArray(res.rows)?res.rows:[];
+      const local=JSON.parse(localStorage.getItem("SK_APS_MACHINE_RULES_V1")||"[]");
+
+      if(cloudRules.length){
+        localStorage.setItem("SK_APS_MACHINE_RULES_V1",JSON.stringify(cloudRules));
+        setState(`雲端已同步 ${cloudRules.length} 筆`,"ok");
+        if(JSON.stringify(local)!==JSON.stringify(cloudRules)){
+          location.reload();
+          return;
+        }
+      }else if(Array.isArray(local)&&local.length){
+        await replaceAllCloud(local);
+        setState(`已將本機 ${local.length} 筆上傳雲端`,"ok");
+      }else{
+        setState("雲端尚無規則","ok");
+      }
+    }catch(err){
+      console.error(err);
+      setState("雲端無法連線，使用本機資料","bad");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initialLoad,1800));
+  setTimeout(installButtons,2600);
+
+  document.title="SEAL KING Smart APS｜Build 0056 Cloud Knowledge";
+  document.querySelectorAll(".header-time small,.version").forEach(el=>{
+    if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
+      el.textContent="Enterprise Preview 2｜Build 0056";
+    }
+  });
+
+  window.APSMachineRuleCloud={
+    reload:loadCloudRules,
+    save:saveRuleCloud,
+    remove:deleteRuleCloud,
+    replaceAll:replaceAllCloud
+  };
+})();
+</script>
+
 </body></html>
