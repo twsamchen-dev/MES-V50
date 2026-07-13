@@ -1236,7 +1236,35 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
     S.pool=pool;S.rows.speed=speeds;initMachines(speeds);populatePoolMachines();populateUrgentLists();window.renderPool();updateKpi();renderQuality();renderSpeedCenter();if(document.getElementById('preprocess')?.classList.contains('active')){setTimeout(()=>window.showPage?.('preprocess'),0);}log(`Build 0048 V82.5 工時引擎：未結案 ${pool.filter(x=>!x.closed).length} 張；可排 ${pool.filter(x=>x.ready).length} 張；需確認 ${pool.filter(x=>!x.closed&&x.anomalies?.length).length} 張`);showPage('pool');
   };
   window.renderPool=function(){
-    const data=typeof filterPoolRows==='function'?filterPoolRows():S.pool;if(!S.pool.length){$('poolTable').className='empty';$('poolTable').textContent='沒有工單資料';$('poolCount').textContent='';return}
+    if(!S.pool.length){$('poolTable').className='empty';$('poolTable').textContent='沒有工單資料';$('poolCount').textContent='';return}
+    const searchText=norm(document.getElementById('poolSearch')?.value||EP?.poolSearch||'');
+    const statusValue=document.getElementById('poolStatus')?.value||EP?.poolStatus||'all';
+    const machineValue=document.getElementById('poolMachine')?.value||EP?.poolMachine||'all';
+    let data=S.pool.filter(x=>{
+      const hay=norm([
+        x.wo,x.order,x.command_no,x.report_no,x.batch,
+        x.part,x.input_part_no,x.output_part_no,
+        x.input_lot_no,x.output_lot_no,
+        x.customer,x.name,x.spec,x.process,
+        x.machine,x.sourceMachine,x.status,
+        ...(Array.isArray(x.aliases)?x.aliases:[])
+      ].join('|'));
+      if(searchText&&!hay.includes(searchText))return false;
+      if(machineValue!=='all'&&String(x.machine||x.sourceMachine||'')!==machineValue)return false;
+      if(statusValue==='open'&&x.closed)return false;
+      if(statusValue==='closed'&&!x.closed)return false;
+      if(statusValue==='urgent'&&!x.urgent)return false;
+      if(statusValue==='risk'&&!x.risk)return false;
+      if(statusValue==='missing'&&(x.closed||x.ready))return false;
+      return true;
+    });
+    if(window.EP?.poolSort?.key&&typeof poolValue==='function'){
+      const {key,dir}=window.EP.poolSort;
+      data.sort((a,b)=>{
+        const av=poolValue(a,key),bv=poolValue(b,key);
+        return(av>bv?1:av<bv?-1:0)*(dir||1);
+      });
+    }
     $('poolCount').textContent=`顯示 ${data.length} / ${S.pool.length} 筆`;
     $('poolTable').className='tablewrap';$('poolTable').innerHTML=`<table><thead><tr><th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th><th>所需回數</th><th>單回產量</th><th>單回時間／速度</th><th>APS模式</th><th>準備／換料</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th><th>產速來源</th><th>檢核</th></tr></thead><tbody>${data.map(x=>`<tr class="${x.closed?'closed-row':''}"><td><span class="tag ${x.closed?'gray':x.urgent?'red':x.risk?'yellow':'blue'}">${x.closed?'已結案':x.urgent?'急單':x.risk?'風險':'一般'}</span></td><td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.machine||'—')}</td><td>${Number(x.remaining).toLocaleString('zh-TW',{maximumFractionDigits:2})}</td><td>${esc(x.unit)}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString('zh-TW'):'—'}</td><td>${x.perRound?Number(x.perRound).toLocaleString('zh-TW',{maximumFractionDigits:3}):'—'}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+(x.apsMode==='LENGTH'?' m/min':'m'):'—'}</td><td><span class="tag blue">${esc(x.apsMode||'ROUND')}</span></td><td>${x.setupMinutes||0}m</td><td>${x.firstArticleMinutes||0}m</td><td>${x.productionMinutes?Math.ceil(x.productionMinutes)+'m':'—'}</td><td>${x.cleanupMinutes||0}m</td><td><b>${x.minutes?Math.ceil(x.minutes)+'m':'—'}</b></td><td><span class="tag ${x.match==='無產速'?'red':x.match==='現場回饋'?'purple':x.match==='完整條件匹配'?'green':'yellow'}">${esc(x.match)}</span></td><td>${anomalyList(x.anomalies).length?`<span class="tag yellow" title="${esc(anomalyList(x.anomalies).join('\n'))}">需確認 ${anomalyList(x.anomalies).length}</span>`:'<span class="tag green">正常</span>'}</td></tr>`).join('')}</tbody></table>`;
   };
@@ -1246,7 +1274,20 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
     out.forEach(seg=>{const j=S.pool.find(x=>x.wo===seg.wo);if(j){seg.reason=`${seg.reason||''}｜${j.apsMode||'ROUND'}；${j.cycles}回；準備/換料${j.setupMinutes}m＋首件${j.firstArticleMinutes}m＋生產${Math.ceil(j.productionMinutes)}m＋下料/收尾${j.cleanupMinutes}m；${j.match}${anomalyList(j.anomalies).length?'；需確認：'+anomalyList(j.anomalies).join('、'):''}`;}});
     return out;
   };
-  const bind=()=>{if($('buildPool'))$('buildPool').onclick=window.buildPool};bind();
+  const bind=()=>{
+    if($('buildPool'))$('buildPool').onclick=window.buildPool;
+    const search=$('poolSearch'),status=$('poolStatus'),machine=$('poolMachine'),clear=$('clearPoolFilters');
+    if(search)search.oninput=e=>{EP.poolSearch=e.target.value;window.renderPool()};
+    if(status)status.onchange=e=>{EP.poolStatus=e.target.value;window.renderPool()};
+    if(machine)machine.onchange=e=>{EP.poolMachine=e.target.value;window.renderPool()};
+    if(clear)clear.onclick=()=>{
+      if(search)search.value='';
+      if(status)status.value='all';
+      if(machine)machine.value='all';
+      EP.poolSearch='';EP.poolStatus='all';EP.poolMachine='all';
+      window.renderPool();
+    };
+  };bind();
 })();
 </script>
 
