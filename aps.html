@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V84 Smart Learning Build 0061</title>
+<title>SEAL KING Smart APS｜V85 AI Scheduler Core Build 0063</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0061 V84.7 APS Core";
+  content:"APS Build 0063 V85 AI Scheduler Core";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -2248,103 +2248,34 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
   function closeAutoRun(delay=500){setTimeout(()=>{const box=el('autoRunDialog');if(box)box.style.display='none'},delay)}
   const yieldUI=()=>new Promise(r=>setTimeout(r,0));
   async function buildAsync(token,started){
-    const jobs=selectedJobs().filter(j=>Number(j.minutes)>0);
-    const machines=enabledMachines();
-    if(!jobs.length)throw Error('目前沒有可排工單');
-    if(!machines.length)throw Error('沒有啟用機台');
-
-    openAutoRun(jobs.length);
-    updateAutoRun(0,jobs.length,'正在建立獨立排程引擎…',started);
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-
-    const payload={
-      token,
-      jobs:jobs.map(j=>({
-        wo:String(j.wo||''),part:String(j.part||''),customer:String(j.customer||''),process:String(j.process||''),
-        due:j.due?new Date(j.due).toISOString():null,urgent:!!j.urgent,machine:String(j.machine||''),minutes:Number(j.minutes)||0
-      })),
-      machines:machines.map(name=>({name,hours:Number(S.machines?.[name]?.hours)||24})),
-      speedRows:(S.rows.speed||[]).map(r=>({part:String(r.part||''),machine:String(r.machine||'')})),
-      days:Math.max(1,Number(el('days')?.value)||14),
-      startDate:(el('startDate')?.value||new Date().toISOString().slice(0,10)),
-      earlyStart:(typeof getShiftSettings==='function'?getShiftSettings():{earlyStart:'08:30'}).earlyStart||'08:30',
-      weights:{
-        due:Number(el('autoDueWeight')?.value)||0,
-        change:Number(el('autoChangeWeight')?.value)||0,
-        balance:Number(el('autoBalanceWeight')?.value)||0,
-        machine:Number(el('autoMachineWeight')?.value)||0
-      },
-      strict:el('autoUrgentGuard')?.value==='strict',
-      maxMs:45000
-    };
-
-    const workerCode=`
-      const norm=v=>String(v??'').trim().replace(/\\s+/g,'').toUpperCase();
-      const family=p=>String(p||'').toUpperCase().replace(/\\s/g,'').split(/[-_*\\/]/)[0].slice(0,8);
-      const changeCost=(a,b)=>{if(!a||!b)return 0;if(a.part&&a.part===b.part)return 0;let c=30;if(family(a.part)&&family(a.part)===family(b.part))c=12;else if(a.process&&b.process&&a.process===b.process)c=20;if(a.customer&&b.customer&&a.customer===b.customer)c=Math.max(5,c-5);return c};
-      const dueEnd=d=>{if(!d)return null;const x=new Date(d);x.setHours(23,59,59,999);return x};
-      self.onmessage=e=>{
-        const p=e.data, started=Date.now();
-        try{
-          const jobs=p.jobs.slice(), machineNames=p.machines.map(x=>x.name), speed=p.speedRows||[];
-          const [hh,mm]=String(p.earlyStart||'08:30').split(':').map(Number);
-          const start=new Date(p.startDate+'T00:00:00');start.setHours(hh||0,mm||0,0,0);
-          const cap={};
-          for(const m of p.machines){cap[m.name]=[];for(let d=0;d<p.days;d++){const st=new Date(start);st.setDate(st.getDate()+d);cap[m.name].push({start:st.getTime(),used:0,limit:(Number(m.hours)||24)*60,last:null})}}
-          jobs.sort((a,b)=>(p.strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due):new Date(8640000000000000))-(b.due?new Date(b.due):new Date(8640000000000000)))||(b.minutes-a.minutes));
-          const out=[];let operations=0;
-          for(let ji=0;ji<jobs.length;ji++){
-            const job=jobs[ji];let remain=Number(job.minutes)||0;
-            let cands=[...new Set(speed.filter(r=>norm(r.part)===norm(job.part)).map(r=>String(r.machine||'').trim()).filter(m=>machineNames.includes(m)))];
-            if(job.machine&&machineNames.includes(job.machine))cands=[job.machine,...cands.filter(m=>m!==job.machine)];
-            if(!cands.length)cands=machineNames.slice();
-            let guard=0;
-            while(remain>.01){
-              if(++guard>p.days*Math.max(1,cands.length)+5)break;
-              let best=null;
-              for(const m of cands){for(let d=0;d<p.days;d++){
-                if(++operations>500000)throw Error('排程安全上限觸發：'+job.wo);
-                const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;if(free<=.01)continue;
-                const st=c.start+(c.used+chg)*60000,take=Math.min(remain,free),finish=st+take*60000,due=dueEnd(job.due);let score=d*100000+c.used;
-                score+=chg*p.weights.change*15;score+=(c.used/c.limit)*p.weights.balance*1000;if(job.machine&&m!==job.machine)score+=p.weights.machine*500;if(due&&finish>due)score+=((finish-due.getTime())/60000)*p.weights.due*100;if(job.urgent)score-=p.strict?1e9:1e6;
-                if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score};
-              }}
-              if(!best)break;
-              if(best.chg>0)best.c.used+=best.chg;
-              const pd=new Date(best.c.start);pd.setHours(0,0,0,0);
-              out.push({machine:best.m,date:pd.toISOString(),start:new Date(best.st).toISOString(),end:new Date(best.finish).toISOString(),minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:!!job.urgent,reason:'AI自動排程；'+(job.urgent?'急單優先；':'')+(job.machine?'建議機台 '+job.machine+'；':'')+'換線 '+best.chg+' 分'});
-              best.c.used+=best.take;best.c.last=job;remain-=best.take;
-            }
-            self.postMessage({type:'progress',done:ji+1,total:jobs.length,wo:job.wo,candidates:cands.length,remain:Math.max(0,Math.round(remain)),elapsed:Date.now()-started});
-            if(Date.now()-started>p.maxMs)throw Error('AI 模擬超過 45 秒，已安全停止。最後處理：'+job.wo);
-          }
-          out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||new Date(a.start)-new Date(b.start));
-          self.postMessage({type:'done',out});
-        }catch(err){self.postMessage({type:'error',message:err&&err.message?err.message:String(err)})}
-      };
-    `;
-
-    return await new Promise((resolve,reject)=>{
-      const url=URL.createObjectURL(new Blob([workerCode],{type:'text/javascript'}));
-      const worker=new Worker(url);
-      let finished=false;
-      const cleanup=()=>{if(finished)return;finished=true;worker.terminate();URL.revokeObjectURL(url)};
-      const cancelTimer=setInterval(()=>{if(token!==autoRunToken){cleanup();clearInterval(cancelTimer);reject(Error('AI 模擬已由使用者中止'))}},120);
-      const timeout=setTimeout(()=>{cleanup();clearInterval(cancelTimer);reject(Error('AI 模擬逾時，已安全中止'))},50000);
-      worker.onmessage=ev=>{
-        const m=ev.data||{};
-        if(m.type==='progress'){
-          updateAutoRun(m.done,m.total,`工單 ${m.wo}｜候選機台 ${m.candidates} 台｜剩餘 ${m.remain} 分鐘`,started);
-        }else if(m.type==='done'){
-          clearTimeout(timeout);clearInterval(cancelTimer);cleanup();
-          resolve((m.out||[]).map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):null})));
-        }else if(m.type==='error'){
-          clearTimeout(timeout);clearInterval(cancelTimer);cleanup();reject(Error(m.message||'AI 模擬失敗'));
-        }
-      };
-      worker.onerror=err=>{clearTimeout(timeout);clearInterval(cancelTimer);cleanup();reject(Error(err.message||'AI Worker 執行失敗'))};
-      worker.postMessage(payload);
-    });
+    const jobs=selectedJobs().filter(j=>j.minutes>0),machines=enabledMachines();if(!jobs.length)throw Error('目前沒有可排工單');if(!machines.length)throw Error('沒有啟用機台');
+    const days=Math.max(1,Number(el('days')?.value)||14),start=dayStart(new Date((el('startDate')?.value||new Date().toISOString().slice(0,10))+'T00:00:00'));
+    const cap={};machines.forEach(m=>{cap[m]=[];for(let d=0;d<days;d++){const st=new Date(start);st.setDate(st.getDate()+d);cap[m].push({start:st,used:0,limit:(Number(S.machines[m]?.hours)||24)*60,last:null})}});
+    const wDue=Number(el('autoDueWeight')?.value)||0,wChange=Number(el('autoChangeWeight')?.value)||0,wBalance=Number(el('autoBalanceWeight')?.value)||0,wMachine=Number(el('autoMachineWeight')?.value)||0,strict=el('autoUrgentGuard')?.value==='strict';
+    jobs.sort((a,b)=>(strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due):new Date(8640000000000000))-(b.due?new Date(b.due):new Date(8640000000000000)))||(b.minutes-a.minutes));
+    openAutoRun(jobs.length);const out=[];let operations=0;
+    for(let ji=0;ji<jobs.length;ji++){
+      if(token!==autoRunToken)throw Error('AI 模擬已由使用者中止');
+      const job=jobs[ji];let remain=job.minutes;const cands=candidateMachines(job,machines);let guard=0;
+      while(remain>.01){
+        if(token!==autoRunToken)throw Error('AI 模擬已由使用者中止');
+        if(++guard>days*Math.max(1,cands.length)+5)break;
+        let best=null;
+        for(const m of cands){for(let d=0;d<days;d++){
+          if(++operations>2000000)throw Error(`排程安全上限觸發：${job.wo}，請檢查產速或機台設定`);
+          const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;if(free<=.01)continue;
+          const st=new Date(c.start.getTime()+(c.used+chg)*60000),take=Math.min(remain,free),finish=new Date(st.getTime()+take*60000),due=dueEnd(job.due);let score=d*100000+c.used;
+          score+=chg*wChange*15;score+=(c.used/c.limit)*wBalance*1000;if(job.machine&&m!==job.machine)score+=wMachine*500;if(due&&finish>due)score+=((finish-due)/60000)*wDue*100;if(job.urgent)score-=strict?1e9:1e6;if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score};
+        }}
+        if(!best)break;if(best.chg>0)best.c.used+=best.chg;const pd=new Date(best.c.start);pd.setHours(0,0,0,0);
+        out.push({machine:best.m,date:pd,start:best.st,end:best.finish,minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due?new Date(job.due):null,urgent:!!job.urgent,reason:`AI自動排程；${job.urgent?'急單優先；':''}${job.machine?'建議機台 '+job.machine+'；':''}交期 ${job.due?fmtDate(job.due):'未提供'}；換線 ${best.chg} 分`});
+        best.c.used+=best.take;best.c.last=job;remain-=best.take;
+      }
+      updateAutoRun(ji+1,jobs.length,`工單 ${job.wo}｜候選機台 ${cands.length} 台｜剩餘 ${Math.max(0,Math.round(remain))} 分鐘`,started);
+      if((ji+1)%3===0)await yieldUI();
+      if(performance.now()-started>45000)throw Error(`AI 模擬超過 45 秒，已安全停止。最後處理：${job.wo}`);
+    }
+    return out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||a.start-b.start);
   }
   async function simulate(){
     const btn=el('runAutoSchedule'),old=btn?.textContent||'開始 AI 模擬',token=++autoRunToken,started=performance.now();
@@ -3276,7 +3207,7 @@ window.SEAL_KING_SECURITY={
 <script id="build0048-v825-marker">
 (()=>{
   window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
-  console.info("SEAL KING Smart APS Build 0061｜V84.7 APS Core loaded");
+  console.info("SEAL KING Smart APS Build 0063｜V85 AI Scheduler Core loaded");
 })();
 </script>
 
@@ -5423,22 +5354,93 @@ document.addEventListener("DOMContentLoaded",function(){
   obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['disabled'],childList:true,characterData:true});
   document.addEventListener('DOMContentLoaded',()=>{
     document.title='SEAL KING Smart APS｜V84.7 Enterprise AI APS';
-    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0061 V84.7';});
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0063 V85';});
   });
 })();
 </script>
 
-<script>
-/* Build 0062｜版本標示固定，避免舊模組覆蓋 */
+
+<!-- Build 0063｜V85 AI Scheduler Core：有限搜尋、防死循環、可中止 -->
+<script id="build0063-v85-ai-scheduler-core">
 (()=>{
-  const apply=()=>{
-    document.title='SEAL KING Smart APS｜Build 0062 V84.8 Worker Core';
-    document.querySelectorAll('.header-time small,.version').forEach(el=>{
-      if(/Build|APS Core|Enterprise Preview|Smart Learning/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0062 V84.8';
-    });
-  };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();
-  setTimeout(apply,1500);
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+const normV=v=>String(v??'').trim().toUpperCase().replace(/\s+/g,'');
+let runId=0, proposal=null, backup=null;
+
+function family(p){return normV(p).split(/[-_*\/]/)[0].slice(0,8)}
+function changeCost(a,b){if(!a||!b)return 0;if(normV(a.part)===normV(b.part))return 0;let c=30;if(family(a.part)&&family(a.part)===family(b.part))c=12;else if(a.process&&b.process&&a.process===b.process)c=20;if(a.customer&&b.customer&&a.customer===b.customer)c=Math.max(5,c-5);return c}
+function dayStart(date){const sh=(typeof getShiftSettings==='function'?getShiftSettings():{earlyStart:'08:30'}).earlyStart||'08:30';const [h,m]=String(sh).split(':').map(Number);const d=new Date(date);d.setHours(h||0,m||0,0,0);return d}
+function dueEnd(d){if(!d)return null;const x=new Date(d);if(Number.isNaN(x.getTime()))return null;x.setHours(23,59,59,999);return x}
+function cloneSchedule(a){return (a||[]).map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):x.due}))}
+function selectedJobs(){const scope=$('autoScope')?.value||'ready';if(scope==='scheduled'){const map={};(S.schedule||[]).forEach(x=>{if(!x.wo)return;const j=map[x.wo]??={wo:x.wo,part:x.part,customer:x.customer,process:x.process,due:x.due?new Date(x.due):null,urgent:!!x.urgent,machine:x.machine,minutes:0,ready:true,closed:false,match:'既有排程'};j.minutes+=n(x.minutes)});return Object.values(map)}return (S.pool||[]).filter(x=>!x.closed&&(scope==='allopen'||x.ready)).map(x=>({...x,minutes:n(x.minutes)}))}
+function enabledMachines(){return Object.keys(S.machines||{}).filter(m=>S.machines[m]?.enabled!==false&&n(S.machines[m]?.hours)>0)}
+function candidateMachines(job,machines){let list=(S.rows?.speed||[]).filter(r=>normV(r.part)===normV(job.part)).map(r=>String(r.machine||'').trim()).filter(m=>machines.includes(m));list=[...new Set(list)];if(job.machine&&machines.includes(job.machine))list=[job.machine,...list.filter(m=>m!==job.machine)];return list.length?list:machines.slice()}
+function yieldUI(){return new Promise(r=>setTimeout(r,0))}
+
+function ensureMonitor(){let box=$('v85Monitor');if(box)return box;box=document.createElement('div');box.id='v85Monitor';box.style.cssText='position:fixed;inset:0;z-index:100000;background:#02080fcc;display:none;align-items:center;justify-content:center;padding:18px';box.innerHTML=`<div style="width:min(680px,96vw);background:#0b1824;border:1px solid #31516d;border-radius:18px;padding:22px;color:#eaf6ff;box-shadow:0 24px 80px #000a"><div style="display:flex;justify-content:space-between;gap:14px"><div><div style="font-size:12px;letter-spacing:.15em;color:#ff5264;font-weight:900">V85 AI SCHEDULER CORE</div><h2 style="margin:7px 0 4px">有限搜尋排程監控</h2><div id="v85Stage" style="color:#9db3c7">準備中…</div></div><button id="v85Cancel" class="btn red" type="button">中止模擬</button></div><div style="height:12px;background:#17283a;border-radius:999px;overflow:hidden;margin:18px 0 8px"><i id="v85Bar" style="display:block;height:100%;width:0;background:linear-gradient(90deg,#2868ff,#23c7d9);transition:width .12s"></i></div><div style="display:flex;justify-content:space-between;color:#9db3c7;font-size:13px"><span id="v85Count">0 / 0</span><span id="v85Pct">0%</span></div><div id="v85Current" style="margin-top:14px;padding:12px;border:1px solid #223b50;border-radius:12px;background:#07131e;min-height:48px"></div><div id="v85Stats" style="margin-top:8px;color:#7890a5;font-size:12px"></div></div>`;document.body.appendChild(box);$('v85Cancel').onclick=()=>{runId++;$('v85Stage').textContent='正在安全中止…';$('v85Cancel').disabled=true};return box}
+function openMonitor(total){const b=ensureMonitor();b.style.display='flex';$('v85Bar').style.width='0%';$('v85Count').textContent=`0 / ${total}`;$('v85Pct').textContent='0%';$('v85Stage').textContent='整理工單與機台容量…';$('v85Current').textContent='準備開始';$('v85Stats').textContent='';$('v85Cancel').disabled=false}
+function updateMonitor(done,total,current,started,ops,skipped){const pct=total?Math.round(done/total*100):0;$('v85Bar').style.width=pct+'%';$('v85Count').textContent=`${done} / ${total}`;$('v85Pct').textContent=pct+'%';$('v85Stage').textContent=done>=total?'整理排程結果…':'AI 正在配置工單';$('v85Current').textContent=current;$('v85Stats').textContent=`耗時 ${((performance.now()-started)/1000).toFixed(1)} 秒｜評估 ${ops.toLocaleString()} 次｜跳過 ${skipped} 張`}
+function closeMonitor(ms=800){setTimeout(()=>{const b=$('v85Monitor');if(b)b.style.display='none'},ms)}
+
+async function buildV85(token,started){
+  openMonitor(0); await yieldUI();
+  const jobs=selectedJobs().filter(j=>j.minutes>0); const machines=enabledMachines();
+  if(!jobs.length)throw Error('目前沒有可排工單'); if(!machines.length)throw Error('沒有啟用機台');
+  openMonitor(jobs.length); await yieldUI();
+  const days=Math.max(1,Math.min(60,n($('days')?.value)||14));
+  const start=dayStart(new Date((($('startDate')?.value)||new Date().toISOString().slice(0,10))+'T00:00:00'));
+  const cap={}; for(const m of machines){cap[m]=[];for(let d=0;d<days;d++){const st=new Date(start);st.setDate(st.getDate()+d);cap[m].push({start:st,used:0,limit:Math.max(1,n(S.machines[m]?.hours)||24)*60,last:null})}}
+  const wDue=n($('autoDueWeight')?.value),wChange=n($('autoChangeWeight')?.value),wBalance=n($('autoBalanceWeight')?.value),wMachine=n($('autoMachineWeight')?.value),strict=$('autoUrgentGuard')?.value==='strict';
+  jobs.sort((a,b)=>(strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due):new Date(8640000000000000))-(b.due?new Date(b.due):new Date(8640000000000000)))||(b.minutes-a.minutes));
+  const out=[], skipped=[]; let operations=0;
+  const MAX_OPS=150000, MAX_JOB_MS=1800, MAX_TOTAL_MS=30000;
+  for(let ji=0;ji<jobs.length;ji++){
+    if(token!==runId)throw Error('AI 模擬已由使用者中止');
+    const job=jobs[ji], cands=candidateMachines(job,machines), jobStarted=performance.now();
+    let remain=Math.max(0,n(job.minutes)), segments=0;
+    const maxSegments=Math.max(1,Math.min(days*Math.max(1,cands.length),120));
+    while(remain>.01 && segments<maxSegments){
+      if(token!==runId)throw Error('AI 模擬已由使用者中止');
+      if(performance.now()-jobStarted>MAX_JOB_MS){skipped.push({wo:job.wo,reason:'單筆工單超過 1.8 秒'});break}
+      if(performance.now()-started>MAX_TOTAL_MS)throw Error(`AI 模擬超過 30 秒，已安全停止。最後處理：${job.wo}`);
+      let best=null;
+      for(const m of cands){for(let d=0;d<days;d++){
+        if(++operations>MAX_OPS)throw Error(`排程評估已達安全上限 ${MAX_OPS.toLocaleString()} 次。最後處理：${job.wo}`);
+        const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;
+        if(free<=.01)continue;
+        const st=new Date(c.start.getTime()+(c.used+chg)*60000),take=Math.min(remain,free),finish=new Date(st.getTime()+take*60000),due=dueEnd(job.due);
+        let score=d*100000+c.used+chg*wChange*15+(c.used/c.limit)*wBalance*1000;
+        if(job.machine&&m!==job.machine)score+=wMachine*500;
+        if(due&&finish>due)score+=((finish-due)/60000)*wDue*100;
+        if(job.urgent)score-=strict?1e9:1e6;
+        if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score};
+      }}
+      if(!best){skipped.push({wo:job.wo,reason:'無可用機台容量'});break}
+      if(!(best.take>0)){skipped.push({wo:job.wo,reason:'可排分鐘為 0'});break}
+      if(best.chg>0)best.c.used+=best.chg;
+      const pd=new Date(best.c.start);pd.setHours(0,0,0,0);
+      out.push({machine:best.m,date:pd,start:best.st,end:best.finish,minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due?new Date(job.due):null,urgent:!!job.urgent,reason:`V85有限搜尋；${job.urgent?'急單優先；':''}${job.machine?'建議機台 '+job.machine+'；':''}交期 ${job.due?(typeof fmtDate==='function'?fmtDate(job.due):String(job.due)):'未提供'}；換線 ${best.chg} 分`});
+      best.c.used+=best.take;best.c.last=job;remain-=best.take;segments++;
+    }
+    if(remain>.01&&!skipped.some(x=>x.wo===job.wo))skipped.push({wo:job.wo,reason:`超過最大 ${maxSegments} 段，剩餘 ${Math.round(remain)} 分鐘`});
+    updateMonitor(ji+1,jobs.length,`工單 ${job.wo}｜候選 ${cands.length} 台｜排程段 ${segments}｜剩餘 ${Math.max(0,Math.round(remain))} 分鐘`,started,operations,skipped.length);
+    await yieldUI();
+  }
+  return {schedule:out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||a.start-b.start),skipped,operations};
+}
+function metrics(schedule){const completion={},seq={};let max=null;(schedule||[]).forEach(x=>{if(!completion[x.wo]||x.end>completion[x.wo])completion[x.wo]=new Date(x.end);(seq[x.machine]??=[]).push(x);if(!max||x.end>max)max=new Date(x.end)});let late=0,lateMin=0;Object.entries(completion).forEach(([wo,end])=>{const p=(S.pool||[]).find(x=>x.wo===wo),due=dueEnd(p?.due);if(due&&end>due){late++;lateMin+=Math.round((end-due)/60000)}});let change=0;Object.values(seq).forEach(a=>{const jobs=[];a.sort((x,y)=>x.start-y.start).forEach(x=>{if(!jobs.length||jobs.at(-1).wo!==x.wo)jobs.push(x)});for(let i=1;i<jobs.length;i++)change+=changeCost(jobs[i-1],jobs[i])});const loads=Object.fromEntries(Object.entries(seq).map(([m,a])=>[m,a.reduce((s,x)=>s+n(x.minutes),0)]));return{late,lateMin,change,max,loads,completion}}
+function dateShort(d){return d?new Date(d).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'—'}
+function renderV85(){const p=proposal;if(!p)return;$('autoLateBefore').textContent=p.before.late;$('autoLateAfter').textContent=p.after.late;$('autoChangeBefore').textContent=Math.round(p.before.change);$('autoChangeAfter').textContent=Math.round(p.after.change);$('autoFinishBefore').textContent=dateShort(p.before.max);$('autoFinishAfter').textContent=dateShort(p.after.max);$('applyAutoSchedule').disabled=false;const savedLate=p.before.late-p.after.late,savedChange=p.before.change-p.after.change,finishDiff=p.before.max&&p.after.max?Math.round((p.before.max-p.after.max)/60000):0;$('autoScheduleInsights').className='';$('autoScheduleInsights').innerHTML=`<div class="auto-insight ${savedLate>=0?'good':'bad'}"><b>交期風險</b>${savedLate>0?`減少 ${savedLate} 張延遲工單`:savedLate===0?'延遲工單數持平':`增加 ${Math.abs(savedLate)} 張延遲工單`}</div><div class="auto-insight ${savedChange>=0?'good':'warn'}"><b>換線改善</b>${savedChange>=0?`預估節省 ${Math.round(savedChange)} 分鐘`:`增加 ${Math.abs(Math.round(savedChange))} 分鐘`}</div><div class="auto-insight ${finishDiff>=0?'good':'warn'}"><b>最晚完成</b>${finishDiff>=0?`提前 ${finishDiff} 分鐘`:`延後 ${Math.abs(finishDiff)} 分鐘`}</div><div class="auto-insight"><b>排程規模</b>${p.schedule.length} 個區段｜跳過 ${p.skipped.length} 張｜評估 ${p.operations.toLocaleString()} 次</div>`;$('autoSchedulePreview').className='auto-preview-wrap';$('autoSchedulePreview').innerHTML=`<table class="auto-preview-table"><thead><tr><th>機台</th><th>工單</th><th>開始</th><th>完成</th><th>分鐘</th><th>狀態</th></tr></thead><tbody>${p.schedule.slice(0,250).map(x=>{const due=dueEnd(x.due),late=due&&x.end>due;return`<tr><td>${esc(x.machine)}</td><td>${esc(x.wo)}</td><td>${esc(dateShort(x.start))}</td><td>${esc(dateShort(x.end))}</td><td>${Math.round(x.minutes)}</td><td><span class="tag ${late?'red':'green'}">${late?'Delay':'準時'}</span></td></tr>`}).join('')}</tbody></table>${p.skipped.length?`<div class="notice" style="margin-top:10px">未排成功 ${p.skipped.length} 張：${p.skipped.slice(0,12).map(x=>esc(x.wo+'（'+x.reason+'）')).join('、')}</div>`:''}`}
+async function simulateV85(){const btn=$('runAutoSchedule'),old=btn?.textContent||'開始 AI 模擬',token=++runId,started=performance.now();try{if(btn){btn.disabled=true;btn.textContent='V85 排程中…'}openMonitor(0);await yieldUI();const r=await buildV85(token,started);if(token!==runId)throw Error('AI 模擬已中止');$('v85Stage').textContent='計算延遲、換線與負載…';await yieldUI();proposal={schedule:r.schedule,before:metrics(S.schedule||[]),after:metrics(r.schedule),skipped:r.skipped,operations:r.operations};renderV85();$('v85Stage').textContent='✓ V85 模擬完成';$('v85Current').textContent=`完成 ${r.schedule.length} 個排程區段，跳過 ${r.skipped.length} 張工單`;$('v85Bar').style.width='100%';$('v85Pct').textContent='100%';closeMonitor(900)}catch(err){const msg=err?.message||String(err);if($('v85Stage'))$('v85Stage').textContent='模擬停止';if($('v85Current'))$('v85Current').textContent=msg;closeMonitor(1800);if(!/使用者中止|已中止/.test(msg))alert(msg)}finally{if(btn){btn.disabled=false;btn.textContent=old}}}
+async function applyV85(){if(!proposal)return;backup=cloneSchedule(S.schedule||[]);S.schedule=cloneSchedule(proposal.schedule);if(typeof renderSchedule==='function')renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();$('restoreAutoSchedule').disabled=false;$('applyAutoSchedule').disabled=true;if(typeof log==='function')log(`V85 AI排程已套用：${S.schedule.length} 個區段`);try{if(typeof saveDataset==='function')await saveDataset('schedule',true)}catch(e){console.warn(e)}alert(`V85 最佳排程已套用，共 ${S.schedule.length} 個區段；未排成功 ${proposal.skipped.length} 張。`);if(typeof showPage==='function')showPage('schedule')}
+function restoreV85(){if(!backup)return;S.schedule=cloneSchedule(backup);if(typeof renderSchedule==='function')renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();backup=null;$('restoreAutoSchedule').disabled=true}
+function install(){const old=$('runAutoSchedule');if(old&&!old.dataset.v85){const neo=old.cloneNode(true);neo.dataset.v85='1';old.replaceWith(neo);neo.addEventListener('click',simulateV85)}const a=$('applyAutoSchedule');if(a&&!a.dataset.v85){const neo=a.cloneNode(true);neo.dataset.v85='1';a.replaceWith(neo);neo.addEventListener('click',applyV85)}const r=$('restoreAutoSchedule');if(r&&!r.dataset.v85){const neo=r.cloneNode(true);neo.dataset.v85='1';r.replaceWith(neo);neo.addEventListener('click',restoreV85)}document.title='SEAL KING Smart APS｜V85 AI Scheduler Core Build 0063';document.querySelectorAll('.header-time small,.version').forEach(x=>{if(/Build|APS Core|Enterprise Preview/i.test(x.textContent||''))x.textContent='Enterprise Preview 2｜Build 0063 V85 AI Scheduler Core'});document.querySelectorAll('.side-footer small').forEach(x=>{if(/APS Core|Build/i.test(x.textContent||''))x.textContent='Build 0063｜V85 AI Scheduler Core'})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0));else setTimeout(install,0);setTimeout(install,1800);
+window.APS_V85={version:'V85',build:'0063',simulate:simulateV85};
 })();
 </script>
+
 </body></html>
