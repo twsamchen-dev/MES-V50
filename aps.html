@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Build 0047.2 Unified Order Index</title>
+<title>SEAL KING Smart APS｜Build 0048 V82.5 APS Core</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0047.2 Unified Index";
+  content:"APS Build 0048 V82.5 APS Core";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -471,7 +471,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0047.2 Unified Index</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0048 V82.5 APS Core</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -511,7 +511,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Build 0047.2 Unified Index</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Build 0048 V82.5 APS Core</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -829,7 +829,34 @@ function renderFiles(){
 function renderPreview(){const e=Object.entries(S.files).find(([k])=>k!=='unknown');if(!e){$('preview').className='empty';$('preview').textContent='尚未上傳檔案';return}const [type,obj]=e,sh=obj.sheets[0],rows=sh.rows.slice(0,8);$('preview').className='tablewrap';$('preview').innerHTML=tableHtml(rows[0]||[],rows.slice(1))}
 function tableHtml(headers,rows,renderers={}){return `<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${headers.map((h,i)=>`<td>${renderers[i]?renderers[i](r[i],r):esc(r[i]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 function pickSheet(type,preferred){const o=S.files[type];if(!o)return null;return o.sheets.find(s=>preferred.some(p=>norm(s.name).includes(norm(p))))||o.sheets[0]}
-function buildSpeed(){const sh=pickSheet('speed',['產速(主力機)']);if(!sh)return[];let hi=sh.rows.findIndex(r=>r.some(v=>norm(v)==='產品料號'));if(hi<0)hi=0;const h=sh.rows[hi],idx={part:findCol(h,['產品料號','料號']),name:findCol(h,['產品名稱','品名']),machine:findCol(h,['機台']),process:findCol(h,['製程']),inw:findCol(h,['投入寬/mm','投入寬']),outw:findCol(h,['產出寬/mm','產出寬']),len:findCol(h,['產出長/M','產出長/m','產出長']),run:findCol(h,['運轉時間min']),down:findCol(h,['下料時間min']),total:findCol(h,['加總min']),speed:findCol(h,['運轉速度'])};return sh.rows.slice(hi+1).filter(r=>r[idx.part]).map(r=>({part:String(r[idx.part]).trim(),name:r[idx.name]||'',machine:String(r[idx.machine]||'').trim(),process:String(r[idx.process]||'').trim(),inw:num(r[idx.inw]),outw:num(r[idx.outw]),len:num(r[idx.len]),run:num(r[idx.run]),down:num(r[idx.down]),total:num(r[idx.total])||num(r[idx.run])+num(r[idx.down]),speed:num(r[idx.speed])})).filter(x=>x.part&&x.total>0)}
+/* Build 0048｜V82.5 APS Core：Master_產速 V2 */
+function inferAPSMode(process,rawMode=''){
+ const m=norm(rawMode);if(['FIXED','LENGTH','AREA','ROLL','ROUND'].includes(m))return m;
+ const p=String(process||'').trim();
+ if(/裁切|分條/.test(p))return'FIXED';
+ if(/覆卷|複捲/.test(p))return'LENGTH';
+ return'ROUND';
+}
+function buildSpeed(){
+ const sh=pickSheet('speed',['產速(主力機)']);if(!sh)return[];
+ let hi=sh.rows.findIndex(r=>r.some(v=>norm(v)==='產品料號'));if(hi<0)hi=0;
+ const h=sh.rows[hi],idx={
+  part:findCol(h,['產品料號','料號']),name:findCol(h,['產品名稱','品名']),machine:findCol(h,['機台']),process:findCol(h,['製程']),
+  mode:findCol(h,['Mode','計算模式','APS Mode']),inw:findCol(h,['投入寬/mm','投入寬']),outw:findCol(h,['產出寬/mm','產出寬']),
+  len:findCol(h,['產出長/M','產出長/m','產出長']),run:findCol(h,['運轉時間min','固定運轉時間','FixedRunTime']),
+  down:findCol(h,['下料時間min','下料時間','UnloadTime']),change:findCol(h,['換料時間min','換料時間','ChangeTime']),
+  setup:findCol(h,['調機時間min','調機時間','SetupTime']),total:findCol(h,['加總min','總工時min']),speed:findCol(h,['運轉速度','SpeedMpm']),
+  efficiency:findCol(h,['效率係數','EfficiencyFactor']),version:findCol(h,['版本','Version']),enabled:findCol(h,['啟用','Enable'])
+ };
+ return sh.rows.slice(hi+1).filter(r=>r[idx.part]).map(r=>{
+  const process=String(r[idx.process]||'').trim(),mode=inferAPSMode(process,r[idx.mode]);
+  const run=num(r[idx.run]),down=num(r[idx.down]),change=num(r[idx.change]),setup=num(r[idx.setup]),speed=num(r[idx.speed]);
+  const total=num(r[idx.total])||run+down+change+setup;
+  return{part:String(r[idx.part]).trim(),name:r[idx.name]||'',machine:String(r[idx.machine]||'').trim(),process,mode,
+   inw:num(r[idx.inw]),outw:num(r[idx.outw]),len:num(r[idx.len]),run,down,change,setup,total,speed,
+   efficiency:num(r[idx.efficiency])||1,version:String(r[idx.version]||'V2').trim(),enabled:String(r[idx.enabled]??'Y').trim().toUpperCase()!=='N'};
+ }).filter(x=>x.part&&x.enabled&&((x.mode==='FIXED'&&x.total>0)||(x.mode==='LENGTH'&&x.speed>0)||(x.mode==='ROUND'&&x.total>0)||x.mode==='AREA'||x.mode==='ROLL'));
+}
 /* Build 0047.2｜Unified Order Index：跨 3-9／4-3／9-1／9-3 建立識別碼關聯 */
 function unifiedFieldIndex(h){
  const find=(names)=>findCol(h,names);
@@ -997,7 +1024,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
  function saveFeedback(rows){localStorage.setItem(KEY,JSON.stringify(rows))}
  function loadStoredMaster(){try{return JSON.parse(localStorage.getItem(MASTER_KEY)||'[]')}catch(e){return[]}}
  function saveStoredMaster(rows){localStorage.setItem(MASTER_KEY,JSON.stringify(rows))}
- function feedbackRows(){return loadFeedback().map((x,i)=>({...x,_feedback:true,_index:i,total:Number(x.minutesRound)||0,qtyPerRound:Number(x.qtyRound)||0,unit:x.unit||'R',inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,run:Number(x.minutesRound)||0,down:0,speed:0}))}
+ function feedbackRows(){return loadFeedback().map((x,i)=>{const mode=inferAPSMode(x.process,x.mode);return({...x,_feedback:true,_index:i,mode,total:Number(x.total)||Number(x.minutesRound)||0,qtyPerRound:Number(x.qtyRound)||0,unit:x.unit||'R',inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,run:Number(x.fixedRunTime)||Number(x.minutesRound)||0,down:Number(x.unloadTime)||0,change:Number(x.changeTime)||0,setup:Number(x.setupTime)||0,speed:Number(x.speedMpm)||Number(x.speed)||0,efficiency:Number(x.efficiencyFactor)||1,version:x.version||'V2-FB',enabled:x.enabled!==false})})}
  const baseBuildSpeed=window.buildSpeed;
  function speedMasterKey(x){return[norm(x.part),norm(x.machine),norm(x.process)].join('|')}
  function mergeStoredMaster(incoming){
@@ -1021,8 +1048,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
      const clean=uploaded.map(x=>({
        part:x.part,name:x.name||'',machine:x.machine||'',process:x.process||'',
        inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,
-       run:Number(x.run)||0,down:Number(x.down)||0,total:Number(x.total)||0,
-       speed:Number(x.speed)||0,source:'加工課產速表'
+       mode:inferAPSMode(x.process,x.mode),run:Number(x.run)||0,down:Number(x.down)||0,change:Number(x.change)||0,setup:Number(x.setup)||0,total:Number(x.total)||0,
+       speed:Number(x.speed)||0,efficiency:Number(x.efficiency)||1,version:x.version||'V2',enabled:x.enabled!==false,source:'加工課產速表'
      }));
      const result=mergeStoredMaster(clean);
      base=result.rows;
@@ -1035,6 +1062,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
        },150);
      }
    }
+   base=base.map(x=>({...x,mode:inferAPSMode(x.process,x.mode),change:Number(x.change)||0,setup:Number(x.setup)||0,efficiency:Number(x.efficiency)||Number(x.efficiencyFactor)||1,version:x.version||'V2',enabled:x.enabled!==false})).filter(x=>x.enabled!==false);
    const fb=feedbackRows();
    const m=new Map(base.map(x=>[speedMasterKey(x),x]));
    fb.forEach(x=>m.set(speedMasterKey(x),x));
@@ -1151,26 +1179,46 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
       default:return 0;
     }
   }
+  function lengthBasis(job,speed){
+    const ut=unitType(job.unit),qty=Number(job.remaining)||0;
+    if(ut==='M')return qty;
+    if(ut==='R')return qty*(Number(speed.len)||0);
+    if(ut==='M2'){const widthM=(Number(speed.outw)||0)/1000;return widthM>0?qty/widthM:0}
+    return 0;
+  }
   function calcJob(job,match){
     const anomalies=[];const ut=unitType(job.unit);
-    if(ut==='UNKNOWN'||ut==='KG')anomalies.push(`單位 ${job.unit||'空白'} 尚未建立換算`);
-    if(!match)return{ready:false,minutes:0,cycles:0,perRound:0,roundMinutes:0,productionMinutes:0,setupMinutes:0,firstArticleMinutes:0,cleanupMinutes:0,match:'無產速',anomalies:['缺少產速資料']};
-    const pr=perRound(match.row,job.unit),rpm=Number(match.row.total)||Number(match.row.minutesRound)||0;
-    if(!(pr>0))anomalies.push('每回產量無法計算');
-    if(!(rpm>0))anomalies.push('每回時間無效');
+    if(!match)return{ready:false,minutes:0,cycles:0,perRound:0,roundMinutes:0,productionMinutes:0,setupMinutes:0,firstArticleMinutes:0,cleanupMinutes:0,match:'無產速',apsMode:'',anomalies:['缺少產速資料']};
+    const speed=match.row,mode=inferAPSMode(job.process,speed.mode),eff=Number(speed.efficiency)||Number(speed.efficiencyFactor)||1;
     if(match.ambiguous)anomalies.push('產速候選資料過於接近，需確認規格');
     if(match.level.includes('估算'))anomalies.push('目前使用低信心產速');
-    if(!(pr>0&&rpm>0))return{ready:false,minutes:0,cycles:0,perRound:pr,roundMinutes:rpm,productionMinutes:0,setupMinutes:0,firstArticleMinutes:0,cleanupMinutes:0,match:match.level,anomalies};
-    const cycles=Math.max(1,Math.ceil(Number(job.remaining)/pr));
-    const productionMinutes=cycles*rpm;
-    const setupMinutes=APS_TIME_RULES.setup+(match.level.includes('估算')?APS_TIME_RULES.looseMatchPenalty:0);
-    const firstArticleMinutes=APS_TIME_RULES.firstArticle;
-    const cleanupMinutes=APS_TIME_RULES.cleanup;
-    const raw=setupMinutes+firstArticleMinutes+productionMinutes+cleanupMinutes;
-    const minutes=Math.max(APS_TIME_RULES.minOccupancy,Math.ceil(raw));
-    if(productionMinutes<10)anomalies.push('純運轉時間低於 10 分鐘，已加入完整準備與收尾工時');
-    if(minutes===APS_TIME_RULES.minOccupancy&&raw<APS_TIME_RULES.minOccupancy)anomalies.push(`套用最低機台占用 ${APS_TIME_RULES.minOccupancy} 分鐘`);
-    return{ready:!anomalies.some(x=>x.includes('無法')||x.includes('無效')||x.includes('單位')),minutes,cycles,perRound:pr,roundMinutes:rpm,productionMinutes,setupMinutes,firstArticleMinutes,cleanupMinutes,match:match.level,anomalies};
+    let cycles=0,pr=0,rpm=0,productionMinutes=0,setupMinutes=Number(speed.setup)||Number(speed.change)||0,firstArticleMinutes=0,cleanupMinutes=Number(speed.down)||0,raw=0;
+    if(mode==='FIXED'){
+      productionMinutes=Number(speed.run)||Math.max(0,(Number(speed.total)||0)-cleanupMinutes-setupMinutes);
+      rpm=productionMinutes;cycles=1;pr=Number(job.remaining)||1;
+      if(!(productionMinutes>=0)||!(Number(speed.total)>0||productionMinutes+cleanupMinutes+setupMinutes>0))anomalies.push('FIXED 固定工時無效');
+      raw=productionMinutes+setupMinutes+cleanupMinutes;
+    }else if(mode==='LENGTH'){
+      const meters=lengthBasis(job,speed),mpm=Number(speed.speed)||Number(speed.speedMpm)||0;
+      if(!(meters>0))anomalies.push('LENGTH 模式無法取得產出米數');
+      if(!(mpm>0))anomalies.push('LENGTH 模式速度必須大於 0');
+      productionMinutes=(meters>0&&mpm>0)?meters/(mpm*eff):0;
+      cycles=1;pr=meters;rpm=mpm;raw=productionMinutes+setupMinutes+cleanupMinutes;
+    }else{
+      if(ut==='UNKNOWN'||ut==='KG')anomalies.push(`單位 ${job.unit||'空白'} 尚未建立換算`);
+      pr=perRound(speed,job.unit);rpm=Number(speed.total)||Number(speed.minutesRound)||0;
+      if(!(pr>0))anomalies.push('每回產量無法計算');
+      if(!(rpm>0))anomalies.push('每回時間無效');
+      cycles=(pr>0)?Math.max(1,Math.ceil(Number(job.remaining)/pr)):0;
+      productionMinutes=cycles*rpm;
+      setupMinutes=APS_TIME_RULES.setup+(match.level.includes('估算')?APS_TIME_RULES.looseMatchPenalty:0);
+      firstArticleMinutes=APS_TIME_RULES.firstArticle;cleanupMinutes=APS_TIME_RULES.cleanup;
+      raw=setupMinutes+firstArticleMinutes+productionMinutes+cleanupMinutes;
+    }
+    const fatal=anomalies.some(x=>/無法|無效|必須/.test(x));
+    if(fatal)return{ready:false,minutes:0,cycles,perRound:pr,roundMinutes:rpm,productionMinutes,setupMinutes,firstArticleMinutes,cleanupMinutes,match:match.level,apsMode:mode,efficiencyFactor:eff,anomalies};
+    const minutes=Math.max(0.1,Math.ceil(raw*10)/10);
+    return{ready:true,minutes,cycles,perRound:pr,roundMinutes:rpm,productionMinutes,setupMinutes,firstArticleMinutes,cleanupMinutes,match:match.level,apsMode:mode,efficiencyFactor:eff,speedVersion:speed.version||'V2',anomalies};
   }
   window.buildPool=function(){
     const sh=pickSheet('workorder',['4-3']);if(!sh){alert('請先上傳 4-3 生產命令單');return}
@@ -1182,20 +1230,20 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
       const o=orders.get(`${r[idx.order]||''}|${r[idx.part]||''}`),due=dateVal(r[idx.due])||o?.due;
       const base={wo:r[idx.wo],order:r[idx.order]||'',part:r[idx.part]||'',name:r[idx.name]||o?.name||'',customer:r[idx.cust]||o?.customer||'',batch:r[idx.batch]||'',process:r[idx.process]||'',sourceMachine:(r[idx.machineCode]||r[idx.machine]||'').trim(),spec:r[idx.spec]||o?.spec||'',due,planned,output,remaining,unit:r[idx.unit]||''};
       const ms=smartMatch({...base,machine:base.sourceMachine},speeds),calc=calcJob(base,ms),dd=due?dayDiff(due,today):999;
-      pool.push({...base,machine:(ms?.row.machine||base.sourceMachine||'').trim(),...calc,urgent:!closed&&dd<=num($('urgentDays').value),risk:!closed&&dd<=num($('riskDays').value),status:statusText(r[idx.status]),closed,closedCode:r[idx.closed]||'',preprocess:closed?'—':'待確認',calculationVersion:'0016'});
+      pool.push({...base,machine:(ms?.row.machine||base.sourceMachine||'').trim(),...calc,urgent:!closed&&dd<=num($('urgentDays').value),risk:!closed&&dd<=num($('riskDays').value),status:statusText(r[idx.status]),closed,closedCode:r[idx.closed]||'',preprocess:closed?'—':'待確認',calculationVersion:'V82.5-0048'});
     }
     pool.sort((a,b)=>(a.closed-b.closed)||(b.urgent-a.urgent)||((a.due?.getTime()||9e15)-(b.due?.getTime()||9e15)));
-    S.pool=pool;S.rows.speed=speeds;initMachines(speeds);populatePoolMachines();populateUrgentLists();window.renderPool();updateKpi();renderQuality();renderSpeedCenter();if(document.getElementById('preprocess')?.classList.contains('active')){setTimeout(()=>window.showPage?.('preprocess'),0);}log(`Build 0016 工時引擎：未結案 ${pool.filter(x=>!x.closed).length} 張；可排 ${pool.filter(x=>x.ready).length} 張；需確認 ${pool.filter(x=>!x.closed&&x.anomalies?.length).length} 張`);showPage('pool');
+    S.pool=pool;S.rows.speed=speeds;initMachines(speeds);populatePoolMachines();populateUrgentLists();window.renderPool();updateKpi();renderQuality();renderSpeedCenter();if(document.getElementById('preprocess')?.classList.contains('active')){setTimeout(()=>window.showPage?.('preprocess'),0);}log(`Build 0048 V82.5 工時引擎：未結案 ${pool.filter(x=>!x.closed).length} 張；可排 ${pool.filter(x=>x.ready).length} 張；需確認 ${pool.filter(x=>!x.closed&&x.anomalies?.length).length} 張`);showPage('pool');
   };
   window.renderPool=function(){
     const data=typeof filterPoolRows==='function'?filterPoolRows():S.pool;if(!S.pool.length){$('poolTable').className='empty';$('poolTable').textContent='沒有工單資料';$('poolCount').textContent='';return}
     $('poolCount').textContent=`顯示 ${data.length} / ${S.pool.length} 筆`;
-    $('poolTable').className='tablewrap';$('poolTable').innerHTML=`<table><thead><tr><th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th><th>所需回數</th><th>單回產量</th><th>單回時間</th><th>準備</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th><th>產速來源</th><th>檢核</th></tr></thead><tbody>${data.map(x=>`<tr class="${x.closed?'closed-row':''}"><td><span class="tag ${x.closed?'gray':x.urgent?'red':x.risk?'yellow':'blue'}">${x.closed?'已結案':x.urgent?'急單':x.risk?'風險':'一般'}</span></td><td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.machine||'—')}</td><td>${Number(x.remaining).toLocaleString('zh-TW',{maximumFractionDigits:2})}</td><td>${esc(x.unit)}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString('zh-TW'):'—'}</td><td>${x.perRound?Number(x.perRound).toLocaleString('zh-TW',{maximumFractionDigits:3}):'—'}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+'m':'—'}</td><td>${x.setupMinutes||0}m</td><td>${x.firstArticleMinutes||0}m</td><td>${x.productionMinutes?Math.ceil(x.productionMinutes)+'m':'—'}</td><td>${x.cleanupMinutes||0}m</td><td><b>${x.minutes?Math.ceil(x.minutes)+'m':'—'}</b></td><td><span class="tag ${x.match==='無產速'?'red':x.match==='現場回饋'?'purple':x.match==='完整條件匹配'?'green':'yellow'}">${esc(x.match)}</span></td><td>${anomalyList(x.anomalies).length?`<span class="tag yellow" title="${esc(anomalyList(x.anomalies).join('\n'))}">需確認 ${anomalyList(x.anomalies).length}</span>`:'<span class="tag green">正常</span>'}</td></tr>`).join('')}</tbody></table>`;
+    $('poolTable').className='tablewrap';$('poolTable').innerHTML=`<table><thead><tr><th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th><th>所需回數</th><th>單回產量</th><th>單回時間／速度</th><th>APS模式</th><th>準備／換料</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th><th>產速來源</th><th>檢核</th></tr></thead><tbody>${data.map(x=>`<tr class="${x.closed?'closed-row':''}"><td><span class="tag ${x.closed?'gray':x.urgent?'red':x.risk?'yellow':'blue'}">${x.closed?'已結案':x.urgent?'急單':x.risk?'風險':'一般'}</span></td><td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.machine||'—')}</td><td>${Number(x.remaining).toLocaleString('zh-TW',{maximumFractionDigits:2})}</td><td>${esc(x.unit)}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString('zh-TW'):'—'}</td><td>${x.perRound?Number(x.perRound).toLocaleString('zh-TW',{maximumFractionDigits:3}):'—'}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+(x.apsMode==='LENGTH'?' m/min':'m'):'—'}</td><td><span class="tag blue">${esc(x.apsMode||'ROUND')}</span></td><td>${x.setupMinutes||0}m</td><td>${x.firstArticleMinutes||0}m</td><td>${x.productionMinutes?Math.ceil(x.productionMinutes)+'m':'—'}</td><td>${x.cleanupMinutes||0}m</td><td><b>${x.minutes?Math.ceil(x.minutes)+'m':'—'}</b></td><td><span class="tag ${x.match==='無產速'?'red':x.match==='現場回饋'?'purple':x.match==='完整條件匹配'?'green':'yellow'}">${esc(x.match)}</span></td><td>${anomalyList(x.anomalies).length?`<span class="tag yellow" title="${esc(anomalyList(x.anomalies).join('\n'))}">需確認 ${anomalyList(x.anomalies).length}</span>`:'<span class="tag green">正常</span>'}</td></tr>`).join('')}</tbody></table>`;
   };
   const oldRunScheduler=window.runScheduler||runScheduler;
   window.runScheduler=function(pool){
     const out=oldRunScheduler(pool);
-    out.forEach(seg=>{const j=S.pool.find(x=>x.wo===seg.wo);if(j){seg.reason=`${seg.reason||''}｜${j.cycles}回；準備${j.setupMinutes}m＋首件${j.firstArticleMinutes}m＋生產${Math.ceil(j.productionMinutes)}m＋收尾${j.cleanupMinutes}m；${j.match}${anomalyList(j.anomalies).length?'；需確認：'+anomalyList(j.anomalies).join('、'):''}`;}});
+    out.forEach(seg=>{const j=S.pool.find(x=>x.wo===seg.wo);if(j){seg.reason=`${seg.reason||''}｜${j.apsMode||'ROUND'}；${j.cycles}回；準備/換料${j.setupMinutes}m＋首件${j.firstArticleMinutes}m＋生產${Math.ceil(j.productionMinutes)}m＋下料/收尾${j.cleanupMinutes}m；${j.match}${anomalyList(j.anomalies).length?'；需確認：'+anomalyList(j.anomalies).join('、'):''}`;}});
     return out;
   };
   const bind=()=>{if($('buildPool'))$('buildPool').onclick=window.buildPool};bind();
@@ -2123,7 +2171,7 @@ function readCfg(){try{return {...defaults,...JSON.parse(localStorage.getItem(CF
 function writeCfg(c){localStorage.setItem(CFG_KEY,JSON.stringify(c))}
 function cfgFromForm(){return {name:$s('sysName')?.value.trim()||defaults.name,admin:$s('sysAdmin')?.value.trim()||defaults.admin,department:$s('sysDepartment')?.value.trim()||defaults.department,subtitle:$s('sysSubtitle')?.value.trim()||defaults.subtitle,version:$s('sysVersion')?.value.trim()||defaults.version,dataOwner:$s('sysDataOwner')?.value.trim()||'',animations:!!$s('sysAnimations')?.checked,compact:!!$s('sysCompact')?.checked,stickySidebar:!!$s('sysStickySidebar')?.checked,tooltips:!!$s('sysTooltips')?.checked,persistPool:!!$s('sysPersistPool')?.checked,autoLoadPool:!!$s('sysAutoLoadPool')?.checked,persistSchedule:!!$s('sysPersistSchedule')?.checked,autoLoadSchedule:!!$s('sysAutoLoadSchedule')?.checked,missingSpeedAlert:Number($s('sysMissingSpeedAlert')?.value)||0,overdueAlert:Number($s('sysOverdueAlert')?.value)||0,machineLoadAlert:Number($s('sysMachineLoadAlert')?.value)||90,staleHours:Number($s('sysStaleHours')?.value)||24}}
 function fillForm(c){const m={sysName:c.name,sysAdmin:c.admin,sysDepartment:c.department,sysSubtitle:c.subtitle,sysVersion:c.version,sysDataOwner:c.dataOwner,sysMissingSpeedAlert:c.missingSpeedAlert,sysOverdueAlert:c.overdueAlert,sysMachineLoadAlert:c.machineLoadAlert,sysStaleHours:c.staleHours};Object.entries(m).forEach(([id,v])=>{if($s(id))$s(id).value=v});[['sysAnimations','animations'],['sysCompact','compact'],['sysStickySidebar','stickySidebar'],['sysTooltips','tooltips'],['sysPersistPool','persistPool'],['sysAutoLoadPool','autoLoadPool'],['sysPersistSchedule','persistSchedule'],['sysAutoLoadSchedule','autoLoadSchedule']].forEach(([id,k])=>{if($s(id))$s(id).checked=!!c[k]})}
-function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0047.2 Unified Index`;window.SK_APS_CONFIG=c}
+function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0048 V82.5 APS Core`;window.SK_APS_CONFIG=c}
 function toast(t){const old=document.querySelector('.sys-toast');if(old)old.remove();const d=document.createElement('div');d.className='sys-toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
@@ -2563,7 +2611,7 @@ async function bootstrapCloud(){
     CLOUD.loaded=true;
     renderAfterCloudLoad();
 
-    /* Build 0047.2 Unified Index：
+    /* Build 0048 V82.5 APS Core：
        雲端資料成功載入後立即建立本機快照。
        API 暫時逾時時仍可先顯示最近一次可用資料。 */
     try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
@@ -2750,7 +2798,7 @@ window.APSCloudDataCenter={
 
 
 <script id="build0046-1-missing-speed-js">
-(()=>{'use strict';const ST={rows:[],filtered:[]};const N=v=>String(v??'').trim().replace(/\s+/g,'').toUpperCase(),NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0},E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function P(o,ks){o=o||{};for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k];return ''}function speedRows(){let a=[],b=[];try{a=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]')}catch{}try{b=JSON.parse(localStorage.getItem('SK_APS_SPEED_FEEDBACK_V2')||'[]')}catch{}return[...a,...b]}function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}function scan(){const p=pool(),sp=speedRows(),exact=new Map(),byPart=new Map();sp.forEach(x=>{const part=N(P(x,['part','part_no','料號'])),m=N(P(x,['machine','machine_code','機台'])),pr=N(P(x,['process','process_site','製程'])),k=[part,m,pr].join('|');if(k.replace(/\|/g,''))exact.set(k,x);if(part){if(!byPart.has(part))byPart.set(part,[]);byPart.get(part).push(x)}});let matched=0;ST.rows=[];p.forEach((x,i)=>{const wo=P(x,['wo','work_order_no','order_no','工單']),part=P(x,['part','part_no','料號']),spec=P(x,['name','product_spec','spec','規格']),machine=P(x,['machine','machine_code','機台']),process=P(x,['process','process_site','製程']),k=[N(part),N(machine),N(process)].join('|'),hit=exact.get(k),same=byPart.get(N(part))||[];if(hit&&NUM(P(hit,['speed','標準速度']))>0){matched++;return}let reason='',code='',suggest='';if(!part){reason='工單沒有可比對的料號';code='part';suggest='先補齊料號'}else if(hit){reason='已有主檔，但標準產速為 0';code='speed';suggest='補登回數／產速'}else if(same.length){const mm=same.some(y=>N(P(y,['machine','machine_code','機台']))===N(machine));if(!mm){reason='此料號已有產速，但缺少目前機台';code='machine';suggest='參考同料號其他機台'}else{reason='此料號與機台已有資料，但缺少目前製程';code='process';suggest='確認製程後建立'}}else{reason='固定產速主檔找不到此料號';code='part';suggest='建立新產品產速'}ST.rows.push({i,wo,part,spec,machine,process,reason,code,suggest})});render(p.length,matched)}function render(total,matched){const q=N(document.getElementById('missingSpeedSearch')?.value),mf=N(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';const rows=ST.rows.filter(r=>{const h=N([r.wo,r.part,r.spec,r.machine,r.process,r.reason].join(' '));return(!q||h.includes(q))&&(!mf||N(r.machine)===mf)&&(!rf||r.code===rf)});ST.filtered=rows;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=total?Math.round(matched/total*1000)/10:0;set('msPoolCount',total.toLocaleString('zh-TW'));set('msMatchedCount',matched.toLocaleString('zh-TW'));set('msMissingCount',ST.rows.length.toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',rows.length+' 筆');const sm=document.getElementById('missingSpeedSummary');if(sm)sm.textContent=!total?'尚未建立工單池。請先到 ERP 資料更新頁建立工單池。':!ST.rows?`產速完整率 ${cov.toFixed(1)}%。目前工單池全部都有可用標準產速。`:`發現 ${ST.rows.length} 筆工單缺少完整產速設定；AI 僅整理與提醒，不會自動修改固定主檔。`;const sel=document.getElementById('missingSpeedMachine');if(sel){const cur=sel.value,ms=[...new Set(ST.rows.map(r=>String(r.machine||'').trim()).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${E(m)}">${E(m)}</option>`).join('');sel.value=cur}const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="8" class="missing-speed-empty">${total&&!ST.rows.length?'目前沒有缺產速工單':'沒有符合篩選條件的資料'}</td></tr>`;return}body.innerHTML=rows.map(r=>`<tr><td><span class="tag yellow">待確認</span></td><td>${E(r.wo||'-')}</td><td>${E(r.part||'-')}</td><td class="spec">${E(r.spec||'-')}</td><td>${E(r.machine||'-')}</td><td>${E(r.process||'-')}</td><td><div class="missing-speed-reason">${E(r.reason)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms="feedback" data-i="${r.i}">${E(r.suggest)}</button><button class="btn ghost" data-ms="copy" data-i="${r.i}">複製資料</button></div></td></tr>`).join('')}function go(r){[...document.querySelectorAll('[data-page]')].find(x=>String(x.dataset.page||'').toLowerCase().includes('speed')||String(x.textContent||'').includes('產速回饋'))?.click();[['speedFbPart',r.part],['speedFeedbackPart',r.part],['speedFbMachine',r.machine],['speedFeedbackMachine',r.machine],['speedFbProcess',r.process],['speedFeedbackProcess',r.process],['speedFbName',r.spec],['speedFeedbackName',r.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});window.log?.(`AI 缺產速：已帶入 ${r.part||r.wo||'待確認工單'} 到產速回饋中心`)}function install(){const ref=document.getElementById('missingSpeedRefresh');if(ref&&!ref.dataset.h){ref.dataset.h='1';ref.addEventListener('click',scan)}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.dataset.h){e.dataset.h='1';e.addEventListener(id==='missingSpeedSearch'?'input':'change',()=>render(pool().length,Math.max(0,pool().length-ST.rows.length)))}});const goBtn=document.getElementById('missingSpeedGoFeedback');if(goBtn&&!goBtn.dataset.h){goBtn.dataset.h='1';goBtn.addEventListener('click',()=>{const r=ST.filtered[0]||ST.rows[0];if(r)go(r)})}const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.h){body.dataset.h='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms]');if(!b)return;const r=ST.rows.find(x=>String(x.i)===String(b.dataset.i));if(!r)return;if(b.dataset.ms==='feedback')go(r);else{const v=`工單：${r.wo}\n料號：${r.part}\n規格：${r.spec}\n機台：${r.machine}\n製程：${r.process}\n缺漏：${r.reason}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製資料',1200)}catch{window.prompt('請複製以下資料',v)}}})}const bb=document.getElementById('buildPool');if(bb&&!bb.dataset.ms){bb.dataset.ms='1';bb.addEventListener('click',()=>setTimeout(scan,500))}document.querySelectorAll('[data-page="missingSpeed"]').forEach(t=>{if(!t.dataset.ms){t.dataset.ms='1';t.addEventListener('click',()=>setTimeout(scan,100))}});setTimeout(scan,1300)}document.addEventListener('DOMContentLoaded',install);setTimeout(install,1800);window.APSMissingSpeed={scan,rows:()=>ST.rows.slice(),state:ST};})();
+(()=>{'use strict';const ST={rows:[],filtered:[]};const N=v=>String(v??'').trim().replace(/\s+/g,'').toUpperCase(),NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0},E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function P(o,ks){o=o||{};for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k];return ''}function speedRows(){let a=[],b=[];try{a=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]')}catch{}try{b=JSON.parse(localStorage.getItem('SK_APS_SPEED_FEEDBACK_V2')||'[]')}catch{}return[...a,...b]}function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}function scan(){const p=pool(),sp=speedRows(),exact=new Map(),byPart=new Map();sp.forEach(x=>{const part=N(P(x,['part','part_no','料號'])),m=N(P(x,['machine','machine_code','機台'])),pr=N(P(x,['process','process_site','製程'])),k=[part,m,pr].join('|');if(k.replace(/\|/g,''))exact.set(k,x);if(part){if(!byPart.has(part))byPart.set(part,[]);byPart.get(part).push(x)}});let matched=0;ST.rows=[];p.forEach((x,i)=>{const wo=P(x,['wo','work_order_no','order_no','工單']),part=P(x,['part','part_no','料號']),spec=P(x,['name','product_spec','spec','規格']),machine=P(x,['machine','machine_code','機台']),process=P(x,['process','process_site','製程']),k=[N(part),N(machine),N(process)].join('|'),hit=exact.get(k),same=byPart.get(N(part))||[];if(hit&&((inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='FIXED'&&NUM(P(hit,['total','run','固定運轉時間','加總min']))>0)||(inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='LENGTH'&&NUM(P(hit,['speed','speedMpm','標準速度','運轉速度']))>0)||(NUM(P(hit,['speed','標準速度']))>0))){matched++;return}let reason='',code='',suggest='';if(!part){reason='工單沒有可比對的料號';code='part';suggest='先補齊料號'}else if(hit){reason='已有主檔，但標準產速為 0';code='speed';suggest='補登回數／產速'}else if(same.length){const mm=same.some(y=>N(P(y,['machine','machine_code','機台']))===N(machine));if(!mm){reason='此料號已有產速，但缺少目前機台';code='machine';suggest='參考同料號其他機台'}else{reason='此料號與機台已有資料，但缺少目前製程';code='process';suggest='確認製程後建立'}}else{reason='固定產速主檔找不到此料號';code='part';suggest='建立新產品產速'}ST.rows.push({i,wo,part,spec,machine,process,reason,code,suggest})});render(p.length,matched)}function render(total,matched){const q=N(document.getElementById('missingSpeedSearch')?.value),mf=N(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';const rows=ST.rows.filter(r=>{const h=N([r.wo,r.part,r.spec,r.machine,r.process,r.reason].join(' '));return(!q||h.includes(q))&&(!mf||N(r.machine)===mf)&&(!rf||r.code===rf)});ST.filtered=rows;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=total?Math.round(matched/total*1000)/10:0;set('msPoolCount',total.toLocaleString('zh-TW'));set('msMatchedCount',matched.toLocaleString('zh-TW'));set('msMissingCount',ST.rows.length.toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',rows.length+' 筆');const sm=document.getElementById('missingSpeedSummary');if(sm)sm.textContent=!total?'尚未建立工單池。請先到 ERP 資料更新頁建立工單池。':!ST.rows?`產速完整率 ${cov.toFixed(1)}%。目前工單池全部都有可用標準產速。`:`發現 ${ST.rows.length} 筆工單缺少完整產速設定；AI 僅整理與提醒，不會自動修改固定主檔。`;const sel=document.getElementById('missingSpeedMachine');if(sel){const cur=sel.value,ms=[...new Set(ST.rows.map(r=>String(r.machine||'').trim()).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${E(m)}">${E(m)}</option>`).join('');sel.value=cur}const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="8" class="missing-speed-empty">${total&&!ST.rows.length?'目前沒有缺產速工單':'沒有符合篩選條件的資料'}</td></tr>`;return}body.innerHTML=rows.map(r=>`<tr><td><span class="tag yellow">待確認</span></td><td>${E(r.wo||'-')}</td><td>${E(r.part||'-')}</td><td class="spec">${E(r.spec||'-')}</td><td>${E(r.machine||'-')}</td><td>${E(r.process||'-')}</td><td><div class="missing-speed-reason">${E(r.reason)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms="feedback" data-i="${r.i}">${E(r.suggest)}</button><button class="btn ghost" data-ms="copy" data-i="${r.i}">複製資料</button></div></td></tr>`).join('')}function go(r){[...document.querySelectorAll('[data-page]')].find(x=>String(x.dataset.page||'').toLowerCase().includes('speed')||String(x.textContent||'').includes('產速回饋'))?.click();[['speedFbPart',r.part],['speedFeedbackPart',r.part],['speedFbMachine',r.machine],['speedFeedbackMachine',r.machine],['speedFbProcess',r.process],['speedFeedbackProcess',r.process],['speedFbName',r.spec],['speedFeedbackName',r.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});window.log?.(`AI 缺產速：已帶入 ${r.part||r.wo||'待確認工單'} 到產速回饋中心`)}function install(){const ref=document.getElementById('missingSpeedRefresh');if(ref&&!ref.dataset.h){ref.dataset.h='1';ref.addEventListener('click',scan)}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.dataset.h){e.dataset.h='1';e.addEventListener(id==='missingSpeedSearch'?'input':'change',()=>render(pool().length,Math.max(0,pool().length-ST.rows.length)))}});const goBtn=document.getElementById('missingSpeedGoFeedback');if(goBtn&&!goBtn.dataset.h){goBtn.dataset.h='1';goBtn.addEventListener('click',()=>{const r=ST.filtered[0]||ST.rows[0];if(r)go(r)})}const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.h){body.dataset.h='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms]');if(!b)return;const r=ST.rows.find(x=>String(x.i)===String(b.dataset.i));if(!r)return;if(b.dataset.ms==='feedback')go(r);else{const v=`工單：${r.wo}\n料號：${r.part}\n規格：${r.spec}\n機台：${r.machine}\n製程：${r.process}\n缺漏：${r.reason}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製資料',1200)}catch{window.prompt('請複製以下資料',v)}}})}const bb=document.getElementById('buildPool');if(bb&&!bb.dataset.ms){bb.dataset.ms='1';bb.addEventListener('click',()=>setTimeout(scan,500))}document.querySelectorAll('[data-page="missingSpeed"]').forEach(t=>{if(!t.dataset.ms){t.dataset.ms='1';t.addEventListener('click',()=>setTimeout(scan,100))}});setTimeout(scan,1300)}document.addEventListener('DOMContentLoaded',install);setTimeout(install,1800);window.APSMissingSpeed={scan,rows:()=>ST.rows.slice(),state:ST};})();
 </script>
 
 <script id="build0042-security-js">
@@ -2770,6 +2818,13 @@ window.SEAL_KING_SECURITY={
   unlock:()=>{},
   isUnlocked:()=>true
 };
+})();
+</script>
+
+<script id="build0048-v825-marker">
+(()=>{
+  window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
+  console.info("SEAL KING Smart APS Build 0048｜V82.5 APS Core loaded");
 })();
 </script>
 
