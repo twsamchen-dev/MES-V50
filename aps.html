@@ -915,7 +915,7 @@ body::after{
     <div class="notice" style="margin-top:12px">公式：所需回數＝CEILING（剩餘需求 ÷ 每回產量）；排程分鐘＝所需回數 × 每回時間。</div>
     <input id="sfEditIndex" type="hidden" value=""><div class="actions"><button class="btn green" id="saveSpeedFeedback">儲存並重新計算</button><button class="btn ghost" id="clearSpeedForm">清除表單</button></div><div id="speedFormMsg" class="hint"></div>
   </div>
-  <div class="card col12"><h2>永久產速紀錄</h2><div class="sub">加工課產速表會永久保存到 Google Sheets 與瀏覽器備援。後續每日 ERP 更新不必重傳；新料號或新機台資料採增量合併，也可在此直接新增、修改或匯出備份。</div><div id="speedFeedbackTable" class="empty">尚無永久產速紀錄</div></div>
+  <div class="card col12"><h2>永久產速紀錄</h2><div class="sub">加工課產速表會永久保存到 Google Sheets 與瀏覽器備援。後續每日 ERP 更新不必重傳；新料號或新機台資料採增量合併，也可在此直接新增、修改或匯出備份。</div><div class="rangeBar speed-status-tabs" style="margin:12px 0"><button class="rangeBtn active" data-speed-status="all">全部</button><button class="rangeBtn" data-speed-status="learning">待確認／現場學習</button><button class="rangeBtn" data-speed-status="approved">課長已確認</button><button class="rangeBtn" data-speed-status="abnormal">異常資料</button></div><div id="speedFeedbackTable" class="empty">尚無永久產速紀錄</div></div>
   <div class="card col12"><h2>機台回數與稼動率</h2><div class="sub">稼動率仍以排程分鐘 ÷ 可用分鐘計算，但排程分鐘來源固定為「回數 × 每回時間」。</div><div id="roundUtilTable" class="empty">產生排程後顯示。</div></div>
 </div></section>
 <section id="master" class="page"><div class="grid">
@@ -5038,6 +5038,39 @@ document.addEventListener("DOMContentLoaded",function(){
 
   window.CloudDataHubEngine57={sync:syncDataHub,getCached};
   window.APSLoadOptimizer57={analyze:analyzeOptimizer,apply:applyOptimizer,run:runOptimizedSchedule};
+})();
+</script>
+
+
+<script>
+/* V83.1 產速狀態、課長確認與異常篩選 */
+(()=>{
+  const KEY='SK_APS_SPEED_FEEDBACK_V2';
+  let filter='all';
+  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}};
+  const save=rows=>localStorage.setItem(KEY,JSON.stringify(rows));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const isApproved=x=>x.is_standard===true||String(x.is_standard)==='1';
+  function abnormalSet(rows){
+    const groups=new Map();
+    rows.forEach((x,i)=>{const k=[x.part,x.machine,x.process].map(v=>String(v||'').trim().toUpperCase()).join('|');if(!groups.has(k))groups.set(k,[]);groups.get(k).push({x,i});});
+    const bad=new Set();
+    groups.forEach(g=>{const vals=g.map(o=>Number(o.x.minutesRound)).filter(v=>v>0);if(vals.length<2){g.forEach(o=>bad.add(o.i));return;}const avg=vals.reduce((a,b)=>a+b,0)/vals.length;g.forEach(o=>{const v=Number(o.x.minutesRound);if(v>0&&Math.abs(v-avg)/avg>.30)bad.add(o.i);});});
+    return bad;
+  }
+  function render(){
+    const host=document.getElementById('speedFeedbackTable');if(!host)return;
+    const all=load(),bad=abnormalSet(all);
+    const list=all.map((x,i)=>({x,i})).filter(o=>filter==='all'||(filter==='learning'&&!isApproved(o.x))||(filter==='approved'&&isApproved(o.x))||(filter==='abnormal'&&bad.has(o.i)));
+    if(!list.length){host.className='empty';host.textContent='目前沒有符合此狀態的產速紀錄';return;}
+    host.className='tablewrap';host.innerHTML=`<table><thead><tr><th>料號</th><th>機台</th><th>製程</th><th>每回產量</th><th>每回時間</th><th>實測日期</th><th>人員</th><th>狀態</th><th>操作</th></tr></thead><tbody>${list.map(({x,i})=>`<tr><td>${esc(x.part)}</td><td>${esc(x.machine)}</td><td>${esc(x.process)}</td><td>${Number(x.qtyRound||0).toLocaleString('zh-TW')} ${esc(x.unit||'')}</td><td>${Number(x.minutesRound||0).toFixed(2)} min</td><td>${esc(x.date||'—')}</td><td>${esc(x.operator||'—')}</td><td>${isApproved(x)?'<span class="tag green">課長已確認</span>':'<span class="tag yellow">現場學習</span>'}${bad.has(i)?' <span class="tag red">異常</span>':''}</td><td><div class="actions" style="margin:0;flex-wrap:nowrap"><button class="btn ${isApproved(x)?'yellow':'green'}" data-speed-approve="${i}">${isApproved(x)?'取消確認':'課長確認'}</button><button class="btn ghost" data-edit-feedback="${i}">修改</button><button class="btn red" data-delete-feedback="${i}">刪除</button></div></td></tr>`).join('')}</tbody></table>`;
+    host.querySelectorAll('[data-speed-approve]').forEach(b=>b.onclick=()=>{const arr=load(),i=Number(b.dataset.speedApprove),x=arr[i];if(!x)return;const yes=!isApproved(x);x.is_standard=yes;x.approved_by=yes?'11035 陳善祖':'';x.approved_at=yes?new Date().toISOString():'';save(arr);render();window.renderSpeedCenter?.();});
+    host.querySelectorAll('[data-delete-feedback]').forEach(b=>b.onclick=()=>{const arr=load();arr.splice(Number(b.dataset.deleteFeedback),1);save(arr);render();});
+    host.querySelectorAll('[data-edit-feedback]').forEach(b=>b.onclick=()=>window.editFeedback?.(Number(b.dataset.editFeedback)));
+  }
+  function install(){document.querySelectorAll('[data-speed-status]').forEach(b=>{if(b.dataset.bound)return;b.dataset.bound='1';b.onclick=()=>{filter=b.dataset.speedStatus;document.querySelectorAll('[data-speed-status]').forEach(x=>x.classList.toggle('active',x===b));render();};});setTimeout(render,100);}
+  document.addEventListener('DOMContentLoaded',install);setTimeout(install,1500);
+  window.renderSpeedApprovalCenter=render;
 })();
 </script>
 
