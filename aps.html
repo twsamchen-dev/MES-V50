@@ -726,7 +726,7 @@ body::after{
     <div class="page-toolbar">
       <div>
         <div class="section-kicker">FIELD EXPERIENCE LEARNING</div>
-        <h2>現場機台學習建議｜V84.4 多層經驗</h2>
+        <h2>現場機台學習建議｜V84.5 正式排程＋換線最佳化</h2>
         <div class="sub">彙整 Target 與 Key In 實際輸入，依同料號35%、同規格30%、同寬度20%、同製程15%計算推薦；每筆可展開查看原因，不會覆蓋課長確認的正式規則。</div>
       </div>
       <div class="actions">
@@ -2136,11 +2136,22 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
   let proposal=null, backup=null;
   const $e=id=>document.getElementById(id);
   const esc2=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  async function persistScheduleCloud(label){
+    try{
+      if(typeof saveDataset==='function'){
+        await saveDataset('schedule',true);
+        log(`${label}：排程已同步至 APS_Schedule`);
+      }
+    }catch(err){
+      console.warn('APS_Schedule 雲端同步失敗',err);
+      log(`${label}：排程已套用，但雲端同步失敗`);
+    }
+  }
   function mount(){
     const ai=document.querySelector('#ai .grid'); if(!ai||$e('sequenceOptimizer'))return;
     const basis=[...ai.children].find(x=>x.querySelector?.('h2')?.textContent.includes('分析依據'));
     const card=document.createElement('div');card.className='card col12 sequence-opt-card';card.id='sequenceOptimizer';
-    card.innerHTML=`<div class="page-toolbar"><div><div class="section-kicker">CHANGEOVER OPTIMIZER</div><h2>AI 換線最佳化</h2><div class="sub">在不改變工單工時的前提下，依料號、製程、客戶與預交日重新排序，先模擬再套用。演算法與節省分鐘皆可追溯。</div></div><div class="sequence-opt-toolbar"><select id="seqMachine"><option value="all">全部機台</option></select><button class="btn" id="runSeqOpt">開始最佳化模擬</button><button class="btn green" id="applySeqOpt" disabled>採用建議排序</button><button class="btn ghost" id="restoreSeqOpt" disabled>還原套用前排程</button></div></div><div class="sequence-opt-summary"><div class="sequence-opt-stat"><span>目前換線估算</span><b id="seqBefore">0</b><small>分鐘</small></div><div class="sequence-opt-stat"><span>最佳化後</span><b id="seqAfter">0</b><small>分鐘</small></div><div class="sequence-opt-stat"><span>預估節省</span><b id="seqSave">0</b><small>分鐘</small></div><div class="sequence-opt-stat"><span>改善機台</span><b id="seqMachines">0</b><small>台</small></div></div><div id="seqResult" class="sequence-opt-empty">請先產生排程，再執行換線最佳化模擬。</div>`;
+    card.innerHTML=`<div class="page-toolbar"><div><div class="section-kicker">CHANGEOVER OPTIMIZER</div><h2>AI 換線最佳化</h2><div class="sub">若尚未產生排程，系統會先自動建立正式排程，再依料號、製程、客戶與預交日進行換線最佳化；模擬確認後可套用並同步雲端。</div></div><div class="sequence-opt-toolbar"><select id="seqMachine"><option value="all">全部機台</option></select><button class="btn" id="runSeqOpt">產生排程並最佳化</button><button class="btn green" id="applySeqOpt" disabled>採用建議排序</button><button class="btn ghost" id="restoreSeqOpt" disabled>還原套用前排程</button></div></div><div class="sequence-opt-summary"><div class="sequence-opt-stat"><span>目前換線估算</span><b id="seqBefore">0</b><small>分鐘</small></div><div class="sequence-opt-stat"><span>最佳化後</span><b id="seqAfter">0</b><small>分鐘</small></div><div class="sequence-opt-stat"><span>預估節省</span><b id="seqSave">0</b><small>分鐘</small></div><div class="sequence-opt-stat"><span>改善機台</span><b id="seqMachines">0</b><small>台</small></div></div><div id="seqResult" class="sequence-opt-empty">請先產生排程，再執行換線最佳化模擬。</div>`;
     ai.insertBefore(card,basis||null);
     $e('runSeqOpt').addEventListener('click',simulate);$e('applySeqOpt').addEventListener('click',apply);$e('restoreSeqOpt').addEventListener('click',restore);
     refreshMachines();
@@ -2151,13 +2162,34 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
   function jobsByMachine(){const map={};(S.schedule||[]).forEach((x,i)=>{if(!x.wo)return;const m=x.machine||'未指定';map[m]??={};const k=x.wo;const j=map[m][k]??={wo:k,machine:m,part:x.part||'',customer:x.customer||'',process:x.process||'',due:x.due?new Date(x.due):null,urgent:!!x.urgent,minutes:0,start:new Date(x.start),segments:[],reason:x.reason||''};j.minutes+=Number(x.minutes)||((new Date(x.end)-new Date(x.start))/60000);if(new Date(x.start)<j.start)j.start=new Date(x.start);j.segments.push(x);map[m][k]=j});const out={};Object.entries(map).forEach(([m,o])=>out[m]=Object.values(o).sort((a,b)=>a.start-b.start));return out}
   function routeCost(arr){let n=0;for(let i=1;i<arr.length;i++)n+=cost(arr[i-1],arr[i]);return n}
   function optimize(arr){if(arr.length<3)return arr.slice();const remain=arr.slice();const first=remain.splice(remain.findIndex(x=>x.urgent)||0,1)[0];const route=[first];let cursor=new Date(first.start.getTime()+first.minutes*60000);while(remain.length){let bestI=0,bestScore=Infinity;remain.forEach((j,i)=>{const change=cost(route.at(-1),j);const finish=new Date(cursor.getTime()+(change+j.minutes)*60000);let duePenalty=0;if(j.due){const due=new Date(j.due);due.setHours(23,59,59,999);if(finish>due)duePenalty=Math.ceil((finish-due)/60000)*8;else duePenalty=Math.max(0,(due-finish)/86400000<1?20:0)}if(j.urgent)duePenalty-=1000;const score=change+duePenalty;if(score<bestScore){bestScore=score;bestI=i}});const j=remain.splice(bestI,1)[0];cursor=new Date(cursor.getTime()+(cost(route.at(-1),j)+j.minutes)*60000);route.push(j)}return route}
-  function simulate(){refreshMachines();if(!(S.schedule||[]).length){alert('請先產生排程');return}const target=$e('seqMachine').value,groups=jobsByMachine();const results=[];Object.entries(groups).forEach(([m,before])=>{if(target!=='all'&&m!==target)return;const after=optimize(before),bc=routeCost(before),ac=routeCost(after);results.push({machine:m,before,after,beforeCost:bc,afterCost:ac,save:Math.max(0,bc-ac)})});proposal={results,createdAt:new Date()};renderProposal();$e('applySeqOpt').disabled=!results.some(x=>x.save>0)}
+  function simulate(){
+    refreshMachines();
+    const btn=$e('runSeqOpt');
+    const oldText=btn?.textContent||'產生排程並最佳化';
+    try{
+      if(btn){btn.disabled=true;btn.textContent='分析中…'}
+      if(!(S.schedule||[]).length){
+        if(!(S.pool||[]).length){alert('請先建立工單池');return}
+        if(typeof runScheduler!=='function'){alert('排程引擎尚未載入');return}
+        S.schedule=runScheduler(S.pool);
+        renderSchedule();
+        if(typeof updateKpi==='function')updateKpi();
+        log(`AI 換線最佳化：先自動建立 ${S.schedule.length} 個正式排程區段`);
+        persistScheduleCloud('自動建立正式排程');
+      }
+      refreshMachines();
+      const target=$e('seqMachine').value,groups=jobsByMachine();const results=[];
+      Object.entries(groups).forEach(([m,before])=>{if(target!=='all'&&m!==target)return;const after=optimize(before),bc=routeCost(before),ac=routeCost(after);results.push({machine:m,before,after,beforeCost:bc,afterCost:ac,save:Math.max(0,bc-ac)})});
+      proposal={results,createdAt:new Date()};renderProposal();$e('applySeqOpt').disabled=!results.some(x=>x.save>0);
+      if(!results.length)alert('目前排程沒有可分析的機台資料');
+    }finally{if(btn){btn.disabled=false;btn.textContent=oldText}}
+  }
   function flow(arr,cls=''){return `<div class="sequence-flow ${cls}">`+arr.map((j,i)=>`${i?'<span class="sequence-arrow">›</span>':''}<div class="sequence-job" title="${esc2(j.wo)}｜${esc2(j.part)}｜${Math.round(j.minutes)} 分"><b>${esc2(j.wo)}</b><small>${esc2(j.part||'無料號')}｜${Math.round(j.minutes)}m</small></div>`).join('')+'</div>'}
   function renderProposal(){const rs=proposal?.results||[],before=rs.reduce((a,x)=>a+x.beforeCost,0),after=rs.reduce((a,x)=>a+x.afterCost,0),save=before-after;$e('seqBefore').textContent=Math.round(before);$e('seqAfter').textContent=Math.round(after);$e('seqSave').textContent=Math.max(0,Math.round(save));$e('seqMachines').textContent=rs.filter(x=>x.save>0).length;const el=$e('seqResult');if(!rs.length){el.className='sequence-opt-empty';el.textContent='目前篩選沒有可分析的機台。';return}el.className='';el.innerHTML=rs.map(x=>`<div class="sequence-machine"><div class="sequence-machine-head"><div><h3>${esc2(x.machine)}</h3><div class="sub">工單 ${x.before.length} 張｜目前 ${x.beforeCost} 分 → 建議 ${x.afterCost} 分</div></div><div class="sequence-saving">${x.save>0?'預估節省 '+x.save+' 分鐘':'目前順序已合理'}</div></div><div class="sub">目前順序</div>${flow(x.before,'sequence-before')}<div class="sub" style="margin-top:7px">建議順序</div>${flow(x.after)}</div>`).join('')}
   function prodDay(d){const sh=(typeof getShiftSettings==='function'?getShiftSettings():{earlyStart:'08:30'}).earlyStart||'08:30';const [h,m]=sh.split(':').map(Number);const x=new Date(d);if(x.getHours()*60+x.getMinutes()<h*60+m)x.setDate(x.getDate()-1);x.setHours(0,0,0,0);return x}
   function rebuildMachine(result){const start=new Date(Math.min(...result.before.map(j=>j.start.getTime())));let cursor=start,segments=[];result.after.forEach((j,idx)=>{if(idx){const ch=cost(result.after[idx-1],j);cursor=new Date(cursor.getTime()+ch*60000)}let remaining=j.minutes;while(remaining>.01){const pd=prodDay(cursor),shift=(typeof getShiftSettings==='function'?getShiftSettings():{earlyStart:'08:30'}),[h,m]=String(shift.earlyStart||'08:30').split(':').map(Number);const boundary=new Date(pd);boundary.setDate(boundary.getDate()+1);boundary.setHours(h,m,0,0);const cap=Math.max(.01,(boundary-cursor)/60000),take=Math.min(remaining,cap),end=new Date(cursor.getTime()+take*60000),base=j.segments[0];segments.push({...base,machine:result.machine,date:pd,start:new Date(cursor),end,minutes:take,reason:(base.reason||'')+'；AI換線最佳化排序'});cursor=end;remaining-=take}});return segments}
   function cloneSchedule(a){return a.map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):x.due}))}
-  function apply(){if(!proposal)return;const improved=proposal.results.filter(x=>x.save>0);if(!improved.length){alert('目前沒有可改善的排序');return}backup=cloneSchedule(S.schedule);const machines=new Set(improved.map(x=>x.machine)),kept=S.schedule.filter(x=>!machines.has(x.machine)),rebuilt=improved.flatMap(rebuildMachine);S.schedule=[...kept,...rebuilt].sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||new Date(a.start)-new Date(b.start));renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();$e('restoreSeqOpt').disabled=false;$e('applySeqOpt').disabled=true;log(`AI換線最佳化已套用：${improved.length} 台機台，預估節省 ${improved.reduce((a,x)=>a+x.save,0)} 分鐘`);alert('建議排序已套用，可使用「還原套用前排程」復原。')}
+  async function apply(){if(!proposal)return;const improved=proposal.results.filter(x=>x.save>0);if(!improved.length){alert('目前沒有可改善的排序');return}backup=cloneSchedule(S.schedule);const machines=new Set(improved.map(x=>x.machine)),kept=S.schedule.filter(x=>!machines.has(x.machine)),rebuilt=improved.flatMap(rebuildMachine);S.schedule=[...kept,...rebuilt].sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||new Date(a.start)-new Date(b.start));renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();$e('restoreSeqOpt').disabled=false;$e('applySeqOpt').disabled=true;const saved=improved.reduce((a,x)=>a+x.save,0);log(`AI換線最佳化已套用：${improved.length} 台機台，預估節省 ${saved} 分鐘`);await persistScheduleCloud('AI換線最佳化');alert(`建議排序已套用並同步雲端。\n改善 ${improved.length} 台機台，預估節省 ${Math.round(saved)} 分鐘。`)}
   function restore(){if(!backup)return;S.schedule=cloneSchedule(backup);renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();backup=null;$e('restoreSeqOpt').disabled=true;log('已還原 AI 換線最佳化前的排程')}
   const oldShow=window.showPage;window.showPage=function(id){oldShow&&oldShow(id);if(id==='ai')setTimeout(()=>{mount();refreshMachines()},0)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
@@ -2197,7 +2229,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
     const by={};p.schedule.forEach(x=>{const a=by[x.machine]??=[];if(!a.length||a.at(-1).wo!==x.wo)a.push(x);by[x.machine]=a});el('autoMachinePlan').className='';el('autoMachinePlan').innerHTML=Object.entries(by).map(([m,a])=>`<div class="auto-machine-card"><div class="auto-machine-head"><div><b>${e(m)}</b><div class="sub">${a.length} 張工單</div></div><div class="auto-load">${Math.round(p.after.loads[m]/60*10)/10} hr</div></div><div class="auto-machine-flow">${a.map((x,i)=>`${i?'<span class="auto-arrow">›</span>':''}<div class="auto-job-chip"><b>${e(x.wo)}</b><small>${e(x.part||'無料號')}｜${Math.round(x.minutes)}m</small></div>`).join('')}</div></div>`).join('');
     const risks=Object.entries(p.after.completion).map(([wo,end])=>{const j=(S.pool||[]).find(x=>x.wo===wo),due=dueEnd(j?.due);return{wo,end,due,late:due&&end>due,delta:due?Math.round((end-due)/60000):null,customer:j?.customer||'',machine:p.schedule.find(x=>x.wo===wo)?.machine||''}}).filter(x=>x.late).sort((a,b)=>b.delta-a.delta);el('autoRiskTable').className=risks.length?'tablewrap':'auto-empty';el('autoRiskTable').innerHTML=risks.length?`<table><thead><tr><th>工單</th><th>客戶</th><th>機台</th><th>預交日</th><th>預計完成</th><th>延遲</th></tr></thead><tbody>${risks.map(x=>`<tr><td>${e(x.wo)}</td><td>${e(x.customer)}</td><td>${e(x.machine)}</td><td>${e(fmtDate(x.due))}</td><td>${e(dateShort(x.end))}</td><td><span class="tag red">${Math.round(x.delta/60*10)/10} hr</span></td></tr>`).join('')}</tbody></table>`:'最佳化後沒有預估延遲工單。';
   }
-  function apply(){if(!proposal)return;backup=clone(S.schedule||[]);S.schedule=clone(proposal.schedule);renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();el('restoreAutoSchedule').disabled=false;el('applyAutoSchedule').disabled=true;log(`AI自動排程已套用：${S.schedule.length} 個排程區段`);alert('AI 最佳排程已套用，可使用「還原套用前排程」復原。');showPage('schedule')}
+  async function apply(){if(!proposal)return;backup=clone(S.schedule||[]);S.schedule=clone(proposal.schedule);renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();el('restoreAutoSchedule').disabled=false;el('applyAutoSchedule').disabled=true;log(`AI自動排程已套用：${S.schedule.length} 個排程區段`);try{if(typeof saveDataset==='function')await saveDataset('schedule',true);log('AI自動排程已同步至 APS_Schedule')}catch(err){console.warn(err);log('AI自動排程雲端同步失敗')}alert(`AI 最佳排程已套用並同步雲端，共 ${S.schedule.length} 個排程區段。`);showPage('schedule')}
   function restore(){if(!backup)return;S.schedule=clone(backup);renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();backup=null;el('restoreAutoSchedule').disabled=true;log('已還原 AI 自動排程前的排程')}
   el('runAutoSchedule')?.addEventListener('click',simulate);el('applyAutoSchedule')?.addEventListener('click',apply);el('restoreAutoSchedule')?.addEventListener('click',restore);
 })();
@@ -4074,17 +4106,17 @@ document.addEventListener("DOMContentLoaded",function(){
 </style>
 
 
-<!-- Build 0055｜核心缺產速判斷修正 -->
+<!-- Build 0056｜核心缺產速判斷修正 -->
 <script id="build0054-core-missing-speed">
 (function(){
   "use strict";
 
   function updateBuildLabel(){
-    document.title = "SEAL KING Smart APS｜Build 0055";
+    document.title = "SEAL KING Smart APS｜Build 0056";
     document.querySelectorAll(".header-time small,.version").forEach(function(el){
       const t = String(el.textContent || "");
       if(/Build\s*00\d+|Enterprise Preview/i.test(t)){
-        el.textContent = "Enterprise Preview 2｜Build 0055";
+        el.textContent = "Enterprise Preview 2｜Build 0056";
       }
     });
   }
@@ -4472,9 +4504,9 @@ document.addEventListener("DOMContentLoaded",function(){
       }
     });
 
-    document.title="SEAL KING Smart APS｜Build 0055 Knowledge Center";
+    document.title="SEAL KING Smart APS｜Build 0056 Knowledge Center";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
-      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0055";
+      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0056";
     });
   }
 
@@ -5166,6 +5198,31 @@ document.addEventListener("DOMContentLoaded",function(){
   async function saveAutoSettings(){const msg=$("mlAutoMsg"),btn=$("mlSaveAuto");btn.disabled=true;try{const res=await jsonp("machinelearningsaveautosettings",{enabled:$("mlAutoEnabled").checked?"Y":"N",threshold:$("mlAutoThreshold").value});msg.textContent="已儲存："+(res.enabled?"開啟":"關閉")+"，門檻 "+res.threshold+"%。";}catch(e){msg.textContent="儲存失敗："+e.message;}finally{btn.disabled=false;}}
   async function autoApplyNow(){if(!confirm("立即依目前門檻建立符合條件的正式規則？"))return;const msg=$("mlAutoMsg"),btn=$("mlAutoApplyNow");btn.disabled=true;btn.textContent="套用中…";try{const res=await jsonp("machinelearningautoapplynow",{force:"Y",threshold:$("mlAutoThreshold").value});msg.textContent="完成：套用 "+Number(res.applied||0)+" 筆，略過 "+Number(res.skipped||0)+" 筆。";await load();if(window.loadMachineRules)window.loadMachineRules();}catch(e){msg.textContent="套用失敗："+e.message;}finally{btn.disabled=false;btn.textContent="立即套用符合條件項目";}}
   document.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{ensureAutoBox();const b=$("mlReload");if(b)b.addEventListener("click",load);const rb=$("mlRefreshCloud");if(rb)rb.addEventListener("click",refreshCloud);document.querySelectorAll(".ml-filter").forEach(x=>x.addEventListener("click",()=>{document.querySelectorAll(".ml-filter").forEach(y=>y.classList.remove("active"));x.classList.add("active");ML.filter=x.dataset.mlFilter||"all";render();}));load();},1800);});window.APSMachineLearningV843={load,refreshCloud,render,state:ML};
+})();
+</script>
+
+
+<style>
+.v845-status{position:fixed;right:16px;bottom:48px;z-index:9996;background:#0b1820ee;border:1px solid #34515e;border-radius:10px;padding:10px 12px;color:#dce9ee;font-size:12px;box-shadow:0 8px 24px #0008;display:none}.v845-status.show{display:block}.v845-status b{color:#75e5b3}
+</style>
+<div id="v845Status" class="v845-status"></div>
+<script>
+/* V84.5｜正式排程、換線最佳化與 APS_Schedule 雲端同步 */
+(()=>{
+  const status=(html,ms=3200)=>{const el=document.getElementById('v845Status');if(!el)return;el.innerHTML=html;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),ms)};
+  window.V845_STATUS=status;
+  const wrap=()=>{
+    const original=window.schedule;
+    if(typeof original==='function'&&!original.__v845){
+      const enhanced=async function(...args){
+        const result=original.apply(this,args);
+        await Promise.resolve(result);
+        try{if((window.S?.schedule||[]).length&&typeof saveDataset==='function'){status('☁ <b>正式排程同步中…</b>');await saveDataset('schedule',true);status(`✓ <b>正式排程已同步</b><br>${window.S.schedule.length} 個排程區段`)} }catch(err){status('⚠ 排程已建立，但雲端同步失敗',5000)}
+        return result;
+      };enhanced.__v845=true;window.schedule=enhanced;
+    }
+  };
+  setTimeout(wrap,800);
 })();
 </script>
 
