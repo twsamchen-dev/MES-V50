@@ -537,6 +537,7 @@ body::after{
 <button class="tab" data-page="workforce"><span>♙</span>人力中心</button>
 <button class="tab" data-page="preprocess"><span>▦</span>前製程中心</button>
 <button class="tab" data-page="machineCenter"><span>▣</span>機台中心</button>
+<button class="tab" data-page="machineRules"><span>⇄</span>機台共用規則</button>
 <button class="tab" data-page="ai"><span>♧</span>AI 建議中心</button>
 <button class="tab" data-page="autoSchedule"><span>✦</span>AI 自動排程</button>
 <button class="tab" data-page="reports"><span>▧</span>報表中心</button>
@@ -593,6 +594,150 @@ body::after{
 <div class="card col12"><h2>插單後排程預覽</h2><div id="urgentTimeline"><div class="empty">尚未執行模擬</div></div></div>
 </div></section>
 
+
+
+<section id="machineRules" class="page"><div class="grid">
+  <div class="card col12">
+    <div class="page-toolbar">
+      <div>
+        <div class="section-kicker">MACHINE CAPABILITY KNOWLEDGE</div>
+        <h2>機台共用規則中心</h2>
+        <div class="sub">建立一次後，APS 會依料號、料號群組與製程自動推薦可共用機台，優先填補機台空檔並兼顧交期。特殊工單仍可人工鎖定。</div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="mrNew">新增規則</button>
+        <button class="btn ghost" id="mrExport">匯出規則 JSON</button>
+        <button class="btn ghost" id="mrImport">匯入規則 JSON</button>
+        <input id="mrImportFile" type="file" accept=".json" hidden>
+      </div>
+    </div>
+
+    <div class="center-kpis">
+      <div class="center-kpi"><span>有效規則</span><b id="mrKpiRules">0</b></div>
+      <div class="center-kpi"><span>涵蓋料號／群組</span><b id="mrKpiParts">0</b></div>
+      <div class="center-kpi"><span>可共用機台</span><b id="mrKpiMachines">0</b></div>
+      <div class="center-kpi"><span>自動推薦工單</span><b id="mrKpiApplied">0</b></div>
+    </div>
+  </div>
+
+  <div class="card col5" id="mrFormCard">
+    <h2>新增／修改共用規則</h2>
+    <div class="center-form" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+      <div class="field span2">
+        <label>規則名稱 *</label>
+        <input id="mrName" placeholder="例如：48mm 工業裁切共用機台">
+      </div>
+      <div class="field">
+        <label>匹配方式</label>
+        <select id="mrMatchType">
+          <option value="exact">精確料號</option>
+          <option value="prefix">料號開頭</option>
+          <option value="contains">料號包含</option>
+          <option value="group">料號群組／關鍵字</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>料號／關鍵字 *</label>
+        <input id="mrPartPattern" placeholder="例如 N30095995048*B">
+      </div>
+      <div class="field">
+        <label>製程 *</label>
+        <select id="mrProcess">
+          <option>裁切</option>
+          <option>分條</option>
+          <option>覆卷</option>
+          <option>複捲</option>
+          <option>包裝</option>
+          <option>上膠</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>主機台</label>
+        <input id="mrPrimaryMachine" list="mrMachineList" placeholder="例如 1B19">
+      </div>
+      <div class="field span2">
+        <label>可共用機台 *</label>
+        <input id="mrSharedMachines" placeholder="以逗號分隔，例如 1B19,1S03,1S12">
+      </div>
+      <div class="field span2">
+        <label>禁用機台</label>
+        <input id="mrBlockedMachines" placeholder="以逗號分隔，可留白">
+      </div>
+      <div class="field">
+        <label>自動改派</label>
+        <select id="mrAutoAssign"><option value="Y">允許</option><option value="N">禁止</option></select>
+      </div>
+      <div class="field">
+        <label>允許拆單</label>
+        <select id="mrAllowSplit"><option value="N">禁止</option><option value="Y">允許</option></select>
+      </div>
+      <div class="field">
+        <label>最多拆分機台數</label>
+        <input id="mrMaxSplit" type="number" min="1" max="4" value="2">
+      </div>
+      <div class="field">
+        <label>最小拆單工時（分鐘）</label>
+        <input id="mrMinSplitMinutes" type="number" min="0" step="10" value="120">
+      </div>
+      <div class="field">
+        <label>換機／換刀成本（分鐘）</label>
+        <input id="mrChangeCost" type="number" min="0" step="1" value="10">
+      </div>
+      <div class="field">
+        <label>優先權</label>
+        <input id="mrPriority" type="number" min="1" max="999" value="100">
+      </div>
+      <div class="field">
+        <label>啟用</label>
+        <select id="mrEnabled"><option value="Y">啟用</option><option value="N">停用</option></select>
+      </div>
+      <div class="field span2">
+        <label>品質／客戶／刀具限制</label>
+        <textarea id="mrRestrictions" rows="3" placeholder="例如：ABSTO 客戶僅可使用 1B19；新刀具未驗證前禁止 1S12"></textarea>
+      </div>
+      <div class="field span2">
+        <label>備註</label>
+        <textarea id="mrNote" rows="2"></textarea>
+      </div>
+    </div>
+    <input id="mrEditId" type="hidden">
+    <datalist id="mrMachineList"></datalist>
+    <div class="actions">
+      <button class="btn green" id="mrSave">儲存規則</button>
+      <button class="btn ghost" id="mrClear">清除</button>
+    </div>
+    <div id="mrFormMsg" class="hint"></div>
+  </div>
+
+  <div class="card col7">
+    <div class="page-toolbar">
+      <div><h2>共用規則清單</h2><div class="sub">規則優先權數字越大越先套用；精確料號優先於群組規則。</div></div>
+      <div class="center-toolbar" style="margin:0">
+        <input id="mrSearch" type="search" placeholder="搜尋料號、製程、機台…">
+        <select id="mrStatus"><option value="all">全部</option><option value="enabled">啟用</option><option value="disabled">停用</option></select>
+      </div>
+    </div>
+    <div id="mrTable" class="empty">尚未建立機台共用規則</div>
+  </div>
+
+  <div class="card col12">
+    <div class="page-toolbar">
+      <div>
+        <h2>AI 自動判定預覽</h2>
+        <div class="sub">依目前工單池套用共用規則，比較機台預估負荷後推薦最適機台。此預覽不會直接改動正式排程。</div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="mrAnalyze">重新分析</button>
+        <button class="btn green" id="mrApply">套用推薦到工單池</button>
+      </div>
+    </div>
+    <div class="notice" style="margin:12px 0">
+      第一階段自動規劃：依交期、機台目前負荷、主機台優先與換機成本推薦單一機台。拆單欄位已預留，後續將支援同一工單跨兩台機台同步排程。
+    </div>
+    <div id="mrPreview" class="empty">請先建立工單池與共用規則。</div>
+  </div>
+</div></section>
 
 <section id="ai" class="page"><div class="grid">
 <div class="card col12">
@@ -3870,6 +4015,379 @@ document.addEventListener("DOMContentLoaded",function(){
   setTimeout(install, 1800);
 
   window.Build0054CoreMissingSpeed = { install };
+})();
+</script>
+
+
+<style id="build0055-machine-rules-style">
+#machineRules .center-form .span2{grid-column:span 2}
+#machineRules textarea{width:100%;background:#0a151d;color:#f5f7fa;border:1px solid #344954;border-radius:8px;padding:10px;font-family:inherit}
+#machineRules .mr-machine-list{display:flex;gap:5px;flex-wrap:wrap}
+#machineRules .mr-machine-chip{padding:3px 7px;border-radius:999px;background:#17324e;color:#98c9ff;font-size:11px}
+#machineRules .mr-decision{border-left:4px solid #20b6e8}
+#machineRules .mr-decision.applied{border-left-color:#22c55e}
+@media(max-width:1100px){#machineRules .col5,#machineRules .col7{grid-column:span 12}}
+@media(max-width:650px){#machineRules .center-form{grid-template-columns:1fr!important}#machineRules .center-form .span2{grid-column:span 1}}
+</style>
+
+<script id="build0055-machine-sharing-rules">
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "SK_APS_MACHINE_RULES_V1";
+  const APPLY_KEY = "SK_APS_MACHINE_RULES_APPLIED_V1";
+  let rules = [];
+  let preview = [];
+  let appliedCount = 0;
+
+  const $ = id => document.getElementById(id);
+  const txt = v => String(v ?? "").trim();
+  const norm = v => txt(v).toUpperCase().replace(/[＊﹡]/g,"*").replace(/[×Ｘ]/g,"X").replace(/\s+/g,"");
+  const esc = v => txt(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const num = (v,d=0)=>{const n=Number(String(v??"").replace(/,/g,""));return Number.isFinite(n)?n:d};
+  const list = v => txt(v).split(/[,，、;\s]+/).map(txt).filter(Boolean);
+  const unique = arr => [...new Set(arr.map(txt).filter(Boolean))];
+
+  function load(){
+    try{rules=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}
+    catch(_){rules=[];}
+    try{appliedCount=Number(localStorage.getItem(APPLY_KEY)||0)||0;}catch(_){appliedCount=0;}
+    rules = Array.isArray(rules) ? rules : [];
+  }
+  function save(){
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(rules));
+    renderAll();
+  }
+  function uid(){return "MR-"+Date.now()+"-"+Math.floor(Math.random()*9999)}
+
+  function getMachines(){
+    const fromState=Object.keys(window.S?.machines||{});
+    const fromSpeed=(window.S?.rows?.speed||[]).map(x=>x.machine);
+    return unique([...fromState,...fromSpeed]).sort();
+  }
+
+  function fillMachineList(){
+    const dl=$("mrMachineList");
+    if(dl) dl.innerHTML=getMachines().map(m=>`<option value="${esc(m)}">`).join("");
+  }
+
+  function exactness(rule){
+    return {exact:4,prefix:3,contains:2,group:1}[rule.matchType]||0;
+  }
+  function matches(rule,job){
+    if(rule.enabled===false)return false;
+    const process=norm(job.process);
+    if(rule.process && norm(rule.process)!==process)return false;
+    const p=norm(job.part);
+    const q=norm(rule.partPattern);
+    if(!p||!q)return false;
+    if(rule.matchType==="exact")return p===q;
+    if(rule.matchType==="prefix")return p.startsWith(q);
+    if(rule.matchType==="contains")return p.includes(q);
+    return q.split(/[|/]+/).some(k=>k&&p.includes(k));
+  }
+
+  function findRule(job){
+    return rules.filter(r=>matches(r,job)).sort((a,b)=>
+      (num(b.priority)-num(a.priority)) ||
+      (exactness(b)-exactness(a)) ||
+      String(b.updatedAt||"").localeCompare(String(a.updatedAt||""))
+    )[0]||null;
+  }
+
+  function machineCapMinutes(machine){
+    const h=num(window.S?.machines?.[machine]?.hours, num($("defaultHours")?.value,24));
+    return Math.max(60,h*60);
+  }
+
+  function currentLoad(){
+    const loads={};
+    const pool=(window.S?.pool||[]).filter(x=>x.ready&&!x.closed);
+    pool.forEach(j=>{
+      if(j.machine)loads[j.machine]=(loads[j.machine]||0)+num(j.minutes);
+    });
+    return loads;
+  }
+
+  function recommend(job,rule,loads){
+    const blocked=new Set((rule.blockedMachines||[]).map(norm));
+    let machines=unique([rule.primaryMachine,...(rule.sharedMachines||[])])
+      .filter(m=>m&&!blocked.has(norm(m)));
+
+    // 僅保留目前有啟用或存在於產速主檔的機台；若皆無則保留規則值供提示。
+    const known=new Set(getMachines().map(norm));
+    const knownList=machines.filter(m=>known.has(norm(m)));
+    if(knownList.length)machines=knownList;
+
+    if(!machines.length)return null;
+
+    let best=null;
+    machines.forEach((m,index)=>{
+      const load=num(loads[m]);
+      const cap=machineCapMinutes(m);
+      const util=load/cap;
+      const primaryBonus=norm(m)===norm(rule.primaryMachine)?-0.12:0;
+      const orderBonus=index*0.025;
+      const changePenalty=num(rule.changeCost)/Math.max(1,cap);
+      const dueBonus=job.urgent?-0.15:job.risk?-0.07:0;
+      const score=util+primaryBonus+orderBonus+changePenalty+dueBonus;
+      const candidate={machine:m,score,load,cap,util};
+      if(!best||candidate.score<best.score)best=candidate;
+    });
+    return best;
+  }
+
+  function analyze(){
+    const pool=(window.S?.pool||[]).filter(x=>!x.closed);
+    const loads=currentLoad();
+    preview=[];
+
+    pool.forEach(job=>{
+      const rule=findRule(job);
+      if(!rule)return;
+      const rec=recommend(job,rule,loads);
+      if(!rec)return;
+      const old=job.machine||"";
+      const reason=[
+        `套用規則：${rule.name}`,
+        norm(rec.machine)===norm(rule.primaryMachine)?"主機台優先":"共用機台填補空檔",
+        `目前預估負荷 ${Math.round(rec.util*100)}%`,
+        job.urgent?"急單優先":"依交期與負荷評分"
+      ].join("；");
+      preview.push({
+        wo:job.wo,part:job.part,process:job.process,
+        oldMachine:old,recommended:rec.machine,
+        ruleId:rule.id,ruleName:rule.name,reason,
+        allowSplit:rule.allowSplit,maxSplit:rule.maxSplit,
+        changed:norm(old)!==norm(rec.machine)
+      });
+      loads[rec.machine]=(loads[rec.machine]||0)+num(job.minutes);
+    });
+
+    renderPreview();
+    updateKpi();
+    return preview;
+  }
+
+  function applyRecommendations(){
+    if(!preview.length)analyze();
+    const map=new Map(preview.map(x=>[txt(x.wo),x]));
+    let changed=0;
+    (window.S?.pool||[]).forEach(job=>{
+      const d=map.get(txt(job.wo));
+      if(!d)return;
+      const rule=rules.find(r=>r.id===d.ruleId);
+      if(!rule||rule.autoAssign===false)return;
+      if(norm(job.machine)!==norm(d.recommended))changed++;
+      job.machine=d.recommended;
+      job.machineRuleId=d.ruleId;
+      job.machineRuleName=d.ruleName;
+      job.machineDecisionReason=d.reason;
+      job.eligibleMachines=unique([rule.primaryMachine,...(rule.sharedMachines||[])]);
+      job.allowSplit=!!rule.allowSplit;
+      job.maxSplit=num(rule.maxSplit,2);
+    });
+    appliedCount+=changed;
+    localStorage.setItem(APPLY_KEY,String(appliedCount));
+    window.renderPool?.();
+    window.updateKpi?.();
+    renderPreview(true);
+    updateKpi();
+    window.log?.(`機台共用規則已套用：${changed} 張工單更新推薦機台`);
+    alert(`已套用 ${changed} 張工單的推薦機台。產生排程時會依此機台安排。`);
+  }
+
+  function readForm(){
+    return {
+      id:txt($("mrEditId")?.value)||uid(),
+      name:txt($("mrName")?.value),
+      matchType:txt($("mrMatchType")?.value)||"exact",
+      partPattern:txt($("mrPartPattern")?.value),
+      process:txt($("mrProcess")?.value),
+      primaryMachine:txt($("mrPrimaryMachine")?.value),
+      sharedMachines:unique(list($("mrSharedMachines")?.value)),
+      blockedMachines:unique(list($("mrBlockedMachines")?.value)),
+      autoAssign:$("mrAutoAssign")?.value!=="N",
+      allowSplit:$("mrAllowSplit")?.value==="Y",
+      maxSplit:Math.max(1,num($("mrMaxSplit")?.value,2)),
+      minSplitMinutes:Math.max(0,num($("mrMinSplitMinutes")?.value,120)),
+      changeCost:Math.max(0,num($("mrChangeCost")?.value,10)),
+      priority:Math.max(1,num($("mrPriority")?.value,100)),
+      enabled:$("mrEnabled")?.value!=="N",
+      restrictions:txt($("mrRestrictions")?.value),
+      note:txt($("mrNote")?.value),
+      updatedAt:new Date().toISOString()
+    };
+  }
+
+  function clearForm(){
+    ["mrEditId","mrName","mrPartPattern","mrPrimaryMachine","mrSharedMachines","mrBlockedMachines","mrRestrictions","mrNote"]
+      .forEach(id=>{if($(id))$(id).value=""});
+    if($("mrMatchType"))$("mrMatchType").value="exact";
+    if($("mrProcess"))$("mrProcess").value="裁切";
+    if($("mrAutoAssign"))$("mrAutoAssign").value="Y";
+    if($("mrAllowSplit"))$("mrAllowSplit").value="N";
+    if($("mrMaxSplit"))$("mrMaxSplit").value="2";
+    if($("mrMinSplitMinutes"))$("mrMinSplitMinutes").value="120";
+    if($("mrChangeCost"))$("mrChangeCost").value="10";
+    if($("mrPriority"))$("mrPriority").value="100";
+    if($("mrEnabled"))$("mrEnabled").value="Y";
+    if($("mrFormMsg"))$("mrFormMsg").textContent="";
+  }
+
+  function saveRule(){
+    const r=readForm();
+    if(!r.name||!r.partPattern||!r.process||(!r.primaryMachine&&!r.sharedMachines.length)){
+      $("mrFormMsg").innerHTML='<span style="color:#ff9ca1">請填寫規則名稱、料號／關鍵字、製程及至少一台可用機台。</span>';
+      return;
+    }
+    r.sharedMachines=unique([r.primaryMachine,...r.sharedMachines]);
+    const i=rules.findIndex(x=>x.id===r.id);
+    if(i>=0)rules[i]=r;else rules.push(r);
+    save();
+    clearForm();
+    $("mrFormMsg").innerHTML='<span style="color:#82e8bd">規則已儲存，後續相同料號會自動判定。</span>';
+    analyze();
+  }
+
+  function editRule(id){
+    const r=rules.find(x=>x.id===id);if(!r)return;
+    $("mrEditId").value=r.id;$("mrName").value=r.name;$("mrMatchType").value=r.matchType;
+    $("mrPartPattern").value=r.partPattern;$("mrProcess").value=r.process;
+    $("mrPrimaryMachine").value=r.primaryMachine||"";$("mrSharedMachines").value=(r.sharedMachines||[]).join(",");
+    $("mrBlockedMachines").value=(r.blockedMachines||[]).join(",");$("mrAutoAssign").value=r.autoAssign===false?"N":"Y";
+    $("mrAllowSplit").value=r.allowSplit?"Y":"N";$("mrMaxSplit").value=r.maxSplit||2;
+    $("mrMinSplitMinutes").value=r.minSplitMinutes||120;$("mrChangeCost").value=r.changeCost||0;
+    $("mrPriority").value=r.priority||100;$("mrEnabled").value=r.enabled===false?"N":"Y";
+    $("mrRestrictions").value=r.restrictions||"";$("mrNote").value=r.note||"";
+    $("mrFormCard")?.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  function deleteRule(id){
+    const r=rules.find(x=>x.id===id);
+    if(!r||!confirm(`確定刪除「${r.name}」？`))return;
+    rules=rules.filter(x=>x.id!==id);save();analyze();
+  }
+
+  function renderRules(){
+    const box=$("mrTable");if(!box)return;
+    const q=norm($("mrSearch")?.value);
+    const status=$("mrStatus")?.value||"all";
+    const data=rules.filter(r=>{
+      if(status==="enabled"&&!r.enabled)return false;
+      if(status==="disabled"&&r.enabled)return false;
+      if(q&&!norm([r.name,r.partPattern,r.process,r.primaryMachine,...(r.sharedMachines||[])].join("|")).includes(q))return false;
+      return true;
+    }).sort((a,b)=>num(b.priority)-num(a.priority));
+
+    if(!data.length){box.className="empty";box.textContent="尚無符合條件的機台共用規則";return}
+    box.className="tablewrap";
+    box.innerHTML=`<table><thead><tr><th>狀態</th><th>規則</th><th>料號匹配</th><th>製程</th><th>主機台</th><th>可共用機台</th><th>自動</th><th>拆單</th><th>優先權</th><th>操作</th></tr></thead>
+    <tbody>${data.map(r=>`<tr>
+      <td><span class="tag ${r.enabled?"green":"gray"}">${r.enabled?"啟用":"停用"}</span></td>
+      <td><b>${esc(r.name)}</b><div class="hint">${esc(r.note||"")}</div></td>
+      <td>${esc(r.matchType)}：${esc(r.partPattern)}</td><td>${esc(r.process)}</td>
+      <td>${esc(r.primaryMachine||"—")}</td>
+      <td><div class="mr-machine-list">${(r.sharedMachines||[]).map(m=>`<span class="mr-machine-chip">${esc(m)}</span>`).join("")}</div></td>
+      <td>${r.autoAssign?"允許":"禁止"}</td><td>${r.allowSplit?`允許（最多${r.maxSplit}台）`:"禁止"}</td>
+      <td>${r.priority}</td>
+      <td><button class="btn ghost" data-mr-edit="${r.id}" style="padding:6px 9px">修改</button>
+          <button class="btn red" data-mr-del="${r.id}" style="padding:6px 9px">刪除</button></td>
+    </tr>`).join("")}</tbody></table>`;
+  }
+
+  function renderPreview(applied=false){
+    const box=$("mrPreview");if(!box)return;
+    if(!preview.length){box.className="empty";box.textContent="目前沒有工單符合共用機台規則。";return}
+    box.className="tablewrap";
+    box.innerHTML=`<table><thead><tr><th>工單</th><th>料號</th><th>製程</th><th>原機台</th><th>AI推薦</th><th>規則</th><th>原因</th><th>拆單設定</th></tr></thead>
+    <tbody>${preview.map(x=>`<tr>
+      <td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.process)}</td>
+      <td>${esc(x.oldMachine||"未指定")}</td>
+      <td><span class="tag ${x.changed?"blue":"green"}">${esc(x.recommended)}</span></td>
+      <td>${esc(x.ruleName)}</td><td>${esc(x.reason)}</td>
+      <td>${x.allowSplit?`允許，最多 ${x.maxSplit} 台`:"不拆單"}</td>
+    </tr>`).join("")}</tbody></table>`;
+    if(applied)box.classList.add("applied");
+  }
+
+  function updateKpi(){
+    $("mrKpiRules").textContent=rules.filter(r=>r.enabled).length;
+    $("mrKpiParts").textContent=new Set(rules.filter(r=>r.enabled).map(r=>norm(r.partPattern))).size;
+    $("mrKpiMachines").textContent=new Set(rules.flatMap(r=>r.enabled?(r.sharedMachines||[]):[]).map(norm)).size;
+    $("mrKpiApplied").textContent=appliedCount;
+  }
+  function renderAll(){fillMachineList();renderRules();updateKpi()}
+
+  function exportRules(){
+    const blob=new Blob([JSON.stringify({version:"V83-Knowledge-1",exportedAt:new Date().toISOString(),rules},null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="APS_機台共用規則.json";a.click();URL.revokeObjectURL(a.href);
+  }
+  function importRules(file){
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        const incoming=Array.isArray(data)?data:data.rules;
+        if(!Array.isArray(incoming))throw Error("格式錯誤");
+        rules=incoming.map(r=>({...r,id:r.id||uid(),updatedAt:r.updatedAt||new Date().toISOString()}));
+        save();analyze();alert(`已匯入 ${rules.length} 筆規則`);
+      }catch(e){alert("匯入失敗："+e.message)}
+    };
+    reader.readAsText(file,"utf-8");
+  }
+
+  function install(){
+    load();renderAll();
+
+    $("mrNew")?.addEventListener("click",()=>{clearForm();$("mrFormCard")?.scrollIntoView({behavior:"smooth"})});
+    $("mrSave")?.addEventListener("click",saveRule);
+    $("mrClear")?.addEventListener("click",clearForm);
+    $("mrSearch")?.addEventListener("input",renderRules);
+    $("mrStatus")?.addEventListener("change",renderRules);
+    $("mrAnalyze")?.addEventListener("click",analyze);
+    $("mrApply")?.addEventListener("click",applyRecommendations);
+    $("mrExport")?.addEventListener("click",exportRules);
+    $("mrImport")?.addEventListener("click",()=>$("mrImportFile")?.click());
+    $("mrImportFile")?.addEventListener("change",e=>{if(e.target.files?.[0])importRules(e.target.files[0]);e.target.value=""});
+    $("mrTable")?.addEventListener("click",e=>{
+      const edit=e.target.closest("[data-mr-edit]"),del=e.target.closest("[data-mr-del]");
+      if(edit)editRule(edit.dataset.mrEdit);
+      if(del)deleteRule(del.dataset.mrDel);
+    });
+
+    // 工單池重新同步後，知識中心自動重新分析。
+    const observer=setInterval(()=>{
+      const n=(window.S?.pool||[]).length;
+      if(n && Number(window.__MR_LAST_POOL_COUNT__||0)!==n){
+        window.__MR_LAST_POOL_COUNT__=n;analyze();
+      }
+    },2500);
+
+    // 產生正式排程前，自動套用規則（只套用允許自動改派者）。
+    ["runSchedule","rerunSchedule"].forEach(id=>{
+      const btn=$(id);
+      if(btn&&!btn.dataset.mrAuto){
+        btn.dataset.mrAuto="1";
+        btn.addEventListener("click",()=>{analyze();applyRecommendations()},true);
+      }
+    });
+
+    document.title="SEAL KING Smart APS｜Build 0055 Knowledge Center";
+    document.querySelectorAll(".header-time small,.version").forEach(el=>{
+      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0055";
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded",install);
+  setTimeout(install,1800);
+
+  window.APSMachineRules={
+    getRules:()=>JSON.parse(JSON.stringify(rules)),
+    findRule,
+    analyze,
+    apply:applyRecommendations
+  };
 })();
 </script>
 
