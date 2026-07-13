@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>SEAL KING Smart APS｜V86.2 APS Turbo Engine Build 0066</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEAL KING Smart APS｜雲端資料讀取穩定復原版</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -131,6 +130,8 @@ body{background:#050b0f;color:#f7f9fa}
 <style>
 .production-midnight{position:absolute;top:0;bottom:0;transform:translateX(-50%);pointer-events:none;z-index:3}.production-midnight i{position:absolute;top:0;bottom:-430px;border-left:1px dashed rgba(255,115,115,.85)}.production-midnight b{position:absolute;top:-24px;left:6px;white-space:nowrap;font-size:10px;color:#ff8f8f;font-weight:700}.schedule-day-title b{font-size:14px}.time-scale{position:relative}
 </style>
+
+
 <style>
 /* Build 0023｜08:30～隔日08:30 單排 24 小時時間軸 */
 .schedule-scroll{min-width:1480px!important}
@@ -145,6 +146,7 @@ body{background:#050b0f;color:#f7f9fa}
 .production-midnight i{bottom:-520px!important;border-left:1px dashed rgba(255,92,100,.9)!important}
 @media(max-width:820px){.schedule-scroll{min-width:1480px!important}}
 </style>
+
 <style>
 /* Build 0009｜依指定示意圖改為單排機台排程卡片 */
 .schedule-scroll{min-width:1380px!important;background:#061018}
@@ -169,6 +171,7 @@ body{background:#050b0f;color:#f7f9fa}
 .production-midnight b{top:4px!important}
 @media(max-width:820px){.schedule-scroll{min-width:1380px!important}}
 </style>
+
 <style>
 /* Build 0011｜24 小時完整縮放於畫面內，不需橫向拖曳 */
 .schedule-scroll{width:100%!important;min-width:0!important;overflow-x:hidden!important;overflow-y:visible!important}
@@ -189,6 +192,7 @@ body{background:#050b0f;color:#f7f9fa}
  .time-tick{font-size:10px!important;padding-left:2px!important}
 }
 </style>
+
 <style>
 /* Build 0012｜Enterprise APS Timeline Engine */
 .schedule-scroll{overflow:hidden!important;min-width:0!important}
@@ -209,10 +213,12 @@ body{background:#050b0f;color:#f7f9fa}
 .machine-label small{font-size:13px!important;color:#20d4ff!important}
 @media(max-width:1200px){.schedule-axis,.schedule-row{grid-template-columns:135px minmax(0,1fr)!important}.time-tick{font-size:10px!important}.machine-label b{font-size:20px!important}}
 </style>
+
 <style>
 /* Build 0013｜早班／夜班各一排，依核准構圖導入 */
 .schedule-axis,.schedule-row{grid-template-columns:166px minmax(0,1fr)!important}.schedule-axis{min-height:72px!important}.schedule-axis-label{font-size:15px!important;line-height:1.45!important}.time-scale{height:72px!important;background:#08151e!important}.shift-axis{position:absolute;left:0;right:0;height:50%;display:block;background:repeating-linear-gradient(90deg,#0a1a24 0,#0a1a24 calc(8.333333% - 1px),#24404e calc(8.333333% - 1px),#24404e 8.333333%)}.shift-axis.day{top:0;border-bottom:1px solid #29404d}.shift-axis.night{bottom:0}.shift-axis-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:3;font-size:11px;font-weight:800;color:#dce8ee;background:#0b2230cc;border:1px solid #21475b;border-radius:5px;padding:3px 7px}.shift-tick{position:absolute;top:0;bottom:0;border-left:1px solid #314a58;padding:10px 0 0 5px;color:#d9e2e7;font-size:11px;white-space:nowrap}.shift-tick:last-child{transform:translateX(-100%);border-left:0;border-right:1px solid #314a58;padding-left:0;padding-right:4px}.shift-axis.night .shift-tick{padding-top:10px}.shift-midnight{position:absolute;top:50%;bottom:0;border-left:1px dashed #ff5e66;z-index:5;pointer-events:none}.shift-midnight b{position:absolute;top:3px;left:5px;background:#bd2029;color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;line-height:1.15;white-space:nowrap}.schedule-row{min-height:132px!important;background:#061018!important}.machine-label{min-height:132px!important;display:flex;flex-direction:column;justify-content:center;padding:12px 38px 12px 14px!important}.machine-label b{font-size:25px!important}.machine-label small{font-size:13px!important}.machine-menu{top:18px!important;right:10px!important}.dual-track{position:relative;height:132px;background:#061018;overflow:hidden}.shift-track{position:absolute;left:0;right:0;height:64px;overflow:hidden;background:repeating-linear-gradient(90deg,#07141c 0,#07141c calc(8.333333% - 1px),#193440 calc(8.333333% - 1px),#193440 8.333333%)}.shift-track.day{top:2px;border-bottom:1px solid #28404c}.shift-track.night{bottom:2px}.shift-label{position:absolute;left:7px;top:7px;z-index:8;width:66px;height:50px;border-radius:5px;background:linear-gradient(180deg,#153247,#0d2433);border:1px solid #26536a;color:#fff;display:flex;flex-direction:column;justify-content:center;padding-left:10px;pointer-events:none;box-shadow:0 2px 5px #0006}.shift-label b{font-size:13px;line-height:1.1}.shift-label small{font-size:8px;color:#b9d3df;margin-top:5px}.shift-track .schedule-block{top:5px!important;height:54px!important;padding:8px 8px!important;border-radius:5px!important}.shift-track .schedule-block b{font-size:12px!important}.shift-track .schedule-block small{font-size:9px!important;margin-top:6px!important}.shift-track .schedule-block.compact{padding:0!important}.shift-track .schedule-block.compact b,.shift-track .schedule-block.compact small{display:none!important}.shift-track .schedule-block.mini{padding:6px 2px!important;text-align:center}.shift-track .schedule-block.mini b{font-size:9px!important}.shift-track .schedule-block.mini small{font-size:7px!important}.shift-track .schedule-block.cluster{padding:7px 4px!important}.shift-track .schedule-block.cluster b{font-size:9px!important}.shift-track .schedule-block.cluster small{font-size:7px!important}@media(max-width:1200px){.schedule-axis,.schedule-row{grid-template-columns:135px minmax(0,1fr)!important}.machine-label b{font-size:20px!important}.shift-label{width:58px;padding-left:7px}.shift-tick{font-size:9px!important}}
 </style>
+
 <style>
 /* Build 0014｜早夜班雙排寬版：班別欄與甘特區完全分離 */
 .schedule-scroll{overflow-x:hidden!important;min-width:0!important}
@@ -268,6 +274,7 @@ body{background:#050b0f;color:#f7f9fa}
 .shift-lane .schedule-block.cluster b{font-size:9px!important}.shift-lane .schedule-block.cluster small{display:none!important}
 @media(max-width:1200px){.schedule-axis,.schedule-row{grid-template-columns:100px minmax(0,1fr)!important}.shift-axis,.shift-track{grid-template-columns:50px minmax(0,1fr)!important}.machine-label b{font-size:18px!important}}
 </style>
+
 <style>
 /* Build 0023｜戰情中心工具列格式修正 */
 #home .panel-toolbar{align-items:flex-start;flex-wrap:wrap}
@@ -307,6 +314,8 @@ body{background:#050b0f;color:#f7f9fa}
   #home .toolbar-actions .due-filter-panel{overflow-x:auto}
 }
 </style>
+
+
 <style>
 /* Build 0024｜缺少產速全寬、回饋表單下移 */
 #speedFeedback #missingSpeedCard,#speedFeedback #speedFeedbackFormCard{grid-column:span 12!important;width:100%;min-width:0}
@@ -322,6 +331,7 @@ body{background:#050b0f;color:#f7f9fa}
 @media(max-width:1200px){#speedFeedback #speedFeedbackFormCard .speed-form{grid-template-columns:repeat(2,minmax(0,1fr))}#speedFeedback #missingSpeedCard .filterbar{grid-template-columns:1fr 180px 180px}}
 @media(max-width:760px){#speedFeedback #speedFeedbackFormCard .speed-form{grid-template-columns:1fr}#speedFeedback #speedFeedbackFormCard .speed-form .span2{grid-column:span 1}#speedFeedback #missingSpeedCard .filterbar{grid-template-columns:1fr}}
 </style>
+
 <style>
 /* Build 0042｜可自訂早班／夜班時段 */
 .time-scale:after{display:none!important}
@@ -332,6 +342,7 @@ body{background:#050b0f;color:#f7f9fa}
 @media(max-width:900px){.shift-setting-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.shift-setting-grid{grid-template-columns:1fr}}
 </style>
+
 <style>
 /* Build 0042｜時間軸日期與班別列重新分層，避免日期、刻度、00:00 與工單重疊 */
 .schedule-axis{min-height:118px!important;align-items:stretch!important}
@@ -361,21 +372,26 @@ body{background:#050b0f;color:#f7f9fa}
   .schedule-axis-label{min-height:112px!important;font-size:12px!important}
 }
 </style>
+
+
 <style>
 /* Build 0042｜AI 插單方案比較 */
 .ai-option-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}.ai-option{border:1px solid #344653;background:#0b151c;border-radius:9px;padding:12px;cursor:pointer;transition:.15s}.ai-option:hover{border-color:#5c7f93;transform:translateY(-1px)}.ai-option.selected{border-color:#32c7ff;box-shadow:0 0 0 2px #32c7ff2b}.ai-option.best{border-color:#37b86a}.ai-option h4{margin:0 0 8px;font-size:15px}.ai-option .score{font-size:12px;color:#9fb1bd;line-height:1.65}.ai-option .score b{color:#fff}.ai-badge{display:inline-block;padding:3px 7px;border-radius:99px;font-size:10px;margin-left:6px;background:#174a34;color:#8bf0b5}.ai-option-table{margin-top:12px}.ai-option-table input{accent-color:#22c55e}.urgent-ai-note{margin-top:10px;padding:10px 12px;border-left:4px solid #32c7ff;background:#10212b;color:#ccefff;border-radius:6px;font-size:12px;line-height:1.6}
 </style>
+
 <style>
 /* Build 0042｜AI 自動排程核心 */
 .auto-schedule-hero{border-top:3px solid #7c5cff}.auto-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.auto-config{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-top:14px;padding:12px;background:#09141b;border:1px solid #2c414c;border-radius:9px}.auto-config input,.auto-config select{width:100%;height:38px;background:#101d25;color:#edf4f7;border:1px solid #344a55;border-radius:7px;padding:0 9px}.auto-note{margin-top:10px;color:#9fb0b8;font-size:12px}.auto-summary{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:9px}.auto-stat{background:#09151c;border:1px solid #2a414c;border-radius:9px;padding:12px}.auto-stat.improve{border-color:#27654d;box-shadow:inset 0 3px #2fb779}.auto-stat span,.auto-stat small{display:block;color:#91a4ad}.auto-stat b{display:block;font-size:25px;margin:5px 0;color:#fff}.auto-empty{padding:24px;text-align:center;color:#8ea1ab;border:1px dashed #334a55;border-radius:9px}.auto-insight{border:1px solid #304650;background:#0a161d;border-radius:9px;padding:11px;margin-bottom:9px}.auto-insight b{display:block;margin-bottom:5px}.auto-insight.good{border-left:4px solid #32b97b}.auto-insight.warn{border-left:4px solid #e3a42b}.auto-insight.bad{border-left:4px solid #df4d57}.auto-machine-card{border:1px solid #2c424d;background:#0a161d;border-radius:9px;padding:12px;margin-top:9px}.auto-machine-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.auto-machine-flow{display:flex;gap:6px;overflow-x:auto;padding-top:9px}.auto-job-chip{flex:0 0 auto;max-width:190px;background:#11252e;border:1px solid #375260;border-radius:7px;padding:7px 9px}.auto-job-chip b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.auto-job-chip small{display:block;color:#9eb0b8;margin-top:3px}.auto-arrow{align-self:center;color:#668c9d}.auto-load{color:#79e4b4;font-weight:800}.auto-preview-wrap{overflow:auto;max-height:540px}.auto-preview-table{min-width:850px}.auto-score-bar{height:8px;background:#182a33;border-radius:99px;overflow:hidden;margin-top:7px}.auto-score-bar i{display:block;height:100%;background:linear-gradient(90deg,#5d77ff,#30c5a0)}
 @media(max-width:1250px){.auto-config{grid-template-columns:repeat(3,1fr)}.auto-summary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.auto-config,.auto-summary{grid-template-columns:1fr 1fr}}
 </style>
+
 <style id="build0037-preprocess-css">
 .pre-smart-grid{position:relative}.pre-hero-card,.pre-board-card,.pre-detail-card,.pre-ai-card{position:relative;overflow:hidden}.pre-hero-card{background:linear-gradient(135deg,#101b24,#0b141b 58%,#171015);animation:preFade .45s ease both}.pre-glow{position:absolute;width:360px;height:360px;border-radius:50%;right:-120px;top:-190px;background:radial-gradient(circle,#d7192030,transparent 68%);animation:prePulse 4s ease-in-out infinite}.pre-kpis{position:relative;z-index:1}.pre-kpi{transition:.25s transform,.25s border-color,.25s box-shadow}.pre-kpi:hover{transform:translateY(-3px);box-shadow:0 10px 24px #0008}.pre-kpi.ready{border-color:#246c4d}.pre-kpi.blocked{border-color:#713039}.pre-kpi.urgent{border-color:#755c22}.pre-kpi small{display:block;color:#8fa0ad;font-size:11px;margin-top:5px}.pre-gate-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin:14px 0 4px}.flow-node{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid #2b3e49;background:#0b151b;border-radius:9px;transition:.22s}.flow-node:hover{border-color:#4d7184;transform:translateY(-2px)}.flow-node i{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#183446;color:#7dd8ff;font-style:normal}.flow-node.final i{background:#164b36;color:#76efbd}.pre-gate-flow>b{color:#556a76}.pre-toolbar{position:relative;z-index:1}.pre-toolbar select{min-width:165px}.pre-board-card{animation:preSlide .45s .06s ease both}.pre-board-legend{display:flex;gap:13px;font-size:12px;color:#b9c5cd}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.dot.green{background:#22c55e}.dot.yellow{background:#eab308}.dot.red{background:#ef4444}.pre-table-wrap{overflow:auto;max-height:590px;border:1px solid #2b3c46;border-radius:10px}.pre-table{min-width:1500px}.pre-table th{top:0}.pre-row{transition:.18s background,.18s transform}.pre-row:hover td{background:#122631}.pre-readiness{display:inline-flex;align-items:center;gap:6px;font-weight:800}.pre-readiness:before{content:"";width:9px;height:9px;border-radius:50%;box-shadow:0 0 10px currentColor}.pre-readiness.ready{color:#58e6a6}.pre-readiness.warning{color:#ffd45b}.pre-readiness.blocked{color:#ff7179}.pre-select{min-width:105px;background:#0a151d;color:#eef5f8;border:1px solid #35505e;border-radius:7px;padding:7px}.pre-mini{font-size:11px;color:#9fb0bb}.pre-view-btn{padding:7px 10px}.pre-detail-card,.pre-ai-card{animation:preSlide .45s .12s ease both}.pre-detail-form{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.pre-detail-form .span2{grid-column:span 4}.pre-detail-form textarea{width:100%;resize:vertical;background:#071526;color:#e8f4ff;border:1px solid #294661;border-radius:9px;padding:10px}.pre-ai-card{background:linear-gradient(145deg,#111c23,#10141b)}.pre-ai-insight{min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#aebbc5;line-height:1.65}.ai-orb{width:78px;height:78px;border-radius:50%;margin-bottom:18px;background:radial-gradient(circle at 35% 30%,#7bd7ff,#2b6ba5 35%,#15283b 62%,#0a1016 70%);box-shadow:0 0 0 10px #2e7fb013,0 0 36px #3fb8ff52;animation:orbFloat 2.8s ease-in-out infinite}.pre-ai-list{width:100%;text-align:left}.pre-ai-item{padding:11px 12px;margin:8px 0;border-radius:8px;background:#0b151b;border-left:4px solid #ef4444;animation:preSlide .35s ease both}.pre-ai-item.warn{border-left-color:#eab308}.pre-ai-item.ok{border-left-color:#22c55e}.pre-ai-item b{display:block;color:#fff;margin-bottom:4px}.pre-flash{animation:preFlash .8s ease}.pre-saving:after{content:"AI 判定與儲存中…";position:absolute;inset:0;background:#07111fca;display:grid;place-items:center;font-size:20px;font-weight:800;z-index:8;backdrop-filter:blur(2px)}
 @keyframes preFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes preSlide{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}@keyframes prePulse{50%{transform:scale(1.15);opacity:.7}}@keyframes orbFloat{50%{transform:translateY(-8px) scale(1.03)}}@keyframes preFlash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 3px #35d4d4,0 0 28px #35d4d466}}
 @media(max-width:1200px){.pre-gate-flow{grid-template-columns:1fr 1fr 1fr}.pre-gate-flow>b{display:none}.pre-detail-card,.pre-ai-card{grid-column:span 12}.pre-detail-form{grid-template-columns:1fr 1fr}.pre-detail-form .span2{grid-column:span 2}}@media(max-width:700px){.pre-gate-flow{grid-template-columns:1fr}.pre-detail-form{grid-template-columns:1fr}.pre-detail-form .span2{grid-column:span 1}}
 </style>
+
 <style>
 /* Build 0042｜系統設定中心正式開通 */
 .sys-grid{align-items:start}.sys-hero{background:radial-gradient(circle at 85% 0,#3a1116 0,transparent 35%),linear-gradient(145deg,#101c24,#091218)}
@@ -385,6 +401,7 @@ body{background:#050b0f;color:#f7f9fa}
 @keyframes sysToastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @media(max-width:900px){.sys-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.sys-kpis{grid-template-columns:1fr}}
 </style>
+
 <style id="build0041-security-css">
 html.aps-locked body{overflow:hidden!important}
 #apsSecurityGate{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(circle at 75% 10%,rgba(111,17,23,.45),transparent 33%),linear-gradient(145deg,#050b0f,#0a1218 58%,#16080b);display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Microsoft JhengHei",Arial,sans-serif;color:#f7f9fa}
@@ -398,14 +415,18 @@ html.aps-locked body{overflow:hidden!important}
 .aps-security-blur{filter:blur(7px);pointer-events:none;user-select:none}
 @media(max-width:600px){.aps-sec-card{padding:22px}.aps-sec-actions{flex-direction:column}.aps-sec-btn{width:100%}#apsSecurityBar{left:10px;right:10px;justify-content:center}}
 </style>
+
+
 <style id="build0042-auth-disabled-css">
 /* Build 0042｜開發階段停用登入鎖定 */
 #apsSecurityGate,#apsSecurityBar,#apsChangePassword{display:none!important}
 html.aps-locked body{overflow:auto!important}
 </style>
+
 <style id="build0046-1-missing-speed-css">
 .missing-speed-kpis{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0}.missing-speed-kpi{border:1px solid #30414b;background:#0b151c;border-radius:9px;padding:14px}.missing-speed-kpi span{display:block;color:#9caab4;font-size:12px}.missing-speed-kpi b{display:block;font-size:28px;margin-top:6px}.missing-speed-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.missing-speed-toolbar input,.missing-speed-toolbar select{background:#0a151d;color:#f5f7fa;border:1px solid #344954;border-radius:7px;padding:9px 10px}.missing-speed-toolbar input[type=search]{min-width:280px;flex:1}.missing-speed-summary{border-left:4px solid #f59e0b;background:#2d210c66;border-radius:8px;padding:11px 13px;color:#f5d98f;line-height:1.55;margin-bottom:12px}.missing-speed-table td{vertical-align:top}.missing-speed-table .spec{max-width:260px;white-space:normal;line-height:1.45}.missing-speed-reason{font-size:11px;color:#f6c76b;line-height:1.45;max-width:220px;white-space:normal}.missing-speed-actions{display:flex;gap:6px;flex-wrap:wrap}.missing-speed-actions .btn{padding:7px 10px;font-size:11px}.missing-speed-empty{padding:36px;text-align:center;color:#9aa8b2}@media(max-width:900px){.missing-speed-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.missing-speed-kpis{grid-template-columns:1fr}.missing-speed-toolbar input[type=search]{min-width:100%}}
 </style>
+
 <script>
 /* Build 0046-4｜雲端 anomalies 資料格式相容修正 */
 function anomalyList(value){
@@ -433,90 +454,83 @@ function anomalyList(value){
   return [String(value).trim()].filter(Boolean);
 }
 </script>
+
+
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0066 V86.2 APS Turbo Engine";
+  content:"APS Build 0061 V84.7 APS Core";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
   pointer-events:none;box-shadow:0 5px 15px #0007
 }
 </style>
-<style id="v862-turbo-core-style">
-#v862CoreDialog{position:fixed;inset:0;z-index:999999;display:none;align-items:center;justify-content:center;background:rgba(2,8,13,.82);backdrop-filter:blur(5px)}
-#v862CoreDialog.show{display:flex}.v862-box{width:min(680px,92vw);background:#0d1a22;border:1px solid #35505e;border-radius:16px;padding:22px;box-shadow:0 25px 80px #000b}.v862-title{font-size:22px;font-weight:900}.v862-stage{margin-top:8px;color:#b8c9d2;min-height:24px}.v862-track{height:12px;margin-top:18px;border-radius:999px;background:#172a34;overflow:hidden;border:1px solid #344d59}.v862-bar{height:100%;width:0;background:linear-gradient(90deg,#20be75,#31b7d7);transition:width .16s linear}.v862-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.v862-grid>div{background:#09131a;border:1px solid #293d47;border-radius:8px;padding:10px}.v862-grid span{display:block;color:#8fa5af;font-size:11px}.v862-grid b{display:block;margin-top:4px;font-size:17px}.v862-log{margin-top:12px;padding:10px;background:#061017;border:1px solid #233844;border-radius:8px;color:#9fc2d2;font:12px/1.55 Consolas,monospace;max-height:130px;overflow:auto}.v862-actions{display:flex;justify-content:flex-end;margin-top:14px}.v862-actions button{background:#b91d25;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
-@media(max-width:620px){.v862-grid{grid-template-columns:1fr 1fr}}
-</style>
-<style id="v862-cloud-status-fix">
-#apsCloudStatus.aps-cloud-status{display:flex!important;align-items:center;gap:7px;white-space:nowrap;min-height:34px;padding:7px 11px;border-radius:999px;border:1px solid #2e4652;background:#0b1820;color:#dce9ee;font-size:11px;flex:0 0 auto}
-#apsCloudStatus.aps-cloud-status i{width:9px;height:9px;border-radius:50%;background:#f59e0b;box-shadow:0 0 10px #f59e0b88}
-#apsCloudStatus.aps-cloud-status.ok i{background:#22c55e;box-shadow:0 0 10px #22c55e88}
-#apsCloudStatus.aps-cloud-status.bad i{background:#ef4444;box-shadow:0 0 10px #ef444488}
-@media(max-width:1100px){#apsCloudStatus.aps-cloud-status{display:flex!important;font-size:10px;padding:6px 8px}}
-</style>
+
 </head>
 <body>
-<div aria-labelledby="apsSecurityTitle" aria-modal="true" id="apsSecurityGate" role="dialog">
-<div class="aps-sec-card">
-<div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0066 V86.2 APS Turbo Engine</p></div></div>
-<div hidden="" id="apsSecuritySetup">
-<div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
-<div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
-<div class="aps-sec-field"><label for="apsNewPassword">新密碼</label><input autocomplete="new-password" id="apsNewPassword" placeholder="至少 6 碼" type="password"/></div>
-<div class="aps-sec-field"><label for="apsConfirmPassword">再次輸入</label><input autocomplete="new-password" id="apsConfirmPassword" placeholder="再次輸入密碼" type="password"/></div>
-<div class="aps-sec-actions"><button class="aps-sec-btn" id="apsCreatePassword">建立並進入</button></div>
-</div>
-<div hidden="" id="apsSecurityLogin">
-<div class="aps-sec-title" id="apsSecurityTitleLogin">管理員登入</div>
-<div class="aps-sec-note">此檔案已啟用權限鎖定。輸入管理員密碼後才能讀取及修改 APS 資料。</div>
-<div class="aps-sec-field"><label for="apsLoginPassword">管理員密碼</label><input autocomplete="current-password" id="apsLoginPassword" placeholder="請輸入密碼" type="password"/></div>
-<div class="aps-sec-actions"><button class="aps-sec-btn" id="apsLoginButton">登入</button></div>
-<div class="aps-sec-status"><i></i><span>閒置 30 分鐘會自動鎖定</span></div>
-</div>
-<div class="aps-sec-error" id="apsSecurityError"></div>
-</div>
+
+<div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
+  <div class="aps-sec-card">
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0061 V84.7 APS Core</p></div></div>
+    <div id="apsSecuritySetup" hidden>
+      <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
+      <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
+      <div class="aps-sec-field"><label for="apsNewPassword">新密碼</label><input id="apsNewPassword" type="password" autocomplete="new-password" placeholder="至少 6 碼"></div>
+      <div class="aps-sec-field"><label for="apsConfirmPassword">再次輸入</label><input id="apsConfirmPassword" type="password" autocomplete="new-password" placeholder="再次輸入密碼"></div>
+      <div class="aps-sec-actions"><button class="aps-sec-btn" id="apsCreatePassword">建立並進入</button></div>
+    </div>
+    <div id="apsSecurityLogin" hidden>
+      <div class="aps-sec-title" id="apsSecurityTitleLogin">管理員登入</div>
+      <div class="aps-sec-note">此檔案已啟用權限鎖定。輸入管理員密碼後才能讀取及修改 APS 資料。</div>
+      <div class="aps-sec-field"><label for="apsLoginPassword">管理員密碼</label><input id="apsLoginPassword" type="password" autocomplete="current-password" placeholder="請輸入密碼"></div>
+      <div class="aps-sec-actions"><button class="aps-sec-btn" id="apsLoginButton">登入</button></div>
+      <div class="aps-sec-status"><i></i><span>閒置 30 分鐘會自動鎖定</span></div>
+    </div>
+    <div class="aps-sec-error" id="apsSecurityError"></div>
+  </div>
 </div>
 <div id="apsSecurityBar"><span class="aps-sec-dot"></span><span>管理員已登入</span><button class="aps-sec-mini" id="apsChangePasswordButton">改密碼</button><button class="aps-sec-mini" id="apsLockButton">立即鎖定</button></div>
 <div id="apsChangePassword">
-<div class="aps-sec-card">
-<div class="aps-sec-title">變更管理員密碼</div>
-<div class="aps-sec-field"><label>目前密碼</label><input id="apsOldPassword" type="password"/></div>
-<div class="aps-sec-field"><label>新密碼</label><input id="apsChangedPassword" placeholder="至少 6 碼" type="password"/></div>
-<div class="aps-sec-field"><label>再次輸入新密碼</label><input id="apsChangedConfirm" type="password"/></div>
-<div class="aps-sec-error" id="apsChangeError"></div>
-<div class="aps-sec-actions"><button class="aps-sec-btn" id="apsSaveChangedPassword">儲存新密碼</button><button class="aps-sec-btn secondary" id="apsCancelChangedPassword">取消</button></div>
+  <div class="aps-sec-card">
+    <div class="aps-sec-title">變更管理員密碼</div>
+    <div class="aps-sec-field"><label>目前密碼</label><input id="apsOldPassword" type="password"></div>
+    <div class="aps-sec-field"><label>新密碼</label><input id="apsChangedPassword" type="password" placeholder="至少 6 碼"></div>
+    <div class="aps-sec-field"><label>再次輸入新密碼</label><input id="apsChangedConfirm" type="password"></div>
+    <div class="aps-sec-error" id="apsChangeError"></div>
+    <div class="aps-sec-actions"><button class="aps-sec-btn" id="apsSaveChangedPassword">儲存新密碼</button><button class="aps-sec-btn secondary" id="apsCancelChangedPassword">取消</button></div>
+  </div>
 </div>
-</div>
+
 <header class="enterprise-header">
-<div class="header-brand-group">
-<div aria-label="SEAL KING Smart Factory" class="sk-wordmark">
-<img alt="SEAL KING Logo" class="official-logo" src="data:image/png;base64,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"/>
-<div class="sk-word"><strong>SEAL KING</strong><span>SMART FACTORY</span></div>
-</div>
-<div class="header-divider"></div>
-<div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
-</div>
-<div class="header-right">
-<div class="header-time"><span id="liveClock"></span><small>Build 0066 V86.2 APS Turbo Engine</small></div>
-<div class="header-menu-wrap">
-<button aria-controls="notificationMenu" aria-expanded="false" class="icon-button header-menu-trigger" id="notificationBtn" title="通知" type="button">♧<b id="notificationBadge">5</b></button>
-<div class="header-dropdown notification-dropdown" hidden="" id="notificationMenu">
-<div class="header-dropdown-title">系統通知</div>
-<button data-header-jump="speedFeedback" type="button"><strong>缺少產速資料</strong><span>前往產速回饋中心查看明細</span></button>
-<button data-header-jump="ai" type="button"><strong>AI 排程建議</strong><span>查看交期、產能與排序改善建議</span></button>
-<button data-header-jump="schedule" type="button"><strong>排程檢查</strong><span>查看目前有限產能排程結果</span></button>
-</div>
-</div>
-<div class="header-menu-wrap">
-<button aria-controls="userMenu" aria-expanded="false" class="user-chip header-menu-trigger" id="userMenuBtn" type="button"><span class="user-icon">♙</span><span>系統管理員</span><span class="menu-arrow">⌄</span></button>
-<div class="header-dropdown user-dropdown" hidden="" id="userMenu">
-<div class="header-dropdown-title">系統管理員</div>
-<button data-header-jump="master" type="button"><strong>Master 設定</strong><span>班別、機台與排程參數</span></button>
-<button data-header-jump="speedFeedback" type="button"><strong>產速主檔</strong><span>新增、修改與備份產速</span></button>
-<button data-header-jump="upload" type="button"><strong>ERP 資料更新</strong><span>更新本次排程來源資料</span></button>
-</div>
-</div>
-</div>
+  <div class="header-brand-group">
+    <div class="sk-wordmark" aria-label="SEAL KING Smart Factory">
+      <img class="official-logo" src="data:image/png;base64,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" alt="SEAL KING Logo">
+      <div class="sk-word"><strong>SEAL KING</strong><span>SMART FACTORY</span></div>
+    </div>
+    <div class="header-divider"></div>
+    <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
+  </div>
+  <div class="header-right">
+    <div class="header-time"><span id="liveClock"></span><small>Build 0061 V84.7 APS Core</small></div>
+    <div class="header-menu-wrap">
+      <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
+      <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
+        <div class="header-dropdown-title">系統通知</div>
+        <button type="button" data-header-jump="speedFeedback"><strong>缺少產速資料</strong><span>前往產速回饋中心查看明細</span></button>
+        <button type="button" data-header-jump="ai"><strong>AI 排程建議</strong><span>查看交期、產能與排序改善建議</span></button>
+        <button type="button" data-header-jump="schedule"><strong>排程檢查</strong><span>查看目前有限產能排程結果</span></button>
+      </div>
+    </div>
+    <div class="header-menu-wrap">
+      <button class="user-chip header-menu-trigger" id="userMenuBtn" type="button" aria-expanded="false" aria-controls="userMenu"><span class="user-icon">♙</span><span>系統管理員</span><span class="menu-arrow">⌄</span></button>
+      <div class="header-dropdown user-dropdown" id="userMenu" hidden>
+        <div class="header-dropdown-title">系統管理員</div>
+        <button type="button" data-header-jump="master"><strong>Master 設定</strong><span>班別、機台與排程參數</span></button>
+        <button type="button" data-header-jump="speedFeedback"><strong>產速主檔</strong><span>新增、修改與備份產速</span></button>
+        <button type="button" data-header-jump="upload"><strong>ERP 資料更新</strong><span>更新本次排程來源資料</span></button>
+      </div>
+    </div>
+  </div>
 </header>
 <div class="app-shell"><aside class="sidebar"><div class="side-title">SMART FACTORY</div><nav class="tabs side-nav"><button class="tab active" data-page="home"><span>⌂</span>戰情中心</button><button class="tab" data-page="upload"><span>⇧</span>ERP 資料更新</button><button class="tab" data-page="pool"><span>▤</span>工單池</button><button class="tab" data-page="schedule"><span>▥</span>APS 排程中心</button><button class="tab" data-page="missingSpeed"><span>⚠</span>AI 缺產速中心</button>
 <button class="tab urgent-nav" data-page="urgent"><span>!</span>急單／插單模擬</button>
@@ -529,425 +543,457 @@ body::after{
 <button class="tab" data-page="reports"><span>▧</span>報表中心</button>
 <button class="tab" data-page="speedFeedback"><span>↻</span>產速回饋中心</button>
 <button class="tab" data-page="master"><span>⚙</span>Master 設定</button>
-<button class="tab" data-page="systemSettings"><span>⚙</span>系統設定</button></nav><div class="side-footer"><img alt="SEAL KING" src="data:image/png;base64,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"/><div><b>SEAL <em>KING</em></b><small>Smart Factory</small></div></div></aside><main class="workspace">
-<section class="page active" id="home">
+<button class="tab" data-page="systemSettings"><span>⚙</span>系統設定</button></nav><div class="side-footer"><img src="data:image/png;base64,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" alt="SEAL KING"><div><b>SEAL <em>KING</em></b><small>Smart Factory</small></div></div></aside><main class="workspace">
+<section id="home" class="page active">
 <div class="dashboard-kpis">
-<div class="metric-card red"><div class="metric-icon">▣</div><div><span>加工課工單</span><strong id="kpiAll">0</strong><small>4-3 站別＝加工課</small></div></div>
-<div class="metric-card orange"><div class="metric-icon">◉</div><div><span>可排工單</span><strong id="kpiReady">0</strong><small>有剩餘量且找到產速</small></div></div>
-<div class="metric-card green"><div class="metric-icon">◎</div><div><span>今日產量目標</span><strong id="kpiTarget">—</strong><small>等待排程資料</small></div></div>
-<div class="metric-card blue"><div class="metric-icon">▥</div><div><span>今日產出累計</span><strong id="kpiOutput">—</strong><small>依 9-1 實績</small></div></div>
-<div class="metric-card purple"><div class="metric-icon">↗</div><div><span>平均機台負荷</span><strong id="kpiUtil">0%</strong><small>目前排程期間</small></div></div>
-<div class="metric-card teal"><div class="metric-icon">◷</div><div><span>Delay 工單</span><strong id="kpiRisk">0</strong><small>逾期或 3 日內未完成</small></div></div>
+  <div class="metric-card red"><div class="metric-icon">▣</div><div><span>加工課工單</span><strong id="kpiAll">0</strong><small>4-3 站別＝加工課</small></div></div>
+  <div class="metric-card orange"><div class="metric-icon">◉</div><div><span>可排工單</span><strong id="kpiReady">0</strong><small>有剩餘量且找到產速</small></div></div>
+  <div class="metric-card green"><div class="metric-icon">◎</div><div><span>今日產量目標</span><strong id="kpiTarget">—</strong><small>等待排程資料</small></div></div>
+  <div class="metric-card blue"><div class="metric-icon">▥</div><div><span>今日產出累計</span><strong id="kpiOutput">—</strong><small>依 9-1 實績</small></div></div>
+  <div class="metric-card purple"><div class="metric-icon">↗</div><div><span>平均機台負荷</span><strong id="kpiUtil">0%</strong><small>目前排程期間</small></div></div>
+  <div class="metric-card teal"><div class="metric-icon">◷</div><div><span>Delay 工單</span><strong id="kpiRisk">0</strong><small>逾期或 3 日內未完成</small></div></div>
 </div>
 <div class="dashboard-layout">
-<div class="schedule-panel">
-<div class="panel-toolbar">
-<div><h2>本生產日機台排程總覽</h2><div class="mini-legend"><span class="lg normal"></span>正常工單 <span class="lg change"></span>換線／調機 <span class="lg wait"></span>待料／等待 <span class="lg idle"></span>閒置／空檔 <span class="lg urgent"></span>急單／保養</div></div>
-<div class="toolbar-actions"><input id="dashboardDate" type="date"/><button class="btn ghost" id="goToday">今天</button><button class="btn ghost" data-page-jump="schedule">查看甘特圖</button><button class="btn red-action" id="homeRunSchedule">產生排程</button></div>
-</div>
-<div id="homeTimeline"><div class="empty">尚未產生排程</div></div>
-</div>
-<aside class="dashboard-side">
-<div class="side-card"><h2>排程結構</h2><div class="donut-wrap"><div class="donut" id="scheduleDonut"><div><b id="donutValue">0%</b><span>稼動率</span></div></div><div class="donut-legend"><span><i class="g"></i>生產工時</span><span><i class="o"></i>換線／調機</span><span><i class="y"></i>待料／等待</span><span><i class="gray"></i>閒置工時</span><span><i class="r"></i>保養／停機</span></div></div></div>
-<div class="side-card"><h2>今日重點提醒</h2><div class="alert-list" id="qualityList">請先上傳 ERP 與產速資料。</div></div>
-<div class="side-card legend-card"><h2>圖例說明</h2><p><i class="legend-box normal"></i>正常工單：機台正在生產工單</p><p><i class="legend-box change"></i>換線／調機：換刀、換料、調機</p><p><i class="legend-box wait"></i>待料／等待：等待材料或前製程</p><p><i class="legend-box idle"></i>閒置／空檔：機台暫無安排</p><p><i class="legend-box urgent"></i>急單／保養：急單插入或設備保養</p></div>
-</aside>
+  <div class="schedule-panel">
+    <div class="panel-toolbar">
+      <div><h2>本生產日機台排程總覽</h2><div class="mini-legend"><span class="lg normal"></span>正常工單 <span class="lg change"></span>換線／調機 <span class="lg wait"></span>待料／等待 <span class="lg idle"></span>閒置／空檔 <span class="lg urgent"></span>急單／保養</div></div>
+      <div class="toolbar-actions"><input id="dashboardDate" type="date"><button class="btn ghost" id="goToday">今天</button><button class="btn ghost" data-page-jump="schedule">查看甘特圖</button><button class="btn red-action" id="homeRunSchedule">產生排程</button></div>
+    </div>
+    <div id="homeTimeline"><div class="empty">尚未產生排程</div></div>
+  </div>
+  <aside class="dashboard-side">
+    <div class="side-card"><h2>排程結構</h2><div class="donut-wrap"><div class="donut" id="scheduleDonut"><div><b id="donutValue">0%</b><span>稼動率</span></div></div><div class="donut-legend"><span><i class="g"></i>生產工時</span><span><i class="o"></i>換線／調機</span><span><i class="y"></i>待料／等待</span><span><i class="gray"></i>閒置工時</span><span><i class="r"></i>保養／停機</span></div></div></div>
+    <div class="side-card"><h2>今日重點提醒</h2><div id="qualityList" class="alert-list">請先上傳 ERP 與產速資料。</div></div>
+    <div class="side-card legend-card"><h2>圖例說明</h2><p><i class="legend-box normal"></i>正常工單：機台正在生產工單</p><p><i class="legend-box change"></i>換線／調機：換刀、換料、調機</p><p><i class="legend-box wait"></i>待料／等待：等待材料或前製程</p><p><i class="legend-box idle"></i>閒置／空檔：機台暫無安排</p><p><i class="legend-box urgent"></i>急單／保養：急單插入或設備保養</p></div>
+  </aside>
 </div>
 <div class="hidden-log"><div id="log">[系統] APS Pro 已啟動。請到「資料更新」上傳檔案。</div></div>
 </section>
-<section class="page" id="upload"><div class="grid">
-<div class="card col8"><h2>ERP／Master 檔案上傳</h2><div class="sub"><b>每日只需更新 4 份 ERP：</b>3-9、4-3、9-1、9-3。<br/><b>加工課產速表為固定主檔：</b>第一次建立或有新料號／新機台產速時才上傳；系統會與既有主檔合併，不會清除原資料。</div><div class="drop" id="drop" style="margin-top:14px"><b>拖曳 Excel 檔案到這裡</b>或點擊選擇檔案<input accept=".xlsx" hidden="" id="files" multiple="" type="file"/></div><div class="filechips" id="filechips"></div><div class="actions"><button class="btn green" id="buildPool">建立工單池</button><button class="btn ghost" id="clearData">清除全部資料</button></div><div class="notice" style="margin-top:12px;border-left-color:#22c55e">日常更新不必再上傳加工課產速表。缺少的新產品產速，可到「產速回饋中心」逐筆新增並永久保存。</div></div>
-<div class="card col4"><h2>辨識規則</h2><div class="sub">系統會依檔名、工作表名稱與欄位名稱辨識資料。產速表優先讀取「產速(主力機)」，工單來源讀取 4-3。</div><div class="sub" id="fileStatus" style="margin-top:14px"></div></div>
-<div class="card col12"><h2>資料預覽</h2><div class="empty" id="preview">尚未上傳檔案</div></div>
+<section id="upload" class="page"><div class="grid">
+<div class="card col8"><h2>ERP／Master 檔案上傳</h2><div class="sub"><b>每日只需更新 4 份 ERP：</b>3-9、4-3、9-1、9-3。<br><b>加工課產速表為固定主檔：</b>第一次建立或有新料號／新機台產速時才上傳；系統會與既有主檔合併，不會清除原資料。</div><div id="drop" class="drop" style="margin-top:14px"><b>拖曳 Excel 檔案到這裡</b>或點擊選擇檔案<input id="files" type="file" accept=".xlsx" multiple hidden></div><div id="filechips" class="filechips"></div><div class="actions"><button class="btn green" id="buildPool">建立工單池</button><button class="btn ghost" id="clearData">清除全部資料</button></div><div class="notice" style="margin-top:12px;border-left-color:#22c55e">日常更新不必再上傳加工課產速表。缺少的新產品產速，可到「產速回饋中心」逐筆新增並永久保存。</div></div>
+<div class="card col4"><h2>辨識規則</h2><div class="sub">系統會依檔名、工作表名稱與欄位名稱辨識資料。產速表優先讀取「產速(主力機)」，工單來源讀取 4-3。</div><div id="fileStatus" class="sub" style="margin-top:14px"></div></div>
+<div class="card col12"><h2>資料預覽</h2><div id="preview" class="empty">尚未上傳檔案</div></div>
 </div></section>
-<section class="page" id="pool"><div class="grid"><div class="card col12"><div class="page-toolbar"><div><h2>加工課工單池</h2><div class="sub">C 代表已結案。點擊欄位標題可升冪／降冪排列，搜尋與狀態可同時篩選。</div></div><div class="actions"><button class="btn" id="runSchedule">產生排程</button><button class="btn ghost" id="exportPool">匯出工單池 CSV</button></div></div><div class="filterbar"><input id="poolSearch" placeholder="搜尋工單／訂單／命令單／日報／批號／料號／客戶／規格／機台…"/><select id="poolStatus"><option value="all">全部狀態</option><option value="open">未結案</option><option value="closed">已結案</option><option value="urgent">急單</option><option value="risk">交期風險</option><option value="missing">缺少產速</option></select><select id="poolMachine"><option value="all">全部機台</option></select><button class="btn ghost" id="clearPoolFilters">清除篩選</button><span class="result-count" id="poolCount"></span></div><div class="empty" id="poolTable">尚未建立工單池</div></div></div></section>
-<section class="page" id="schedule"><div class="grid">
+<section id="pool" class="page"><div class="grid"><div class="card col12"><div class="page-toolbar"><div><h2>加工課工單池</h2><div class="sub">C 代表已結案。點擊欄位標題可升冪／降冪排列，搜尋與狀態可同時篩選。</div></div><div class="actions"><button class="btn" id="runSchedule">產生排程</button><button class="btn ghost" id="exportPool">匯出工單池 CSV</button></div></div><div class="filterbar"><input id="poolSearch" placeholder="搜尋工單／訂單／命令單／日報／批號／料號／客戶／規格／機台…"><select id="poolStatus"><option value="all">全部狀態</option><option value="open">未結案</option><option value="closed">已結案</option><option value="urgent">急單</option><option value="risk">交期風險</option><option value="missing">缺少產速</option></select><select id="poolMachine"><option value="all">全部機台</option></select><button class="btn ghost" id="clearPoolFilters">清除篩選</button><span class="result-count" id="poolCount"></span></div><div id="poolTable" class="empty">尚未建立工單池</div></div></div></section>
+<section id="schedule" class="page"><div class="grid">
 <div class="card col12"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><h2>有限產能排程結果</h2><div class="sub">以每日時間軸顯示機台安排。綠色為正常工單、紅色為急單、橘色為交期延遲風險。</div></div><div class="actions"><button class="btn" id="rerunSchedule">重新排程</button><button class="btn ghost" id="exportSchedule">匯出排程 CSV</button></div></div><div id="scheduleTimeline" style="margin-top:14px"><div class="empty">尚未產生排程</div></div></div>
-<div class="card col12"><h2>排程明細</h2><div class="empty" id="scheduleTable">尚未產生排程</div></div></div></section>
-<section class="page" id="urgent"><div class="grid">
+<div class="card col12"><h2>排程明細</h2><div id="scheduleTable" class="empty">尚未產生排程</div></div></div></section>
+
+<section id="urgent" class="page"><div class="grid">
 <div class="card col5"><div class="section-kicker">DYNAMIC RESCHEDULING</div><h2>急單／插單 Key In</h2><div class="sub">先模擬，不直接改動正式排程。系統會比較插單前後完成時間並標出 Delay。</div>
 <div class="urgent-form">
-<div class="field span2"><label>從既有工單快速帶入</label><div class="inline-field"><input id="urgentLookup" list="woList" placeholder="輸入工單號"/><datalist id="woList"></datalist><button class="btn ghost" id="loadUrgentWo">帶入</button></div></div>
-<div class="field"><label>急單工單 *</label><input id="urgentWo" placeholder="例如 WO260999"/></div><div class="field"><label>客戶</label><input id="urgentCustomer"/></div>
-<div class="field"><label>產品料號 *</label><input id="urgentPart"/></div><div class="field"><label>製程</label><input id="urgentProcess" placeholder="裁切／複捲／分條"/></div>
-<div class="field"><label>需求數量 *</label><input id="urgentQty" min="0" step="0.01" type="number"/></div><div class="field"><label>單位</label><select id="urgentUnit"><option>㎡</option><option>R</option><option>M</option><option>PCS</option></select></div>
-<div class="field"><label>最晚交期 *</label><input id="urgentDue" type="datetime-local"/></div><div class="field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select></div>
-<div class="field"><label>預估工時（hr）</label><input id="urgentHours" min="0" placeholder="空白則依產速表" step="0.1" type="number"/></div><div class="field"><label>前製程狀態</label><select id="urgentPre"><option value="ready">半成品已到位</option><option value="pending">等待前製程</option></select></div>
-</div><div class="actions"><button class="btn red" id="simulateUrgent">開始插單模擬</button><button class="btn ghost" id="resetUrgent">清除</button></div><div class="hint" id="urgentFormMsg"></div></div>
-<div class="card col7"><div class="section-kicker">WHAT-IF ANALYSIS</div><h2>模擬結果</h2><div class="empty" id="urgentSummary">請先建立正常排程，再輸入急單進行模擬。</div><div class="actions" id="urgentApplyActions" style="display:none"><button class="btn green" id="applyUrgent">採用此方案</button><button class="btn ghost" id="discardUrgent">取消模擬</button></div></div>
-<div class="card col12"><h2>受影響工單／Delay 分析</h2><div class="empty" id="urgentImpact">尚未執行模擬</div></div>
+<div class="field span2"><label>從既有工單快速帶入</label><div class="inline-field"><input id="urgentLookup" list="woList" placeholder="輸入工單號"><datalist id="woList"></datalist><button class="btn ghost" id="loadUrgentWo">帶入</button></div></div>
+<div class="field"><label>急單工單 *</label><input id="urgentWo" placeholder="例如 WO260999"></div><div class="field"><label>客戶</label><input id="urgentCustomer"></div>
+<div class="field"><label>產品料號 *</label><input id="urgentPart"></div><div class="field"><label>製程</label><input id="urgentProcess" placeholder="裁切／複捲／分條"></div>
+<div class="field"><label>需求數量 *</label><input id="urgentQty" type="number" min="0" step="0.01"></div><div class="field"><label>單位</label><select id="urgentUnit"><option>㎡</option><option>R</option><option>M</option><option>PCS</option></select></div>
+<div class="field"><label>最晚交期 *</label><input id="urgentDue" type="datetime-local"></div><div class="field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select></div>
+<div class="field"><label>預估工時（hr）</label><input id="urgentHours" type="number" min="0" step="0.1" placeholder="空白則依產速表"></div><div class="field"><label>前製程狀態</label><select id="urgentPre"><option value="ready">半成品已到位</option><option value="pending">等待前製程</option></select></div>
+</div><div class="actions"><button class="btn red" id="simulateUrgent">開始插單模擬</button><button class="btn ghost" id="resetUrgent">清除</button></div><div id="urgentFormMsg" class="hint"></div></div>
+<div class="card col7"><div class="section-kicker">WHAT-IF ANALYSIS</div><h2>模擬結果</h2><div id="urgentSummary" class="empty">請先建立正常排程，再輸入急單進行模擬。</div><div class="actions" id="urgentApplyActions" style="display:none"><button class="btn green" id="applyUrgent">採用此方案</button><button class="btn ghost" id="discardUrgent">取消模擬</button></div></div>
+<div class="card col12"><h2>受影響工單／Delay 分析</h2><div id="urgentImpact" class="empty">尚未執行模擬</div></div>
 <div class="card col12"><h2>插單後排程預覽</h2><div id="urgentTimeline"><div class="empty">尚未執行模擬</div></div></div>
 </div></section>
-<section class="page" id="machineRules"><div class="grid">
-<div class="card col12">
-<div class="page-toolbar">
-<div>
-<div class="section-kicker">MACHINE CAPABILITY KNOWLEDGE</div>
-<h2>機台共用規則中心</h2>
-<div class="sub">建立一次後，APS 會依料號、料號群組與製程自動推薦可共用機台，優先填補機台空檔並兼顧交期。特殊工單仍可人工鎖定。</div>
-</div>
-<div class="actions">
-<button class="btn" id="mrNew">新增規則</button>
-<button class="btn ghost" id="mrExport">匯出規則 JSON</button>
-<button class="btn ghost" id="mrImport">匯入規則 JSON</button>
-<input accept=".json" hidden="" id="mrImportFile" type="file"/>
-</div>
-</div>
-<div class="center-kpis">
-<div class="center-kpi"><span>有效規則</span><b id="mrKpiRules">0</b></div>
-<div class="center-kpi"><span>涵蓋料號／群組</span><b id="mrKpiParts">0</b></div>
-<div class="center-kpi"><span>可共用機台</span><b id="mrKpiMachines">0</b></div>
-<div class="center-kpi"><span>自動推薦工單</span><b id="mrKpiApplied">0</b></div>
-</div>
-</div>
-<div class="card col5" id="mrFormCard">
-<h2>新增／修改共用規則</h2>
-<div class="center-form" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-<div class="field span2">
-<label>規則名稱 *</label>
-<input id="mrName" placeholder="例如：48mm 工業裁切共用機台"/>
-</div>
-<div class="field">
-<label>匹配方式</label>
-<select id="mrMatchType">
-<option value="exact">精確料號</option>
-<option value="prefix">料號開頭</option>
-<option value="contains">料號包含</option>
-<option value="group">料號群組／關鍵字</option>
-</select>
-</div>
-<div class="field">
-<label>料號／關鍵字 *</label>
-<input id="mrPartPattern" placeholder="例如 N30095995048*B"/>
-</div>
-<div class="field">
-<label>製程 *</label>
-<select id="mrProcess">
-<option>裁切</option>
-<option>分條</option>
-<option>覆卷</option>
-<option>複捲</option>
-<option>包裝</option>
-<option>上膠</option>
-<option>其他</option>
-</select>
-</div>
-<div class="field">
-<label>主機台</label>
-<input id="mrPrimaryMachine" list="mrMachineList" placeholder="例如 1B19"/>
-</div>
-<div class="field span2">
-<label>可共用機台 *</label>
-<input id="mrSharedMachines" placeholder="以逗號分隔，例如 1B19,1S03,1S12"/>
-</div>
-<div class="field span2">
-<label>禁用機台</label>
-<input id="mrBlockedMachines" placeholder="以逗號分隔，可留白"/>
-</div>
-<div class="field">
-<label>自動改派</label>
-<select id="mrAutoAssign"><option value="Y">允許</option><option value="N">禁止</option></select>
-</div>
-<div class="field">
-<label>允許拆單</label>
-<select id="mrAllowSplit"><option value="N">禁止</option><option value="Y">允許</option></select>
-</div>
-<div class="field">
-<label>最多拆分機台數</label>
-<input id="mrMaxSplit" max="4" min="1" type="number" value="2"/>
-</div>
-<div class="field">
-<label>最小拆單工時（分鐘）</label>
-<input id="mrMinSplitMinutes" min="0" step="10" type="number" value="120"/>
-</div>
-<div class="field">
-<label>換機／換刀成本（分鐘）</label>
-<input id="mrChangeCost" min="0" step="1" type="number" value="10"/>
-</div>
-<div class="field">
-<label>優先權</label>
-<input id="mrPriority" max="999" min="1" type="number" value="100"/>
-</div>
-<div class="field">
-<label>啟用</label>
-<select id="mrEnabled"><option value="Y">啟用</option><option value="N">停用</option></select>
-</div>
-<div class="field span2">
-<label>品質／客戶／刀具限制</label>
-<textarea id="mrRestrictions" placeholder="例如：ABSTO 客戶僅可使用 1B19；新刀具未驗證前禁止 1S12" rows="3"></textarea>
-</div>
-<div class="field span2">
-<label>備註</label>
-<textarea id="mrNote" rows="2"></textarea>
-</div>
-</div>
-<input id="mrEditId" type="hidden"/>
-<datalist id="mrMachineList"></datalist>
-<div class="actions">
-<button class="btn green" id="mrSave">儲存規則</button>
-<button class="btn ghost" id="mrClear">清除</button>
-</div>
-<div class="hint" id="mrFormMsg"></div>
-</div>
-<div class="card col7">
-<div class="page-toolbar">
-<div><h2>共用規則清單</h2><div class="sub">規則優先權數字越大越先套用；精確料號優先於群組規則。</div></div>
-<div class="center-toolbar" style="margin:0">
-<input id="mrSearch" placeholder="搜尋料號、製程、機台…" type="search"/>
-<select id="mrStatus"><option value="all">全部</option><option value="enabled">啟用</option><option value="disabled">停用</option></select>
-</div>
-</div>
-<div class="empty" id="mrTable">尚未建立機台共用規則</div>
-</div>
-<div class="card col12" id="machineLearningCard">
-<div class="page-toolbar">
-<div>
-<div class="section-kicker">FIELD EXPERIENCE LEARNING</div>
-<h2>現場機台學習建議｜V84.5 正式排程＋換線最佳化</h2>
-<div class="sub">彙整 Target 與 Key In 實際輸入，依同料號35%、同規格30%、同寬度20%、同製程15%計算推薦；每筆可展開查看原因，不會覆蓋課長確認的正式規則。</div>
-</div>
-<div class="actions">
-<button class="btn ghost ml-filter active" data-ml-filter="all">全部</button>
-<button class="btn ghost ml-filter" data-ml-filter="high">高信心</button>
-<button class="btn ghost ml-filter" data-ml-filter="pending">待累積</button>
-<button class="btn green" id="mlRefreshCloud">更新雲端學習表</button><button class="btn" id="mlReload">重新讀取學習資料</button>
-</div>
-</div>
-<div class="center-kpis" style="margin-top:12px">
-<div class="center-kpi"><span>歷史使用筆數</span><b id="mlHistoryRows">0</b></div>
-<div class="center-kpi"><span>學習群組</span><b id="mlGroups">0</b></div>
-<div class="center-kpi"><span>高信心建議</span><b id="mlHigh">0</b></div>
-<div class="center-kpi"><span>待累積</span><b id="mlPending">0</b></div>
-</div>
-<div class="hint" id="mlProgress" style="margin:12px 0">尚未讀取學習資料</div>
-<div class="empty" id="mlTable">讀取後顯示 Target／Key In 的機台學習結果。</div>
-</div>
-<div class="card col12">
-<div class="page-toolbar">
-<div>
-<h2>AI 自動判定預覽</h2>
-<div class="sub">依目前工單池套用共用規則，比較機台預估負荷後推薦最適機台。此預覽不會直接改動正式排程。</div>
-</div>
-<div class="actions">
-<button class="btn" id="mrAnalyze">重新分析</button>
-<button class="btn green" id="mrApply">套用推薦到工單池</button>
-</div>
-</div>
-<div class="notice" style="margin:12px 0">
+
+
+
+<section id="machineRules" class="page"><div class="grid">
+  <div class="card col12">
+    <div class="page-toolbar">
+      <div>
+        <div class="section-kicker">MACHINE CAPABILITY KNOWLEDGE</div>
+        <h2>機台共用規則中心</h2>
+        <div class="sub">建立一次後，APS 會依料號、料號群組與製程自動推薦可共用機台，優先填補機台空檔並兼顧交期。特殊工單仍可人工鎖定。</div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="mrNew">新增規則</button>
+        <button class="btn ghost" id="mrExport">匯出規則 JSON</button>
+        <button class="btn ghost" id="mrImport">匯入規則 JSON</button>
+        <input id="mrImportFile" type="file" accept=".json" hidden>
+      </div>
+    </div>
+
+    <div class="center-kpis">
+      <div class="center-kpi"><span>有效規則</span><b id="mrKpiRules">0</b></div>
+      <div class="center-kpi"><span>涵蓋料號／群組</span><b id="mrKpiParts">0</b></div>
+      <div class="center-kpi"><span>可共用機台</span><b id="mrKpiMachines">0</b></div>
+      <div class="center-kpi"><span>自動推薦工單</span><b id="mrKpiApplied">0</b></div>
+    </div>
+  </div>
+
+  <div class="card col5" id="mrFormCard">
+    <h2>新增／修改共用規則</h2>
+    <div class="center-form" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+      <div class="field span2">
+        <label>規則名稱 *</label>
+        <input id="mrName" placeholder="例如：48mm 工業裁切共用機台">
+      </div>
+      <div class="field">
+        <label>匹配方式</label>
+        <select id="mrMatchType">
+          <option value="exact">精確料號</option>
+          <option value="prefix">料號開頭</option>
+          <option value="contains">料號包含</option>
+          <option value="group">料號群組／關鍵字</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>料號／關鍵字 *</label>
+        <input id="mrPartPattern" placeholder="例如 N30095995048*B">
+      </div>
+      <div class="field">
+        <label>製程 *</label>
+        <select id="mrProcess">
+          <option>裁切</option>
+          <option>分條</option>
+          <option>覆卷</option>
+          <option>複捲</option>
+          <option>包裝</option>
+          <option>上膠</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>主機台</label>
+        <input id="mrPrimaryMachine" list="mrMachineList" placeholder="例如 1B19">
+      </div>
+      <div class="field span2">
+        <label>可共用機台 *</label>
+        <input id="mrSharedMachines" placeholder="以逗號分隔，例如 1B19,1S03,1S12">
+      </div>
+      <div class="field span2">
+        <label>禁用機台</label>
+        <input id="mrBlockedMachines" placeholder="以逗號分隔，可留白">
+      </div>
+      <div class="field">
+        <label>自動改派</label>
+        <select id="mrAutoAssign"><option value="Y">允許</option><option value="N">禁止</option></select>
+      </div>
+      <div class="field">
+        <label>允許拆單</label>
+        <select id="mrAllowSplit"><option value="N">禁止</option><option value="Y">允許</option></select>
+      </div>
+      <div class="field">
+        <label>最多拆分機台數</label>
+        <input id="mrMaxSplit" type="number" min="1" max="4" value="2">
+      </div>
+      <div class="field">
+        <label>最小拆單工時（分鐘）</label>
+        <input id="mrMinSplitMinutes" type="number" min="0" step="10" value="120">
+      </div>
+      <div class="field">
+        <label>換機／換刀成本（分鐘）</label>
+        <input id="mrChangeCost" type="number" min="0" step="1" value="10">
+      </div>
+      <div class="field">
+        <label>優先權</label>
+        <input id="mrPriority" type="number" min="1" max="999" value="100">
+      </div>
+      <div class="field">
+        <label>啟用</label>
+        <select id="mrEnabled"><option value="Y">啟用</option><option value="N">停用</option></select>
+      </div>
+      <div class="field span2">
+        <label>品質／客戶／刀具限制</label>
+        <textarea id="mrRestrictions" rows="3" placeholder="例如：ABSTO 客戶僅可使用 1B19；新刀具未驗證前禁止 1S12"></textarea>
+      </div>
+      <div class="field span2">
+        <label>備註</label>
+        <textarea id="mrNote" rows="2"></textarea>
+      </div>
+    </div>
+    <input id="mrEditId" type="hidden">
+    <datalist id="mrMachineList"></datalist>
+    <div class="actions">
+      <button class="btn green" id="mrSave">儲存規則</button>
+      <button class="btn ghost" id="mrClear">清除</button>
+    </div>
+    <div id="mrFormMsg" class="hint"></div>
+  </div>
+
+  <div class="card col7">
+    <div class="page-toolbar">
+      <div><h2>共用規則清單</h2><div class="sub">規則優先權數字越大越先套用；精確料號優先於群組規則。</div></div>
+      <div class="center-toolbar" style="margin:0">
+        <input id="mrSearch" type="search" placeholder="搜尋料號、製程、機台…">
+        <select id="mrStatus"><option value="all">全部</option><option value="enabled">啟用</option><option value="disabled">停用</option></select>
+      </div>
+    </div>
+    <div id="mrTable" class="empty">尚未建立機台共用規則</div>
+  </div>
+
+
+  <div class="card col12" id="machineLearningCard">
+    <div class="page-toolbar">
+      <div>
+        <div class="section-kicker">FIELD EXPERIENCE LEARNING</div>
+        <h2>現場機台學習建議｜V84.5 正式排程＋換線最佳化</h2>
+        <div class="sub">彙整 Target 與 Key In 實際輸入，依同料號35%、同規格30%、同寬度20%、同製程15%計算推薦；每筆可展開查看原因，不會覆蓋課長確認的正式規則。</div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost ml-filter active" data-ml-filter="all">全部</button>
+        <button class="btn ghost ml-filter" data-ml-filter="high">高信心</button>
+        <button class="btn ghost ml-filter" data-ml-filter="pending">待累積</button>
+        <button class="btn green" id="mlRefreshCloud">更新雲端學習表</button><button class="btn" id="mlReload">重新讀取學習資料</button>
+      </div>
+    </div>
+    <div class="center-kpis" style="margin-top:12px">
+      <div class="center-kpi"><span>歷史使用筆數</span><b id="mlHistoryRows">0</b></div>
+      <div class="center-kpi"><span>學習群組</span><b id="mlGroups">0</b></div>
+      <div class="center-kpi"><span>高信心建議</span><b id="mlHigh">0</b></div>
+      <div class="center-kpi"><span>待累積</span><b id="mlPending">0</b></div>
+    </div>
+    <div id="mlProgress" class="hint" style="margin:12px 0">尚未讀取學習資料</div>
+    <div id="mlTable" class="empty">讀取後顯示 Target／Key In 的機台學習結果。</div>
+  </div>
+
+  <div class="card col12">
+    <div class="page-toolbar">
+      <div>
+        <h2>AI 自動判定預覽</h2>
+        <div class="sub">依目前工單池套用共用規則，比較機台預估負荷後推薦最適機台。此預覽不會直接改動正式排程。</div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="mrAnalyze">重新分析</button>
+        <button class="btn green" id="mrApply">套用推薦到工單池</button>
+      </div>
+    </div>
+    <div class="notice" style="margin:12px 0">
       第一階段自動規劃：依交期、機台目前負荷、主機台優先與換機成本推薦單一機台。拆單欄位已預留，後續將支援同一工單跨兩台機台同步排程。
     </div>
-<div class="empty" id="mrPreview">請先建立工單池與共用規則。</div>
-</div>
+    <div id="mrPreview" class="empty">請先建立工單池與共用規則。</div>
+  </div>
 </div></section>
-<section class="page" id="ai"><div class="grid">
+
+<section id="ai" class="page"><div class="grid">
 <div class="card col12">
-<div class="page-toolbar"><div><div class="section-kicker">RULE-BASED APS ADVISOR</div><h2>AI 排程建議中心</h2><div class="sub">依目前工單池、產速主檔、預交日與排程結果產生可追溯建議。此版本採透明規則分析，不會直接改動正式排程。</div></div>
-<div class="ai-toolbar"><select id="aiScope"><option value="all">全部建議</option><option value="high">高優先</option><option value="speed">產速資料</option><option value="due">交期風險</option><option value="capacity">產能負荷</option><option value="sequence">排序改善</option></select><button class="btn" id="refreshAi">重新分析</button><button class="btn ghost" id="exportAi">匯出建議 CSV</button></div></div>
-<div class="ai-summary"><div class="ai-stat"><span>建議總數</span><b id="aiCount">0</b></div><div class="ai-stat"><span>高優先</span><b id="aiHigh">0</b></div><div class="ai-stat"><span>可能延遲工單</span><b id="aiLate">0</b></div><div class="ai-stat"><span>可改善分鐘</span><b id="aiSave">0</b></div></div>
+  <div class="page-toolbar"><div><div class="section-kicker">RULE-BASED APS ADVISOR</div><h2>AI 排程建議中心</h2><div class="sub">依目前工單池、產速主檔、預交日與排程結果產生可追溯建議。此版本採透明規則分析，不會直接改動正式排程。</div></div>
+  <div class="ai-toolbar"><select id="aiScope"><option value="all">全部建議</option><option value="high">高優先</option><option value="speed">產速資料</option><option value="due">交期風險</option><option value="capacity">產能負荷</option><option value="sequence">排序改善</option></select><button class="btn" id="refreshAi">重新分析</button><button class="btn ghost" id="exportAi">匯出建議 CSV</button></div></div>
+  <div class="ai-summary"><div class="ai-stat"><span>建議總數</span><b id="aiCount">0</b></div><div class="ai-stat"><span>高優先</span><b id="aiHigh">0</b></div><div class="ai-stat"><span>可能延遲工單</span><b id="aiLate">0</b></div><div class="ai-stat"><span>可改善分鐘</span><b id="aiSave">0</b></div></div>
 </div>
-<div class="card col12"><h2>建議清單</h2><div class="ai-empty" id="aiList">請先建立工單池並產生排程。</div></div>
+<div class="card col12"><h2>建議清單</h2><div id="aiList" class="ai-empty">請先建立工單池並產生排程。</div></div>
 <div class="card col12"><h2>分析依據</h2><div class="sub">建議來源包含：缺少產速、低信心產速、逾期／即將到期、排程後超過預交日、同料號跨機台能力、機台負荷失衡與短工單過度分散。每項建議均顯示原因，不會自動套用。</div></div>
 </div></section>
-<section class="page" id="autoSchedule"><div class="grid">
-<div class="card col12 auto-schedule-hero">
-<div class="page-toolbar">
-<div><div class="section-kicker">AUTO SCHEDULER CORE</div><h2>AI 自動排程核心</h2><div class="sub">以交期、急單、換線、機台負荷與指定機台為約束，先模擬再套用。所有評分與改善結果均可追溯。</div></div>
-<div class="auto-toolbar"><button class="btn" id="runAutoSchedule">開始 AI 模擬</button><button class="btn green" disabled="" id="applyAutoSchedule">採用最佳排程</button><button class="btn ghost" disabled="" id="restoreAutoSchedule">還原套用前排程</button></div>
-</div>
-<div class="auto-config">
-<div class="field"><label>排程範圍</label><select id="autoScope"><option value="ready">目前可排工單</option><option value="allopen">全部未結案</option><option value="scheduled">目前已排工單</option></select></div>
-<div class="field"><label>交期權重</label><input id="autoDueWeight" max="100" min="0" type="number" value="40"/></div>
-<div class="field"><label>換線權重</label><input id="autoChangeWeight" max="100" min="0" type="number" value="30"/></div>
-<div class="field"><label>負荷平衡權重</label><input id="autoBalanceWeight" max="100" min="0" type="number" value="20"/></div>
-<div class="field"><label>指定機台權重</label><input id="autoMachineWeight" max="100" min="0" type="number" value="10"/></div>
-<div class="field"><label>急單保護</label><select id="autoUrgentGuard"><option value="strict">嚴格優先</option><option value="normal">一般優先</option></select></div>
-</div>
-<div class="auto-note">此功能不會直接改動正式排程。先按「開始 AI 模擬」，確認改善結果後再採用。</div>
-</div>
-<div class="card col12">
-<div class="auto-summary">
-<div class="auto-stat"><span>延遲工單</span><b id="autoLateBefore">0</b><small>目前</small></div>
-<div class="auto-stat improve"><span>延遲工單</span><b id="autoLateAfter">0</b><small>最佳化後</small></div>
-<div class="auto-stat"><span>換線估算</span><b id="autoChangeBefore">0</b><small>分鐘</small></div>
-<div class="auto-stat improve"><span>換線估算</span><b id="autoChangeAfter">0</b><small>分鐘</small></div>
-<div class="auto-stat"><span>最晚完成</span><b id="autoFinishBefore">—</b><small>目前排程</small></div>
-<div class="auto-stat improve"><span>最晚完成</span><b id="autoFinishAfter">—</b><small>最佳化後</small></div>
-</div>
-</div>
-<div class="card col8"><h2>最佳化排程預覽</h2><div class="auto-empty" id="autoSchedulePreview">請先建立工單池並執行 AI 模擬。</div></div>
-<div class="card col4"><h2>改善摘要</h2><div class="auto-empty" id="autoScheduleInsights">尚未執行模擬。</div></div>
-<div class="card col12"><h2>機台排序與負荷</h2><div class="auto-empty" id="autoMachinePlan">尚未執行模擬。</div></div>
-<div class="card col12"><h2>交期風險明細</h2><div class="auto-empty" id="autoRiskTable">尚未執行模擬。</div></div>
+
+<section id="autoSchedule" class="page"><div class="grid">
+  <div class="card col12 auto-schedule-hero">
+    <div class="page-toolbar">
+      <div><div class="section-kicker">AUTO SCHEDULER CORE</div><h2>AI 自動排程核心</h2><div class="sub">以交期、急單、換線、機台負荷與指定機台為約束，先模擬再套用。所有評分與改善結果均可追溯。</div></div>
+      <div class="auto-toolbar"><button class="btn" id="runAutoSchedule">開始 AI 模擬</button><button class="btn green" id="applyAutoSchedule" disabled>採用最佳排程</button><button class="btn ghost" id="restoreAutoSchedule" disabled>還原套用前排程</button></div>
+    </div>
+    <div class="auto-config">
+      <div class="field"><label>排程範圍</label><select id="autoScope"><option value="ready">目前可排工單</option><option value="allopen">全部未結案</option><option value="scheduled">目前已排工單</option></select></div>
+      <div class="field"><label>交期權重</label><input id="autoDueWeight" type="number" min="0" max="100" value="40"></div>
+      <div class="field"><label>換線權重</label><input id="autoChangeWeight" type="number" min="0" max="100" value="30"></div>
+      <div class="field"><label>負荷平衡權重</label><input id="autoBalanceWeight" type="number" min="0" max="100" value="20"></div>
+      <div class="field"><label>指定機台權重</label><input id="autoMachineWeight" type="number" min="0" max="100" value="10"></div>
+      <div class="field"><label>急單保護</label><select id="autoUrgentGuard"><option value="strict">嚴格優先</option><option value="normal">一般優先</option></select></div>
+    </div>
+    <div class="auto-note">此功能不會直接改動正式排程。先按「開始 AI 模擬」，確認改善結果後再採用。</div>
+  </div>
+  <div class="card col12">
+    <div class="auto-summary">
+      <div class="auto-stat"><span>延遲工單</span><b id="autoLateBefore">0</b><small>目前</small></div>
+      <div class="auto-stat improve"><span>延遲工單</span><b id="autoLateAfter">0</b><small>最佳化後</small></div>
+      <div class="auto-stat"><span>換線估算</span><b id="autoChangeBefore">0</b><small>分鐘</small></div>
+      <div class="auto-stat improve"><span>換線估算</span><b id="autoChangeAfter">0</b><small>分鐘</small></div>
+      <div class="auto-stat"><span>最晚完成</span><b id="autoFinishBefore">—</b><small>目前排程</small></div>
+      <div class="auto-stat improve"><span>最晚完成</span><b id="autoFinishAfter">—</b><small>最佳化後</small></div>
+    </div>
+  </div>
+  <div class="card col8"><h2>最佳化排程預覽</h2><div id="autoSchedulePreview" class="auto-empty">請先建立工單池並執行 AI 模擬。</div></div>
+  <div class="card col4"><h2>改善摘要</h2><div id="autoScheduleInsights" class="auto-empty">尚未執行模擬。</div></div>
+  <div class="card col12"><h2>機台排序與負荷</h2><div id="autoMachinePlan" class="auto-empty">尚未執行模擬。</div></div>
+  <div class="card col12"><h2>交期風險明細</h2><div id="autoRiskTable" class="auto-empty">尚未執行模擬。</div></div>
 </div></section>
-<section class="page" id="workforce"><div class="grid">
+
+
+<section id="workforce" class="page"><div class="grid">
 <div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">WORKFORCE CAPACITY</div><h2>人力中心</h2><div class="sub">管理早班／夜班操作員與幹部人數，設定各機台需求人數，並依目前排程自動計算人力缺口。</div></div><div class="actions"><button class="btn" id="wfAnalyze">重新分析</button><button class="btn ghost" id="wfExport">匯出人力分析 CSV</button></div></div>
 <div class="center-kpis"><div class="center-kpi"><span>早班可用人力</span><b id="wfDayTotal">0</b></div><div class="center-kpi"><span>夜班可用人力</span><b id="wfNightTotal">0</b></div><div class="center-kpi"><span>人力不足時段</span><b id="wfShortage">0</b></div><div class="center-kpi"><span>目前排程需求</span><b id="wfDemand">0</b></div></div></div>
-<div class="card col6"><h2>班別人力設定</h2><div class="center-form"><div class="field"><label>早班操作員</label><input id="wfDayOps" min="0" type="number" value="12"/></div><div class="field"><label>早班幹部</label><input id="wfDayLead" min="0" type="number" value="2"/></div><div class="field"><label>夜班操作員</label><input id="wfNightOps" min="0" type="number" value="8"/></div><div class="field"><label>夜班幹部</label><input id="wfNightLead" min="0" type="number" value="1"/></div></div><div class="actions"><button class="btn green" id="wfSave">儲存人力設定</button></div><div class="hint" id="wfMsg"></div></div>
-<div class="card col6"><h2>機台需求人數設定</h2><div class="sub">預設每台運轉機台需要 1 人；特殊機台可單獨調整。</div><div class="tablewrap" id="wfMachineReq" style="margin-top:12px;max-height:340px"></div><div class="actions"><button class="btn green" id="wfSaveMachine">儲存需求設定</button></div></div>
-<div class="card col12"><h2>人力負荷與缺口明細</h2><div class="empty" id="wfAnalysis">請先建立排程，再執行人力分析。</div></div>
+<div class="card col6"><h2>班別人力設定</h2><div class="center-form"><div class="field"><label>早班操作員</label><input id="wfDayOps" type="number" min="0" value="12"></div><div class="field"><label>早班幹部</label><input id="wfDayLead" type="number" min="0" value="2"></div><div class="field"><label>夜班操作員</label><input id="wfNightOps" type="number" min="0" value="8"></div><div class="field"><label>夜班幹部</label><input id="wfNightLead" type="number" min="0" value="1"></div></div><div class="actions"><button class="btn green" id="wfSave">儲存人力設定</button></div><div id="wfMsg" class="hint"></div></div>
+<div class="card col6"><h2>機台需求人數設定</h2><div class="sub">預設每台運轉機台需要 1 人；特殊機台可單獨調整。</div><div id="wfMachineReq" class="tablewrap" style="margin-top:12px;max-height:340px"></div><div class="actions"><button class="btn green" id="wfSaveMachine">儲存需求設定</button></div></div>
+<div class="card col12"><h2>人力負荷與缺口明細</h2><div id="wfAnalysis" class="empty">請先建立排程，再執行人力分析。</div></div>
 </div></section>
-<section class="page" id="preprocess"><div class="grid pre-smart-grid">
+
+<section id="preprocess" class="page"><div class="grid pre-smart-grid">
 <div class="card col12 pre-hero-card"><div class="pre-glow"></div><div class="page-toolbar"><div><div class="section-kicker">SMART PRE-PROCESS GATE</div><h2>前製程智慧中心</h2><div class="sub">集中確認母卷、材料、刀模／治具、品質、人力與機台條件；系統自動判斷工單是否可投入 APS 排程。</div></div><div class="actions"><button class="btn" id="preAutoCheck">AI 重新判斷</button><button class="btn green" id="preSaveAll">儲存全部狀態</button><button class="btn ghost" id="preExport">匯出前製程清單 CSV</button></div></div>
 <div class="center-kpis pre-kpis"><div class="center-kpi pre-kpi pending"><span>待確認</span><b id="prePending">0</b><small>尚未完成檢核</small></div><div class="center-kpi pre-kpi ready"><span>可投入</span><b id="preReady">0</b><small>符合排程條件</small></div><div class="center-kpi pre-kpi blocked"><span>阻擋工單</span><b id="preBlocked">0</b><small>缺料／未完成／品質異常</small></div><div class="center-kpi pre-kpi urgent"><span>今日／逾期</span><b id="preUrgent">0</b><small>優先確認工單</small></div></div>
 <div class="pre-gate-flow"><div class="flow-node"><i>①</i><span>母卷／前製程</span></div><b>→</b><div class="flow-node"><i>②</i><span>材料／刀模</span></div><b>→</b><div class="flow-node"><i>③</i><span>品質／人力</span></div><b>→</b><div class="flow-node"><i>④</i><span>機台確認</span></div><b>→</b><div class="flow-node final"><i>✓</i><span>APS 放行</span></div></div>
-<div class="center-toolbar pre-toolbar"><input id="preSearch" placeholder="搜尋工單、客戶、料號、批號、品名…" type="search"/><select id="preStatusFilter"><option value="all">全部放行狀態</option><option value="待確認">待確認</option><option value="已到位">已到位</option><option value="缺料">缺料</option><option value="前製程未完成">前製程未完成</option><option value="品質待確認">品質待確認</option><option value="暫停">暫停</option></select><select id="preReadinessFilter"><option value="all">全部可排狀態</option><option value="ready">可投入</option><option value="warning">條件不足</option><option value="blocked">不可投入</option></select><button class="btn ghost" id="preClear">清除篩選</button></div></div>
-<div class="card col12 pre-board-card"><div class="page-toolbar"><div><h2>前製程放行看板</h2><div class="sub">點選狀態即可更新；紅色條件會阻擋排程，黃色條件需主管確認。</div></div><div class="pre-board-legend"><span><i class="dot green"></i>可投入</span><span><i class="dot yellow"></i>待確認</span><span><i class="dot red"></i>不可投入</span></div></div><div class="empty" id="preTable">請先建立工單池。</div></div>
-<div class="card col8 pre-detail-card"><div class="page-toolbar"><div><h2>工單條件明細</h2><div class="sub">點擊表格中的「查看」可帶入此區，補充預計到位時間與異常說明。</div></div><span class="tag blue" id="preDetailBadge">尚未選取工單</span></div><div class="empty" id="preDetailEmpty">請從上方看板選擇一張工單。</div><div class="pre-detail-form" hidden="" id="preDetailForm">
-<div class="field"><label>工單</label><input id="preDWo" readonly=""/></div><div class="field"><label>客戶</label><input id="preDCustomer" readonly=""/></div><div class="field"><label>料號</label><input id="preDPart" readonly=""/></div><div class="field"><label>建議機台</label><input id="preDMachine" readonly=""/></div>
-<div class="field"><label>預計可投入時間</label><input id="preDReadyAt" type="datetime-local"/></div><div class="field"><label>責任單位</label><select id="preDOwner"><option>加工課</option><option>塗佈課</option><option>品保</option><option>物料</option><option>設備</option></select></div><div class="field span2"><label>異常／處理說明</label><textarea id="preDNote" placeholder="例如：等待母卷、紙管預計 15:30 到料、首件待品保確認…" rows="3"></textarea></div><div class="actions span2"><button class="btn green" id="preDetailSave">儲存此工單</button><button class="btn" id="preSendAPS">送入 APS 排程</button><button class="btn ghost" id="preMarkWaiting">退回待料</button></div></div></div>
-<div class="card col4 pre-ai-card"><div class="section-kicker">AI READINESS INSIGHT</div><h2>智慧判斷</h2><div class="pre-ai-insight" id="preAiInsight"><div class="ai-orb"></div><p>建立工單池後，系統會分析阻擋原因與建議處理順序。</p></div></div>
+<div class="center-toolbar pre-toolbar"><input id="preSearch" type="search" placeholder="搜尋工單、客戶、料號、批號、品名…"><select id="preStatusFilter"><option value="all">全部放行狀態</option><option value="待確認">待確認</option><option value="已到位">已到位</option><option value="缺料">缺料</option><option value="前製程未完成">前製程未完成</option><option value="品質待確認">品質待確認</option><option value="暫停">暫停</option></select><select id="preReadinessFilter"><option value="all">全部可排狀態</option><option value="ready">可投入</option><option value="warning">條件不足</option><option value="blocked">不可投入</option></select><button class="btn ghost" id="preClear">清除篩選</button></div></div>
+<div class="card col12 pre-board-card"><div class="page-toolbar"><div><h2>前製程放行看板</h2><div class="sub">點選狀態即可更新；紅色條件會阻擋排程，黃色條件需主管確認。</div></div><div class="pre-board-legend"><span><i class="dot green"></i>可投入</span><span><i class="dot yellow"></i>待確認</span><span><i class="dot red"></i>不可投入</span></div></div><div id="preTable" class="empty">請先建立工單池。</div></div>
+<div class="card col8 pre-detail-card"><div class="page-toolbar"><div><h2>工單條件明細</h2><div class="sub">點擊表格中的「查看」可帶入此區，補充預計到位時間與異常說明。</div></div><span id="preDetailBadge" class="tag blue">尚未選取工單</span></div><div id="preDetailEmpty" class="empty">請從上方看板選擇一張工單。</div><div id="preDetailForm" class="pre-detail-form" hidden>
+<div class="field"><label>工單</label><input id="preDWo" readonly></div><div class="field"><label>客戶</label><input id="preDCustomer" readonly></div><div class="field"><label>料號</label><input id="preDPart" readonly></div><div class="field"><label>建議機台</label><input id="preDMachine" readonly></div>
+<div class="field"><label>預計可投入時間</label><input id="preDReadyAt" type="datetime-local"></div><div class="field"><label>責任單位</label><select id="preDOwner"><option>加工課</option><option>塗佈課</option><option>品保</option><option>物料</option><option>設備</option></select></div><div class="field span2"><label>異常／處理說明</label><textarea id="preDNote" rows="3" placeholder="例如：等待母卷、紙管預計 15:30 到料、首件待品保確認…"></textarea></div><div class="actions span2"><button class="btn green" id="preDetailSave">儲存此工單</button><button class="btn" id="preSendAPS">送入 APS 排程</button><button class="btn ghost" id="preMarkWaiting">退回待料</button></div></div></div>
+<div class="card col4 pre-ai-card"><div class="section-kicker">AI READINESS INSIGHT</div><h2>智慧判斷</h2><div id="preAiInsight" class="pre-ai-insight"><div class="ai-orb"></div><p>建立工單池後，系統會分析阻擋原因與建議處理順序。</p></div></div>
 </div></section>
-<section class="page" id="machineCenter"><div class="grid">
-<div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">MACHINE CAPACITY &amp; MAINTENANCE</div><h2>機台中心</h2><div class="sub">管理機台啟用狀態、每日可用工時、保養日與備註；設定會永久保留並影響排程。</div></div><div class="actions"><button class="btn green" id="mcSave">儲存機台設定</button><button class="btn ghost" id="mcExport">匯出機台設定 CSV</button></div></div>
+
+<section id="machineCenter" class="page"><div class="grid">
+<div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">MACHINE CAPACITY & MAINTENANCE</div><h2>機台中心</h2><div class="sub">管理機台啟用狀態、每日可用工時、保養日與備註；設定會永久保留並影響排程。</div></div><div class="actions"><button class="btn green" id="mcSave">儲存機台設定</button><button class="btn ghost" id="mcExport">匯出機台設定 CSV</button></div></div>
 <div class="center-kpis"><div class="center-kpi"><span>機台總數</span><b id="mcTotal">0</b></div><div class="center-kpi"><span>啟用機台</span><b id="mcEnabled">0</b></div><div class="center-kpi"><span>停機／保養</span><b id="mcDown">0</b></div><div class="center-kpi"><span>平均負荷</span><b id="mcUtil">0%</b></div></div>
-<div class="center-toolbar"><input id="mcSearch" placeholder="搜尋機台…" type="search"/><select id="mcStatus"><option value="all">全部狀態</option><option value="enabled">啟用</option><option value="disabled">停用</option><option value="maintenance">保養</option></select><button class="btn ghost" id="mcClear">清除篩選</button></div><div class="empty" id="mcTable">尚無機台資料。</div></div>
+<div class="center-toolbar"><input id="mcSearch" type="search" placeholder="搜尋機台…"><select id="mcStatus"><option value="all">全部狀態</option><option value="enabled">啟用</option><option value="disabled">停用</option><option value="maintenance">保養</option></select><button class="btn ghost" id="mcClear">清除篩選</button></div><div id="mcTable" class="empty">尚無機台資料。</div></div>
 </div></section>
-<section class="page" id="aiLoadOptimizer">
-<div class="grid">
-<div class="card col12">
-<div class="page-toolbar">
-<div>
-<div class="section-kicker">ENTERPRISE LOAD OPTIMIZER</div>
-<h2>AI 滿載最佳化</h2>
-<div class="sub">
+
+
+<section id="aiLoadOptimizer" class="page">
+  <div class="grid">
+    <div class="card col12">
+      <div class="page-toolbar">
+        <div>
+          <div class="section-kicker">ENTERPRISE LOAD OPTIMIZER</div>
+          <h2>AI 滿載最佳化</h2>
+          <div class="sub">
             以交期風險、共用機台規則、機台負荷、換機成本與產速可信度進行啟發式最佳化，
             目標是減少空機時段並讓每日可用機台盡量滿載。
           </div>
-</div>
-<div class="actions">
-<button class="btn" id="optAnalyze">分析目前負荷</button>
-<button class="btn green" id="optApply">套用最佳化建議</button>
-<button class="btn red" id="optRunSchedule">套用並產生排程</button>
-</div>
-</div>
-<div class="center-kpis">
-<div class="center-kpi"><span>可排工單</span><b id="optReadyJobs">0</b></div>
-<div class="center-kpi"><span>使用機台</span><b id="optMachineCount">0</b></div>
-<div class="center-kpi"><span>平均負荷</span><b id="optAvgLoad">0%</b></div>
-<div class="center-kpi"><span>預估滿載率</span><b id="optProjectedLoad">0%</b></div>
-</div>
-</div>
-<div class="card col4">
-<h2>最佳化權重</h2>
-<div class="center-form" style="grid-template-columns:1fr">
-<div class="field">
-<label>交期風險權重</label>
-<input id="optDueWeight" max="100" min="0" type="number" value="40"/>
-</div>
-<div class="field">
-<label>空檔填補權重</label>
-<input id="optFillWeight" max="100" min="0" type="number" value="30"/>
-</div>
-<div class="field">
-<label>主機台偏好權重</label>
-<input id="optPrimaryWeight" max="100" min="0" type="number" value="15"/>
-</div>
-<div class="field">
-<label>換機成本權重</label>
-<input id="optChangeWeight" max="100" min="0" type="number" value="10"/>
-</div>
-<div class="field">
-<label>產速可信度權重</label>
-<input id="optSpeedWeight" max="100" min="0" type="number" value="5"/>
-</div>
-<div class="field">
-<label>單台每日可用工時</label>
-<input id="optDailyHours" max="24" min="1" step="0.5" type="number" value="24"/>
-</div>
-</div>
-<div class="notice">
+        </div>
+        <div class="actions">
+          <button class="btn" id="optAnalyze">分析目前負荷</button>
+          <button class="btn green" id="optApply">套用最佳化建議</button>
+          <button class="btn red" id="optRunSchedule">套用並產生排程</button>
+        </div>
+      </div>
+
+      <div class="center-kpis">
+        <div class="center-kpi"><span>可排工單</span><b id="optReadyJobs">0</b></div>
+        <div class="center-kpi"><span>使用機台</span><b id="optMachineCount">0</b></div>
+        <div class="center-kpi"><span>平均負荷</span><b id="optAvgLoad">0%</b></div>
+        <div class="center-kpi"><span>預估滿載率</span><b id="optProjectedLoad">0%</b></div>
+      </div>
+    </div>
+
+    <div class="card col4">
+      <h2>最佳化權重</h2>
+      <div class="center-form" style="grid-template-columns:1fr">
+        <div class="field">
+          <label>交期風險權重</label>
+          <input id="optDueWeight" type="number" min="0" max="100" value="40">
+        </div>
+        <div class="field">
+          <label>空檔填補權重</label>
+          <input id="optFillWeight" type="number" min="0" max="100" value="30">
+        </div>
+        <div class="field">
+          <label>主機台偏好權重</label>
+          <input id="optPrimaryWeight" type="number" min="0" max="100" value="15">
+        </div>
+        <div class="field">
+          <label>換機成本權重</label>
+          <input id="optChangeWeight" type="number" min="0" max="100" value="10">
+        </div>
+        <div class="field">
+          <label>產速可信度權重</label>
+          <input id="optSpeedWeight" type="number" min="0" max="100" value="5">
+        </div>
+        <div class="field">
+          <label>單台每日可用工時</label>
+          <input id="optDailyHours" type="number" min="1" max="24" step="0.5" value="24">
+        </div>
+      </div>
+      <div class="notice">
         權重總和不必等於 100，系統會自動正規化。第一階段不會自動拆單；
         只有明確允許自動改派的規則才會套用。
       </div>
-</div>
-<div class="card col8">
-<h2>機台負荷預覽</h2>
-<div class="empty" id="optMachineTable">請先按「分析目前負荷」。</div>
-</div>
-<div class="card col12">
-<h2>工單改派建議</h2>
-<div class="empty" id="optDecisionTable">尚未分析。</div>
-</div>
-</div>
+    </div>
+
+    <div class="card col8">
+      <h2>機台負荷預覽</h2>
+      <div id="optMachineTable" class="empty">請先按「分析目前負荷」。</div>
+    </div>
+
+    <div class="card col12">
+      <h2>工單改派建議</h2>
+      <div id="optDecisionTable" class="empty">尚未分析。</div>
+    </div>
+  </div>
 </section>
-<section class="page" id="reports"><div class="grid">
+
+<section id="reports" class="page"><div class="grid">
 <div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">APS MANAGEMENT REPORT</div><h2>報表中心</h2><div class="sub">整合工單、交期、機台、人力、產速與排程結果，提供晨會與管理報告。</div></div><div class="actions"><button class="btn" id="rpRefresh">更新報表</button><button class="btn ghost" id="rpExport">匯出綜合報表 CSV</button><button class="btn ghost" id="rpPrint">列印／另存 PDF</button></div></div>
-<div class="center-toolbar"><label class="sub">報表日期</label><input id="rpDate" type="date"/><select id="rpScope"><option value="today">生產日</option><option value="week">本週</option><option value="all">全部資料</option></select></div>
+<div class="center-toolbar"><label class="sub">報表日期</label><input id="rpDate" type="date"><select id="rpScope"><option value="today">生產日</option><option value="week">本週</option><option value="all">全部資料</option></select></div>
 <div class="center-kpis"><div class="center-kpi"><span>待排工單</span><b id="rpOpen">0</b></div><div class="center-kpi"><span>已排工單</span><b id="rpScheduled">0</b></div><div class="center-kpi"><span>交期風險</span><b id="rpRisk">0</b></div><div class="center-kpi"><span>產速覆蓋率</span><b id="rpCoverage">0%</b></div></div></div>
 <div class="card col12"><div class="report-grid"><div class="report-box"><h3>機台負荷排行</h3><div id="rpMachine"></div></div><div class="report-box"><h3>工單狀態分布</h3><div id="rpStatus"></div></div><div class="report-box"><h3>交期風險明細</h3><div id="rpDue"></div></div><div class="report-box"><h3>缺少產速摘要</h3><div id="rpSpeed"></div></div></div></div>
-<div class="card col12"><h2>排程明細</h2><div class="empty" id="rpSchedule">尚未產生排程。</div></div>
+<div class="card col12"><h2>排程明細</h2><div id="rpSchedule" class="empty">尚未產生排程。</div></div>
 </div></section>
-<section class="page" id="speedFeedback"><div class="grid">
-<div class="card col12 speed-health">
-<div class="page-toolbar"><div><div class="section-kicker">SPEED MASTER HEALTH</div><h2>產速主檔／Key In 共用回數回饋中心</h2><div class="sub">排程以「所需回數 × 每回時間」計算。Key In 現場輸入的一回產量與每回分鐘數會寫入同一雲端資料，APS 開啟後自動載入。</div></div><div class="actions"><button class="btn ghost" id="exportSpeedFeedback">匯出產速備份 CSV</button><button class="btn ghost" id="exportSpeedJSON">匯出永久備份</button><button class="btn ghost" id="importSpeedJSON">匯入永久備份</button><input accept=".json" hidden="" id="importSpeedJSONFile" type="file"/><button class="btn" id="refreshSpeedFeedback">重新檢查</button></div></div>
-<div class="speed-kpis"><div><span>產速主檔</span><b id="speedMasterCount">0</b><small>有效料號＋機台組合</small></div><div><span>缺少產速</span><b class="danger-text" id="speedMissingCount">0</b><small>目前不可自動排程</small></div><div><span>現場回饋</span><b id="speedFeedbackCount">0</b><small>永久保留，累積歷史</small></div><div><span>可排率</span><b id="speedCoverage">0%</b><small>未結案工單產速覆蓋率</small></div></div>
-</div>
-<div class="card col12" id="missingSpeedCard"><h2>待測／缺少產速清單</h2><div class="sub">點「帶入回饋」會把工單的料號、製程與建議機台填入右側表單。</div><div class="empty" id="missingSpeedTable">請先上傳資料並建立工單池。</div></div>
-<div class="card col12" id="speedFeedbackFormCard"><h2>新增現場實測回饋</h2>
-<div class="speed-form">
-<div class="field span2"><label>產品料號 *</label><input id="sfPart" placeholder="由待測清單帶入或手動輸入"/></div>
-<div class="field span2"><label>產品名稱</label><input id="sfName"/></div>
-<div class="field"><label>機台 *</label><input id="sfMachine" list="sfMachineList"/><datalist id="sfMachineList"></datalist></div>
-<div class="field"><label>製程</label><input id="sfProcess"/></div>
-<div class="field"><label>投入寬 mm</label><input id="sfInW" min="0" step="0.01" type="number"/></div>
-<div class="field"><label>產出寬 mm</label><input id="sfOutW" min="0" step="0.01" type="number"/></div>
-<div class="field"><label>產出長 M</label><input id="sfLen" min="0" step="0.01" type="number"/></div>
-<div class="field"><label>每回產量 *</label><input id="sfQtyRound" min="0" placeholder="例如每回 20 捲" step="0.01" type="number"/></div>
-<div class="field"><label>回數單位</label><select id="sfUnit"><option value="R">捲 R</option><option value="㎡">㎡</option><option value="M">M</option><option value="PCS">PCS</option></select></div>
-<div class="field"><label>每回時間 min *</label><input id="sfMinutesRound" min="0" step="0.01" type="number"/></div>
-<div class="field"><label>實測日期</label><input id="sfDate" type="date"/></div>
-<div class="field"><label>實測人員</label><input id="sfOperator" placeholder="姓名或工號"/></div>
-<div class="field span2"><label>備註／現場條件</label><input id="sfNote" placeholder="例如新產品第一次測試、含下料時間"/></div>
-</div>
-<div class="notice" style="margin-top:12px">公式：所需回數＝CEILING（剩餘需求 ÷ 每回產量）；排程分鐘＝所需回數 × 每回時間。</div>
-<input id="sfEditIndex" type="hidden" value=""/><div class="actions"><button class="btn green" id="saveSpeedFeedback">儲存並重新計算</button><button class="btn ghost" id="clearSpeedForm">清除表單</button></div><div class="hint" id="speedFormMsg"></div>
-</div>
-<div class="card col12"><h2>永久產速紀錄</h2><div class="sub">加工課產速表會永久保存到 Google Sheets 與瀏覽器備援。後續每日 ERP 更新不必重傳；新料號或新機台資料採增量合併，也可在此直接新增、修改或匯出備份。</div><div class="rangeBar speed-status-tabs" style="margin:12px 0"><button class="rangeBtn active" data-speed-status="all">全部</button><button class="rangeBtn" data-speed-status="learning">待確認／現場學習</button><button class="rangeBtn" data-speed-status="approved">課長已確認</button><button class="rangeBtn" data-speed-status="abnormal">異常資料</button></div><div class="empty" id="speedFeedbackTable">尚無永久產速紀錄</div></div>
-<div class="card col12"><h2>機台回數與稼動率</h2><div class="sub">稼動率仍以排程分鐘 ÷ 可用分鐘計算，但排程分鐘來源固定為「回數 × 每回時間」。</div><div class="empty" id="roundUtilTable">產生排程後顯示。</div></div>
+
+<section id="speedFeedback" class="page"><div class="grid">
+  <div class="card col12 speed-health">
+    <div class="page-toolbar"><div><div class="section-kicker">SPEED MASTER HEALTH</div><h2>產速主檔／Key In 共用回數回饋中心</h2><div class="sub">排程以「所需回數 × 每回時間」計算。Key In 現場輸入的一回產量與每回分鐘數會寫入同一雲端資料，APS 開啟後自動載入。</div></div><div class="actions"><button class="btn ghost" id="exportSpeedFeedback">匯出產速備份 CSV</button><button class="btn ghost" id="exportSpeedJSON">匯出永久備份</button><button class="btn ghost" id="importSpeedJSON">匯入永久備份</button><input id="importSpeedJSONFile" type="file" accept=".json" hidden><button class="btn" id="refreshSpeedFeedback">重新檢查</button></div></div>
+    <div class="speed-kpis"><div><span>產速主檔</span><b id="speedMasterCount">0</b><small>有效料號＋機台組合</small></div><div><span>缺少產速</span><b id="speedMissingCount" class="danger-text">0</b><small>目前不可自動排程</small></div><div><span>現場回饋</span><b id="speedFeedbackCount">0</b><small>永久保留，累積歷史</small></div><div><span>可排率</span><b id="speedCoverage">0%</b><small>未結案工單產速覆蓋率</small></div></div>
+  </div>
+  <div class="card col12" id="missingSpeedCard"><h2>待測／缺少產速清單</h2><div class="sub">點「帶入回饋」會把工單的料號、製程與建議機台填入右側表單。</div><div id="missingSpeedTable" class="empty">請先上傳資料並建立工單池。</div></div>
+  <div class="card col12" id="speedFeedbackFormCard"><h2>新增現場實測回饋</h2>
+    <div class="speed-form">
+      <div class="field span2"><label>產品料號 *</label><input id="sfPart" placeholder="由待測清單帶入或手動輸入"></div>
+      <div class="field span2"><label>產品名稱</label><input id="sfName"></div>
+      <div class="field"><label>機台 *</label><input id="sfMachine" list="sfMachineList"><datalist id="sfMachineList"></datalist></div>
+      <div class="field"><label>製程</label><input id="sfProcess"></div>
+      <div class="field"><label>投入寬 mm</label><input id="sfInW" type="number" min="0" step="0.01"></div>
+      <div class="field"><label>產出寬 mm</label><input id="sfOutW" type="number" min="0" step="0.01"></div>
+      <div class="field"><label>產出長 M</label><input id="sfLen" type="number" min="0" step="0.01"></div>
+      <div class="field"><label>每回產量 *</label><input id="sfQtyRound" type="number" min="0" step="0.01" placeholder="例如每回 20 捲"></div>
+      <div class="field"><label>回數單位</label><select id="sfUnit"><option value="R">捲 R</option><option value="㎡">㎡</option><option value="M">M</option><option value="PCS">PCS</option></select></div>
+      <div class="field"><label>每回時間 min *</label><input id="sfMinutesRound" type="number" min="0" step="0.01"></div>
+      <div class="field"><label>實測日期</label><input id="sfDate" type="date"></div>
+      <div class="field"><label>實測人員</label><input id="sfOperator" placeholder="姓名或工號"></div>
+      <div class="field span2"><label>備註／現場條件</label><input id="sfNote" placeholder="例如新產品第一次測試、含下料時間"></div>
+    </div>
+    <div class="notice" style="margin-top:12px">公式：所需回數＝CEILING（剩餘需求 ÷ 每回產量）；排程分鐘＝所需回數 × 每回時間。</div>
+    <input id="sfEditIndex" type="hidden" value=""><div class="actions"><button class="btn green" id="saveSpeedFeedback">儲存並重新計算</button><button class="btn ghost" id="clearSpeedForm">清除表單</button></div><div id="speedFormMsg" class="hint"></div>
+  </div>
+  <div class="card col12"><h2>永久產速紀錄</h2><div class="sub">加工課產速表會永久保存到 Google Sheets 與瀏覽器備援。後續每日 ERP 更新不必重傳；新料號或新機台資料採增量合併，也可在此直接新增、修改或匯出備份。</div><div class="rangeBar speed-status-tabs" style="margin:12px 0"><button class="rangeBtn active" data-speed-status="all">全部</button><button class="rangeBtn" data-speed-status="learning">待確認／現場學習</button><button class="rangeBtn" data-speed-status="approved">課長已確認</button><button class="rangeBtn" data-speed-status="abnormal">異常資料</button></div><div id="speedFeedbackTable" class="empty">尚無永久產速紀錄</div></div>
+  <div class="card col12"><h2>機台回數與稼動率</h2><div class="sub">稼動率仍以排程分鐘 ÷ 可用分鐘計算，但排程分鐘來源固定為「回數 × 每回時間」。</div><div id="roundUtilTable" class="empty">產生排程後顯示。</div></div>
 </div></section>
-<section class="page" id="master"><div class="grid">
-<div class="card col6"><h2>排程參數</h2><div class="formgrid"><div class="field"><label>生產日起始日</label><input id="startDate" type="date"/></div><div class="field"><label>排程天數</label><input id="days" max="60" min="1" type="number" value="14"/></div><div class="field"><label>生產日開始時間</label><input id="dayStart" readonly="" title="由早班開始時間自動同步" type="time" value="08:30"/></div><div class="field"><label>預設生產日可用工時</label><input id="defaultHours" max="24" min="1" step="0.5" type="number" value="24"/></div><div class="field"><label>每位人員可顧機台數</label><input id="machinesPerOperator" max="4" min="1" type="number" value="2"/></div><div class="field"><label>當日可用人數</label><input id="operators" max="100" min="0" type="number" value="10"/></div><div class="field"><label>急單判定天數</label><input id="urgentDays" max="30" min="0" type="number" value="1"/></div><div class="field"><label>風險判定天數</label><input id="riskDays" max="30" min="0" type="number" value="3"/></div></div><div class="hint">生產日開始時間會跟隨下方「早班開始」設定。個別機台仍可依停機、保養或人力調整可用工時。</div></div>
-<div class="card col12 shift-setting-card"><h2>班別時段設定</h2><div class="sub">可手動調整早班與夜班時段。為避免排程斷層，早班結束必須等於夜班開始，夜班結束必須等於早班開始。</div><div class="shift-setting-grid"><div class="field"><label>早班開始</label><input id="earlyShiftStart" type="time" value="08:30"/></div><div class="field"><label>早班結束</label><input id="earlyShiftEnd" type="time" value="20:30"/></div><div class="field"><label>夜班開始</label><input id="nightShiftStart" type="time" value="20:30"/></div><div class="field"><label>夜班結束（隔日）</label><input id="nightShiftEnd" type="time" value="08:30"/></div></div><div class="actions"><button class="btn green" id="saveShiftSettings" type="button">儲存班別設定</button><button class="btn ghost" id="resetShiftSettings" type="button">恢復 08:30／20:30</button></div><div class="shift-setting-status" id="shiftSettingStatus">目前：早班 08:30～20:30；夜班 20:30～隔日 08:30。</div></div>
-<div class="card col6"><h2>機台可用工時</h2><div class="sub">建立工單池後會自動列出產速表中的機台，可逐台調整。指定機台產品會優先使用該機台。</div><div class="empty" id="machineSettings">尚無機台資料</div></div>
+<section id="master" class="page"><div class="grid">
+<div class="card col6"><h2>排程參數</h2><div class="formgrid"><div class="field"><label>生產日起始日</label><input id="startDate" type="date"></div><div class="field"><label>排程天數</label><input id="days" type="number" min="1" max="60" value="14"></div><div class="field"><label>生產日開始時間</label><input id="dayStart" type="time" value="08:30" readonly title="由早班開始時間自動同步"></div><div class="field"><label>預設生產日可用工時</label><input id="defaultHours" type="number" min="1" max="24" step="0.5" value="24"></div><div class="field"><label>每位人員可顧機台數</label><input id="machinesPerOperator" type="number" min="1" max="4" value="2"></div><div class="field"><label>當日可用人數</label><input id="operators" type="number" min="0" max="100" value="10"></div><div class="field"><label>急單判定天數</label><input id="urgentDays" type="number" min="0" max="30" value="1"></div><div class="field"><label>風險判定天數</label><input id="riskDays" type="number" min="0" max="30" value="3"></div></div><div class="hint">生產日開始時間會跟隨下方「早班開始」設定。個別機台仍可依停機、保養或人力調整可用工時。</div></div>
+
+<div class="card col12 shift-setting-card"><h2>班別時段設定</h2><div class="sub">可手動調整早班與夜班時段。為避免排程斷層，早班結束必須等於夜班開始，夜班結束必須等於早班開始。</div><div class="shift-setting-grid"><div class="field"><label>早班開始</label><input id="earlyShiftStart" type="time" value="08:30"></div><div class="field"><label>早班結束</label><input id="earlyShiftEnd" type="time" value="20:30"></div><div class="field"><label>夜班開始</label><input id="nightShiftStart" type="time" value="20:30"></div><div class="field"><label>夜班結束（隔日）</label><input id="nightShiftEnd" type="time" value="08:30"></div></div><div class="actions"><button class="btn green" id="saveShiftSettings" type="button">儲存班別設定</button><button class="btn ghost" id="resetShiftSettings" type="button">恢復 08:30／20:30</button></div><div id="shiftSettingStatus" class="shift-setting-status">目前：早班 08:30～20:30；夜班 20:30～隔日 08:30。</div></div>
+<div class="card col6"><h2>機台可用工時</h2><div class="sub">建立工單池後會自動列出產速表中的機台，可逐台調整。指定機台產品會優先使用該機台。</div><div id="machineSettings" class="empty">尚無機台資料</div></div>
 <div class="card col12"><h2>目前核心規則</h2><div class="tablewrap"><table><thead><tr><th>規則</th><th>內容</th><th>狀態</th></tr></thead><tbody><tr><td>R001</td><td>交期越近優先度越高</td><td><span class="tag green">啟用</span></td></tr><tr><td>R002</td><td>交期 1 日內視為急單（可調）</td><td><span class="tag green">啟用</span></td></tr><tr><td>R003</td><td>同一機台同一時間不得重疊</td><td><span class="tag green">啟用</span></td></tr><tr><td>R004</td><td>工單允許拆單並跨日</td><td><span class="tag green">啟用</span></td></tr><tr><td>R005</td><td>料號有指定機台時優先使用指定機台</td><td><span class="tag green">啟用</span></td></tr><tr><td>R006</td><td>前製程與半成品狀態缺資料時標示待確認</td><td><span class="tag yellow">待串接</span></td></tr><tr><td>R007</td><td>人力限制同時可開機台數</td><td><span class="tag green">啟用</span></td></tr></tbody></table></div></div>
 </div></section>
-<section class="page" id="systemSettings"><div class="grid sys-grid">
-<div class="card col12 sys-hero">
-<div class="page-toolbar">
-<div><div class="section-kicker">ENTERPRISE CONTROL CENTER</div><h2>系統設定中心</h2><div class="sub">集中管理系統識別、資料保存、排程通知、介面顯示與完整備份。設定會永久保存於目前瀏覽器。</div></div>
-<div class="actions"><button class="btn green" id="sysSaveAll">儲存全部設定</button><button class="btn ghost" id="sysExportAll">下載完整系統備份</button><label class="btn ghost sys-import-label">匯入完整系統備份<input accept="application/json,.json" hidden="" id="sysImportAll" type="file"/></label></div>
-</div>
-<div class="sys-kpis"><div><span>工單池</span><b id="sysPoolCount">0</b><small>目前記憶體</small></div><div><span>排程區段</span><b id="sysScheduleCount">0</b><small>目前記憶體</small></div><div><span>永久設定</span><b id="sysStorageCount">0</b><small>localStorage 項目</small></div><div><span>資料容量</span><b id="sysStorageSize">0 KB</b><small>瀏覽器估算</small></div></div>
-</div>
-<div class="card col6"><h2>系統識別</h2><div class="center-form">
-<div class="field span2"><label>系統名稱</label><input id="sysName" value="SEAL KING Smart APS"/></div>
-<div class="field"><label>管理員顯示名稱</label><input id="sysAdmin" value="系統管理員"/></div>
-<div class="field"><label>部門／場域</label><input id="sysDepartment" value="加工課"/></div>
-<div class="field span2"><label>副標題</label><input id="sysSubtitle" value="加工課智慧排程與決策平台"/></div>
-<div class="field"><label>版本標示</label><input id="sysVersion" value="Enterprise Preview 2"/></div>
-<div class="field"><label>資料更新人員</label><input id="sysDataOwner" placeholder="例如：課長／助理"/></div>
-</div></div>
-<div class="card col6"><h2>介面與動畫</h2><div class="sys-switch-list">
-<label><span><b>介面動畫</b><small>頁面與卡片切換動畫</small></span><input checked="" id="sysAnimations" type="checkbox"/></label>
-<label><span><b>緊湊模式</b><small>縮小卡片間距，增加可視資料量</small></span><input id="sysCompact" type="checkbox"/></label>
-<label><span><b>固定側邊欄</b><small>捲動時保持左側導覽列</small></span><input checked="" id="sysStickySidebar" type="checkbox"/></label>
-<label><span><b>顯示操作提示</b><small>保留滑鼠提示與說明文字</small></span><input checked="" id="sysTooltips" type="checkbox"/></label>
-</div></div>
-<div class="card col6"><h2>資料保存與啟動</h2><div class="sys-switch-list">
-<label><span><b>自動保存 ERP 工單池</b><small>建立工單池後保存快照</small></span><input checked="" id="sysPersistPool" type="checkbox"/></label>
-<label><span><b>開啟時自動載入上次工單池</b><small>不必每次重新建立工單池</small></span><input checked="" id="sysAutoLoadPool" type="checkbox"/></label>
-<label><span><b>自動保存正式排程</b><small>排程更新後保存快照</small></span><input checked="" id="sysPersistSchedule" type="checkbox"/></label>
-<label><span><b>載入時還原正式排程</b><small>重新開啟 HTML 後保留上次排程</small></span><input checked="" id="sysAutoLoadSchedule" type="checkbox"/></label>
-</div><div class="actions"><button class="btn ghost" id="sysSaveSnapshot">立即保存目前工單池／排程</button><button class="btn red" id="sysClearSnapshots">清除工單池／排程快照</button></div><div class="center-note" id="sysSnapshotStatus">尚未檢查快照。</div></div>
-<div class="card col6"><h2>通知與風險門檻</h2><div class="center-form">
-<div class="field"><label>缺少產速警戒（筆）</label><input id="sysMissingSpeedAlert" min="0" type="number" value="1"/></div>
-<div class="field"><label>逾期工單警戒（筆）</label><input id="sysOverdueAlert" min="0" type="number" value="1"/></div>
-<div class="field"><label>機台負荷警戒（%）</label><input id="sysMachineLoadAlert" max="100" min="1" type="number" value="90"/></div>
-<div class="field"><label>資料逾時警戒（小時）</label><input id="sysStaleHours" min="1" type="number" value="24"/></div>
-</div><div class="hint">門檻會供右上角通知與 AI 建議中心使用，不會直接改動正式排程。</div></div>
-<div class="card col12"><div class="page-toolbar"><div><h2>瀏覽器資料管理</h2><div class="sub">可查看目前永久資料項目；清除前建議先下載完整系統備份。</div></div><div class="actions"><button class="btn ghost" id="sysRefreshStorage">重新整理</button><button class="btn red" id="sysClearAllStorage">清除全部 APS 永久資料</button></div></div><div class="empty" id="sysStorageTable">正在讀取資料…</div></div>
+
+<section id="systemSettings" class="page"><div class="grid sys-grid">
+  <div class="card col12 sys-hero">
+    <div class="page-toolbar">
+      <div><div class="section-kicker">ENTERPRISE CONTROL CENTER</div><h2>系統設定中心</h2><div class="sub">集中管理系統識別、資料保存、排程通知、介面顯示與完整備份。設定會永久保存於目前瀏覽器。</div></div>
+      <div class="actions"><button class="btn green" id="sysSaveAll">儲存全部設定</button><button class="btn ghost" id="sysExportAll">下載完整系統備份</button><label class="btn ghost sys-import-label">匯入完整系統備份<input id="sysImportAll" type="file" accept="application/json,.json" hidden></label></div>
+    </div>
+    <div class="sys-kpis"><div><span>工單池</span><b id="sysPoolCount">0</b><small>目前記憶體</small></div><div><span>排程區段</span><b id="sysScheduleCount">0</b><small>目前記憶體</small></div><div><span>永久設定</span><b id="sysStorageCount">0</b><small>localStorage 項目</small></div><div><span>資料容量</span><b id="sysStorageSize">0 KB</b><small>瀏覽器估算</small></div></div>
+  </div>
+
+  <div class="card col6"><h2>系統識別</h2><div class="center-form">
+    <div class="field span2"><label>系統名稱</label><input id="sysName" value="SEAL KING Smart APS"></div>
+    <div class="field"><label>管理員顯示名稱</label><input id="sysAdmin" value="系統管理員"></div>
+    <div class="field"><label>部門／場域</label><input id="sysDepartment" value="加工課"></div>
+    <div class="field span2"><label>副標題</label><input id="sysSubtitle" value="加工課智慧排程與決策平台"></div>
+    <div class="field"><label>版本標示</label><input id="sysVersion" value="Enterprise Preview 2"></div>
+    <div class="field"><label>資料更新人員</label><input id="sysDataOwner" placeholder="例如：課長／助理"></div>
+  </div></div>
+
+  <div class="card col6"><h2>介面與動畫</h2><div class="sys-switch-list">
+    <label><span><b>介面動畫</b><small>頁面與卡片切換動畫</small></span><input id="sysAnimations" type="checkbox" checked></label>
+    <label><span><b>緊湊模式</b><small>縮小卡片間距，增加可視資料量</small></span><input id="sysCompact" type="checkbox"></label>
+    <label><span><b>固定側邊欄</b><small>捲動時保持左側導覽列</small></span><input id="sysStickySidebar" type="checkbox" checked></label>
+    <label><span><b>顯示操作提示</b><small>保留滑鼠提示與說明文字</small></span><input id="sysTooltips" type="checkbox" checked></label>
+  </div></div>
+
+  <div class="card col6"><h2>資料保存與啟動</h2><div class="sys-switch-list">
+    <label><span><b>自動保存 ERP 工單池</b><small>建立工單池後保存快照</small></span><input id="sysPersistPool" type="checkbox" checked></label>
+    <label><span><b>開啟時自動載入上次工單池</b><small>不必每次重新建立工單池</small></span><input id="sysAutoLoadPool" type="checkbox" checked></label>
+    <label><span><b>自動保存正式排程</b><small>排程更新後保存快照</small></span><input id="sysPersistSchedule" type="checkbox" checked></label>
+    <label><span><b>載入時還原正式排程</b><small>重新開啟 HTML 後保留上次排程</small></span><input id="sysAutoLoadSchedule" type="checkbox" checked></label>
+  </div><div class="actions"><button class="btn ghost" id="sysSaveSnapshot">立即保存目前工單池／排程</button><button class="btn red" id="sysClearSnapshots">清除工單池／排程快照</button></div><div id="sysSnapshotStatus" class="center-note">尚未檢查快照。</div></div>
+
+  <div class="card col6"><h2>通知與風險門檻</h2><div class="center-form">
+    <div class="field"><label>缺少產速警戒（筆）</label><input id="sysMissingSpeedAlert" type="number" min="0" value="1"></div>
+    <div class="field"><label>逾期工單警戒（筆）</label><input id="sysOverdueAlert" type="number" min="0" value="1"></div>
+    <div class="field"><label>機台負荷警戒（%）</label><input id="sysMachineLoadAlert" type="number" min="1" max="100" value="90"></div>
+    <div class="field"><label>資料逾時警戒（小時）</label><input id="sysStaleHours" type="number" min="1" value="24"></div>
+  </div><div class="hint">門檻會供右上角通知與 AI 建議中心使用，不會直接改動正式排程。</div></div>
+
+  <div class="card col12"><div class="page-toolbar"><div><h2>瀏覽器資料管理</h2><div class="sub">可查看目前永久資料項目；清除前建議先下載完整系統備份。</div></div><div class="actions"><button class="btn ghost" id="sysRefreshStorage">重新整理</button><button class="btn red" id="sysClearAllStorage">清除全部 APS 永久資料</button></div></div><div id="sysStorageTable" class="empty">正在讀取資料…</div></div>
 </div></section>
-<section class="page" id="missingSpeed"><div class="grid"><div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">BUILD 0046-1</div><h2>AI 缺產速中心</h2><div class="sub">建立工單池後，自動比對 APS_WorkPool 與固定產速主檔。此頁只顯示與整理，不會自動修改 Master_產速。</div></div><div class="actions"><button class="btn ghost" id="missingSpeedRefresh">重新掃描</button><button class="btn" id="missingSpeedGoFeedback">前往產速回饋中心</button></div></div><div class="missing-speed-kpis"><div class="missing-speed-kpi"><span>工單池筆數</span><b id="msPoolCount">0</b></div><div class="missing-speed-kpi"><span>有標準產速</span><b id="msMatchedCount">0</b></div><div class="missing-speed-kpi"><span>缺產速</span><b class="danger-text" id="msMissingCount">0</b></div><div class="missing-speed-kpi"><span>產速完整率</span><b id="msCoverage">0%</b></div></div><div class="missing-speed-summary" id="missingSpeedSummary">尚未掃描。請先建立工單池。</div><div class="missing-speed-toolbar"><input id="missingSpeedSearch" placeholder="搜尋工單、料號、規格、機台" type="search"/><select id="missingSpeedMachine"><option value="">全部機台</option></select><select id="missingSpeedReason"><option value="">全部原因</option><option value="part">缺料號對應</option><option value="machine">缺機台產速</option><option value="process">缺製程產速</option><option value="speed">產速為 0</option></select><span class="result-count" id="missingSpeedResultCount">0 筆</span></div><div class="tablewrap"><table class="missing-speed-table"><thead><tr><th>狀態</th><th>工單</th><th>料號</th><th>規格</th><th>機台</th><th>製程</th><th>缺漏原因</th><th>建議動作</th></tr></thead><tbody id="missingSpeedBody"><tr><td class="missing-speed-empty" colspan="8">尚未掃描資料</td></tr></tbody></table></div></div></div></section>
+
+<section id="missingSpeed" class="page"><div class="grid"><div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">BUILD 0046-1</div><h2>AI 缺產速中心</h2><div class="sub">建立工單池後，自動比對 APS_WorkPool 與固定產速主檔。此頁只顯示與整理，不會自動修改 Master_產速。</div></div><div class="actions"><button class="btn ghost" id="missingSpeedRefresh">重新掃描</button><button class="btn" id="missingSpeedGoFeedback">前往產速回饋中心</button></div></div><div class="missing-speed-kpis"><div class="missing-speed-kpi"><span>工單池筆數</span><b id="msPoolCount">0</b></div><div class="missing-speed-kpi"><span>有標準產速</span><b id="msMatchedCount">0</b></div><div class="missing-speed-kpi"><span>缺產速</span><b id="msMissingCount" class="danger-text">0</b></div><div class="missing-speed-kpi"><span>產速完整率</span><b id="msCoverage">0%</b></div></div><div id="missingSpeedSummary" class="missing-speed-summary">尚未掃描。請先建立工單池。</div><div class="missing-speed-toolbar"><input id="missingSpeedSearch" type="search" placeholder="搜尋工單、料號、規格、機台"><select id="missingSpeedMachine"><option value="">全部機台</option></select><select id="missingSpeedReason"><option value="">全部原因</option><option value="part">缺料號對應</option><option value="machine">缺機台產速</option><option value="process">缺製程產速</option><option value="speed">產速為 0</option></select><span id="missingSpeedResultCount" class="result-count">0 筆</span></div><div class="tablewrap"><table class="missing-speed-table"><thead><tr><th>狀態</th><th>工單</th><th>料號</th><th>規格</th><th>機台</th><th>製程</th><th>缺漏原因</th><th>建議動作</th></tr></thead><tbody id="missingSpeedBody"><tr><td colspan="8" class="missing-speed-empty">尚未掃描資料</td></tr></tbody></table></div></div></div></section>
 </main></div>
 <script>
 'use strict';
@@ -1027,7 +1073,7 @@ function renderFiles(){
 function renderPreview(){const e=Object.entries(S.files).find(([k])=>k!=='unknown');if(!e){$('preview').className='empty';$('preview').textContent='尚未上傳檔案';return}const [type,obj]=e,sh=obj.sheets[0],rows=sh.rows.slice(0,8);$('preview').className='tablewrap';$('preview').innerHTML=tableHtml(rows[0]||[],rows.slice(1))}
 function tableHtml(headers,rows,renderers={}){return `<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${headers.map((h,i)=>`<td>${renderers[i]?renderers[i](r[i],r):esc(r[i]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 function pickSheet(type,preferred){const o=S.files[type];if(!o)return null;return o.sheets.find(s=>preferred.some(p=>norm(s.name).includes(norm(p))))||o.sheets[0]}
-/* Build 0066｜V86.2 APS Turbo Engine：Master_產速 V2 */
+/* Build 0061｜V84.7 APS Core：Master_產速 V2 */
 function inferAPSMode(process,rawMode=''){
  const m=norm(rawMode);if(['FIXED','LENGTH','AREA','ROLL','ROUND'].includes(m))return m;
  const p=String(process||'').trim();
@@ -1152,6 +1198,7 @@ function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.
 document.querySelectorAll('.tab').forEach(x=>x.onclick=()=>showPage(x.dataset.page));$('drop').onclick=()=>$('files').click();$('files').onchange=e=>handleFiles(e.target.files);['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('drag')}));['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('drag')}));$('drop').addEventListener('drop',e=>handleFiles(e.dataTransfer.files));$('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSchedule').onclick=schedule;$('clearData').onclick=clearAll;$('exportPool').onclick=exportPool;$('exportSchedule').onclick=exportSchedule;
 $('startDate').value=fmtDate(new Date());applyShiftSettingsToForm();$('saveShiftSettings').onclick=saveShiftSettings;$('resetShiftSettings').onclick=resetShiftSettings;['earlyShiftStart','earlyShiftEnd','nightShiftStart','nightShiftEnd'].forEach(id=>$(id).addEventListener('change',()=>{const x={earlyStart:$('earlyShiftStart').value,earlyEnd:$('earlyShiftEnd').value,nightStart:$('nightShiftStart').value,nightEnd:$('nightShiftEnd').value},v=validateShiftSettings(x);updateShiftStatus(x,v.ok,v.msg)}));renderFiles();updateKpi();
 </script>
+
 <script>
 /* Enterprise Preview 2 enhancements */
 const EP={poolSort:{key:'due',dir:1},poolSearch:'',poolStatus:'all',poolMachine:'all',simulation:null};
@@ -1186,6 +1233,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 // Default urgent due: today 17:00
 (()=>{const d=new Date();d.setHours(17,0,0,0);if(d<new Date())d.setDate(d.getDate()+1);$('urgentDue').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)})();
 </script>
+
 <script>
 /* Build 0005 dashboard adapters */
 (function(){
@@ -1210,6 +1258,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   setTimeout(()=>window.updateKpi?.(),0);
 })();
 </script>
+
 <script>
 /* Build 0006｜回數制產速、缺料提醒、現場回饋 */
 (function(){
@@ -1316,6 +1365,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
  $('sfDate').value=new Date().toISOString().slice(0,10);renderSpeedCenter();if(loadStoredMaster().length)log('已載入永久產速主檔：'+loadStoredMaster().length+' 筆');
 })();
 </script>
+
 <script>
 /* Build 0023｜預交日篩選與優先排程
  * 原則：回數為核心；排程工時 = 準備 + 首件 + 純生產 + 收尾，並執行最低占用與異常檢核。
@@ -1484,6 +1534,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   };bind();
 })();
 </script>
+
+
 <style>
 /* Build 0023｜預交日篩選 */
 .due-filter-panel{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 9px;background:#0a141a;border:1px solid #30434d;border-radius:7px}
@@ -1602,6 +1654,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
  document.addEventListener('DOMContentLoaded',bind);if(document.readyState!=='loading')setTimeout(bind,0);
 })();
 </script>
+
+
 <style>
 /* Build 0020｜缺少產速明細中心 */
 #speedMissingCount{cursor:pointer;text-decoration:underline;text-underline-offset:5px}
@@ -1654,6 +1708,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   setTimeout(()=>{renderDetail();window.renderQuality?.()},200);
 })();
 </script>
+
+
 <style>
 #speedFeedback .card.col5.speed-form-focus{outline:2px solid #f59e0b;box-shadow:0 0 0 5px rgba(245,158,11,.16),var(--shadow);transition:.2s}
 </style>
@@ -1714,6 +1770,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   setTimeout(()=>window.renderSpeedCenter?.(),150);
 })();
 </script>
+
+
 <style>
 /* Build 0022｜缺少產速欄位篩選、排序與設定下載 */
 #missingSpeedTable table{min-width:1180px}
@@ -1792,6 +1850,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   addDownloadButton();setTimeout(render,120);
 })();
 </script>
+
+
 <style>
 /* Build 0023｜左右介面遮蔽與寬度自適應修正 */
 html,body{width:100%;max-width:100%;overflow-x:hidden!important}
@@ -1848,6 +1908,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   .speed-detail-tools{grid-template-columns:1fr!important}
 }
 </style>
+
 <style>
 /* Build 0042｜缺少產速篩選控制可操作修正 */
 #missingSpeedTable .filter-row input,
@@ -1862,6 +1923,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   outline:2px solid #35b8ff;outline-offset:1px;border-color:#35b8ff;
 }
 </style>
+
 <script>
 /* Build 0042｜AI 排程建議中心（透明規則引擎） */
 (function(){
@@ -1892,6 +1954,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   const oldShow=window.showPage;window.showPage=function(id){oldShow&&oldShow(id);if(id==='ai')setTimeout(analyze,0)};
 })();
 </script>
+
 <style>
 /* Build 0042｜右上通知與管理員選單可操作 */
 .header-menu-wrap{position:relative;display:flex;align-items:center}
@@ -1928,6 +1991,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
 })();
 </script>
+
 <style>
 /* Build 0042｜手動排程調整中心 */
 .manual-adjust-active .schedule-block[data-schedule-wo]{cursor:pointer!important;outline:1px dashed rgba(90,210,255,.7);outline-offset:-2px}
@@ -1947,24 +2011,26 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 .manual-history{margin-top:12px;color:#8ea2ad;font-size:11px}
 @media(max-width:680px){.manual-grid{grid-template-columns:1fr}.manual-grid .span2{grid-column:span 1}}
 </style>
-<div class="manual-modal-backdrop" hidden="" id="manualScheduleModal">
-<div aria-labelledby="manualModalTitle" aria-modal="true" class="manual-modal" role="dialog">
-<div class="manual-modal-head"><div><h2 id="manualModalTitle">手動調整排程</h2><div class="sub" id="manualModalSub">保留原工時，調整機台與開始時間。</div></div><button class="manual-close" id="manualClose" type="button">×</button></div>
-<div class="manual-grid">
-<div><label>工單</label><input id="manualWo" readonly=""/></div>
-<div><label>工時</label><input id="manualDuration" readonly=""/></div>
-<div><label>調整機台</label><select id="manualMachine"></select></div>
-<div><label>開始日期</label><input id="manualDate" type="date"/></div>
-<div><label>開始時間</label><input id="manualTime" step="60" type="time"/></div>
-<div><label>完成時間</label><input id="manualEnd" readonly=""/></div>
-<div class="span2 manual-info" id="manualInfo"></div>
-<label class="span2" style="display:flex;align-items:center;gap:9px;color:#d8e3e8"><input checked="" id="manualAutoShift" style="width:auto;height:auto" type="checkbox"/>若與同機台其他工單重疊，自動將後續工單順延</label>
+
+<div id="manualScheduleModal" class="manual-modal-backdrop" hidden>
+  <div class="manual-modal" role="dialog" aria-modal="true" aria-labelledby="manualModalTitle">
+    <div class="manual-modal-head"><div><h2 id="manualModalTitle">手動調整排程</h2><div class="sub" id="manualModalSub">保留原工時，調整機台與開始時間。</div></div><button class="manual-close" id="manualClose" type="button">×</button></div>
+    <div class="manual-grid">
+      <div><label>工單</label><input id="manualWo" readonly></div>
+      <div><label>工時</label><input id="manualDuration" readonly></div>
+      <div><label>調整機台</label><select id="manualMachine"></select></div>
+      <div><label>開始日期</label><input id="manualDate" type="date"></div>
+      <div><label>開始時間</label><input id="manualTime" type="time" step="60"></div>
+      <div><label>完成時間</label><input id="manualEnd" readonly></div>
+      <div class="span2 manual-info" id="manualInfo"></div>
+      <label class="span2" style="display:flex;align-items:center;gap:9px;color:#d8e3e8"><input id="manualAutoShift" type="checkbox" checked style="width:auto;height:auto">若與同機台其他工單重疊，自動將後續工單順延</label>
+    </div>
+    <div id="manualConflict" class="manual-conflict"></div>
+    <div class="manual-actions"><button class="btn ghost" id="manualCancel" type="button">取消</button><button class="btn" id="manualSave" type="button">套用調整</button></div>
+    <div class="manual-history">提示：在「手動調整模式」下，點擊甘特圖工單即可開啟此視窗。調整前會自動建立復原點。</div>
+  </div>
 </div>
-<div class="manual-conflict" id="manualConflict"></div>
-<div class="manual-actions"><button class="btn ghost" id="manualCancel" type="button">取消</button><button class="btn" id="manualSave" type="button">套用調整</button></div>
-<div class="manual-history">提示：在「手動調整模式」下，點擊甘特圖工單即可開啟此視窗。調整前會自動建立復原點。</div>
-</div>
-</div>
+
 <script>
 /* Build 0042｜手動排程調整中心 */
 (()=>{
@@ -2000,6 +2066,8 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   const oldShow=window.showPage;window.showPage=function(id){oldShow&&oldShow(id);if(id==='schedule')setTimeout(installToolbar,0)};
 })();
 </script>
+
+
 <script>
 /* Build 0042｜AI 插單多方案比較引擎 */
 function urgentCandidateMachines(urgent){
@@ -2051,6 +2119,7 @@ simulateUrgent=function(){try{
 const oldResetUrgent0033=resetUrgent;resetUrgent=function(){oldResetUrgent0033();EP.simulationOptions=null;EP.selectedSimulationIndex=0};
 $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;$('discardUrgent').onclick=resetUrgent;
 </script>
+
 <style>
 /* Build 0042｜AI 換線最佳化 */
 .sequence-opt-card{border-color:#315466!important;box-shadow:inset 0 3px #2cb7d8}
@@ -2126,6 +2195,112 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
 </script>
+
+<script>
+/* Build 0042｜透明啟發式 AI 自動排程核心 */
+(()=>{
+  let proposal=null,backup=null;
+  const el=id=>document.getElementById(id);
+  const e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const clone=a=>a.map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):x.due}));
+  const family=p=>String(p||'').toUpperCase().replace(/\s/g,'').split(/[-_*\/]/)[0].slice(0,8);
+  function changeCost(a,b){if(!a||!b)return 0;if(a.part&&a.part===b.part)return 0;let c=30;if(family(a.part)&&family(a.part)===family(b.part))c=12;else if(a.process&&b.process&&a.process===b.process)c=20;if(a.customer&&b.customer&&a.customer===b.customer)c=Math.max(5,c-5);return c}
+  function selectedJobs(){const scope=el('autoScope')?.value||'ready';if(scope==='scheduled'){const map={};(S.schedule||[]).forEach(x=>{if(!x.wo)return;const j=map[x.wo]??={wo:x.wo,part:x.part,customer:x.customer,process:x.process,due:x.due?new Date(x.due):null,urgent:!!x.urgent,machine:x.machine,minutes:0,ready:true,closed:false,match:'既有排程'};j.minutes+=Number(x.minutes)||0;map[x.wo]=j});return Object.values(map)}return (S.pool||[]).filter(x=>!x.closed&&(scope==='allopen'||x.ready)).map(x=>({...x,minutes:Number(x.minutes)||0}))}
+  function enabledMachines(){return Object.keys(S.machines||{}).filter(m=>S.machines[m]?.enabled!==false&&Number(S.machines[m]?.hours)>0)}
+  function candidateMachines(job,machines){let list=(S.rows.speed||[]).filter(r=>norm(r.part)===norm(job.part)).map(r=>String(r.machine||'').trim()).filter(m=>machines.includes(m));list=[...new Set(list)];if(job.machine&&machines.includes(job.machine))list=[job.machine,...list.filter(m=>m!==job.machine)];return list.length?list:machines.slice()}
+  function dayStart(date){const sh=(typeof getShiftSettings==='function'?getShiftSettings():{earlyStart:'08:30'}).earlyStart||'08:30';const [h,m]=sh.split(':').map(Number);const d=new Date(date);d.setHours(h,m,0,0);return d}
+  function dueEnd(d){if(!d)return null;const x=new Date(d);x.setHours(23,59,59,999);return x}
+  function build(){
+    const jobs=selectedJobs().filter(j=>j.minutes>0),machines=enabledMachines();if(!jobs.length)throw Error('目前沒有可排工單');if(!machines.length)throw Error('沒有啟用機台');
+    const days=Math.max(1,Number(el('days')?.value)||14),start=dayStart(new Date((el('startDate')?.value||new Date().toISOString().slice(0,10))+'T00:00:00'));
+    const cap={};machines.forEach(m=>{cap[m]=[];for(let d=0;d<days;d++){const s=new Date(start);s.setDate(s.getDate()+d);cap[m].push({start:s,used:0,limit:(Number(S.machines[m]?.hours)||24)*60,last:null})}});
+    const wDue=Number(el('autoDueWeight')?.value)||0,wChange=Number(el('autoChangeWeight')?.value)||0,wBalance=Number(el('autoBalanceWeight')?.value)||0,wMachine=Number(el('autoMachineWeight')?.value)||0,strict=el('autoUrgentGuard')?.value==='strict';
+    jobs.sort((a,b)=>(strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due):new Date(8640000000000000))-(b.due?new Date(b.due):new Date(8640000000000000)))||(b.minutes-a.minutes));
+    const out=[];
+    for(const job of jobs){let remain=job.minutes;const cands=candidateMachines(job,machines);while(remain>.01){let best=null;for(const m of cands){for(let d=0;d<days;d++){const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;if(free<=.01)continue;const st=new Date(c.start.getTime()+(c.used+chg)*60000),take=Math.min(remain,free),finish=new Date(st.getTime()+take*60000),due=dueEnd(job.due);let score=d*100000+c.used;score+=chg*wChange*15;score+=(c.used/c.limit)*wBalance*1000;if(job.machine&&m!==job.machine)score+=wMachine*500;if(due&&finish>due)score+=((finish-due)/60000)*wDue*100;if(job.urgent)score-=strict?1e9:1e6;if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score}}}if(!best)break;if(best.chg>0){best.c.used+=best.chg}const pd=new Date(best.c.start);pd.setHours(0,0,0,0);out.push({machine:best.m,date:pd,start:best.st,end:best.finish,minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due?new Date(job.due):null,urgent:!!job.urgent,reason:`AI自動排程；${job.urgent?'急單優先；':''}${job.machine?'建議機台 '+job.machine+'；':''}交期 ${job.due?fmtDate(job.due):'未提供'}；換線 ${best.chg} 分`});best.c.used+=best.take;best.c.last=job;remain-=best.take}}
+    return out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||a.start-b.start)
+  }
+  function metrics(schedule){const completion={},seq={};let max=null;(schedule||[]).forEach(x=>{if(!completion[x.wo]||x.end>completion[x.wo])completion[x.wo]=new Date(x.end);(seq[x.machine]??=[]).push(x);if(!max||x.end>max)max=new Date(x.end)});let late=0,lateMin=0;Object.entries(completion).forEach(([wo,end])=>{const p=(S.pool||[]).find(x=>x.wo===wo),due=dueEnd(p?.due);if(due&&end>due){late++;lateMin+=Math.round((end-due)/60000)}});let change=0;Object.values(seq).forEach(a=>{const jobs=[];a.sort((x,y)=>x.start-y.start).forEach(x=>{if(!jobs.length||jobs.at(-1).wo!==x.wo)jobs.push(x)});for(let i=1;i<jobs.length;i++)change+=changeCost(jobs[i-1],jobs[i])});const loads=Object.fromEntries(Object.entries(seq).map(([m,a])=>[m,a.reduce((s,x)=>s+(Number(x.minutes)||0),0)]));return{late,lateMin,change,max,loads,completion}}
+  function dateShort(d){return d?new Date(d).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'—'}
+  let autoRunToken=0;
+  function ensureAutoRunDialog(){
+    let box=el('autoRunDialog');
+    if(box)return box;
+    box=document.createElement('div');
+    box.id='autoRunDialog';
+    box.style.cssText='position:fixed;inset:0;background:rgba(2,8,15,.78);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px';
+    box.innerHTML=`<div style="width:min(620px,94vw);background:#0b1824;border:1px solid #31516d;border-radius:18px;padding:22px;box-shadow:0 24px 80px #0009;color:#eaf6ff">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start">
+        <div><div style="font-size:12px;letter-spacing:.14em;color:#ff5264;font-weight:900">AI SCHEDULER MONITOR</div><h2 style="margin:7px 0 4px">AI 排程執行監控</h2><div id="autoRunStage" style="color:#9db3c7">準備中…</div></div>
+        <button id="autoRunCancel" class="btn danger" type="button">中止模擬</button>
+      </div>
+      <div style="height:12px;background:#17283a;border-radius:999px;overflow:hidden;margin:18px 0 8px"><i id="autoRunBar" style="display:block;height:100%;width:0%;background:linear-gradient(90deg,#2868ff,#23c7d9);transition:width .18s"></i></div>
+      <div style="display:flex;justify-content:space-between;color:#9db3c7;font-size:13px"><span id="autoRunCount">0 / 0</span><span id="autoRunPct">0%</span></div>
+      <div id="autoRunCurrent" style="margin-top:14px;padding:12px;border:1px solid #223b50;border-radius:12px;background:#07131e;color:#cde7f8;min-height:48px">等待開始</div>
+      <div id="autoRunElapsed" style="margin-top:8px;color:#7890a5;font-size:12px">耗時 0.0 秒</div>
+    </div>`;
+    document.body.appendChild(box);
+    el('autoRunCancel').addEventListener('click',()=>{autoRunToken++;el('autoRunStage').textContent='正在安全中止…';el('autoRunCancel').disabled=true});
+    return box;
+  }
+  function openAutoRun(total){const box=ensureAutoRunDialog();box.style.display='flex';el('autoRunBar').style.width='0%';el('autoRunCount').textContent=`0 / ${total}`;el('autoRunPct').textContent='0%';el('autoRunStage').textContent='建立候選機台與容量資料…';el('autoRunCurrent').textContent='準備開始';el('autoRunElapsed').textContent='耗時 0.0 秒';el('autoRunCancel').disabled=false}
+  function updateAutoRun(done,total,text,started){const pct=total?Math.min(100,Math.round(done/total*100)):0;el('autoRunBar').style.width=pct+'%';el('autoRunCount').textContent=`${done} / ${total}`;el('autoRunPct').textContent=pct+'%';el('autoRunStage').textContent=done>=total?'整理排程結果…':'AI 正在配置工單';el('autoRunCurrent').textContent=text||'';el('autoRunElapsed').textContent=`耗時 ${((performance.now()-started)/1000).toFixed(1)} 秒`}
+  function closeAutoRun(delay=500){setTimeout(()=>{const box=el('autoRunDialog');if(box)box.style.display='none'},delay)}
+  const yieldUI=()=>new Promise(r=>setTimeout(r,0));
+  async function buildAsync(token,started){
+    const jobs=selectedJobs().filter(j=>j.minutes>0),machines=enabledMachines();if(!jobs.length)throw Error('目前沒有可排工單');if(!machines.length)throw Error('沒有啟用機台');
+    const days=Math.max(1,Number(el('days')?.value)||14),start=dayStart(new Date((el('startDate')?.value||new Date().toISOString().slice(0,10))+'T00:00:00'));
+    const cap={};machines.forEach(m=>{cap[m]=[];for(let d=0;d<days;d++){const st=new Date(start);st.setDate(st.getDate()+d);cap[m].push({start:st,used:0,limit:(Number(S.machines[m]?.hours)||24)*60,last:null})}});
+    const wDue=Number(el('autoDueWeight')?.value)||0,wChange=Number(el('autoChangeWeight')?.value)||0,wBalance=Number(el('autoBalanceWeight')?.value)||0,wMachine=Number(el('autoMachineWeight')?.value)||0,strict=el('autoUrgentGuard')?.value==='strict';
+    jobs.sort((a,b)=>(strict?(Number(!!b.urgent)-Number(!!a.urgent)):0)||((a.due?new Date(a.due):new Date(8640000000000000))-(b.due?new Date(b.due):new Date(8640000000000000)))||(b.minutes-a.minutes));
+    openAutoRun(jobs.length);const out=[];let operations=0;
+    for(let ji=0;ji<jobs.length;ji++){
+      if(token!==autoRunToken)throw Error('AI 模擬已由使用者中止');
+      const job=jobs[ji];let remain=job.minutes;const cands=candidateMachines(job,machines);let guard=0;
+      while(remain>.01){
+        if(token!==autoRunToken)throw Error('AI 模擬已由使用者中止');
+        if(++guard>days*Math.max(1,cands.length)+5)break;
+        let best=null;
+        for(const m of cands){for(let d=0;d<days;d++){
+          if(++operations>2000000)throw Error(`排程安全上限觸發：${job.wo}，請檢查產速或機台設定`);
+          const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;if(free<=.01)continue;
+          const st=new Date(c.start.getTime()+(c.used+chg)*60000),take=Math.min(remain,free),finish=new Date(st.getTime()+take*60000),due=dueEnd(job.due);let score=d*100000+c.used;
+          score+=chg*wChange*15;score+=(c.used/c.limit)*wBalance*1000;if(job.machine&&m!==job.machine)score+=wMachine*500;if(due&&finish>due)score+=((finish-due)/60000)*wDue*100;if(job.urgent)score-=strict?1e9:1e6;if(!best||score<best.score)best={m,d,c,chg,st,take,finish,score};
+        }}
+        if(!best)break;if(best.chg>0)best.c.used+=best.chg;const pd=new Date(best.c.start);pd.setHours(0,0,0,0);
+        out.push({machine:best.m,date:pd,start:best.st,end:best.finish,minutes:best.take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due?new Date(job.due):null,urgent:!!job.urgent,reason:`AI自動排程；${job.urgent?'急單優先；':''}${job.machine?'建議機台 '+job.machine+'；':''}交期 ${job.due?fmtDate(job.due):'未提供'}；換線 ${best.chg} 分`});
+        best.c.used+=best.take;best.c.last=job;remain-=best.take;
+      }
+      updateAutoRun(ji+1,jobs.length,`工單 ${job.wo}｜候選機台 ${cands.length} 台｜剩餘 ${Math.max(0,Math.round(remain))} 分鐘`,started);
+      if((ji+1)%3===0)await yieldUI();
+      if(performance.now()-started>45000)throw Error(`AI 模擬超過 45 秒，已安全停止。最後處理：${job.wo}`);
+    }
+    return out.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||a.start-b.start);
+  }
+  async function simulate(){
+    const btn=el('runAutoSchedule'),old=btn?.textContent||'開始 AI 模擬',token=++autoRunToken,started=performance.now();
+    try{
+      if(btn){btn.disabled=true;btn.textContent='AI 模擬中…'}
+      const next=await buildAsync(token,started);if(token!==autoRunToken)throw Error('AI 模擬已中止');
+      updateAutoRun(next.length?selectedJobs().filter(j=>j.minutes>0).length:0,selectedJobs().filter(j=>j.minutes>0).length,'正在計算延遲、換線與負載指標…',started);await yieldUI();
+      const before=metrics(S.schedule||[]),after=metrics(next);proposal={schedule:next,before,after};render();
+      el('autoRunStage').textContent='✓ AI 模擬完成';el('autoRunCurrent').textContent=`完成 ${next.length} 個排程區段，使用 ${Object.keys(after.loads).length} 台機台`;el('autoRunBar').style.width='100%';el('autoRunPct').textContent='100%';closeAutoRun(900);
+    }catch(err){
+      const msg=err?.message||String(err);el('autoRunStage')&&(el('autoRunStage').textContent='模擬停止');el('autoRunCurrent')&&(el('autoRunCurrent').textContent=msg);closeAutoRun(1400);if(!/使用者中止|已中止/.test(msg))alert(msg);
+    }finally{if(btn){btn.disabled=false;btn.textContent=old}}
+  }
+  function render(){const p=proposal;if(!p)return;el('autoLateBefore').textContent=p.before.late;el('autoLateAfter').textContent=p.after.late;el('autoChangeBefore').textContent=Math.round(p.before.change);el('autoChangeAfter').textContent=Math.round(p.after.change);el('autoFinishBefore').textContent=dateShort(p.before.max);el('autoFinishAfter').textContent=dateShort(p.after.max);el('applyAutoSchedule').disabled=false;
+    const savedLate=p.before.late-p.after.late,savedChange=p.before.change-p.after.change,finishDiff=p.before.max&&p.after.max?Math.round((p.before.max-p.after.max)/60000):0;el('autoScheduleInsights').className='';el('autoScheduleInsights').innerHTML=`<div class="auto-insight ${savedLate>=0?'good':'bad'}"><b>交期風險</b>${savedLate>0?`減少 ${savedLate} 張延遲工單`:savedLate===0?'延遲工單數持平':`增加 ${Math.abs(savedLate)} 張延遲工單`}</div><div class="auto-insight ${savedChange>=0?'good':'warn'}"><b>換線改善</b>${savedChange>=0?`預估節省 ${Math.round(savedChange)} 分鐘`:`增加 ${Math.abs(Math.round(savedChange))} 分鐘`}</div><div class="auto-insight ${finishDiff>=0?'good':'warn'}"><b>最晚完成</b>${finishDiff>=0?`提前 ${finishDiff} 分鐘`:`延後 ${Math.abs(finishDiff)} 分鐘`}</div><div class="auto-insight"><b>排程規模</b>${p.schedule.length} 個排程區段｜${Object.keys(p.after.loads).length} 台機台</div>`;
+    el('autoSchedulePreview').className='auto-preview-wrap';el('autoSchedulePreview').innerHTML=`<table class="auto-preview-table"><thead><tr><th>機台</th><th>工單</th><th>開始</th><th>完成</th><th>分鐘</th><th>預交日</th><th>狀態</th></tr></thead><tbody>${p.schedule.slice(0,250).map(x=>{const due=dueEnd(x.due),late=due&&x.end>due;return`<tr><td>${e(x.machine)}</td><td>${e(x.wo)}</td><td>${e(dateShort(x.start))}</td><td>${e(dateShort(x.end))}</td><td>${Math.round(x.minutes)}</td><td>${e(x.due?fmtDate(x.due):'—')}</td><td><span class="tag ${late?'red':'green'}">${late?'Delay':'準時'}</span></td></tr>`}).join('')}</tbody></table>`;
+    const by={};p.schedule.forEach(x=>{const a=by[x.machine]??=[];if(!a.length||a.at(-1).wo!==x.wo)a.push(x);by[x.machine]=a});el('autoMachinePlan').className='';el('autoMachinePlan').innerHTML=Object.entries(by).map(([m,a])=>`<div class="auto-machine-card"><div class="auto-machine-head"><div><b>${e(m)}</b><div class="sub">${a.length} 張工單</div></div><div class="auto-load">${Math.round(p.after.loads[m]/60*10)/10} hr</div></div><div class="auto-machine-flow">${a.map((x,i)=>`${i?'<span class="auto-arrow">›</span>':''}<div class="auto-job-chip"><b>${e(x.wo)}</b><small>${e(x.part||'無料號')}｜${Math.round(x.minutes)}m</small></div>`).join('')}</div></div>`).join('');
+    const risks=Object.entries(p.after.completion).map(([wo,end])=>{const j=(S.pool||[]).find(x=>x.wo===wo),due=dueEnd(j?.due);return{wo,end,due,late:due&&end>due,delta:due?Math.round((end-due)/60000):null,customer:j?.customer||'',machine:p.schedule.find(x=>x.wo===wo)?.machine||''}}).filter(x=>x.late).sort((a,b)=>b.delta-a.delta);el('autoRiskTable').className=risks.length?'tablewrap':'auto-empty';el('autoRiskTable').innerHTML=risks.length?`<table><thead><tr><th>工單</th><th>客戶</th><th>機台</th><th>預交日</th><th>預計完成</th><th>延遲</th></tr></thead><tbody>${risks.map(x=>`<tr><td>${e(x.wo)}</td><td>${e(x.customer)}</td><td>${e(x.machine)}</td><td>${e(fmtDate(x.due))}</td><td>${e(dateShort(x.end))}</td><td><span class="tag red">${Math.round(x.delta/60*10)/10} hr</span></td></tr>`).join('')}</tbody></table>`:'最佳化後沒有預估延遲工單。';
+  }
+  async function apply(){if(!proposal)return;backup=clone(S.schedule||[]);S.schedule=clone(proposal.schedule);renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();el('restoreAutoSchedule').disabled=false;el('applyAutoSchedule').disabled=true;log(`AI自動排程已套用：${S.schedule.length} 個排程區段`);try{if(typeof saveDataset==='function')await saveDataset('schedule',true);log('AI自動排程已同步至 APS_Schedule')}catch(err){console.warn(err);log('AI自動排程雲端同步失敗')}alert(`AI 最佳排程已套用並同步雲端，共 ${S.schedule.length} 個排程區段。`);showPage('schedule')}
+  function restore(){if(!backup)return;S.schedule=clone(backup);renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();backup=null;el('restoreAutoSchedule').disabled=true;log('已還原 AI 自動排程前的排程')}
+  el('runAutoSchedule')?.addEventListener('click',simulate);el('applyAutoSchedule')?.addEventListener('click',apply);el('restoreAutoSchedule')?.addEventListener('click',restore);
+})();
+</script>
+
 <script>
 /* Build 0042｜人力、前製程、機台、報表中心 */
 (function(){
@@ -2237,6 +2412,8 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  setTimeout(()=>{renderWFSettings();renderPre();renderMC();renderReports()},300);
 })();
 </script>
+
+
 <script id="build0039-preprocess-js">
 (()=>{
  const KEY='APS_PREPROCESS_SMART_V0039', LEGACY='APS_PREPROCESS_SMART_V0037'; let selectedWo='';
@@ -2365,6 +2542,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  },700);
 })();
 </script>
+
 <script>
 /* Build 0042｜系統設定、快照、完整備份與還原 */
 (function(){
@@ -2376,7 +2554,7 @@ function readCfg(){try{return {...defaults,...JSON.parse(localStorage.getItem(CF
 function writeCfg(c){localStorage.setItem(CFG_KEY,JSON.stringify(c))}
 function cfgFromForm(){return {name:$s('sysName')?.value.trim()||defaults.name,admin:$s('sysAdmin')?.value.trim()||defaults.admin,department:$s('sysDepartment')?.value.trim()||defaults.department,subtitle:$s('sysSubtitle')?.value.trim()||defaults.subtitle,version:$s('sysVersion')?.value.trim()||defaults.version,dataOwner:$s('sysDataOwner')?.value.trim()||'',animations:!!$s('sysAnimations')?.checked,compact:!!$s('sysCompact')?.checked,stickySidebar:!!$s('sysStickySidebar')?.checked,tooltips:!!$s('sysTooltips')?.checked,persistPool:!!$s('sysPersistPool')?.checked,autoLoadPool:!!$s('sysAutoLoadPool')?.checked,persistSchedule:!!$s('sysPersistSchedule')?.checked,autoLoadSchedule:!!$s('sysAutoLoadSchedule')?.checked,missingSpeedAlert:Number($s('sysMissingSpeedAlert')?.value)||0,overdueAlert:Number($s('sysOverdueAlert')?.value)||0,machineLoadAlert:Number($s('sysMachineLoadAlert')?.value)||90,staleHours:Number($s('sysStaleHours')?.value)||24}}
 function fillForm(c){const m={sysName:c.name,sysAdmin:c.admin,sysDepartment:c.department,sysSubtitle:c.subtitle,sysVersion:c.version,sysDataOwner:c.dataOwner,sysMissingSpeedAlert:c.missingSpeedAlert,sysOverdueAlert:c.overdueAlert,sysMachineLoadAlert:c.machineLoadAlert,sysStaleHours:c.staleHours};Object.entries(m).forEach(([id,v])=>{if($s(id))$s(id).value=v});[['sysAnimations','animations'],['sysCompact','compact'],['sysStickySidebar','stickySidebar'],['sysTooltips','tooltips'],['sysPersistPool','persistPool'],['sysAutoLoadPool','autoLoadPool'],['sysPersistSchedule','persistSchedule'],['sysAutoLoadSchedule','autoLoadSchedule']].forEach(([id,k])=>{if($s(id))$s(id).checked=!!c[k]})}
-function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent='Enterprise Preview 2｜Build 0066 V86.2';document.title=`${c.name}｜Build 0066 V86.2 APS Turbo Engine`;window.SK_APS_CONFIG=c}
+function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0061 V84.7 APS Core`;window.SK_APS_CONFIG=c}
 function toast(t){const old=document.querySelector('.sys-toast');if(old)old.remove();const d=document.createElement('div');d.className='sys-toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
@@ -2395,6 +2573,8 @@ document.addEventListener('click',e=>{const d=e.target.closest('[data-sys-downlo
 window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats};
 })();
 </script>
+
+
 <script id="build0043-cloud-datacenter-js">
 (()=>{
 'use strict';
@@ -2814,7 +2994,7 @@ async function bootstrapCloud(){
     CLOUD.loaded=true;
     renderAfterCloudLoad();
 
-    /* Build 0066 V86.2 APS Turbo Engine：
+    /* Build 0061 V84.7 APS Core：
        雲端資料成功載入後立即建立本機快照。
        API 暫時逾時時仍可先顯示最近一次可用資料。 */
     try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
@@ -2997,9 +3177,13 @@ window.APSCloudDataCenter={
 };
 })();
 </script>
+
+
+
 <script id="build0046-1-missing-speed-js">
 (()=>{'use strict';const ST={rows:[],filtered:[]};const N=v=>String(v??'').trim().replace(/\s+/g,'').toUpperCase(),NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0},E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function P(o,ks){o=o||{};for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k];return ''}function speedRows(){let a=[],b=[];try{a=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]')}catch{}try{b=JSON.parse(localStorage.getItem('SK_APS_SPEED_FEEDBACK_V2')||'[]')}catch{}return[...a,...b]}function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}function scan(){const p=pool(),sp=speedRows(),exact=new Map(),byPart=new Map();sp.forEach(x=>{const part=N(P(x,['part','part_no','料號'])),m=N(P(x,['machine','machine_code','機台'])),pr=N(P(x,['process','process_site','製程'])),k=[part,m,pr].join('|');if(k.replace(/\|/g,''))exact.set(k,x);if(part){if(!byPart.has(part))byPart.set(part,[]);byPart.get(part).push(x)}});let matched=0;ST.rows=[];p.forEach((x,i)=>{const wo=P(x,['wo','work_order_no','order_no','工單']),part=P(x,['part','part_no','料號']),spec=P(x,['name','product_spec','spec','規格']),machine=P(x,['machine','machine_code','機台']),process=P(x,['process','process_site','製程']),k=[N(part),N(machine),N(process)].join('|'),hit=exact.get(k),same=byPart.get(N(part))||[];if(hit&&((inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='FIXED'&&NUM(P(hit,['total','run','固定運轉時間','加總min']))>0)||(inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='LENGTH'&&NUM(P(hit,['speed','speedMpm','標準速度','運轉速度']))>0)||(NUM(P(hit,['speed','標準速度']))>0))){matched++;return}let reason='',code='',suggest='';if(!part){reason='工單沒有可比對的料號';code='part';suggest='先補齊料號'}else if(hit){reason='已有主檔，但標準產速為 0';code='speed';suggest='補登回數／產速'}else if(same.length){const mm=same.some(y=>N(P(y,['machine','machine_code','機台']))===N(machine));if(!mm){reason='此料號已有產速，但缺少目前機台';code='machine';suggest='參考同料號其他機台'}else{reason='此料號與機台已有資料，但缺少目前製程';code='process';suggest='確認製程後建立'}}else{reason='固定產速主檔找不到此料號';code='part';suggest='建立新產品產速'}ST.rows.push({i,wo,part,spec,machine,process,reason,code,suggest})});render(p.length,matched)}function render(total,matched){const q=N(document.getElementById('missingSpeedSearch')?.value),mf=N(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';const rows=ST.rows.filter(r=>{const h=N([r.wo,r.part,r.spec,r.machine,r.process,r.reason].join(' '));return(!q||h.includes(q))&&(!mf||N(r.machine)===mf)&&(!rf||r.code===rf)});ST.filtered=rows;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=total?Math.round(matched/total*1000)/10:0;set('msPoolCount',total.toLocaleString('zh-TW'));set('msMatchedCount',matched.toLocaleString('zh-TW'));set('msMissingCount',ST.rows.length.toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',rows.length+' 筆');const sm=document.getElementById('missingSpeedSummary');if(sm)sm.textContent=!total?'尚未建立工單池。請先到 ERP 資料更新頁建立工單池。':!ST.rows?`產速完整率 ${cov.toFixed(1)}%。目前工單池全部都有可用標準產速。`:`發現 ${ST.rows.length} 筆工單缺少完整產速設定；AI 僅整理與提醒，不會自動修改固定主檔。`;const sel=document.getElementById('missingSpeedMachine');if(sel){const cur=sel.value,ms=[...new Set(ST.rows.map(r=>String(r.machine||'').trim()).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${E(m)}">${E(m)}</option>`).join('');sel.value=cur}const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="8" class="missing-speed-empty">${total&&!ST.rows.length?'目前沒有缺產速工單':'沒有符合篩選條件的資料'}</td></tr>`;return}body.innerHTML=rows.map(r=>`<tr><td><span class="tag yellow">待確認</span></td><td>${E(r.wo||'-')}</td><td>${E(r.part||'-')}</td><td class="spec">${E(r.spec||'-')}</td><td>${E(r.machine||'-')}</td><td>${E(r.process||'-')}</td><td><div class="missing-speed-reason">${E(r.reason)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms="feedback" data-i="${r.i}">${E(r.suggest)}</button><button class="btn ghost" data-ms="copy" data-i="${r.i}">複製資料</button></div></td></tr>`).join('')}function go(r){[...document.querySelectorAll('[data-page]')].find(x=>String(x.dataset.page||'').toLowerCase().includes('speed')||String(x.textContent||'').includes('產速回饋'))?.click();[['speedFbPart',r.part],['speedFeedbackPart',r.part],['speedFbMachine',r.machine],['speedFeedbackMachine',r.machine],['speedFbProcess',r.process],['speedFeedbackProcess',r.process],['speedFbName',r.spec],['speedFeedbackName',r.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});window.log?.(`AI 缺產速：已帶入 ${r.part||r.wo||'待確認工單'} 到產速回饋中心`)}function install(){const ref=document.getElementById('missingSpeedRefresh');if(ref&&!ref.dataset.h){ref.dataset.h='1';ref.addEventListener('click',scan)}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.dataset.h){e.dataset.h='1';e.addEventListener(id==='missingSpeedSearch'?'input':'change',()=>render(pool().length,Math.max(0,pool().length-ST.rows.length)))}});const goBtn=document.getElementById('missingSpeedGoFeedback');if(goBtn&&!goBtn.dataset.h){goBtn.dataset.h='1';goBtn.addEventListener('click',()=>{const r=ST.filtered[0]||ST.rows[0];if(r)go(r)})}const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.h){body.dataset.h='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms]');if(!b)return;const r=ST.rows.find(x=>String(x.i)===String(b.dataset.i));if(!r)return;if(b.dataset.ms==='feedback')go(r);else{const v=`工單：${r.wo}\n料號：${r.part}\n規格：${r.spec}\n機台：${r.machine}\n製程：${r.process}\n缺漏：${r.reason}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製資料',1200)}catch{window.prompt('請複製以下資料',v)}}})}const bb=document.getElementById('buildPool');if(bb&&!bb.dataset.ms){bb.dataset.ms='1';bb.addEventListener('click',()=>setTimeout(scan,500))}document.querySelectorAll('[data-page="missingSpeed"]').forEach(t=>{if(!t.dataset.ms){t.dataset.ms='1';t.addEventListener('click',()=>setTimeout(scan,100))}});setTimeout(scan,1300)}document.addEventListener('DOMContentLoaded',install);setTimeout(install,1800);window.APSMissingSpeed={scan,rows:()=>ST.rows.slice(),state:ST};})();
 </script>
+
 <script id="build0042-security-js">
 (()=>{
 'use strict';
@@ -3019,12 +3203,15 @@ window.SEAL_KING_SECURITY={
 };
 })();
 </script>
+
 <script id="build0048-v825-marker">
 (()=>{
   window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
-  console.info("SEAL KING Smart APS Build 0066｜V86.2 APS Turbo Engine loaded");
+  console.info("SEAL KING Smart APS Build 0061｜V84.7 APS Core loaded");
 })();
 </script>
+
+
 <!-- Build 0050｜APS 工單池直接改讀 DataHub_WorkOrder -->
 <script id="build0050-aps-datahub-workorder">
 (function(){
@@ -3287,6 +3474,8 @@ window.SEAL_KING_SECURITY={
   };
 })();
 </script>
+
+
 <!-- Build 0051｜APS Speed Engine：DataHub 工單自動推導製程、機台與產速 -->
 <script id="build0051-aps-speed-engine">
 (function(){
@@ -3729,6 +3918,8 @@ window.SEAL_KING_SECURITY={
   };
 })();
 </script>
+
+
 <script id="build0052-label">
 document.addEventListener("DOMContentLoaded",function(){
   document.title="SEAL KING Smart APS｜Build 0052 DataHub Fast";
@@ -3739,6 +3930,8 @@ document.addEventListener("DOMContentLoaded",function(){
   });
 });
 </script>
+
+
 <!-- Build 0053｜缺產速導引與一鍵帶入回饋 -->
 <script id="build0053-missing-speed-action">
 (function(){
@@ -3972,21 +4165,24 @@ document.addEventListener("DOMContentLoaded",function(){
   };
 })();
 </script>
+
 <style id="build0053-style">
 #poolTable .btn.red{white-space:nowrap}
 #poolTable .hint{font-size:11px;color:#fca5a5}
 </style>
+
+
 <!-- Build 0056｜核心缺產速判斷修正 -->
 <script id="build0054-core-missing-speed">
 (function(){
   "use strict";
 
   function updateBuildLabel(){
-    document.title = "SEAL KING Smart APS｜Build 0066 V86.2 Core Clean";
+    document.title = "SEAL KING Smart APS｜Build 0056";
     document.querySelectorAll(".header-time small,.version").forEach(function(el){
       const t = String(el.textContent || "");
       if(/Build\s*00\d+|Enterprise Preview/i.test(t)){
-        el.textContent = "Enterprise Preview 2｜Build 0066";
+        el.textContent = "Enterprise Preview 2｜Build 0056";
       }
     });
   }
@@ -4018,6 +4214,8 @@ document.addEventListener("DOMContentLoaded",function(){
   window.Build0054CoreMissingSpeed = { install };
 })();
 </script>
+
+
 <style id="build0055-machine-rules-style">
 #machineRules .center-form .span2{grid-column:span 2}
 #machineRules textarea{width:100%;background:#0a151d;color:#f5f7fa;border:1px solid #344954;border-radius:8px;padding:10px;font-family:inherit}
@@ -4028,6 +4226,7 @@ document.addEventListener("DOMContentLoaded",function(){
 @media(max-width:1100px){#machineRules .col5,#machineRules .col7{grid-column:span 12}}
 @media(max-width:650px){#machineRules .center-form{grid-template-columns:1fr!important}#machineRules .center-form .span2{grid-column:span 1}}
 </style>
+
 <script id="build0055-machine-sharing-rules">
 (function(){
   "use strict";
@@ -4371,9 +4570,9 @@ document.addEventListener("DOMContentLoaded",function(){
       }
     });
 
-    document.title="SEAL KING Smart APS｜Build 0066 V86.2 Core Clean";
+    document.title="SEAL KING Smart APS｜Build 0056 Knowledge Center";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
-      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0066";
+      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0056";
     });
   }
 
@@ -4388,12 +4587,15 @@ document.addEventListener("DOMContentLoaded",function(){
   };
 })();
 </script>
+
+
 <style id="build0056-cloud-style">
 .cloud-state{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid #31527d;font-size:12px}
 .cloud-state.ok{color:#86efac;background:#0b2a21}
 .cloud-state.warn{color:#fde68a;background:#30250b}
 .cloud-state.bad{color:#fecaca;background:#3b1115}
 </style>
+
 <script id="build0056-machine-rules-cloud">
 (function(){
   "use strict";
@@ -4581,10 +4783,10 @@ document.addEventListener("DOMContentLoaded",function(){
   document.addEventListener("DOMContentLoaded",()=>setTimeout(initialLoad,1800));
   setTimeout(installButtons,2600);
 
-  document.title="SEAL KING Smart APS｜Build 0066 V86.2 Core Clean";
+  document.title="SEAL KING Smart APS｜Build 0061 Smart Learning APS";
   document.querySelectorAll(".header-time small,.version").forEach(el=>{
     if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-      el.textContent="V86.2 Turbo Engine｜Build 0066";
+      el.textContent="V84 Smart Learning｜Build 0061";
     }
   });
 
@@ -4596,6 +4798,8 @@ document.addEventListener("DOMContentLoaded",function(){
   };
 })();
 </script>
+
+
 <style id="build0057-style">
 .cloud-datahub-state{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid #31527d;font-size:12px;margin-left:8px}
 .cloud-datahub-state.ok{background:#0b2a21;color:#86efac}
@@ -4605,6 +4809,7 @@ document.addEventListener("DOMContentLoaded",function(){
 #aiLoadOptimizer .opt-fill{height:100%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444)}
 #aiLoadOptimizer .opt-reason{font-size:12px;color:#9fc1d8;line-height:1.5}
 </style>
+
 <script id="build0057-enterprise-ai-aps">
 (function(){
   "use strict";
@@ -4915,10 +5120,10 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    document.title="SEAL KING Smart APS｜Build 0066 V86.2 Core Clean";
+    document.title="SEAL KING Smart APS｜Build 0061 Enterprise AI APS";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-        el.textContent="Enterprise Preview 2｜Build 0066";
+        el.textContent="Enterprise Preview 2｜Build 0061";
       }
     });
 
@@ -4958,6 +5163,8 @@ document.addEventListener("DOMContentLoaded",function(){
   window.APSLoadOptimizer57={analyze:analyzeOptimizer,apply:applyOptimizer,run:runOptimizedSchedule};
 })();
 </script>
+
+
 <script>
 /* V83.1 產速狀態、課長確認與異常篩選 */
 (()=>{
@@ -4989,6 +5196,8 @@ document.addEventListener("DOMContentLoaded",function(){
   window.renderSpeedApprovalCenter=render;
 })();
 </script>
+
+
 <script>
 (function(){
   const oldJsonp=window.jsonp;
@@ -5014,6 +5223,7 @@ document.addEventListener("DOMContentLoaded",function(){
   function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 })();
 </script>
+
 <style id="v84-machine-learning-style">
 #machineLearningCard .ml-filter.active{background:linear-gradient(135deg,#d71920,#8b0f15);color:#fff;border-color:#d71920}
 .ml-confidence{display:inline-flex;align-items:center;gap:6px}.ml-confidence b{min-width:44px}
@@ -5056,10 +5266,12 @@ document.addEventListener("DOMContentLoaded",function(){
   document.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{ensureAutoBox();const b=$("mlReload");if(b)b.addEventListener("click",load);const rb=$("mlRefreshCloud");if(rb)rb.addEventListener("click",refreshCloud);document.querySelectorAll(".ml-filter").forEach(x=>x.addEventListener("click",()=>{document.querySelectorAll(".ml-filter").forEach(y=>y.classList.remove("active"));x.classList.add("active");ML.filter=x.dataset.mlFilter||"all";render();}));load();},1800);});window.APSMachineLearningV843={load,refreshCloud,render,state:ML};
 })();
 </script>
+
+
 <style>
 .v845-status{position:fixed;right:16px;bottom:48px;z-index:9996;background:#0b1820ee;border:1px solid #34515e;border-radius:10px;padding:10px 12px;color:#dce9ee;font-size:12px;box-shadow:0 8px 24px #0008;display:none}.v845-status.show{display:block}.v845-status b{color:#75e5b3}
 </style>
-<div class="v845-status" id="v845Status"></div>
+<div id="v845Status" class="v845-status"></div>
 <script>
 /* V84.5｜正式排程、換線最佳化與 APS_Schedule 雲端同步 */
 (()=>{
@@ -5079,111 +5291,71 @@ document.addEventListener("DOMContentLoaded",function(){
   setTimeout(wrap,800);
 })();
 </script>
-<div aria-labelledby="v862CoreTitle" aria-modal="true" id="v862CoreDialog" role="dialog">
-<div class="v862-box">
-<div class="v862-title" id="v862CoreTitle">V86.2 APS Turbo Engine</div>
-<div class="v862-stage" id="v862CoreStage">準備有限搜尋排程…</div>
-<div class="v862-track"><div class="v862-bar" id="v862CoreBar"></div></div>
-<div class="v862-grid">
-<div><span>處理進度</span><b id="v862CoreCount">0 / 0</b></div>
-<div><span>目前工單</span><b id="v862CoreWo">—</b></div>
-<div><span>耗時</span><b id="v862CoreElapsed">0.0 秒</b></div>
+
+
+<style id="apsV846ProgressStyle">
+#apsV846Progress{position:fixed;inset:0;z-index:99999;background:rgba(2,8,13,.76);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+#apsV846Progress.show{display:flex}
+.aps-v846-box{width:min(560px,92vw);background:#0b1820;border:1px solid #35505e;border-radius:16px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.aps-v846-title{font-size:22px;font-weight:900;color:#f7fbfd}.aps-v846-step{margin-top:8px;color:#a8bdc7;min-height:22px}
+.aps-v846-track{height:12px;margin-top:18px;border-radius:999px;background:#162a34;overflow:hidden;border:1px solid #2f4652}
+.aps-v846-bar{height:100%;width:0;background:linear-gradient(90deg,#1dbf73,#2cb7d8);transition:width .28s ease}
+.aps-v846-foot{display:flex;justify-content:space-between;margin-top:10px;color:#8fa5af;font-size:13px}.aps-v846-ok{color:#77e8b2}
+</style>
+<div id="apsV846Progress" role="status" aria-live="polite">
+  <div class="aps-v846-box">
+    <div class="aps-v846-title" id="apsV846Title">AI 排程處理中</div>
+    <div class="aps-v846-step" id="apsV846Step">準備資料…</div>
+    <div class="aps-v846-track"><div class="aps-v846-bar" id="apsV846Bar"></div></div>
+    <div class="aps-v846-foot"><span id="apsV846Count">0%</span><span>請勿關閉頁面</span></div>
+  </div>
 </div>
-<div class="v862-log" id="v862CoreLog">等待開始。</div>
-<div class="v862-actions"><button id="v862CoreCancel" type="button">中止模擬</button></div>
-</div>
-</div><script id="v862-turbo-core">
-/* Build 0066｜V86.2 APS Turbo Engine：Web Worker 背景排程、WatchDog、有限搜尋、單次批次同步 */
+<script>
+/* V84.7｜操作進度與版本同步 */
 (()=>{
-'use strict';
-if(window.__V862_TURBO__) return;
-window.__V862_TURBO__=true;
-const BUILD='Build 0066 V86.2 APS Turbo Engine';
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let worker=null,proposal=null,backup=null,running=false,cancelled=false,watchdog=null,startedAt=0;
-const cloneSchedule=a=>(a||[]).map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):null}));
-function setVersion(){
- document.title='SEAL KING Smart APS｜V86.2 APS Turbo Engine Build 0066';
- document.querySelectorAll('.header-time small,.version').forEach(n=>{if(/Build|APS Core|Enterprise Preview|Smart Learning/i.test(n.textContent||''))n.textContent='Enterprise Preview 2｜Build 0066 V86.2';});
- document.documentElement.dataset.apsCore='v86.2-turbo';
-}
-function ensureTopLoading(){
- try{
-  if(typeof window.APSCloudDataCenter?.status==='function'){
-   const st=window.APSCloudDataCenter.status();
-   let el=$('apsCloudStatus');
-   if(!el){
-    el=document.createElement('div');el.id='apsCloudStatus';el.className='aps-cloud-status loading';el.innerHTML='<i></i><span>APS 雲端：正在載入</span>';
-    (document.querySelector('.header-right')||document.querySelector('header'))?.prepend(el);
-   }
-   if(!st.loaded&&!st.loading){setTimeout(()=>window.APSCloudDataCenter?.bootstrap?.(),80);}
+  const $=id=>document.getElementById(id);
+  let timer=null, pct=0;
+  function show(title,steps){
+    clearInterval(timer); pct=6;
+    $('apsV846Title').textContent=title;
+    $('apsV846Step').textContent=steps[0]||'準備中…';
+    $('apsV846Bar').style.width=pct+'%'; $('apsV846Count').textContent=pct+'%';
+    $('apsV846Progress').classList.add('show');
+    let i=0;
+    timer=setInterval(()=>{
+      pct=Math.min(92,pct+Math.max(1,Math.round((94-pct)/9)));
+      if(pct>25&&i<1)i=1;if(pct>52&&i<2)i=2;if(pct>76&&i<3)i=3;
+      $('apsV846Step').textContent=steps[Math.min(i,steps.length-1)]||steps.at(-1)||'處理中…';
+      $('apsV846Bar').style.width=pct+'%'; $('apsV846Count').textContent=pct+'%';
+    },360);
   }
- }catch(e){console.warn('V86.2 cloud indicator restore skipped',e)}
-}
-function showDialog(total){cancelled=false;$('v862CoreDialog')?.classList.add('show');updateDialog(0,total,'建立 Worker…','—',0,'記憶體排程 → UI 預覽 → 採用後一次批次同步 APS_Schedule。');}
-function updateDialog(done,total,stage,wo,elapsed,log){
- const pct=total?Math.min(100,Math.round(done/total*100)):0;
- if($('v862CoreBar'))$('v862CoreBar').style.width=pct+'%';
- if($('v862CoreCount'))$('v862CoreCount').textContent=`${done} / ${total}`;
- if($('v862CoreWo'))$('v862CoreWo').textContent=wo||'—';
- if($('v862CoreElapsed'))$('v862CoreElapsed').textContent=(elapsed/1000).toFixed(1)+' 秒';
- if($('v862CoreStage'))$('v862CoreStage').textContent=stage;
- if(log&&$('v862CoreLog')){$('v862CoreLog').textContent=log;$('v862CoreLog').scrollTop=$('v862CoreLog').scrollHeight;}
-}
-function closeDialog(delay=700){setTimeout(()=>$('v862CoreDialog')?.classList.remove('show'),delay);}
-function selectedJobs(){
- const scope=$('autoScope')?.value||'ready';
- if(scope==='scheduled'){
-  const map={};(window.S?.schedule||[]).forEach(x=>{if(!x.wo)return;const j=map[x.wo]??={wo:x.wo,part:x.part,customer:x.customer,process:x.process,due:x.due,urgent:!!x.urgent,machine:x.machine,minutes:0,ready:true,closed:false};j.minutes+=Number(x.minutes)||0;});return Object.values(map);
- }
- return (window.S?.pool||[]).filter(x=>!x.closed&&(scope==='allopen'||x.ready)).map(x=>({...x,minutes:Number(x.minutes)||0}));
-}
-function payload(){
- const jobs=selectedJobs().filter(j=>Number(j.minutes)>0).map(j=>({wo:j.wo,part:j.part,customer:j.customer,process:j.process,due:j.due||null,urgent:!!j.urgent,machine:j.machine||'',minutes:Number(j.minutes)||0}));
- const machines=Object.entries(window.S?.machines||{}).filter(([,v])=>v?.enabled!==false&&Number(v?.hours)>0).map(([code,v])=>({code,hours:Number(v.hours)||24}));
- const speeds=(window.S?.rows?.speed||[]).map(r=>({part:String(r.part||''),machine:String(r.machine||'')}));
- return {jobs,machines,speeds,maxDays:Math.max(1,Math.min(60,Number($('days')?.value)||14)),startDate:$('startDate')?.value||new Date().toISOString().slice(0,10),strict:$('autoUrgentGuard')?.value==='strict'};
-}
-function workerSource(){return `
-'use strict';
-let stopped=false;
-const norm=v=>String(v??'').trim().toUpperCase().replace(/[＊﹡]/g,'*').replace(/[×Ｘ]/g,'X').replace(/\s+/g,'');
-const dueEnd=v=>{if(!v)return null;const d=new Date(v);if(Number.isNaN(d.getTime()))return null;d.setHours(23,59,59,999);return d};
-const dayStart=v=>{const d=new Date(v+'T00:00:00');d.setHours(8,30,0,0);return d};
-const changeCost=(a,b)=>!a||!b?0:(a.part&&a.part===b.part?0:(a.process&&b.process&&a.process===b.process?15:30));
-onmessage=e=>{if(e.data?.type==='cancel'){stopped=true;return}if(e.data?.type!=='run')return;stopped=false;const p=e.data.payload;try{
- const jobs=(p.jobs||[]).slice(),machines=(p.machines||[]),codes=machines.map(x=>x.code);if(!jobs.length)throw Error('目前沒有可排工單');if(!codes.length)throw Error('沒有啟用機台');
- const cap={},start=dayStart(p.startDate);machines.forEach(x=>{cap[x.code]=[];for(let d=0;d<p.maxDays;d++){const s=new Date(start);s.setDate(s.getDate()+d);cap[x.code].push({start:s.getTime(),used:0,limit:Math.max(1,x.hours*60),last:null})}});
- if(p.strict)jobs.sort((a,b)=>(Number(!!b.urgent)-Number(!!a.urgent))||((dueEnd(a.due)?.getTime()||8640000000000000)-(dueEnd(b.due)?.getTime()||8640000000000000))||(b.minutes-a.minutes));
- else jobs.sort((a,b)=>((dueEnd(a.due)?.getTime()||8640000000000000)-(dueEnd(b.due)?.getTime()||8640000000000000))||(b.minutes-a.minutes));
- const out=[],skipped=[];let evaluations=0;const begun=Date.now();
- for(let ji=0;ji<jobs.length;ji++){
-  if(stopped)throw Error('已由使用者中止');if(Date.now()-begun>25000)throw Error('超過 25 秒 WatchDog 安全上限');
-  const job=jobs[ji];let cands=(p.speeds||[]).filter(r=>norm(r.part)===norm(job.part)).map(r=>r.machine).filter(m=>codes.includes(m));if(job.machine&&codes.includes(job.machine))cands.unshift(job.machine);cands=[...new Set(cands)];if(!cands.length)cands=codes.slice();
-  let remain=Math.max(0,Number(job.minutes)||0),segments=0;const opts=[];
-  for(const m of cands){for(let d=0;d<p.maxDays;d++){if(++evaluations>250000)throw Error('超過 250,000 次評估安全上限');const c=cap[m][d],chg=c.last?changeCost(c.last,job):0,free=c.limit-c.used-chg;if(free>.01){const st=c.start+(c.used+chg)*60000,fin=st+Math.min(remain,free)*60000,due=dueEnd(job.due);let score=d*100000+c.used+chg*100;if(job.machine&&m!==job.machine)score+=5000;if(due&&fin>due.getTime())score+=(fin-due.getTime())/60000*1000;if(job.urgent)score-=1e8;opts.push({m,d,c,chg,score})}}}
-  opts.sort((a,b)=>a.score-b.score);
-  for(const o of opts){if(remain<=.01||segments>=120)break;const free=o.c.limit-o.c.used-o.chg;if(free<=.01)continue;const take=Math.min(remain,free),st=o.c.start+(o.c.used+o.chg)*60000,en=st+take*60000,pd=new Date(o.c.start);pd.setHours(0,0,0,0);out.push({machine:o.m,date:pd.toISOString(),start:new Date(st).toISOString(),end:new Date(en).toISOString(),minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due||null,urgent:!!job.urgent,reason:'V86.2 Turbo Worker；'+(job.urgent?'急單優先；':'')+'換線 '+o.chg+' 分'});o.c.used+=o.chg+take;o.c.last=job;remain-=take;segments++}
-  if(remain>.01)skipped.push({wo:job.wo,remaining:Math.round(remain),reason:segments>=120?'超過單工單 120 區段上限':'排程期間內產能不足'});
-  postMessage({type:'progress',done:ji+1,total:jobs.length,wo:job.wo,segments:out.length,evaluations,elapsed:Date.now()-begun,remaining:Math.round(remain)});
- }
- postMessage({type:'done',schedule:out,skipped,evaluations,elapsed:Date.now()-begun});
- }catch(err){postMessage({type:'error',message:err?.message||String(err)})}
-};`}
-function stopWorker(){if(watchdog){clearTimeout(watchdog);watchdog=null}if(worker){try{worker.terminate()}catch{}worker=null}}
-function dateShort(v){if(!v)return'—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});}
-function metrics(schedule){const completion={},seq={},loads={};let max=null;(schedule||[]).forEach(x=>{const end=new Date(x.end);if(!completion[x.wo]||end>completion[x.wo])completion[x.wo]=end;(seq[x.machine]??=[]).push(x);loads[x.machine]=(loads[x.machine]||0)+(Number(x.minutes)||0);if(!max||end>max)max=end});let late=0;Object.entries(completion).forEach(([wo,end])=>{const p=(window.S?.pool||[]).find(x=>x.wo===wo);if(p?.due){const d=new Date(p.due);d.setHours(23,59,59,999);if(end>d)late++}});let change=0;Object.values(seq).forEach(a=>{a.sort((x,y)=>new Date(x.start)-new Date(y.start));for(let i=1;i<a.length;i++)if(a[i].wo!==a[i-1].wo)change+=15});return{completion,loads,max,late,change}}
-function renderProposal(){const p=proposal;if(!p)return;const before=metrics(window.S?.schedule||[]),after=metrics(p.schedule);if($('autoLateBefore'))$('autoLateBefore').textContent=before.late;if($('autoLateAfter'))$('autoLateAfter').textContent=after.late;if($('autoChangeBefore'))$('autoChangeBefore').textContent=Math.round(before.change);if($('autoChangeAfter'))$('autoChangeAfter').textContent=Math.round(after.change);if($('autoFinishBefore'))$('autoFinishBefore').textContent=dateShort(before.max);if($('autoFinishAfter'))$('autoFinishAfter').textContent=dateShort(after.max);if($('applyAutoSchedule'))$('applyAutoSchedule').disabled=false;const savedLate=before.late-after.late,savedChange=before.change-after.change;if($('autoScheduleInsights')){$('autoScheduleInsights').className='';$('autoScheduleInsights').innerHTML=`<div class="auto-insight ${savedLate>=0?'good':'bad'}"><b>交期風險</b>${savedLate>=0?`減少/持平 ${savedLate} 張延遲工單`:`增加 ${Math.abs(savedLate)} 張`}</div><div class="auto-insight ${savedChange>=0?'good':'warn'}"><b>換線改善</b>預估節省 ${Math.max(0,Math.round(savedChange))} 分鐘</div><div class="auto-insight"><b>Turbo Worker</b>${p.schedule.length} 區段｜跳過 ${p.skipped.length} 張｜評估 ${p.evaluations.toLocaleString()} 次</div>`}if($('autoSchedulePreview')){$('autoSchedulePreview').className='auto-preview-wrap';$('autoSchedulePreview').innerHTML=`<table class="auto-preview-table"><thead><tr><th>機台</th><th>工單</th><th>開始</th><th>完成</th><th>分鐘</th><th>狀態</th></tr></thead><tbody>${p.schedule.slice(0,300).map(x=>`<tr><td>${esc(x.machine)}</td><td>${esc(x.wo)}</td><td>${esc(dateShort(x.start))}</td><td>${esc(dateShort(x.end))}</td><td>${Math.round(x.minutes)}</td><td><span class="tag green">已排</span></td></tr>`).join('')}</tbody></table>${p.skipped.length?`<div class="notice" style="margin-top:10px">未排成功：${p.skipped.slice(0,20).map(x=>`${esc(x.wo)}（${esc(x.reason)}）`).join('、')}</div>`:''}`}}
-async function simulate(){if(running)return;running=true;proposal=null;cancelled=false;const btn=$('runAutoSchedule'),old=btn?.textContent||'開始 AI 模擬';if(btn){btn.disabled=true;btn.textContent='V86.2 背景排程中…'}const p=payload();showDialog(p.jobs.length);startedAt=performance.now();try{const blob=new Blob([workerSource()],{type:'text/javascript'});worker=new Worker(URL.createObjectURL(blob));watchdog=setTimeout(()=>{if(running){worker?.terminate();worker=null;running=false;updateDialog(0,p.jobs.length,'WatchDog 中止','—',performance.now()-startedAt,'超過 30 秒，已安全停止背景 Worker。');closeDialog(1800);if(btn){btn.disabled=false;btn.textContent=old}}},30000);worker.onmessage=e=>{const m=e.data||{};if(m.type==='progress'){updateDialog(m.done,m.total,'Turbo Worker 排程中',m.wo,m.elapsed,`目前工單 ${m.wo}
-已產生 ${m.segments} 區段｜評估 ${Number(m.evaluations||0).toLocaleString()} 次${m.remaining?`
-未排剩餘 ${m.remaining} 分鐘`:''}`)}else if(m.type==='done'){stopWorker();proposal={schedule:(m.schedule||[]).map(x=>({...x,date:new Date(x.date),start:new Date(x.start),end:new Date(x.end),due:x.due?new Date(x.due):null})),skipped:m.skipped||[],evaluations:m.evaluations||0,elapsed:m.elapsed||0};renderProposal();updateDialog(p.jobs.length,p.jobs.length,'背景模擬完成','—',proposal.elapsed,`完成 ${proposal.schedule.length} 個排程區段
-跳過 ${proposal.skipped.length} 張工單
-按「採用最佳排程」才會一次批次同步 APS_Schedule。`);closeDialog(1300);running=false;if(btn){btn.disabled=false;btn.textContent=old}}else if(m.type==='error'){throw new Error(m.message||'Worker 排程失敗')}};worker.onerror=ev=>{stopWorker();running=false;updateDialog(0,p.jobs.length,'Worker 錯誤','—',performance.now()-startedAt,ev.message||'背景排程失敗');closeDialog(1800);if(btn){btn.disabled=false;btn.textContent=old};alert(ev.message||'背景排程失敗')};worker.postMessage({type:'run',payload:p})}catch(err){stopWorker();running=false;updateDialog(0,p.jobs.length,'模擬停止','—',performance.now()-startedAt,err?.message||String(err));closeDialog(1800);if(btn){btn.disabled=false;btn.textContent=old};if(!/使用者中止/.test(err?.message||''))alert(err?.message||String(err))}}
-async function apply(){if(!proposal)return;const btn=$('applyAutoSchedule'),old=btn?.textContent||'採用最佳排程';if(btn){btn.disabled=true;btn.textContent='一次批次同步中…'}try{backup=cloneSchedule(window.S?.schedule||[]);window.S.schedule=cloneSchedule(proposal.schedule);window.renderSchedule?.();window.updateKpi?.();window.updateDueKpi?.();if(typeof window.saveDataset==='function')await window.saveDataset('schedule',true);$('restoreAutoSchedule')&&($('restoreAutoSchedule').disabled=false);alert(`V86.2 最佳排程已套用並一次批次同步，共 ${window.S.schedule.length} 個區段。`);window.showPage?.('schedule')}catch(err){console.error(err);alert('排程套用或雲端同步失敗：'+(err?.message||err))}finally{if(btn){btn.disabled=false;btn.textContent=old}}}
-function restore(){if(!backup)return;window.S.schedule=cloneSchedule(backup);window.renderSchedule?.();window.updateKpi?.();window.updateDueKpi?.();backup=null;if($('restoreAutoSchedule'))$('restoreAutoSchedule').disabled=true}
-function cancel(){cancelled=true;if(worker){try{worker.postMessage({type:'cancel'})}catch{}setTimeout(stopWorker,80)}running=false;updateDialog(0,0,'已中止','—',performance.now()-startedAt,'已安全停止背景 Worker。');closeDialog(900)}
-function bindUnique(){[['runAutoSchedule',simulate],['applyAutoSchedule',apply],['restoreAutoSchedule',restore]].forEach(([id,fn])=>{const old=$(id);if(!old)return;const fresh=old.cloneNode(true);fresh.disabled=old.disabled;old.replaceWith(fresh);fresh.addEventListener('click',fn,{passive:false})});$('v862CoreCancel')?.addEventListener('click',cancel);setVersion();ensureTopLoading()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindUnique,{once:true});else bindUnique();setTimeout(()=>{setVersion();ensureTopLoading()},500);setTimeout(()=>{setVersion();ensureTopLoading()},1800);
+  function done(msg='完成並同步雲端'){
+    clearInterval(timer);pct=100;$('apsV846Bar').style.width='100%';$('apsV846Count').textContent='100%';
+    $('apsV846Step').innerHTML='<span class="aps-v846-ok">✓ '+msg+'</span>';
+    setTimeout(()=>$('apsV846Progress').classList.remove('show'),650);
+  }
+  function fail(msg='處理未完成'){
+    clearInterval(timer);$('apsV846Step').textContent=msg;setTimeout(()=>$('apsV846Progress').classList.remove('show'),1200);
+  }
+  window.APS_V846_PROGRESS={show,done,fail};
+  document.addEventListener('click',ev=>{
+    const b=ev.target.closest('button'); if(!b)return;
+    if(b.id==='runAutoSchedule') show('AI 排程模擬中',['整理可排工單與產速資料…','評估交期、急單與機台負荷…','建立最佳化排程預覽…','計算延遲與完成時間…']);
+    if(b.id==='applyAutoSchedule') show('套用最佳排程',['備份目前排程…','套用最佳化結果…','重繪甘特圖與統計…','同步 APS_Schedule 雲端…']);
+    if(b.id==='runSeqOpt') show('換線最佳化分析中',['確認正式排程資料…','依料號、製程與客戶分群…','重新排序並計算換線成本…','產生改善預覽…']);
+    if(b.id==='applySeqOpt') show('套用換線最佳化',['備份目前排程…','重建機台工單順序…','更新甘特圖與完成時間…','同步 APS_Schedule 雲端…']);
+  },true);
+  // Observe buttons returning to normal, which indicates each synchronous/asynchronous workflow has finished.
+  const obs=new MutationObserver(()=>{
+    const ids=['runAutoSchedule','applyAutoSchedule','runSeqOpt','applySeqOpt'];
+    const active=ids.some(id=>{const b=$(id);return b&&b.disabled&&/中|分析|建立|同步|套用/.test(b.textContent||'')});
+    if(!active&&$('apsV846Progress')?.classList.contains('show')) done();
+  });
+  obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['disabled'],childList:true,characterData:true});
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.title='SEAL KING Smart APS｜V84.7 Enterprise AI APS';
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0061 V84.7';});
+  });
 })();
-</script><script id="v862-version-lock">(()=>{const apply=()=>{document.title='SEAL KING Smart APS｜V86.2 APS Turbo Engine Build 0066';document.querySelectorAll('.header-time small,.version').forEach(n=>{if(/Build|APS Core|Enterprise Preview|Smart Learning/i.test(n.textContent||''))n.textContent='Enterprise Preview 2｜Build 0066 V86.2';});};apply();new MutationObserver(apply).observe(document.documentElement,{subtree:true,childList:true,characterData:true});})();</script></body></html>
+</script>
+</body></html>
