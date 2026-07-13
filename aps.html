@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0048 V82.5 APS Core";
+  content:"APS Build 0060 V84.6 APS Core";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -471,7 +471,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0048 V82.5 APS Core</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0060 V84.6 APS Core</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -511,7 +511,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Build 0048 V82.5 APS Core</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Build 0060 V84.6 APS Core</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -1073,7 +1073,7 @@ function renderFiles(){
 function renderPreview(){const e=Object.entries(S.files).find(([k])=>k!=='unknown');if(!e){$('preview').className='empty';$('preview').textContent='尚未上傳檔案';return}const [type,obj]=e,sh=obj.sheets[0],rows=sh.rows.slice(0,8);$('preview').className='tablewrap';$('preview').innerHTML=tableHtml(rows[0]||[],rows.slice(1))}
 function tableHtml(headers,rows,renderers={}){return `<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${headers.map((h,i)=>`<td>${renderers[i]?renderers[i](r[i],r):esc(r[i]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 function pickSheet(type,preferred){const o=S.files[type];if(!o)return null;return o.sheets.find(s=>preferred.some(p=>norm(s.name).includes(norm(p))))||o.sheets[0]}
-/* Build 0048｜V82.5 APS Core：Master_產速 V2 */
+/* Build 0060｜V84.6 APS Core：Master_產速 V2 */
 function inferAPSMode(process,rawMode=''){
  const m=norm(rawMode);if(['FIXED','LENGTH','AREA','ROLL','ROUND'].includes(m))return m;
  const p=String(process||'').trim();
@@ -2488,7 +2488,7 @@ function readCfg(){try{return {...defaults,...JSON.parse(localStorage.getItem(CF
 function writeCfg(c){localStorage.setItem(CFG_KEY,JSON.stringify(c))}
 function cfgFromForm(){return {name:$s('sysName')?.value.trim()||defaults.name,admin:$s('sysAdmin')?.value.trim()||defaults.admin,department:$s('sysDepartment')?.value.trim()||defaults.department,subtitle:$s('sysSubtitle')?.value.trim()||defaults.subtitle,version:$s('sysVersion')?.value.trim()||defaults.version,dataOwner:$s('sysDataOwner')?.value.trim()||'',animations:!!$s('sysAnimations')?.checked,compact:!!$s('sysCompact')?.checked,stickySidebar:!!$s('sysStickySidebar')?.checked,tooltips:!!$s('sysTooltips')?.checked,persistPool:!!$s('sysPersistPool')?.checked,autoLoadPool:!!$s('sysAutoLoadPool')?.checked,persistSchedule:!!$s('sysPersistSchedule')?.checked,autoLoadSchedule:!!$s('sysAutoLoadSchedule')?.checked,missingSpeedAlert:Number($s('sysMissingSpeedAlert')?.value)||0,overdueAlert:Number($s('sysOverdueAlert')?.value)||0,machineLoadAlert:Number($s('sysMachineLoadAlert')?.value)||90,staleHours:Number($s('sysStaleHours')?.value)||24}}
 function fillForm(c){const m={sysName:c.name,sysAdmin:c.admin,sysDepartment:c.department,sysSubtitle:c.subtitle,sysVersion:c.version,sysDataOwner:c.dataOwner,sysMissingSpeedAlert:c.missingSpeedAlert,sysOverdueAlert:c.overdueAlert,sysMachineLoadAlert:c.machineLoadAlert,sysStaleHours:c.staleHours};Object.entries(m).forEach(([id,v])=>{if($s(id))$s(id).value=v});[['sysAnimations','animations'],['sysCompact','compact'],['sysStickySidebar','stickySidebar'],['sysTooltips','tooltips'],['sysPersistPool','persistPool'],['sysAutoLoadPool','autoLoadPool'],['sysPersistSchedule','persistSchedule'],['sysAutoLoadSchedule','autoLoadSchedule']].forEach(([id,k])=>{if($s(id))$s(id).checked=!!c[k]})}
-function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0048 V82.5 APS Core`;window.SK_APS_CONFIG=c}
+function applyCfg(c){document.body.classList.toggle('no-animations',!c.animations);document.body.classList.toggle('compact-ui',!!c.compact);document.body.classList.toggle('sidebar-not-sticky',!c.stickySidebar);document.body.classList.toggle('hide-tooltips',!c.tooltips);const h=document.querySelector('.system-title h1');if(h)h.textContent=c.name;const p=document.querySelector('.system-title p');if(p)p.textContent=c.subtitle;const u=document.querySelector('.user-chip span:nth-child(2)');if(u)u.textContent=c.admin;const small=document.querySelector('.header-time small');if(small)small.textContent=`${c.version} ｜ Build 0042`;document.title=`${c.name}｜Build 0060 V84.6 APS Core`;window.SK_APS_CONFIG=c}
 function toast(t){const old=document.querySelector('.sys-toast');if(old)old.remove();const d=document.createElement('div');d.className='sys-toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400)}
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
@@ -2928,7 +2928,7 @@ async function bootstrapCloud(){
     CLOUD.loaded=true;
     renderAfterCloudLoad();
 
-    /* Build 0048 V82.5 APS Core：
+    /* Build 0060 V84.6 APS Core：
        雲端資料成功載入後立即建立本機快照。
        API 暫時逾時時仍可先顯示最近一次可用資料。 */
     try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
@@ -3141,7 +3141,7 @@ window.SEAL_KING_SECURITY={
 <script id="build0048-v825-marker">
 (()=>{
   window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
-  console.info("SEAL KING Smart APS Build 0048｜V82.5 APS Core loaded");
+  console.info("SEAL KING Smart APS Build 0060｜V84.6 APS Core loaded");
 })();
 </script>
 
@@ -5054,10 +5054,10 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    document.title="SEAL KING Smart APS｜Build 0057 Enterprise AI APS";
+    document.title="SEAL KING Smart APS｜Build 0060 Enterprise AI APS";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-        el.textContent="Enterprise Preview 2｜Build 0057";
+        el.textContent="Enterprise Preview 2｜Build 0060";
       }
     });
 
@@ -5226,4 +5226,70 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
+<style id="apsV846ProgressStyle">
+#apsV846Progress{position:fixed;inset:0;z-index:99999;background:rgba(2,8,13,.76);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+#apsV846Progress.show{display:flex}
+.aps-v846-box{width:min(560px,92vw);background:#0b1820;border:1px solid #35505e;border-radius:16px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.aps-v846-title{font-size:22px;font-weight:900;color:#f7fbfd}.aps-v846-step{margin-top:8px;color:#a8bdc7;min-height:22px}
+.aps-v846-track{height:12px;margin-top:18px;border-radius:999px;background:#162a34;overflow:hidden;border:1px solid #2f4652}
+.aps-v846-bar{height:100%;width:0;background:linear-gradient(90deg,#1dbf73,#2cb7d8);transition:width .28s ease}
+.aps-v846-foot{display:flex;justify-content:space-between;margin-top:10px;color:#8fa5af;font-size:13px}.aps-v846-ok{color:#77e8b2}
+</style>
+<div id="apsV846Progress" role="status" aria-live="polite">
+  <div class="aps-v846-box">
+    <div class="aps-v846-title" id="apsV846Title">AI 排程處理中</div>
+    <div class="aps-v846-step" id="apsV846Step">準備資料…</div>
+    <div class="aps-v846-track"><div class="aps-v846-bar" id="apsV846Bar"></div></div>
+    <div class="aps-v846-foot"><span id="apsV846Count">0%</span><span>請勿關閉頁面</span></div>
+  </div>
+</div>
+<script>
+/* V84.6｜操作進度與版本同步 */
+(()=>{
+  const $=id=>document.getElementById(id);
+  let timer=null, pct=0;
+  function show(title,steps){
+    clearInterval(timer); pct=6;
+    $('apsV846Title').textContent=title;
+    $('apsV846Step').textContent=steps[0]||'準備中…';
+    $('apsV846Bar').style.width=pct+'%'; $('apsV846Count').textContent=pct+'%';
+    $('apsV846Progress').classList.add('show');
+    let i=0;
+    timer=setInterval(()=>{
+      pct=Math.min(92,pct+Math.max(1,Math.round((94-pct)/9)));
+      if(pct>25&&i<1)i=1;if(pct>52&&i<2)i=2;if(pct>76&&i<3)i=3;
+      $('apsV846Step').textContent=steps[Math.min(i,steps.length-1)]||steps.at(-1)||'處理中…';
+      $('apsV846Bar').style.width=pct+'%'; $('apsV846Count').textContent=pct+'%';
+    },360);
+  }
+  function done(msg='完成並同步雲端'){
+    clearInterval(timer);pct=100;$('apsV846Bar').style.width='100%';$('apsV846Count').textContent='100%';
+    $('apsV846Step').innerHTML='<span class="aps-v846-ok">✓ '+msg+'</span>';
+    setTimeout(()=>$('apsV846Progress').classList.remove('show'),650);
+  }
+  function fail(msg='處理未完成'){
+    clearInterval(timer);$('apsV846Step').textContent=msg;setTimeout(()=>$('apsV846Progress').classList.remove('show'),1200);
+  }
+  window.APS_V846_PROGRESS={show,done,fail};
+  document.addEventListener('click',ev=>{
+    const b=ev.target.closest('button'); if(!b)return;
+    if(b.id==='runAutoSchedule') show('AI 排程模擬中',['整理可排工單與產速資料…','評估交期、急單與機台負荷…','建立最佳化排程預覽…','計算延遲與完成時間…']);
+    if(b.id==='applyAutoSchedule') show('套用最佳排程',['備份目前排程…','套用最佳化結果…','重繪甘特圖與統計…','同步 APS_Schedule 雲端…']);
+    if(b.id==='runSeqOpt') show('換線最佳化分析中',['確認正式排程資料…','依料號、製程與客戶分群…','重新排序並計算換線成本…','產生改善預覽…']);
+    if(b.id==='applySeqOpt') show('套用換線最佳化',['備份目前排程…','重建機台工單順序…','更新甘特圖與完成時間…','同步 APS_Schedule 雲端…']);
+  },true);
+  // Observe buttons returning to normal, which indicates each synchronous/asynchronous workflow has finished.
+  const obs=new MutationObserver(()=>{
+    const ids=['runAutoSchedule','applyAutoSchedule','runSeqOpt','applySeqOpt'];
+    const active=ids.some(id=>{const b=$(id);return b&&b.disabled&&/中|分析|建立|同步|套用/.test(b.textContent||'')});
+    if(!active&&$('apsV846Progress')?.classList.contains('show')) done();
+  });
+  obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['disabled'],childList:true,characterData:true});
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.title='SEAL KING Smart APS｜V84.6 Enterprise AI APS';
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|APS Core|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0060 V84.6';});
+  });
+})();
+</script>
 </body></html>
