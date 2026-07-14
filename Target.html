@@ -15,10 +15,12 @@
 .saveOverlay{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10000;align-items:center;justify-content:center}.saveOverlay.show{display:flex}.savePanel{width:min(520px,92vw);background:#fff;border-radius:18px;padding:22px;box-shadow:0 25px 70px #0006}.savePanel h3{margin:0 0 10px;font-size:22px}.previewList{max-height:260px;overflow:auto;border:1px solid #dbe4f0;border-radius:12px;margin:10px 0}.previewRow{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eef2f7}.previewRow:last-child{border-bottom:0}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes successPulse{0%{transform:scale(.98);opacity:.65}100%{transform:scale(1);opacity:1}}@keyframes fieldFlash{0%,100%{background:#fff}50%{background:#dcfce7}}
 @media(max-width:900px){.multiFields{grid-template-columns:1fr 1fr}.multiHint{grid-column:span 2}}@media(max-width:560px){.multiFields{grid-template-columns:1fr}.multiHint{grid-column:span 1}}
+
+.lookupLine{display:flex;gap:8px;align-items:stretch}.lookupLine input{flex:1}.lookupBtn{width:112px;min-width:112px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer}.lookupBtn:hover{filter:brightness(.96)}.lookupBtn:disabled{opacity:.65;cursor:wait}.lookupBtn.ok{background:#16a34a}.lookupBtn.bad{background:#dc2626}@media(max-width:560px){.lookupLine{flex-direction:column}.lookupBtn{width:100%}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.5 Auto Lookup Fill</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.6 Fast Search Button</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -70,7 +72,7 @@
       </div>
       <div class="col4"><label>幹部角色 / ตำแหน่ง</label><select id="leader_role"><option>課長 / หัวหน้าแผนก</option><option>副課長 / รองหัวหน้าแผนก</option><option>組長 / หัวหน้ากลุ่ม</option><option>班長 / หัวหน้ากะ</option><option>代理 / รักษาการ</option></select></div>
       <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入"></div>
-      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">手動輸入後停止約 0.5 秒，自動搜尋五份資料與 Key In，並直接帶入機台、訂單、料號、批號、製程、目標、客戶、規格與預交日 / ค้นหาข้อมูล 5 ไฟล์และ Key In อัตโนมัติ</div></div>
+      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><div class="lookupLine"><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder(true)}" placeholder="例如 MM2605060026 或 202607010036"><button id="lookupBtn" class="lookupBtn" type="button" onclick="lookupOrder(true)">🔍 搜尋</button></div><div class="muted">可按搜尋鍵或 Enter；先查本機快取，找不到才連線 API，因此速度更快。停止輸入約 0.35 秒也會自動搜尋。</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
@@ -349,7 +351,9 @@ async function loadBootstrap(){
 }
 
 let __lookupSeq=0;
-function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();return}lookupTimer=setTimeout(lookupOrder,550)}
+function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();setLookupButtonState_('idle');return}lookupTimer=setTimeout(()=>lookupOrder(false),350)}
+function setLookupButtonState_(state,text){const b=$('lookupBtn');if(!b)return;b.disabled=state==='loading';b.className='lookupBtn'+(state==='ok'?' ok':state==='bad'?' bad':'');b.textContent=text||(state==='loading'?'⌛ 搜尋中':state==='ok'?'✓ 已找到':state==='bad'?'重新搜尋':'🔍 搜尋')}
+function getLocalLookupRows_(q){const rows=[];const seen=new Set();const push=r=>{if(!r)return;const n=normalizeClientOrder(r);if(!localOrderMatch(n,q))return;const k=[n.work_order_no,n.command_no,n.order_no,n.report_no,n.batch_no,n.part_no,n.machine_code].map(norm).join('|');if(seen.has(k))return;seen.add(k);rows.push(n)};(ORDER_LIST||[]).forEach(push);(KEYIN_ROWS||[]).map(normalizeKeyInOrder).forEach(push);return rows.sort((a,b)=>lookupExactScore_(b,q)-lookupExactScore_(a,q))}
 function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。'}
 function renderSearchProgress(percent,step){
   $('lookupBox').className='found';
@@ -384,7 +388,7 @@ function normalizeKeyInOrder(r){
 }
 async function lookupKeyInOrders(q){
   try{
-    const res=await apiGetRetry('keyinsource',{q:q,keyword:q,work_order_no:q,limit:1000,_:Date.now()},1);
+    const res=await apiGetRetry('keyinsource',{q:q,keyword:q,work_order_no:q,limit:200,_:Date.now()},0);
     const rows=res.rows||res.data||res.list||res.items||[];
     return rows.map(normalizeKeyInOrder).filter(r=>localOrderMatch(r,q));
   }catch(_e){
@@ -411,20 +415,29 @@ function mergeLookupRows_(rows,q){
   });
   return best;
 }
-async function lookupOrder(){
+async function lookupOrder(forceApi=false){
   clearTimeout(lookupTimer);
   const seq=++__lookupSeq;
   const q=queryNorm($('work_order_no').value);
   $('work_order_no').value=q;
-  if(!q){renderSearchIdle();return}
+  if(!q){renderSearchIdle();setLookupButtonState_('idle');return}
+  setLookupButtonState_('loading');
   try{
-    renderSearchProgress(12,'步驟 1/4：準備搜尋工單、訂單與命令單');
+    // 先查已載入的五份資料與 Key In 快取；精準命中時立即帶入，不等待 API。
+    const localRows=getLocalLookupRows_(q);
+    const localExact=localRows.filter(r=>lookupExactScore_(r,q)>=80);
+    if(localExact.length){
+      const best=mergeLookupRows_(localRows,q);
+      LAST_LOOKUP=best;fillFromOrder(best);renderLookupSummary(best,localRows.length);$('lookupBox').classList.add('searchDone');setLookupButtonState_('ok');toast('快取搜尋完成，資料已帶入');return;
+    }
+    if(!forceApi && q.length<6){setLookupButtonState_('idle');return}
+    renderSearchProgress(18,'先查快取未命中，正在連線搜尋');
     await new Promise(r=>setTimeout(r,120));
     if(seq!==__lookupSeq)return;
     renderSearchProgress(35,'步驟 2/4：比對五份資料的日報、批號與料號');
     let rows=[];
     try{
-      const list=await apiGetRetry('targetorderlist',{start:'2000-01-01',end:'2099-12-31',q:q,limit:300,_:Date.now()},1);
+      const list=await apiGetRetry('targetorderlist',{q:q,limit:80,_:Date.now()},0);
       if(seq!==__lookupSeq)return;
       rows=list.rows||list.data||list.items||[];
     }catch(_e){}
@@ -441,23 +454,23 @@ async function lookupOrder(){
     const seen=new Set();
     rows=rows.filter(r=>{const k=[r.work_order_no,r.command_no,r.order_no,r.report_no,r.batch_no,r.part_no].map(norm).join('|');if(seen.has(k))return false;seen.add(k);return true});
     if(seq!==__lookupSeq)return;
-    if(!rows.length){$('lookupBox').className='found warn searchDone';$('lookupBox').innerHTML='<b>⚠ 查無資料 / ไม่พบข้อมูล：</b>'+esc(q)+'<br><span class="muted">仍可手動輸入，或確認右側工單清單是否已更新。</span><br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>';return}
+    if(!rows.length){setLookupButtonState_('bad');$('lookupBox').className='found warn searchDone';$('lookupBox').innerHTML='<b>⚠ 查無資料 / ไม่พบข้อมูล：</b>'+esc(q)+'<br><span class="muted">仍可手動輸入，或確認右側工單清單是否已更新。</span><br><button class="btn ghost" type="button" onclick="lookupOrder(true)">重新搜尋 / ค้นหาใหม่</button>';return}
     const autoBest=mergeLookupRows_(rows,q);
     const exactRows=rows.filter(r=>lookupExactScore_(r,q)>=80);
     if(autoBest && exactRows.length>=1){
       LAST_LOOKUP=autoBest;fillFromOrder(autoBest);renderLookupSummary(autoBest,rows.length);$('lookupBox').classList.add('searchDone');
-      toast('已搜尋並自動帶入工單資訊');return;
+      setLookupButtonState_('ok');toast('已搜尋並自動帶入工單資訊');return;
     }
-    if(rows.length===1){LAST_LOOKUP=rows[0];fillFromOrder(rows[0]);renderLookupSummary(rows[0],1);$('lookupBox').classList.add('searchDone');toast('搜尋完成，資料已自動帶入');return}
-    window.__TARGET_LOOKUP_ROWS=rows;
+    if(rows.length===1){LAST_LOOKUP=rows[0];fillFromOrder(rows[0]);renderLookupSummary(rows[0],1);$('lookupBox').classList.add('searchDone');setLookupButtonState_('ok');toast('搜尋完成，資料已自動帶入');return}
+    window.__TARGET_LOOKUP_ROWS=rows;setLookupButtonState_('ok','選擇資料');
     $('lookupBox').className='found searchDone';
     $('lookupBox').innerHTML='<b>✓ 搜尋完成，共找到 '+rows.length+' 筆五份資料／Key In 關聯資料，請選擇：</b><div style="max-height:300px;overflow:auto;margin-top:8px">'+rows.slice(0,100).map((r,i)=>'<div class="listitem" onclick="selectLookupRow('+i+')"><b>'+esc(r.work_order_no||r.command_no||r.order_no||r.report_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'</span><br><span class="muted">料號：'+esc(r.part_no||r.output_part_no||r.input_part_no||'-')+'｜客戶：'+esc(r.customer||'-')+'｜規格：'+esc(r.product_spec||'-')+'</span></div>').join('')+'</div>';
-  }catch(e){if(seq!==__lookupSeq)return;$('lookupBox').className='found warn';$('lookupBox').innerHTML='<b>搜尋失敗：</b>'+esc(e.message)+'<br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>'}
+  }catch(e){if(seq!==__lookupSeq)return;setLookupButtonState_('bad');$('lookupBox').className='found warn';$('lookupBox').innerHTML='<b>搜尋失敗：</b>'+esc(e.message)+'<br><button class="btn ghost" type="button" onclick="lookupOrder(true)">重新搜尋 / ค้นหาใหม่</button>'}
 }
 function selectLookupRow(i){
   const rows=window.__TARGET_LOOKUP_ROWS||[];
   const r=rows[i];if(!r)return;
-  LAST_LOOKUP=r;fillFromOrder(r);renderLookupSummary(r,rows.length);
+  LAST_LOOKUP=r;fillFromOrder(r);renderLookupSummary(r,rows.length);setLookupButtonState_('ok');
 }
 function renderLookupSummary(r,total){
   $('lookupBox').className='found';
