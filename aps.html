@@ -4012,7 +4012,7 @@ window.SEAL_KING_SECURITY={
       if (showPageAfter && typeof window.showPage === "function") window.showPage("pool");
     } catch (err) {
       console.error("Build0050 APS DataHub sync failed:", err);
-      alert("DataHub 工單池同步失敗：" + (err.message || err));
+      window.log?.("舊版 DataHub 同步器已略過："+(err.message||err));
     } finally {
       syncing = false;
       if (btn) {
@@ -4132,6 +4132,13 @@ window.SEAL_KING_SECURITY={
   }
 
   async function fetchAllWorkOrders(){
+    // Build0072：CloudDataHub Engine 已下載的資料直接交給產速引擎，
+    // 禁止同一次操作再次呼叫 datahubworkorders。
+    if(Array.isArray(window.__BUILD0057_DATAHUB_ROWS__) && window.__BUILD0057_DATAHUB_ROWS__.length){
+      const cachedRows = window.__BUILD0057_DATAHUB_ROWS__.slice();
+      window.__BUILD0057_DATAHUB_ROWS__ = null;
+      return cachedRows;
+    }
     const all = [];
     let page = 1;
     let total = 0;
@@ -4451,7 +4458,14 @@ window.SEAL_KING_SECURITY={
       }
     }catch(err){
       console.error("Build0051 sync failed", err);
-      alert("APS 產速引擎同步失敗：" + (err.message || err));
+      const cache = window.CloudDataHubEngine57?.getCached?.();
+      if(cache?.rows?.length){
+        window.log?.("APS 產速引擎連線失敗，保留目前工單池與本機快取："+(err.message||err));
+        const state=document.getElementById("cloudDataHubState57");
+        if(state){state.className="cloud-datahub-state warn";state.textContent="DataHub 暫時離線｜保留快取";}
+      }else{
+        window.log?.("APS 產速引擎同步失敗："+(err.message||err));
+      }
     }finally{
       syncing = false;
       if(btn){
@@ -5388,7 +5402,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
   const CACHE_KEY = "SK_APS_DATAHUB_WORKORDERS_V57";
   const CACHE_TS_KEY = "SK_APS_DATAHUB_WORKORDERS_TS_V57";
-  const CACHE_MAX_AGE = 10 * 60 * 1000;
+  const CACHE_MAX_AGE = 30 * 60 * 1000;
   const API_URL =
     window.MES_API_URL ||
     "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
@@ -5550,11 +5564,12 @@ document.addEventListener("DOMContentLoaded",function(){
     window.__BUILD0057_DATAHUB_ROWS__ = rows;
 
     if(window.Build0051APSSpeedEngine?.sync){
-      // Build0051 sync normally fetches again, so only call it on manual fallback.
-      // Current pool is retained when already populated.
-      if(!(window.S?.pool?.length)){
-        window.Build0051APSSpeedEngine.sync(false);
-      }
+      // Build0072：Build0051 會直接消耗 __BUILD0057_DATAHUB_ROWS__，
+      // 因此這裡只轉換一次，不會再次讀取 DataHub。
+      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).catch(err=>{
+        console.error("Build0072 speed conversion failed",err);
+        window.log?.("快取已載入，但產速轉換失敗："+(err.message||err));
+      });
     }
     setDataState(`DataHub 快取 ${rows.length} 筆`,"ok");
   }
@@ -5574,6 +5589,7 @@ document.addEventListener("DOMContentLoaded",function(){
         setDataState("DataHub 單一同步中…","warn");
         const rows=await fetchAll();
         saveCache(rows);
+        installRows(rows);
         setDataState(`DataHub 已同步 ${rows.length} 筆`,"ok");
         return rows;
       }catch(err){
@@ -5755,10 +5771,10 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    document.title="SEAL KING Smart APS｜Build 0070 V87.3 Canonical Sync Engine";
+    document.title="SEAL KING Smart APS｜Build 0072 V87.5 Stable DataHub Cache Engine";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-        el.textContent="Enterprise Preview 2｜Build 0070";
+        el.textContent="Enterprise Preview 2｜Build 0072";
       }
     });
 
@@ -5783,9 +5799,17 @@ document.addEventListener("DOMContentLoaded",function(){
         btn.disabled=true;const t=btn.textContent;btn.textContent="同步中…";
         try{
           await syncDataHub(true);
-          if(window.Build0051APSSpeedEngine?.sync)await window.Build0051APSSpeedEngine.sync(true);
+          window.log?.("DataHub 與產速引擎同步完成");
         }catch(err){
-          alert("同步失敗："+err.message);
+          const cache=getCached();
+          if(cache.rows.length){
+            installRows(cache.rows);
+            setDataState(`DataHub 離線｜使用快取 ${cache.rows.length} 筆`,"warn");
+            window.log?.("DataHub 同步逾時，已使用本機快取："+err.message);
+          }else{
+            setDataState("DataHub 無法連線，且沒有可用快取","bad");
+            window.log?.("DataHub 同步失敗："+err.message);
+          }
         }finally{btn.disabled=false;btn.textContent=t}
       });
     }
@@ -5969,6 +5993,23 @@ document.addEventListener("DOMContentLoaded",function(){
   window.APSCanonicalScheduleV872={normalize,sync,restoreAccepted};
   document.title='SEAL KING Smart APS｜Build 0069 V87.2 Canonical Sync';
   document.querySelectorAll('.header-time small').forEach(el=>el.textContent='Enterprise Preview 2｜Build 0069 V87.2');
+})();
+</script>
+
+
+<script id="build0072-stable-datahub-guard">
+(()=>{
+  "use strict";
+  window.APS_BUILD="0072";
+  window.APS_VERSION="V87.5";
+  const update=()=>{
+    document.querySelectorAll(".version").forEach(el=>{
+      if(/Build|V8/i.test(el.textContent||"")) el.textContent="APS Build 0072｜V87.5 Stable DataHub";
+    });
+  };
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(update,300));
+  setTimeout(update,1800);
+  console.info("SEAL KING Smart APS Build 0072｜single DataHub request + local cache fallback loaded");
 })();
 </script>
 
