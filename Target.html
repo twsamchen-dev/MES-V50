@@ -126,7 +126,7 @@ function cleanSource(s){s=String(s||'');const a=[];if(s.includes('4-3'))a.push('
 function num(v){let n=parseFloat(String(v??'').replace(/,/g,''));return isNaN(n)?0:n}
 function dateKey(v){let s=String(v||'').replace(/\//g,'-');let m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):s.slice(0,10)}
 function isoWeek(d){let x=new Date(dateKey(d)+'T00:00:00');if(isNaN(x))return '';x.setHours(0,0,0,0);x.setDate(x.getDate()+3-((x.getDay()+6)%7));let w1=new Date(x.getFullYear(),0,4);let week=1+Math.round(((x-w1)/86400000-3+((w1.getDay()+6)%7))/7);return x.getFullYear()+'-W'+String(week).padStart(2,'0')}
-function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V732_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');let done=false;const timeout=(action==='targetmatchlist'||action==='targetorderlist')?45000:90000;
+function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V732_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');let done=false;const timeout=(action==='targetorderlist'||action==='keyinsource')?180000:(action==='targetmatchlist'?90000:120000);
       const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},timeout);function cleanup(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
 async function apiGetRetry(action,params={},retry=2){let lastErr=null;for(let i=0;i<=retry;i++){try{return await apiGet(action,params)}catch(e){lastErr=e;if(i<retry){$('loadMsg').textContent='API暫時失敗，重試 '+(i+1)+'/'+retry+'：'+action;await new Promise(r=>setTimeout(r,900+i*700));}}}throw lastErr}
 async function apiPost(action,body){await fetch(API_URL+'?action='+encodeURIComponent(action)+'&_='+Date.now(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body||{})});return {ok:true}}
@@ -266,12 +266,11 @@ async function rebuildOrderCache(){
     $('loadMsg').textContent='五份資料快取完成：寫入 '+totalWritten+' 筆，讀取 '+totalRead+' 筆。開始更新畫面...';
     toast('五份資料快取完成：'+totalWritten+' 筆');
     __orderCacheKey='';
-    ORDER_LIST=[];
-    const results=await Promise.allSettled([loadOrderList(true),loadMatchList(true)]);
-    const fail=results.filter(x=>x.status==='rejected').map(x=>x.reason&&x.reason.message?x.reason.message:String(x.reason));
-    $('loadMsg').textContent=fail.length
-      ? '快取完成，但部分清單讀取逾時；已保留可用資料。'
-      : '五份資料快取完成，畫面已更新。';
+    $('loadMsg').textContent='快取完成，正在依序更新工單清單...';
+    await loadOrderList(true);
+    $('loadMsg').textContent='工單清單完成，正在讀取 Key In 並重新配對...';
+    await recalculateMatches(true);
+    $('loadMsg').textContent='五份資料快取、工單清單與 Key In 配對均已完成。';
   }catch(e){
     alert('建立五份資料快取失敗：'+e.message);
     $('loadMsg').textContent='建立快取失敗：'+e.message;
@@ -371,7 +370,7 @@ async function lookupOrder(){
     renderSearchProgress(35,'步驟 2/4：比對五份資料的日報、批號與料號');
     let rows=[];
     try{
-      const list=await apiGetRetry('targetorderlist',{start:'2000-01-01',end:'2099-12-31',q:q,limit:500,_:Date.now()},1);
+      const list=await apiGetRetry('targetorderlist',{start:'2000-01-01',end:'2099-12-31',q:q,limit:300,_:Date.now()},1);
       if(seq!==__lookupSeq)return;
       rows=list.rows||list.data||list.items||[];
     }catch(_e){}
@@ -539,7 +538,7 @@ async function loadOrderList(force=false){
     if(!keepOld) $('quickList').innerHTML='背景讀取快取資料中 / กำลังโหลดข้อมูลแคช...';
 
     let rows=[];
-    let res=await apiGetRetry('targetorderlist',{start:reqStart,end:reqEnd,q:q,limit:500,_:Date.now()},1);
+    let res=await apiGetRetry('targetorderlist',{start:reqStart,end:reqEnd,q:q,limit:300,_:Date.now()},1);
     if(seq!==__orderReqSeq)return;
     rows=res.rows||res.data||res.items||[];
 
@@ -633,21 +632,18 @@ async function loadMatchList(force=false){
   __loadingMatch=true;
   renderTargetsLoading();
   try{
-    const res=await apiGet('targetmatchlist',{start:$('rangeStart').value,end:$('rangeEnd').value,_:Date.now()});
+    // V83.6.1：不再等待容易逾時的 targetmatchlist。
+    // 直接讀取 Key In，於前端依工單／命令單／日報／批號／料號建立配對。
+    await loadKeyInForRange(force);
     if(seq!==__matchReqSeq)return;
-    const rows=res.rows||res.data||res.list||[];
-    if(rows.length){
-      MATCH_ROWS=rows;
-      renderTargets();updateKpi();
-      $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜後端配對完成 '+rows.length+' 筆。';
-      return;
-    }
-    throw new Error('後端配對未回傳資料');
+    buildClientMatches();
+    $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜Key In '+KEYIN_ROWS.length+' 筆｜前端配對完成。';
   }catch(e){
     if(seq===__matchReqSeq){
-      await loadKeyInForRange(force);
-      buildClientMatches();
-      $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜已改用前端 Key In 配對 '+KEYIN_ROWS.length+' 筆。';
+      renderTargetsFallback();
+      updateKpi();
+      $('loadMsg').textContent='Key In 讀取失敗：'+e.message+'；已保留目標資料，請按「重新計算配對」。';
+      throw e;
     }
   }finally{
     if(seq===__matchReqSeq)__loadingMatch=false;
