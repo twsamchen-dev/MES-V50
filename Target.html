@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V83.5.7 MES Target Enterprise｜Process Sync</title>
+<title>V83.5.8 MES Target Enterprise｜Key In Search Sync</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
@@ -18,7 +18,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.5.7 Process Sync</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引搜尋進度、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.5.8 Key In Search Sync</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -69,7 +69,7 @@
       </div>
       <div class="col4"><label>幹部角色 / ตำแหน่ง</label><select id="leader_role"><option>課長 / หัวหน้าแผนก</option><option>副課長 / รองหัวหน้าแผนก</option><option>組長 / หัวหน้ากลุ่ม</option><option>班長 / หัวหน้ากะ</option><option>代理 / รักษาการ</option></select></div>
       <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入"></div>
-      <div class="col4"><label>工單／訂單／命令單／日報／批號</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">停止輸入約 0.5 秒後自動搜尋 / ค้นหาอัตโนมัติหลังหยุดพิมพ์</div></div>
+      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">同時搜尋五份資料與人員 Key In；停止輸入約 0.5 秒後自動帶出資訊 / ค้นหาข้อมูล 5 ไฟล์และ Key In อัตโนมัติ</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
@@ -88,7 +88,7 @@
       <div class="col3"><label>預計完成 / วันที่คาดว่าจะเสร็จ</label><input id="planned_finish" type="date"></div>
       <div class="col3"><label>狀態 / สถานะ</label><select id="status"><option>未完成 / ยังไม่เสร็จ</option><option>進行中 / กำลังทำ</option><option>已完成 / เสร็จแล้ว</option></select></div>
       <div class="col12"><label>備註 / หมายเหตุ</label><textarea id="note" rows="3"></textarea></div>
-    </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號或料號後才查資料。</div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
+    </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。</div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
 
     <div class="card col4"><h2><span id="quickTitle">五份資料工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋工單／訂單／命令單／日報／批號／投入產出料號製號／客戶／規格／機台" oninput="debouncedOrderList()"><div id="quickList" class="found" style="max-height:620px;overflow:auto">讀取後顯示</div></div>
     <div class="card col12"><h2><span id="targetTitle">今日目標清單</span> / รายการเป้าหมาย</h2><div class="muted">依幹部目標 × 人員 Key In × 五份檔案比對。/ เทียบเป้าหมายหัวหน้า × รายงาน Key In × ข้อมูล 5 ไฟล์</div><div id="targetTable"></div></div>
@@ -121,7 +121,7 @@ function wo12(v){return String(v??'').trim().replace(/\s+/g,'').toUpperCase().sl
 function queryNorm(v){return String(v??'').trim().replace(/\s+/g,'').toUpperCase()}
 function norm(v){return String(v??'').trim().replace(/\s+/g,'').toUpperCase()}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function cleanSource(s){s=String(s||'');const a=[];if(s.includes('4-3'))a.push('4-3');if(s.toUpperCase().includes('PD11B'))a.push('PD11B');if(s.toUpperCase().includes('SL31A'))a.push('SL31A');if(s.includes('5-C')||s.includes('5C'))a.push('5-C');if(s.includes('5-3')||s==='53')a.push('5-3');return a.filter((v,i,x)=>x.indexOf(v)===i).join('+')||s||'-'}
+function cleanSource(s){s=String(s||'');const a=[];if(s.includes('4-3'))a.push('4-3');if(s.toUpperCase().includes('PD11B'))a.push('PD11B');if(s.toUpperCase().includes('SL31A'))a.push('SL31A');if(s.includes('5-C')||s.includes('5C'))a.push('5-C');if(s.includes('5-3')||s==='53')a.push('5-3');if(s.toUpperCase().includes('KEY IN')||s.toUpperCase().includes('KEYIN'))a.push('Key In');return a.filter((v,i,x)=>x.indexOf(v)===i).join('+')||s||'-'}
 function num(v){let n=parseFloat(String(v??'').replace(/,/g,''));return isNaN(n)?0:n}
 function dateKey(v){let s=String(v||'').replace(/\//g,'-');let m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):s.slice(0,10)}
 function isoWeek(d){let x=new Date(dateKey(d)+'T00:00:00');if(isNaN(x))return '';x.setHours(0,0,0,0);x.setDate(x.getDate()+3-((x.getDay()+6)%7));let w1=new Date(x.getFullYear(),0,4);let week=1+Math.round(((x-w1)/86400000-3+((w1.getDay()+6)%7))/7);return x.getFullYear()+'-W'+String(week).padStart(2,'0')}
@@ -315,10 +315,46 @@ async function loadBootstrap(){
 
 let __lookupSeq=0;
 function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();return}lookupTimer=setTimeout(lookupOrder,550)}
-function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號或料號後才查資料。'}
+function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。'}
 function renderSearchProgress(percent,step){
   $('lookupBox').className='found';
   $('lookupBox').innerHTML='<div class="searchProgress"><div class="searchHead"><span class="spinner"></span>正在搜尋統一訂單索引 / กำลังค้นหาฐานข้อมูล</div><div class="progressTrack"><div class="progressBar" style="width:'+percent+'%"></div></div><div class="searchSteps">'+esc(step)+'｜'+percent+'%</div></div>';
+}
+function normalizeKeyInOrder(r){
+  r=Object.assign({},r||{});
+  const wo=r.work_order_no||r.order_no||r.command_no||r['工單']||r['工單號']||r['命令單號']||r['訂單單號']||r.mo_no||'';
+  const process=r.process_site||r.process||r['製程站點']||r['站點']||r['製程']||'';
+  const machine=r.machine_code||r.machine||r['機台']||r['機台編號']||'';
+  const qty=r.actual_qty||r.qty||r.quantity||r['實際產量']||r['數量']||r['產量']||'';
+  return normalizeClientOrder(Object.assign({},r,{
+    source:(r.source?String(r.source)+'+':'')+'Key In',
+    work_order_no:wo,
+    command_no:r.command_no||wo,
+    order_no:r.order_no||r['訂單單號']||'',
+    report_no:r.report_no||r.daily_report_no||r['日報號']||'',
+    batch_no:r.batch_no||r.lot_no||r['批號']||r['生產批號']||'',
+    part_no:r.part_no||r.output_part_no||r['料號']||r['產出料號']||'',
+    input_part_no:r.input_part_no||r['投入料號']||'',
+    output_part_no:r.output_part_no||r['產出料號']||r.part_no||'',
+    input_lot_no:r.input_lot_no||r['投入製號']||'',
+    output_lot_no:r.output_lot_no||r['產出製號']||'',
+    customer:r.customer||r['客戶']||'',
+    product_spec:r.product_spec||r.spec||r['產品規格']||r['規格']||'',
+    process:process,
+    machine:machine,
+    machine_code:machine,
+    target_qty:r.target_qty||qty,
+    report_date:r.report_date||r.date||r['回報日期']||r['日期']||''
+  }));
+}
+async function lookupKeyInOrders(q){
+  try{
+    const res=await apiGetRetry('keyinsource',{q:q,keyword:q,work_order_no:q,limit:1000,_:Date.now()},1);
+    const rows=res.rows||res.data||res.list||res.items||[];
+    return rows.map(normalizeKeyInOrder).filter(r=>localOrderMatch(r,q));
+  }catch(_e){
+    return [];
+  }
 }
 async function lookupOrder(){
   clearTimeout(lookupTimer);
@@ -327,23 +363,26 @@ async function lookupOrder(){
   $('work_order_no').value=q;
   if(!q){renderSearchIdle();return}
   try{
-    renderSearchProgress(15,'步驟 1/3：準備搜尋工單、訂單與命令單');
+    renderSearchProgress(12,'步驟 1/4：準備搜尋工單、訂單與命令單');
     await new Promise(r=>setTimeout(r,120));
     if(seq!==__lookupSeq)return;
-    renderSearchProgress(38,'步驟 2/3：比對日報、批號與料號');
+    renderSearchProgress(35,'步驟 2/4：比對五份資料的日報、批號與料號');
     let rows=[];
     try{
       const list=await apiGetRetry('targetorderlist',{start:'2000-01-01',end:'2099-12-31',q:q,limit:500,_:Date.now()},1);
       if(seq!==__lookupSeq)return;
       rows=list.rows||list.data||list.items||[];
     }catch(_e){}
-    renderSearchProgress(72,'步驟 3/3：整理關聯資料與去除重複');
+    renderSearchProgress(65,'步驟 3/4：搜尋人員 Key In 工單');
+    const keyInRows=await lookupKeyInOrders(q);
+    if(seq!==__lookupSeq)return;
+    renderSearchProgress(82,'步驟 4/4：整理關聯資料與去除重複');
     if(!rows.length){
       const res=await apiGetRetry('targetlookup',{q:q,_:Date.now()},1);
       if(seq!==__lookupSeq)return;
       rows=res.rows||res.data||res.items||(res.row?[res.row]:[]);
     }
-    rows=(rows||[]).map(normalizeClientOrder).filter(r=>localOrderMatch(r,q));
+    rows=(rows||[]).map(normalizeClientOrder).concat(keyInRows).filter(r=>localOrderMatch(r,q));
     const seen=new Set();
     rows=rows.filter(r=>{const k=[r.work_order_no,r.command_no,r.order_no,r.report_no,r.batch_no,r.part_no].map(norm).join('|');if(seen.has(k))return false;seen.add(k);return true});
     if(seq!==__lookupSeq)return;
@@ -351,7 +390,7 @@ async function lookupOrder(){
     if(rows.length===1){LAST_LOOKUP=rows[0];fillFromOrder(rows[0]);renderLookupSummary(rows[0],1);$('lookupBox').classList.add('searchDone');toast('搜尋完成，資料已自動帶入');return}
     window.__TARGET_LOOKUP_ROWS=rows;
     $('lookupBox').className='found searchDone';
-    $('lookupBox').innerHTML='<b>✓ 搜尋完成，共找到 '+rows.length+' 筆關聯資料，請選擇：</b><div style="max-height:300px;overflow:auto;margin-top:8px">'+rows.slice(0,100).map((r,i)=>'<div class="listitem" onclick="selectLookupRow('+i+')"><b>'+esc(r.work_order_no||r.command_no||r.order_no||r.report_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'</span><br><span class="muted">料號：'+esc(r.part_no||r.output_part_no||r.input_part_no||'-')+'｜客戶：'+esc(r.customer||'-')+'｜規格：'+esc(r.product_spec||'-')+'</span></div>').join('')+'</div>';
+    $('lookupBox').innerHTML='<b>✓ 搜尋完成，共找到 '+rows.length+' 筆五份資料／Key In 關聯資料，請選擇：</b><div style="max-height:300px;overflow:auto;margin-top:8px">'+rows.slice(0,100).map((r,i)=>'<div class="listitem" onclick="selectLookupRow('+i+')"><b>'+esc(r.work_order_no||r.command_no||r.order_no||r.report_no||'-')+'</b><span class="pill" style="margin-left:6px">'+esc(cleanSource(r.source))+'</span><br><span class="muted">訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'</span><br><span class="muted">料號：'+esc(r.part_no||r.output_part_no||r.input_part_no||'-')+'｜客戶：'+esc(r.customer||'-')+'｜規格：'+esc(r.product_spec||'-')+'</span></div>').join('')+'</div>';
   }catch(e){if(seq!==__lookupSeq)return;$('lookupBox').className='found warn';$('lookupBox').innerHTML='<b>搜尋失敗：</b>'+esc(e.message)+'<br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>'}
 }
 function selectLookupRow(i){
@@ -361,7 +400,7 @@ function selectLookupRow(i){
 }
 function renderLookupSummary(r,total){
   $('lookupBox').className='found';
-  $('lookupBox').innerHTML='<b>已帶入統一訂單索引資料</b>'+(total>1?'<span class="pill" style="margin-left:6px">本查詢共 '+total+' 筆</span>':'')+'<br>來源：'+esc(cleanSource(r.source))+'<br>工單／命令單：'+esc(r.work_order_no||r.command_no||'-')+'<br>訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'<br>投入料號：'+esc(r.input_part_no||'-')+'｜產出料號：'+esc(r.output_part_no||r.part_no||'-')+'<br>投入製號：'+esc(r.input_lot_no||'-')+'｜產出製號：'+esc(r.output_lot_no||'-')+'<br>預交日：'+esc(r.due_date||'-')+'｜客戶：'+esc(r.customer||'-')+'<br>規格：'+esc(r.product_spec||'-')+'<br>SL31A 長×寬：'+esc(r.pivot_len||'-')+' × '+esc(r.pivot_width||'-');
+  $('lookupBox').innerHTML='<b>已自動帶入五份資料／Key In 工單資訊</b>'+(total>1?'<span class="pill" style="margin-left:6px">本查詢共 '+total+' 筆</span>':'')+'<br>來源：'+esc(cleanSource(r.source))+'<br>工單／命令單：'+esc(r.work_order_no||r.command_no||'-')+'<br>訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'<br>投入料號：'+esc(r.input_part_no||'-')+'｜產出料號：'+esc(r.output_part_no||r.part_no||'-')+'<br>投入製號：'+esc(r.input_lot_no||'-')+'｜產出製號：'+esc(r.output_lot_no||'-')+'<br>預交日：'+esc(r.due_date||'-')+'｜客戶：'+esc(r.customer||'-')+'<br>規格：'+esc(r.product_spec||'-')+'<br>SL31A 長×寬：'+esc(r.pivot_len||'-')+' × '+esc(r.pivot_width||'-');
 }
 function clearOrderFields(){
   ['work_order_no','order_no','command_no','report_no','daily_report_no','part_no','input_part_no','output_part_no','batch_no','input_lot_no','output_lot_no','machine_code','customer','product_spec','target_roll','target_m2','pivot_len','pivot_width','due_date_display'].forEach(id=>{if($(id))$(id).value=''});
