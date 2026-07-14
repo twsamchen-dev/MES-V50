@@ -24,6 +24,7 @@
     <div class="card col12 compact-card toolbar">
       <button class="btn" id="loadBtn" onclick="loadBootstrap()">重新讀取目標/人員</button>
       <button class="btn ghost" id="cacheBtn" onclick="rebuildOrderCache()">重建五份資料快取</button>
+      <button class="btn ghost" id="rematchBtn" onclick="recalculateMatches(true)">重新計算配對</button>
       <button class="btn ghost" onclick="clearForm()">清空表單</button>
       <span id="loadMsg" class="muted"></span>
     </div>
@@ -108,7 +109,7 @@
 
 <script>
 const API_URL=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-let ALL_TARGETS=[],TARGETS=[],MATCH_ROWS=[],EMPLOYEES=[],EMPIDX={},ORDER_LIST=[],lookupTimer=null,orderTimer=null,currentRange='today',LAST_LOOKUP=null;
+let ALL_TARGETS=[],TARGETS=[],MATCH_ROWS=[],EMPLOYEES=[],EMPIDX={},ORDER_LIST=[],KEYIN_ROWS=[],lookupTimer=null,orderTimer=null,currentRange='today',LAST_LOOKUP=null;
 let __bgMatchTimer=null,__bgOrderTimer=null,__orderCacheKey='',__lastOrderSearch='';
 let __orderReqSeq=0,__matchReqSeq=0,__loadingOrder=false,__loadingMatch=false,__rebuildingCache=false;
 function $(id){return document.getElementById(id)}
@@ -134,7 +135,7 @@ function inRangeDate(v){const d=dateKey(v);return d&&d>=dateKey($('rangeStart').
 function rangeName(){return currentRange==='today'?'今日':currentRange==='week'?'一周':currentRange==='month'?'本月':'自訂區間'}
 function applyRange(){
   TARGETS=ALL_TARGETS.filter(r=>inRangeDate(r.report_date));
-  $('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value;
+  $('rangeHint').textContent='目前：'+rangeName()+' '+$('rangeStart').value+' ~ '+$('rangeEnd').value+'｜全部目標 '+ALL_TARGETS.length+' 筆，目前區間 '+TARGETS.length+' 筆';
   $('quickTitle').textContent=rangeName()+'五份資料工單';
   $('targetTitle').textContent=rangeName()+'目標清單 / 配對狀況';
   MATCH_ROWS=[];
@@ -303,8 +304,9 @@ async function loadBootstrap(){
     ALL_TARGETS=t.targets||t.rows||t.data||t.list||[];
     normalizeEmployees(e.employees||e.rows||e.data||e.list||[]);
     applyRange();
-    $('loadMsg').textContent='已讀取目標 '+ALL_TARGETS.length+' 筆，人員 '+EMPLOYEES.length+' 筆；配對與工單清單背景載入中。';
-    toast('目標/人員讀取完成');
+    $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜人員 '+EMPLOYEES.length+' 筆；正在讀取 Key In 並計算配對。';
+    await recalculateMatches(false);
+    toast('目標、人員與配對讀取完成');
   }catch(e){
     $('loadMsg').textContent='讀取失敗：'+e.message;
     alert('讀取失敗：'+e.message);
@@ -580,29 +582,89 @@ function renderTargetsLoading(){
   if(!TARGETS.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
   $('targetTable').innerHTML='<div class="muted">配對計算中：目標 × Key In × 五份資料... / กำลังจับคู่ข้อมูล...</div>';
 }
+async function loadKeyInForRange(force=false){
+  if(KEYIN_ROWS.length && !force)return KEYIN_ROWS;
+  const start=$('rangeStart').value||today(), end=$('rangeEnd').value||today();
+  try{
+    const res=await apiGetRetry('keyinsource',{start:start,end:end,date_from:start,date_to:end,limit:5000,_:Date.now()},1);
+    KEYIN_ROWS=(res.rows||res.data||res.list||res.items||[]).map(normalizeKeyInOrder);
+  }catch(e){
+    KEYIN_ROWS=[];
+    console.warn('Key In fallback load failed',e);
+  }
+  return KEYIN_ROWS;
+}
+function matchTokens_(r){
+  return [r.work_order_no,r.command_no,r.order_no,r.report_no,r.daily_report_no,r.batch_no,r.part_no,r.input_part_no,r.output_part_no,r.input_lot_no,r.output_lot_no]
+    .map(norm).filter(Boolean);
+}
+function rowsRelated_(a,b){
+  const A=matchTokens_(a),B=new Set(matchTokens_(b));
+  return A.some(x=>B.has(x));
+}
+function keyInQty_(r){
+  return num(r.actual_qty||r.qty||r.quantity||r.target_qty||r['實際產量']||r['數量']||r['產量']);
+}
+function buildClientMatches(){
+  MATCH_ROWS=TARGETS.map(t=>{
+    const related=KEYIN_ROWS.filter(k=>rowsRelated_(t,k));
+    const qty=related.reduce((a,k)=>a+keyInQty_(k),0);
+    const target=num(t.target_roll||t.target_qty);
+    const completion=target>0?Math.min(999,Math.round(qty/target*100)):'';
+    let workStatus=t.status||'未作業';
+    if(qty>0 && target>0) workStatus=qty>=target?'已完成':'作業中';
+    else if(qty>0) workStatus='作業中';
+    const sample=related[0]||{};
+    return Object.assign({},t,{
+      customer:t.customer||sample.customer||'',
+      process_site:t.process_site||sample.process||sample.process_site||'',
+      machine_code:t.machine_code||sample.machine||sample.machine_code||'',
+      keyin_qty:qty||'',
+      file_match_status:related.length?'Key In 已配對':'未找到 Key In',
+      work_status:workStatus,
+      completion_rate:completion
+    });
+  });
+  renderTargets();updateKpi();
+}
 async function loadMatchList(force=false){
   if(__loadingMatch && !force)return;
   const seq=++__matchReqSeq;
   __loadingMatch=true;
+  renderTargetsLoading();
   try{
     const res=await apiGet('targetmatchlist',{start:$('rangeStart').value,end:$('rangeEnd').value,_:Date.now()});
     if(seq!==__matchReqSeq)return;
-    MATCH_ROWS=res.rows||[];
-    renderTargets();
-    updateKpi();
+    const rows=res.rows||res.data||res.list||[];
+    if(rows.length){
+      MATCH_ROWS=rows;
+      renderTargets();updateKpi();
+      $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜後端配對完成 '+rows.length+' 筆。';
+      return;
+    }
+    throw new Error('後端配對未回傳資料');
   }catch(e){
     if(seq===__matchReqSeq){
-      MATCH_ROWS=[];
-      $('targetTable').innerHTML='<div class="found warn">配對資料讀取失敗：'+esc(e.message)+'<br>仍顯示原始目標資料。</div>';
-      renderTargetsFallback();
+      await loadKeyInForRange(force);
+      buildClientMatches();
+      $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜已改用前端 Key In 配對 '+KEYIN_ROWS.length+' 筆。';
     }
-    throw e;
   }finally{
     if(seq===__matchReqSeq)__loadingMatch=false;
   }
 }
+async function recalculateMatches(force=true){
+  const btn=$('rematchBtn');
+  if(btn){btn.disabled=true;btn.textContent='計算中...'}
+  if(force){KEYIN_ROWS=[];MATCH_ROWS=[]}
+  try{
+    await loadMatchList(force);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='重新計算配對'}
+  }
+}
 function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整'))return 'status-run';return 'status-wait'}
-function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'未計算',work_status:r.status||'',completion_rate:''}));renderTargets()}
+function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待配對',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
 function renderTargets(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
