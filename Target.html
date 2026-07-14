@@ -18,7 +18,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.4 Exact Key In Match</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.5 Auto Lookup Fill</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -70,7 +70,7 @@
       </div>
       <div class="col4"><label>幹部角色 / ตำแหน่ง</label><select id="leader_role"><option>課長 / หัวหน้าแผนก</option><option>副課長 / รองหัวหน้าแผนก</option><option>組長 / หัวหน้ากลุ่ม</option><option>班長 / หัวหน้ากะ</option><option>代理 / รักษาการ</option></select></div>
       <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入"></div>
-      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">同時搜尋五份資料與人員 Key In；停止輸入約 0.5 秒後自動帶出資訊 / ค้นหาข้อมูล 5 ไฟล์และ Key In อัตโนมัติ</div></div>
+      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder()}" placeholder="例如 MM2605060026 或 202607010036"><div class="muted">手動輸入後停止約 0.5 秒，自動搜尋五份資料與 Key In，並直接帶入機台、訂單、料號、批號、製程、目標、客戶、規格與預交日 / ค้นหาข้อมูล 5 ไฟล์และ Key In อัตโนมัติ</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
@@ -391,6 +391,26 @@ async function lookupKeyInOrders(q){
     return [];
   }
 }
+function lookupExactScore_(r,q){
+  const nq=norm(q);
+  const exactFields=[r.work_order_no,r.command_no,r.order_no,r.report_no,r.daily_report_no,r.batch_no,r.part_no,r.input_part_no,r.output_part_no,r.input_lot_no,r.output_lot_no];
+  let score=0;
+  exactFields.forEach((v,i)=>{const nv=norm(v);if(!nv)return;if(nv===nq)score+=100-(i*2);else if(nv.includes(nq)||nq.includes(nv))score+=20;});
+  if(String(r.source||'').toUpperCase().includes('KEY IN'))score+=2;
+  return score;
+}
+function mergeLookupRows_(rows,q){
+  const ranked=(rows||[]).slice().sort((a,b)=>lookupExactScore_(b,q)-lookupExactScore_(a,q));
+  if(!ranked.length)return null;
+  const best=Object.assign({},ranked[0]);
+  const bestScore=lookupExactScore_(best,q);
+  ranked.slice(1).forEach(r=>{
+    if(lookupExactScore_(r,q)<Math.max(20,bestScore-25))return;
+    ['work_order_no','command_no','order_no','report_no','daily_report_no','batch_no','part_no','input_part_no','output_part_no','input_lot_no','output_lot_no','customer','product_spec','process','machine','machine_code','target_qty','pivot_len','pivot_width','due_date'].forEach(k=>{if(!best[k]&&r[k])best[k]=r[k]});
+    const src=[best.source,r.source].filter(Boolean).join('+');best.source=cleanSource(src);
+  });
+  return best;
+}
 async function lookupOrder(){
   clearTimeout(lookupTimer);
   const seq=++__lookupSeq;
@@ -422,6 +442,12 @@ async function lookupOrder(){
     rows=rows.filter(r=>{const k=[r.work_order_no,r.command_no,r.order_no,r.report_no,r.batch_no,r.part_no].map(norm).join('|');if(seen.has(k))return false;seen.add(k);return true});
     if(seq!==__lookupSeq)return;
     if(!rows.length){$('lookupBox').className='found warn searchDone';$('lookupBox').innerHTML='<b>⚠ 查無資料 / ไม่พบข้อมูล：</b>'+esc(q)+'<br><span class="muted">仍可手動輸入，或確認右側工單清單是否已更新。</span><br><button class="btn ghost" type="button" onclick="lookupOrder()">重新搜尋 / ค้นหาใหม่</button>';return}
+    const autoBest=mergeLookupRows_(rows,q);
+    const exactRows=rows.filter(r=>lookupExactScore_(r,q)>=80);
+    if(autoBest && exactRows.length>=1){
+      LAST_LOOKUP=autoBest;fillFromOrder(autoBest);renderLookupSummary(autoBest,rows.length);$('lookupBox').classList.add('searchDone');
+      toast('已搜尋並自動帶入工單資訊');return;
+    }
     if(rows.length===1){LAST_LOOKUP=rows[0];fillFromOrder(rows[0]);renderLookupSummary(rows[0],1);$('lookupBox').classList.add('searchDone');toast('搜尋完成，資料已自動帶入');return}
     window.__TARGET_LOOKUP_ROWS=rows;
     $('lookupBox').className='found searchDone';
