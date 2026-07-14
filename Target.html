@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.7 Manual Search Only</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.8 Unit Aware Target</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -75,13 +75,13 @@
       <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><div class="lookupLine"><input id="work_order_no" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="manualLookupInput_()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder(true)}" placeholder="例如 MM2605060026 或 202607010036"><button id="lookupBtn" class="lookupBtn" type="button" onclick="lookupOrder(true)">🔍 搜尋</button></div><div class="muted">請完整輸入後按「搜尋」或 Enter。已關閉自動補字與輸入中自動搜尋，避免只打幾個字就被替換。</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
-      <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
+      <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden"><input id="target_unit" type="hidden">
       <div class="col4"><label>料號 / รหัสสินค้า</label><input id="part_no" placeholder="由工單或 SL31A 帶入"></div>
       <div class="col4"><label>生產批號 / ล็อตผลิต</label><input id="batch_no" placeholder="可空白"></div>
       <div class="col4"><label>製程站點 / จุดกระบวนการ</label><select id="process_site">
         <option>開料 / ตัดวัตถุดิบ</option><option>清洗 / ล้าง</option><option>退火 / อบอ่อน</option><option>軋延 / รีด</option><option>上膠 / เคลือบกาว</option><option>覆卷 / ม้วนซ้ำ</option><option>線軸覆卷機台 / เครื่องกรอม้วนแกน</option><option>分條 / ตัดแบ่งม้วน</option><option>複捲 / กรอกลับ</option><option>對貼 / ประกบ</option><option>裁切 / ตัดแผ่น</option><option>檢驗 / ตรวจสอบ</option><option>包裝 / บรรจุ</option><option>入庫 / เข้าคลัง</option><option>重工 / งานแก้ไข</option><option>其他 / อื่นๆ</option>
       </select></div>
-      <div class="col4"><label>目標卷數 R / เป้าหมายม้วน</label><input id="target_roll" type="number" step="0.01" oninput="calcTargetM2()"></div>
+      <div class="col4"><label>目標卷數 R / เป้าหมายม้วน</label><input id="target_roll" type="number" step="0.01" oninput="calcTargetM2()"><div id="targetUnitHint" class="muted">依來源單位自動判斷 R 或 ㎡</div></div>
       <div class="col4"><label>目標 ㎡ / เป้าหมาย ตร.ม.</label><input id="target_m2" type="number" step="0.01"></div>
       <div class="col6"><label>客戶 / ลูกค้า</label><input id="customer"></div>
       <div class="col6"><label>產品規格 / สเปกสินค้า</label><input id="product_spec"></div>
@@ -478,9 +478,36 @@ function renderLookupSummary(r,total){
   $('lookupBox').innerHTML='<b>已自動帶入五份資料／Key In 工單資訊</b>'+(total>1?'<span class="pill" style="margin-left:6px">本查詢共 '+total+' 筆</span>':'')+'<br>來源：'+esc(cleanSource(r.source))+'<br>工單／命令單：'+esc(r.work_order_no||r.command_no||'-')+'<br>訂單：'+esc(r.order_no||'-')+'｜日報：'+esc(r.report_no||r.daily_report_no||'-')+'｜批號：'+esc(r.batch_no||'-')+'<br>投入料號：'+esc(r.input_part_no||'-')+'｜產出料號：'+esc(r.output_part_no||r.part_no||'-')+'<br>投入製號：'+esc(r.input_lot_no||'-')+'｜產出製號：'+esc(r.output_lot_no||'-')+'<br>預交日：'+esc(r.due_date||'-')+'｜客戶：'+esc(r.customer||'-')+'<br>規格：'+esc(r.product_spec||'-')+'<br>SL31A 長×寬：'+esc(r.pivot_len||'-')+' × '+esc(r.pivot_width||'-');
 }
 function clearOrderFields(){
-  ['work_order_no','order_no','command_no','report_no','daily_report_no','part_no','input_part_no','output_part_no','batch_no','input_lot_no','output_lot_no','machine_code','customer','product_spec','target_roll','target_m2','pivot_len','pivot_width','due_date_display'].forEach(id=>{if($(id))$(id).value=''});
+  ['work_order_no','order_no','command_no','report_no','daily_report_no','part_no','input_part_no','output_part_no','batch_no','input_lot_no','output_lot_no','machine_code','customer','product_spec','target_roll','target_m2','pivot_len','pivot_width','due_date_display','target_unit'].forEach(id=>{if($(id))$(id).value=''});
   if($('planned_finish')) $('planned_finish').value=$('report_date').value||today();
   if($('process_site')) $('process_site').selectedIndex=0;
+}
+function normalizeTargetUnit_(v){
+  const u=String(v||'').trim().toUpperCase().replace(/平方公尺|平方米|M²|㎡/g,'M2');
+  if(u==='R'||u.includes('ROLL')||u.includes('卷'))return 'R';
+  if(u==='M2'||u.includes('SQM'))return 'M2';
+  if(u==='M'||u.includes('METER')||u.includes('米'))return 'M';
+  if(u==='PCS'||u.includes('PC')||u.includes('片')||u.includes('個'))return 'PCS';
+  return u;
+}
+function applyTargetQtyByUnit_(r){
+  const qty=num(r.target_qty||r.planned_qty||r.plan_qty||r['預計產量']||r['目標數量']);
+  const unit=normalizeTargetUnit_(r.target_unit||r.unit||r.qty_unit||r.quantity_unit||r['單位']);
+  $('target_unit').value=unit||'';
+  $('target_roll').value='';
+  $('target_m2').value='';
+  if(qty){
+    if(unit==='M2') $('target_m2').value=qty;
+    else if(unit==='R') $('target_roll').value=qty;
+    else if(!unit) $('target_roll').value=qty;
+  }
+  const hint=$('targetUnitHint');
+  if(hint){
+    if(unit==='M2') hint.textContent='來源單位：㎡，數量已填入「目標㎡」';
+    else if(unit==='R') hint.textContent='來源單位：R，數量已填入「目標卷數」';
+    else if(unit) hint.textContent='來源單位：'+unit+'；目前不自動放入 R 或㎡';
+    else hint.textContent='來源未提供單位，暫以 R 帶入，請確認';
+  }
 }
 function fillFromOrder(r){
   if(!r)return;
@@ -501,12 +528,12 @@ function fillFromOrder(r){
   $('product_spec').value=r.product_spec||'';
   if(r.process)$('process_site').value=matchProcess(r.process);
   if(r.machine||r.machine_code)$('machine_code').value=r.machine||r.machine_code;
-  if(r.target_qty)$('target_roll').value=r.target_qty;
+  applyTargetQtyByUnit_(r);
   if(r.pivot_len)$('pivot_len').value=r.pivot_len;
   if(r.pivot_width)$('pivot_width').value=r.pivot_width;
   if(r.due_date){$('due_date_display').value=dateKey(r.due_date);$('planned_finish').value=dateKey(r.due_date)}
   else if($('due_date_display')){$('due_date_display').value=''}
-  calcTargetM2();
+  if(normalizeTargetUnit_($('target_unit').value)!=='M2')calcTargetM2();
 }
 function matchProcess(p){p=String(p||'');const sel=$('process_site');for(let i=0;i<sel.options.length;i++){let z=sel.options[i].text;if(z.includes(p)||p.includes(z.split('/')[0].trim()))return sel.options[i].text}return sel.value}
 function calcTargetM2(){let r=num($('target_roll').value),l=num($('pivot_len').value),w=num($('pivot_width').value);if(r&&l&&w){$('target_m2').value=(r*l*w/1000).toFixed(2)}}
@@ -581,6 +608,8 @@ function normalizeClientOrder(r){
   }
   if(!r.customer && parts.length>=3 && !looksWorkNo(parts[2]) && !looksOrderNo(parts[2])) r.customer=parts[2];
   if(!r.source && parts[0]) r.source=parts[0];
+  r.target_unit=r.target_unit||r.unit||r.qty_unit||r.quantity_unit||r['單位']||r['產量單位']||r['目標單位']||'';
+  if(!r.target_unit && orderIdx>=0 && parts[orderIdx+10]) r.target_unit=parts[orderIdx+10];
   return r;
 }
 function displayMainNo(r){r=normalizeClientOrder(r);return r.work_order_no||r.command_no||r.order_no||r.daily_report_no||r.report_no||r.batch_no||r.part_no||'-'}
@@ -705,17 +734,22 @@ function keyInQty_(r){
 function buildClientMatches(){
   MATCH_ROWS=TARGETS.map(t=>{
     const related=KEYIN_ROWS.filter(k=>rowsRelated_(t,k));
-    const qty=related.reduce((a,k)=>a+keyInQty_(k),0);
-    const target=num(t.target_roll||t.target_qty);
+    const targetUnit=normalizeTargetUnit_(t.target_unit||(num(t.target_m2)?'M2':'R'));
+    const unitRows=related.filter(k=>{
+      const ku=normalizeTargetUnit_(k.unit||k.qty_unit||k.quantity_unit||k['單位']);
+      return !ku||!targetUnit||ku===targetUnit;
+    });
+    const qty=unitRows.reduce((a,k)=>a+keyInQty_(k),0);
+    const target=targetUnit==='M2'?num(t.target_m2||t.target_qty):num(t.target_roll||t.target_qty);
     const rawRate=target>0?Math.round(qty/target*100):'';
     const completion=rawRate===''?'':Math.min(100,rawRate);
     const overQty=(target>0 && qty>target)?qty-target:0;
     let workStatus='未作業';
     if(qty>0 && target>0) workStatus=qty>=target?(overQty>0?'已完成（超產）':'已完成'):'作業中';
     else if(qty>0) workStatus='作業中';
-    const sample=related[0]||{};
-    const matchText=related.length
-      ?('Key In 已配對'+(overQty>0?'｜超產 '+Number(overQty.toFixed(3))+' R':''))
+    const sample=unitRows[0]||related[0]||{};
+    const matchText=unitRows.length
+      ?('Key In 已配對'+(overQty>0?'｜超產 '+Number(overQty.toFixed(3))+' '+(targetUnit==='M2'?'㎡':'R'):''))
       :'未找到同日同工單 Key In';
     return Object.assign({},t,{
       customer:t.customer||sample.customer||'',
@@ -800,7 +834,7 @@ function syncMultiStart(){if(!$('multi_start'))return;const d=$('report_date').v
 function enumerateDates(start,end){const a=dateKey(start),b=dateKey(end);if(!a||!b||a>b)return[];const rows=[];let d=a;while(d<=b&&rows.length<366){rows.push(d);d=addDays(d,1)}return rows}
 function updateMultiSummary(){if(!$('multi_start'))return;const dates=enumerateDates($('multi_start').value,$('multi_end').value);$('multi_days').value=dates.length||0;const value=num($('target_roll').value);const mode=$('multi_alloc').value;if(!dates.length){$('multiSummary').textContent='日期範圍不正確 / ช่วงวันที่ไม่ถูกต้อง';return}if(mode==='total'){$('multiSummary').textContent='總目標 '+value+' R 將平均分配至 '+dates.length+' 天，每日約 '+(dates.length?value/dates.length:0).toFixed(2)+' R。'}else{$('multiSummary').textContent='將建立 '+dates.length+' 天，每天 '+value+' R，共 '+(value*dates.length).toFixed(2)+' R。'}}
 function buildBaseTargetData(){
- return {report_date:$('report_date').value||today(),week_no:isoWeek($('report_date').value||today()),shift:$('shift').value,emp_no:$('emp_no').value,leader_emp_no:$('emp_no').value,leader_role:$('leader_role').value,leader_name:$('leader_name').value,work_order_no:wo12($('work_order_no').value),order_no:$('order_no').value,command_no:$('command_no').value||wo12($('work_order_no').value),report_no:$('report_no').value,daily_report_no:$('daily_report_no').value,part_no:$('part_no').value,input_part_no:$('input_part_no').value,output_part_no:$('output_part_no').value,batch_no:$('batch_no').value,input_lot_no:$('input_lot_no').value,output_lot_no:$('output_lot_no').value,process_site:$('process_site').value,machine_code:$('machine_code').value,customer:$('customer').value,product_spec:$('product_spec').value,target_roll:$('target_roll').value,target_m2:$('target_m2').value,planned_finish:$('planned_finish').value,status:$('status').value,note:$('note').value};
+ return {report_date:$('report_date').value||today(),week_no:isoWeek($('report_date').value||today()),shift:$('shift').value,emp_no:$('emp_no').value,leader_emp_no:$('emp_no').value,leader_role:$('leader_role').value,leader_name:$('leader_name').value,work_order_no:wo12($('work_order_no').value),order_no:$('order_no').value,command_no:$('command_no').value||wo12($('work_order_no').value),report_no:$('report_no').value,daily_report_no:$('daily_report_no').value,part_no:$('part_no').value,input_part_no:$('input_part_no').value,output_part_no:$('output_part_no').value,batch_no:$('batch_no').value,input_lot_no:$('input_lot_no').value,output_lot_no:$('output_lot_no').value,process_site:$('process_site').value,machine_code:$('machine_code').value,customer:$('customer').value,product_spec:$('product_spec').value,target_roll:$('target_roll').value,target_m2:$('target_m2').value,target_unit:$('target_unit').value,planned_finish:$('planned_finish').value,status:$('status').value,note:$('note').value};
 }
 function closeSaveOverlay(){if($('confirmSaveBtn').disabled)return;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[]}
 function prepareMultiRows(base){
