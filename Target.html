@@ -18,7 +18,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.3 Legacy Row Repair</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.4 Exact Key In Match</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -627,33 +627,62 @@ async function loadKeyInForRange(force=false){
   }
   return KEYIN_ROWS;
 }
-function matchTokens_(r){
-  return [r.work_order_no,r.command_no,r.order_no,r.report_no,r.daily_report_no,r.batch_no,r.part_no,r.input_part_no,r.output_part_no,r.input_lot_no,r.output_lot_no]
-    .map(norm).filter(Boolean);
+function primaryWorkOrder_(r){
+  // 僅使用真正的工單／命令單欄位，不再用批號、料號、客戶等寬鬆條件配對。
+  return norm(r.work_order_no||r.command_no||r['工單']||r['工單號']||r['命令單號']||'');
 }
-function rowsRelated_(a,b){
-  const A=matchTokens_(a),B=new Set(matchTokens_(b));
-  return A.some(x=>B.has(x));
+function machineKey_(r){
+  return norm(r.machine_code||r.machine||r['機台']||r['機台編號']||'');
+}
+function processKey_(r){
+  return norm(String(r.process_site||r.process||r['製程站點']||r['站點']||r['製程']||'').split('/')[0]);
+}
+function rowsRelated_(targetRow,keyinRow){
+  const targetWo=primaryWorkOrder_(targetRow);
+  const keyinWo=primaryWorkOrder_(keyinRow);
+  if(!targetWo || !keyinWo || targetWo!==keyinWo)return false;
+
+  // 每日目標只計算同一天的 Key In，避免把歷史累計全部灌入當日完成量。
+  const targetDate=dateKey(targetRow.report_date);
+  const keyinDate=dateKey(keyinRow.report_date||keyinRow.date||keyinRow['回報日期']||keyinRow['日期']);
+  if(targetDate && keyinDate && targetDate!==keyinDate)return false;
+
+  // 同一工單分配到多台機台時，必須精準配到該機台，避免每列重複加總整張工單。
+  const targetMachine=machineKey_(targetRow);
+  const keyinMachine=machineKey_(keyinRow);
+  if(targetMachine && targetMachine!==keyinMachine)return false;
+
+  // 有填製程且 Key In 也有製程時，再檢查製程一致。
+  const targetProcess=processKey_(targetRow);
+  const keyinProcess=processKey_(keyinRow);
+  if(targetProcess && keyinProcess && targetProcess!==keyinProcess)return false;
+  return true;
 }
 function keyInQty_(r){
-  return num(r.actual_qty||r.qty||r.quantity||r.target_qty||r['實際產量']||r['數量']||r['產量']);
+  // 只取實際回報數量，不可把目標數量誤當成 Key In 數量。
+  return num(r.actual_qty||r.qty||r.quantity||r['實際產量']||r['數量']||r['產量']);
 }
 function buildClientMatches(){
   MATCH_ROWS=TARGETS.map(t=>{
     const related=KEYIN_ROWS.filter(k=>rowsRelated_(t,k));
     const qty=related.reduce((a,k)=>a+keyInQty_(k),0);
     const target=num(t.target_roll||t.target_qty);
-    const completion=target>0?Math.min(999,Math.round(qty/target*100)):'';
-    let workStatus=t.status||'未作業';
-    if(qty>0 && target>0) workStatus=qty>=target?'已完成':'作業中';
+    const rawRate=target>0?Math.round(qty/target*100):'';
+    const completion=rawRate===''?'':Math.min(100,rawRate);
+    const overQty=(target>0 && qty>target)?qty-target:0;
+    let workStatus='未作業';
+    if(qty>0 && target>0) workStatus=qty>=target?(overQty>0?'已完成（超產）':'已完成'):'作業中';
     else if(qty>0) workStatus='作業中';
     const sample=related[0]||{};
+    const matchText=related.length
+      ?('Key In 已配對'+(overQty>0?'｜超產 '+Number(overQty.toFixed(3))+' R':''))
+      :'未找到同日同工單 Key In';
     return Object.assign({},t,{
       customer:t.customer||sample.customer||'',
       process_site:t.process_site||sample.process||sample.process_site||'',
       machine_code:t.machine_code||sample.machine||sample.machine_code||'',
       keyin_qty:qty||'',
-      file_match_status:related.length?'Key In 已配對':'未找到 Key In',
+      file_match_status:matchText,
       work_status:workStatus,
       completion_rate:completion
     });
