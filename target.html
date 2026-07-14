@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.7.2 Key In Completion Fix</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.7.3 Actual Key In Match</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -407,7 +407,7 @@ function normalizeKeyInOrder(r){
 }
 async function lookupKeyInOrders(q){
   try{
-    const res=await apiGetRetry('keyinsource',{q:q,keyword:q,work_order_no:q,limit:200,_:Date.now()},0);
+    const res=await apiGetRetry('targetkeyinactual',{q:q,keyword:q,work_order_no:q,limit:500,_:Date.now()},0);
     const rows=res.rows||res.data||res.list||res.items||[];
     return rows.map(normalizeKeyInOrder).filter(r=>localOrderMatch(r,q));
   }catch(_e){
@@ -725,7 +725,10 @@ async function loadKeyInForRange(force=false){
   if(KEYIN_ROWS.length && !force)return KEYIN_ROWS;
   const start=$('rangeStart').value||today(), end=$('rangeEnd').value||today();
   try{
-    const res=await apiGetRetry('keyinsource',{start:start,end:end,date_from:start,date_to:end,limit:5000,_:Date.now()},1);
+    // targetkeyinactual 專門回傳 keyin 工作表的實際回報資料。
+    // 不再使用 keyinsource，因為 keyinsource 是給 Key In 畫面搜尋 ERP 工單的資料源，
+    // 裡面沒有 actual_output / convert_m2，無法計算完成率。
+    const res=await apiGetRetry('targetkeyinactual',{start:start,end:end,date_from:start,date_to:end,limit:10000,_:Date.now()},1);
     KEYIN_ROWS=(res.rows||res.data||res.list||res.items||[]).map(normalizeKeyInOrder);
   }catch(e){
     KEYIN_ROWS=[];
