@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.6 Fast Search Button</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.7 Manual Search Only</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -72,7 +72,7 @@
       </div>
       <div class="col4"><label>幹部角色 / ตำแหน่ง</label><select id="leader_role"><option>課長 / หัวหน้าแผนก</option><option>副課長 / รองหัวหน้าแผนก</option><option>組長 / หัวหน้ากลุ่ม</option><option>班長 / หัวหน้ากะ</option><option>代理 / รักษาการ</option></select></div>
       <div class="col4"><label>幹部姓名 / ชื่อหัวหน้า</label><input id="leader_name" placeholder="輸入工號自動帶入"></div>
-      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><div class="lookupLine"><input id="work_order_no" oninput="debouncedLookup()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder(true)}" placeholder="例如 MM2605060026 或 202607010036"><button id="lookupBtn" class="lookupBtn" type="button" onclick="lookupOrder(true)">🔍 搜尋</button></div><div class="muted">可按搜尋鍵或 Enter；先查本機快取，找不到才連線 API，因此速度更快。停止輸入約 0.35 秒也會自動搜尋。</div></div>
+      <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><div class="lookupLine"><input id="work_order_no" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="manualLookupInput_()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder(true)}" placeholder="例如 MM2605060026 或 202607010036"><button id="lookupBtn" class="lookupBtn" type="button" onclick="lookupOrder(true)">🔍 搜尋</button></div><div class="muted">請完整輸入後按「搜尋」或 Enter。已關閉自動補字與輸入中自動搜尋，避免只打幾個字就被替換。</div></div>
       <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
@@ -351,10 +351,11 @@ async function loadBootstrap(){
 }
 
 let __lookupSeq=0;
-function debouncedLookup(){clearTimeout(lookupTimer);const q=queryNorm($('work_order_no').value);if(!q){renderSearchIdle();setLookupButtonState_('idle');return}lookupTimer=setTimeout(()=>lookupOrder(false),350)}
+function debouncedLookup(){manualLookupInput_()}
+function manualLookupInput_(){clearTimeout(lookupTimer);++__lookupSeq;LAST_LOOKUP=null;setLookupButtonState_('idle');const q=String($('work_order_no').value||'').trim();if(!q){renderSearchIdle();return}$('lookupBox').className='found';$('lookupBox').innerHTML='已輸入：<b>'+esc(q)+'</b>。請按「🔍 搜尋」或 Enter 後才查詢與帶入資料。';}
 function setLookupButtonState_(state,text){const b=$('lookupBtn');if(!b)return;b.disabled=state==='loading';b.className='lookupBtn'+(state==='ok'?' ok':state==='bad'?' bad':'');b.textContent=text||(state==='loading'?'⌛ 搜尋中':state==='ok'?'✓ 已找到':state==='bad'?'重新搜尋':'🔍 搜尋')}
 function getLocalLookupRows_(q){const rows=[];const seen=new Set();const push=r=>{if(!r)return;const n=normalizeClientOrder(r);if(!localOrderMatch(n,q))return;const k=[n.work_order_no,n.command_no,n.order_no,n.report_no,n.batch_no,n.part_no,n.machine_code].map(norm).join('|');if(seen.has(k))return;seen.add(k);rows.push(n)};(ORDER_LIST||[]).forEach(push);(KEYIN_ROWS||[]).map(normalizeKeyInOrder).forEach(push);return rows.sort((a,b)=>lookupExactScore_(b,q)-lookupExactScore_(a,q))}
-function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。'}
+function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='請先輸入完整工單、訂單、命令單、日報號、批號、料號或 Key In 工單，再按「🔍 搜尋」或 Enter。'}
 function renderSearchProgress(percent,step){
   $('lookupBox').className='found';
   $('lookupBox').innerHTML='<div class="searchProgress"><div class="searchHead"><span class="spinner"></span>正在搜尋統一訂單索引 / กำลังค้นหาฐานข้อมูล</div><div class="progressTrack"><div class="progressBar" style="width:'+percent+'%"></div></div><div class="searchSteps">'+esc(step)+'｜'+percent+'%</div></div>';
