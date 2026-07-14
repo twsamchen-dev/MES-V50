@@ -18,7 +18,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.2 Stable Unified Match</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.3 Legacy Row Repair</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -281,6 +281,40 @@ async function rebuildOrderCache(){
   }
 }
 function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value}
+
+// V83.6.3：修復 Target_Plan 舊資料缺少 target_plan_id，造成整列欄位左移一格。
+function normalizeTargetRow(r){
+  r=Object.assign({},r||{});
+  const first=dateKey(r.target_plan_id);
+  const report=dateKey(r.report_date);
+  const targetIdLooksDate=/^\d{4}-\d{2}-\d{2}$/.test(first);
+  const reportLooksDate=/^\d{4}-\d{2}-\d{2}$/.test(report);
+  if(targetIdLooksDate&&!reportLooksDate){
+    const old=Object.assign({},r);
+    r.target_plan_id='LEGACY-'+first+'-'+norm(old.leader_name||old.work_order_no||Math.random().toString(36).slice(2,8));
+    r.report_date=first;
+    r.shift=old.report_date||'';
+    r.leader_emp_no=old.shift||'';
+    r.emp_no=old.leader_emp_no||'';
+    r.leader_role=old.emp_no||'';
+    r.leader_name=old.leader_role||'';
+    r.work_order_no=old.leader_name||'';
+    r.order_no=old.work_order_no||'';
+    r.process_site=old.order_no||'';
+    r.machine_code=old.process_site||'';
+    r.customer=old.machine_code||'';
+    r.product_spec=old.customer||'';
+    r.target_roll=old.product_spec||'';
+    r.target_m2=old.target_roll||'';
+    r.planned_finish=old.target_m2||'';
+    r.status=old.planned_finish||'';
+    r.note=old.status||old.note||'';
+    r.__legacy_repaired=true;
+  }
+  r.report_date=dateKey(r.report_date);
+  return r;
+}
+
 async function loadBootstrap(){
   try{
     $('loadBtn').textContent='讀取中...';
@@ -300,10 +334,10 @@ async function loadBootstrap(){
         return await apiGetRetry('employees',{_:Date.now()},1);
       })
     ]);
-    ALL_TARGETS=t.targets||t.rows||t.data||t.list||[];
+    ALL_TARGETS=(t.targets||t.rows||t.data||t.list||[]).map(normalizeTargetRow);
     normalizeEmployees(e.employees||e.rows||e.data||e.list||[]);
     applyRange();
-    $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜人員 '+EMPLOYEES.length+' 筆；正在讀取 Key In 並計算配對。';
+    $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜已修復舊格式 '+ALL_TARGETS.filter(r=>r.__legacy_repaired).length+' 筆｜人員 '+EMPLOYEES.length+' 筆；正在讀取 Key In 並計算配對。';
     await recalculateMatches(false);
     toast('目標、人員與配對讀取完成');
   }catch(e){
