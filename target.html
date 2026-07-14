@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.7.1 M2 Display Fix</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.7.2 Key In Completion Fix</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -395,7 +395,13 @@ function normalizeKeyInOrder(r){
     process:process,
     machine:machine,
     machine_code:machine,
-    target_qty:r.target_qty||qty,
+    // 保留 Key In 真正回報數量與換算㎡，不可只塞入 target_qty，
+    // 否則後續完成率會找不到 actual_qty 而顯示空白。
+    actual_qty:qty,
+    actual_output:r.actual_output||r['實際產量']||qty,
+    convert_m2:r.convert_m2||r.m2||r['換算㎡']||r['換算M2']||r['實際㎡']||'',
+    unit:r.unit||r.qty_unit||r.quantity_unit||r['單位']||'',
+    target_qty:r.target_qty||'',
     report_date:r.report_date||r.date||r['回報日期']||r['日期']||''
   }));
 }
@@ -760,36 +766,54 @@ function rowsRelated_(targetRow,keyinRow){
 }
 function keyInQty_(r){
   // 只取實際回報數量，不可把目標數量誤當成 Key In 數量。
-  return num(r.actual_qty||r.qty||r.quantity||r['實際產量']||r['數量']||r['產量']);
+  return num(r.actual_output||r.actual_qty||r.qty||r.quantity||r['實際產量']||r['數量']||r['產量']);
+}
+function keyInQtyByUnit_(r,targetUnit){
+  const unit=normalizeTargetUnit_(r.unit||r.qty_unit||r.quantity_unit||r['單位']);
+  if(targetUnit==='M2'){
+    // 目標為㎡：優先使用 Key In 已換算的㎡；若 Key In 本身單位就是㎡，才使用實際數量。
+    const m2=num(r.convert_m2||r.m2||r['換算㎡']||r['換算M2']||r['實際㎡']);
+    if(m2>0)return m2;
+    return unit==='M2'?keyInQty_(r):0;
+  }
+  if(targetUnit==='R'){
+    // 目標為卷：僅加總 R/卷，單位空白時沿用實際回報數量作為備援。
+    return (!unit||unit==='R')?keyInQty_(r):0;
+  }
+  return keyInQty_(r);
 }
 function buildClientMatches(){
   MATCH_ROWS=TARGETS.map(t=>{
     const related=KEYIN_ROWS.filter(k=>rowsRelated_(t,k));
     const targetUnit=normalizeTargetUnit_(t.target_unit||(num(t.target_m2)?'M2':'R'));
-    const unitRows=related.filter(k=>{
-      const ku=normalizeTargetUnit_(k.unit||k.qty_unit||k.quantity_unit||k['單位']);
-      return !ku||!targetUnit||ku===targetUnit;
-    });
-    const qty=unitRows.reduce((a,k)=>a+keyInQty_(k),0);
+    const unitRows=related.filter(k=>keyInQtyByUnit_(k,targetUnit)>0);
+    const qty=unitRows.reduce((a,k)=>a+keyInQtyByUnit_(k,targetUnit),0);
     const target=targetUnit==='M2'?num(t.target_m2||t.target_qty):num(t.target_roll||t.target_qty);
-    const rawRate=target>0?Math.round(qty/target*100):'';
-    const completion=rawRate===''?'':Math.min(100,rawRate);
+
+    // 只要已找到同日同工單 Key In，就必須顯示完成率：
+    // 有目標時為 0～100%；沒有可計算目標時才顯示「—」。
+    const rawRate=target>0?Math.round((qty/target)*1000)/10:null;
+    const completion=rawRate===null?'—':Math.min(100,rawRate);
     const overQty=(target>0 && qty>target)?qty-target:0;
+
     let workStatus='未作業';
     if(qty>0 && target>0) workStatus=qty>=target?(overQty>0?'已完成（超產）':'已完成'):'作業中';
     else if(qty>0) workStatus='作業中';
+
     const sample=unitRows[0]||related[0]||{};
-    const matchText=unitRows.length
+    const hasMatchedKeyIn=related.length>0;
+    const matchText=hasMatchedKeyIn
       ?('Key In 已配對'+(overQty>0?'｜超產 '+Number(overQty.toFixed(3))+' '+(targetUnit==='M2'?'㎡':'R'):''))
       :'未找到同日同工單 Key In';
     return Object.assign({},t,{
       customer:t.customer||sample.customer||'',
       process_site:t.process_site||sample.process||sample.process_site||'',
       machine_code:t.machine_code||sample.machine||sample.machine_code||'',
-      keyin_qty:qty||'',
+      keyin_qty:hasMatchedKeyIn?Number(qty.toFixed(3)):'',
+      keyin_unit:targetUnit==='M2'?'㎡':'R',
       file_match_status:matchText,
       work_status:workStatus,
-      completion_rate:completion
+      completion_rate:hasMatchedKeyIn?completion:''
     });
   });
   renderTargets();updateKpi();
@@ -833,12 +857,13 @@ function renderTargets(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
   const heads=[
-    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','Key In R<br>รายงาน'],['file_match_status','與檔案目標配對<br>สถานะจับคู่ข้อมูล'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','Key In 數量<br>รายงาน'],['file_match_status','與檔案目標配對<br>สถานะจับคู่ข้อมูล'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):(r[h[0]]||'');
     if(h[0]==='report_date')v=dateKey(v);
-    if(h[0]==='completion_rate')v=(v===''?'':v+'%');
+    if(h[0]==='keyin_qty' && v!=='' && r.keyin_unit)v=v+' '+r.keyin_unit;
+    if(h[0]==='completion_rate')v=(v===''?'':(v==='—'?'—':v+'%'));
     if(h[0]==='file_match_status'||h[0]==='work_status')return '<td class="'+statusClass(v)+'">'+esc(v)+'</td>';
     return '<td>'+esc(v)+'</td>';
   }).join('')+'</tr>').join('')+'</tbody></table></div>'
