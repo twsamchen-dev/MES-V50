@@ -5915,7 +5915,29 @@ document.addEventListener("DOMContentLoaded",function(){
     box.querySelectorAll('[data-ml-use]').forEach(b=>b.onclick=()=>useAsRule(rows[Number(b.dataset.mlUse)]));box.querySelectorAll('[data-ml-accept]').forEach(b=>b.onclick=()=>accept(rows[Number(b.dataset.mlAccept)],b));box.querySelectorAll('[data-ml-ignore]').forEach(b=>b.onclick=()=>ignore(rows[Number(b.dataset.mlIgnore)],b));box.querySelectorAll('[data-ml-restore]').forEach(b=>b.onclick=()=>restore(rows[Number(b.dataset.mlRestore)],b));
   }
   function useAsRule(r){if(!r)return;const set=(id,v)=>{const e=$(id);if(e)e.value=v??""};set("mrName",(r.part_no||r.product_spec||"現場學習")+" "+(r.process||"")+" 共用規則");set("mrMatchType",r.part_no?"exact":"contains");set("mrPartPattern",r.part_no||r.product_spec||"");set("mrProcess",r.process||"其他");set("mrPrimaryMachine",r.primary_machine||"");const shared=[r.primary_machine].concat(String(r.shared_machines||"").split(",")).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);set("mrSharedMachines",shared.join(","));set("mrNote","由 V84.3 現場學習建議帶入；樣本 "+Number(r.total_samples||0)+" 筆，信心值 "+Number(r.confidence||0)+"%。請課長確認後儲存。");const card=$("mrFormCard");if(card)card.scrollIntoView({behavior:"smooth",block:"start"});const msg=$("mrFormMsg");if(msg)msg.textContent="已帶入現場學習建議，請檢查限制後再儲存正式規則。";}
-  async function accept(r,b){if(!r||!confirm("接受此 AI 建議並建立正式共用規則？"))return;const old=b.textContent;b.disabled=true;b.textContent="建立中…";try{await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});await load();if(window.loadMachineRules)window.loadMachineRules();}catch(e){alert("建立失敗："+e.message);}finally{b.disabled=false;b.textContent=old;}}
+  async function accept(r,b){
+    if(!r||!confirm("接受此 AI 建議並建立正式共用規則？"))return;
+    const old=b.textContent;
+    b.disabled=true;
+    b.textContent="建立中…";
+    try{
+      await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});
+      window.log?.("AI 建議已接受，正式機台規則已建立");
+      await load();
+      if(window.loadMachineRules)window.loadMachineRules();
+    }catch(e){
+      console.error("Machine learning accept failed",e);
+      window.log?.("AI 規則建立失敗："+(e.message||e));
+      const state=document.getElementById("cloudDataHubState57");
+      if(state){
+        state.className="cloud-datahub-state warn";
+        state.textContent="AI 規則建立失敗｜請查看系統日誌";
+      }
+    }finally{
+      b.disabled=false;
+      b.textContent=old;
+    }
+  }
   async function ignore(r,b){if(!r||!confirm("忽略此建議？之後可恢復。"))return;b.disabled=true;try{await jsonp("machinelearningignore",{learning_key:r.learning_key,by:"11035"});await load();}catch(e){alert("忽略失敗："+e.message);}finally{b.disabled=false;}}
   async function restore(r,b){if(!r)return;b.disabled=true;try{await jsonp("machinelearningrestore",{learning_key:r.learning_key});await load();}catch(e){alert("恢復失敗："+e.message);}finally{b.disabled=false;}}
   async function refreshCloud(){const p=$("mlProgress"),btn=$("mlRefreshCloud");if(btn){btn.disabled=true;btn.textContent="更新中…"}if(p)p.textContent="正在重建 Machine_Learning 雲端彙整表…";try{const res=await jsonp("machinelearningrefresh",{});if(p)p.textContent="雲端學習表更新完成：寫入 "+Number(res.written||0)+" 個群組。";await load();}catch(e){if(p)p.textContent="更新失敗："+e.message;}finally{if(btn){btn.disabled=false;btn.textContent="更新雲端學習表"}}}
@@ -6004,12 +6026,31 @@ document.addEventListener("DOMContentLoaded",function(){
   window.APS_VERSION="V87.5";
   const update=()=>{
     document.querySelectorAll(".version").forEach(el=>{
-      if(/Build|V8/i.test(el.textContent||"")) el.textContent="APS Build 0072｜V87.5 Stable DataHub";
+      if(/Build|V8/i.test(el.textContent||"")) el.textContent="APS Build 0073｜V87.6 Safe AI Initialization";
     });
   };
   document.addEventListener("DOMContentLoaded",()=>setTimeout(update,300));
   setTimeout(update,1800);
   console.info("SEAL KING Smart APS Build 0072｜single DataHub request + local cache fallback loaded");
+})();
+</script>
+
+
+<script id="build0073-safe-ai-init">
+(()=>{
+  "use strict";
+  window.APS_BUILD="0073";
+  window.APS_VERSION="V87.6";
+  const update=()=>{
+    document.querySelectorAll(".version").forEach(el=>{
+      if(/Build|V8/i.test(el.textContent||"")){
+        el.textContent="APS Build 0073｜V87.6 Safe AI Initialization";
+      }
+    });
+  };
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(update,250));
+  setTimeout(update,1600);
+  console.info("APS Build 0073｜safe Machine_Learning_Decision initialization loaded");
 })();
 </script>
 
