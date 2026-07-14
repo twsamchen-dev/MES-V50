@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.6.8 Unit Aware Target</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.6.9 Clean Search + Unit Sync</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -352,7 +352,19 @@ async function loadBootstrap(){
 
 let __lookupSeq=0;
 function debouncedLookup(){manualLookupInput_()}
-function manualLookupInput_(){clearTimeout(lookupTimer);++__lookupSeq;LAST_LOOKUP=null;setLookupButtonState_('idle');const q=String($('work_order_no').value||'').trim();if(!q){renderSearchIdle();return}$('lookupBox').className='found';$('lookupBox').innerHTML='已輸入：<b>'+esc(q)+'</b>。請按「🔍 搜尋」或 Enter 後才查詢與帶入資料。';}
+function manualLookupInput_(){
+  clearTimeout(lookupTimer);
+  ++__lookupSeq;
+  LAST_LOOKUP=null;
+  setLookupButtonState_('idle');
+  const q=String($('work_order_no').value||'').trim();
+  // 換下一筆工單時，立即清除上一筆自動帶入資料，但保留目前輸入中的查詢值。
+  clearOrderFields();
+  $('work_order_no').value=q;
+  if(!q){renderSearchIdle();return}
+  $('lookupBox').className='found';
+  $('lookupBox').innerHTML='已輸入：<b>'+esc(q)+'</b>。請按「🔍 搜尋」或 Enter 後才查詢與帶入資料。';
+}
 function setLookupButtonState_(state,text){const b=$('lookupBtn');if(!b)return;b.disabled=state==='loading';b.className='lookupBtn'+(state==='ok'?' ok':state==='bad'?' bad':'');b.textContent=text||(state==='loading'?'⌛ 搜尋中':state==='ok'?'✓ 已找到':state==='bad'?'重新搜尋':'🔍 搜尋')}
 function getLocalLookupRows_(q){const rows=[];const seen=new Set();const push=r=>{if(!r)return;const n=normalizeClientOrder(r);if(!localOrderMatch(n,q))return;const k=[n.work_order_no,n.command_no,n.order_no,n.report_no,n.batch_no,n.part_no,n.machine_code].map(norm).join('|');if(seen.has(k))return;seen.add(k);rows.push(n)};(ORDER_LIST||[]).forEach(push);(KEYIN_ROWS||[]).map(normalizeKeyInOrder).forEach(push);return rows.sort((a,b)=>lookupExactScore_(b,q)-lookupExactScore_(a,q))}
 function renderSearchIdle(){$('lookupBox').className='found';$('lookupBox').innerHTML='請先輸入完整工單、訂單、命令單、日報號、批號、料號或 Key In 工單，再按「🔍 搜尋」或 Enter。'}
@@ -420,6 +432,8 @@ async function lookupOrder(forceApi=false){
   clearTimeout(lookupTimer);
   const seq=++__lookupSeq;
   const q=queryNorm($('work_order_no').value);
+  // 每次正式搜尋前再次清除舊資料，避免上一筆殘留。
+  clearOrderFields();
   $('work_order_no').value=q;
   if(!q){renderSearchIdle();setLookupButtonState_('idle');return}
   setLookupButtonState_('loading');
@@ -499,14 +513,13 @@ function applyTargetQtyByUnit_(r){
   if(qty){
     if(unit==='M2') $('target_m2').value=qty;
     else if(unit==='R') $('target_roll').value=qty;
-    else if(!unit) $('target_roll').value=qty;
   }
   const hint=$('targetUnitHint');
   if(hint){
     if(unit==='M2') hint.textContent='來源單位：㎡，數量已填入「目標㎡」';
     else if(unit==='R') hint.textContent='來源單位：R，數量已填入「目標卷數」';
-    else if(unit) hint.textContent='來源單位：'+unit+'；目前不自動放入 R 或㎡';
-    else hint.textContent='來源未提供單位，暫以 R 帶入，請確認';
+    else if(unit) hint.textContent='來源單位：'+unit+'；未自動放入 R 或㎡';
+    else hint.textContent='來源未提供單位，目標數量保持空白，請先確認來源資料';
   }
 }
 function fillFromOrder(r){
