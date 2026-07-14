@@ -5391,22 +5391,44 @@ document.addEventListener("DOMContentLoaded",function(){
     el.textContent=message;
   }
 
-  function jsonp(action, params={}, timeout=60000){
+  const JSONP_GRACE_MS = 120000;
+  const PAGE_SIZE = 200;
+  const MAX_PAGES = 120;
+  const MAX_ROWS = 50000;
+
+  function jsonp(action, params={}, timeout=90000){
     return new Promise((resolve,reject)=>{
       const cb="DH57_"+Date.now()+"_"+Math.floor(Math.random()*999999);
       const s=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();reject(new Error("DataHub 讀取逾時："+action));},timeout);
-      function cleanup(){
-        clearTimeout(timer);
-        try{delete window[cb]}catch(_){window[cb]=undefined}
+      let settled=false;
+      let timer=0;
+
+      function removeScript(){
         if(s.parentNode)s.parentNode.removeChild(s);
       }
+      function retireCallback(){
+        // Apps Script 的 JSONP 可能在逾時後才回來。保留暫時的 no-op callback，
+        // 避免瀏覽器出現「DH57_xxx is not defined」。
+        window[cb]=function(){};
+        setTimeout(()=>{
+          try{delete window[cb]}catch(_){window[cb]=undefined}
+        },JSONP_GRACE_MS);
+      }
+      function finish(ok,value){
+        if(settled)return;
+        settled=true;
+        clearTimeout(timer);
+        removeScript();
+        retireCallback();
+        ok?resolve(value):reject(value);
+      }
+
       window[cb]=res=>{
-        cleanup();
-        if(res&&res.ok===false)reject(new Error(res.message||res.error||"DataHub API error"));
-        else resolve(res||{});
+        if(res&&res.ok===false)finish(false,new Error(res.message||res.error||"DataHub API error"));
+        else finish(true,res||{});
       };
-      s.onerror=()=>{cleanup();reject(new Error("DataHub 連線失敗："+action));};
+      s.onerror=()=>finish(false,new Error("DataHub 連線失敗："+action));
+      timer=setTimeout(()=>finish(false,new Error("DataHub 讀取逾時："+action)),timeout);
       const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();
       s.src=API_URL+"?"+qs;
       document.head.appendChild(s);
@@ -5415,28 +5437,69 @@ document.addEventListener("DOMContentLoaded",function(){
 
   async function fetchPage(page, attempt=1){
     try{
-      return await jsonp("datahubworkorders",{page,pageSize:200});
+      return await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},90000);
     }catch(err){
       if(attempt<3){
-        await new Promise(r=>setTimeout(r,1000*attempt));
+        setDataState(`DataHub 第 ${page} 頁重試 ${attempt}/2…`,"warn");
+        await new Promise(r=>setTimeout(r,1200*attempt));
         return fetchPage(page,attempt+1);
       }
       throw err;
     }
   }
 
+  function rowFingerprint(row){
+    if(!row||typeof row!=="object")return JSON.stringify(row);
+    const keys=["work_order_no","order_no","wo","工單","命令單號","part_no","part","料號","batch_no","生產批號","machine","machine_code","機台"];
+    const core=keys.map(k=>txt(row[k])).filter(Boolean).join("|");
+    return core||JSON.stringify(row);
+  }
+
   async function fetchAll(){
     const all=[];
-    let page=1,total=0;
-    do{
+    const seenPages=new Set();
+    const seenRows=new Set();
+    let page=1;
+    let expectedTotal=null;
+
+    while(page<=MAX_PAGES){
+      setDataState(`DataHub 同步中｜第 ${page} 頁｜${all.length} 筆`,"warn");
       const res=await fetchPage(page);
-      const rows=Array.isArray(res.rows)?res.rows:[];
-      total=Number(res.total||rows.length||0);
-      all.push(...rows);
-      page++;
+      const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:Array.isArray(res.list)?res.list:[];
+      const serverTotal=Number(res.total??res.totalCount??res.count);
+      if(Number.isFinite(serverTotal)&&serverTotal>=0)expectedTotal=serverTotal;
+
       if(!rows.length)break;
-      if(page>30)throw new Error("DataHub 分頁超過安全上限");
-    }while(all.length<total);
+
+      const pageSig=rows.slice(0,5).map(rowFingerprint).join("||")+"#"+rows.length;
+      if(seenPages.has(pageSig)){
+        console.warn("DataHub 偵測到重複分頁，停止讀取",{page,rows:rows.length});
+        break;
+      }
+      seenPages.add(pageSig);
+
+      let added=0;
+      for(const row of rows){
+        const fp=rowFingerprint(row);
+        if(seenRows.has(fp))continue;
+        seenRows.add(fp);
+        all.push(row);
+        added++;
+        if(all.length>MAX_ROWS)throw new Error("DataHub 筆數超過安全上限（50,000 筆）");
+      }
+
+      if(added===0)break;
+      if(expectedTotal!==null&&all.length>=expectedTotal)break;
+      if(res.hasMore===false||res.has_more===false)break;
+      if(res.nextPage===null||res.next_page===null)break;
+      if(rows.length<PAGE_SIZE&&expectedTotal===null)break;
+
+      const next=Number(res.nextPage??res.next_page);
+      if(Number.isFinite(next)&&next>page)page=next;
+      else page+=1;
+    }
+
+    if(page>MAX_PAGES)throw new Error("DataHub 分頁超過安全上限（120 頁）");
     return all;
   }
 
@@ -5666,10 +5729,10 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    document.title="SEAL KING Smart APS｜Build 0061 Enterprise AI APS";
+    document.title="SEAL KING Smart APS｜Build 0070 V87.3 Canonical Sync Engine";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-        el.textContent="Enterprise Preview 2｜Build 0061";
+        el.textContent="Enterprise Preview 2｜Build 0070";
       }
     });
 
