@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0069 V87.2 Canonical Sync";
+  content:"APS Build 0071 V88 Drag & Drop Engine";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -466,6 +466,16 @@ body::after{
 }
 </style>
 
+
+<style>
+/* Build 0071｜V88 Drag & Drop interaction */
+.manual-drop-enabled{transition:background .15s,box-shadow .15s}
+.manual-drop-enabled:hover{box-shadow:inset 0 0 0 1px #2e7898}
+.manual-drop-target{background:repeating-linear-gradient(90deg,#0b2d3b 0,#0b2d3b calc(16.666667% - 1px),#2f7d99 calc(16.666667% - 1px),#2f7d99 16.666667%)!important;box-shadow:inset 0 0 0 2px #53d5ff!important}
+.manual-dragging{cursor:grabbing!important;user-select:none!important}.manual-dragging *{cursor:grabbing!important}
+.manual-drag-ghost{position:fixed;z-index:20000;pointer-events:none;background:#d71920;color:#fff;border:1px solid #ff7b81;border-radius:7px;padding:8px 12px;font-weight:800;box-shadow:0 10px 28px #000b;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.manual-adjust-active .schedule-block[data-schedule-wo]{cursor:grab!important;touch-action:none}
+</style>
 </head>
 <body>
 
@@ -1165,7 +1175,7 @@ function renderTimeline(target){
  const dateTimeText=d=>d.toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
  const classifyGap=gap=>gap<=40?'change':gap<=90?'wait':'idle';
  const gapLabel=kind=>kind==='change'?'換線':kind==='wait'?'待料':'空檔';
- const renderShift=(jobs,shiftFrom,shiftTo,shiftName,shiftSpan)=>{
+ const renderShift=(jobs,shiftFrom,shiftTo,shiftName,shiftSpan,machineName,dayKey)=>{
    const clipped=[];
    for(const j of jobs){const a=Math.max(shiftFrom,j._from),b=Math.min(shiftTo,j._to);if(b-a>=.5)clipped.push({...j,_clipFrom:a,_clipTo:b,_clipDuration:b-a})}
    clipped.sort((a,b)=>a._clipFrom-b._clipFrom);
@@ -1176,12 +1186,12 @@ function renderTimeline(target){
    addGap(cursor,shiftTo);
    const blocks=segments.map(seg=>{const left=(seg.from-shiftFrom)/shiftSpan*100,width=Math.max(.08,(seg.to-seg.from)/shiftSpan*100),st=fmtMinute(dayStart+seg.from),et=fmtMinute(dayStart+seg.to);if(seg.kind==='job'){const j=seg.job,dueEnd=j.due?new Date(j.due):null;if(dueEnd)dueEnd.setHours(23,59,59,999);const delay=!!(dueEnd&&j.end>dueEnd),cls=delay?'delay':(j.urgent?'urgent':'normal'),density=width<2.5?' compact':width<6?' mini':'';return `<div class="schedule-block ${cls}${density}" data-schedule-wo="${esc(j.wo)}" data-schedule-machine="${esc(j.machine||'')}" data-schedule-start="${new Date(j.start).getTime()}" style="left:${left}%;width:${width}%" title="工單：${esc(j.wo)}\n客戶：${esc(j.customer||'—')}\n料號：${esc(j.part||'—')}\n開始：${dateTimeText(j.start)}\n完成：${dateTimeText(j.end)}\n工時：${Math.round((j.end-j.start)/60000)} 分鐘\n${esc(j.reason||'')}"><b>${esc(j.wo)}</b><small>${st}～${et}</small></div>`}if(seg.kind==='cluster'){const detail=seg.jobs.map(x=>`${x.wo} ${fmtMinute(dayStart+x._clipFrom)}～${fmtMinute(dayStart+x._clipTo)}`).join('\n'),density=width<3?' compact':width<7?' mini':'';return `<div class="schedule-block cluster${density}" style="left:${left}%;width:${width}%" title="${esc(detail)}"><b>${seg.label}</b><small>${st}～${et}</small></div>`}const density=width<2.5?' compact':width<6?' mini':'';return `<div class="schedule-block ${seg.kind}${density}" style="left:${left}%;width:${width}%" title="${seg.label}：${st}～${et}"><b>${seg.label}</b><small>${st}～${et}</small></div>`}).join('');
    const label=shiftName==='day'?'早班':'夜班',range=shiftName==='day'?`${cfg.earlyStart}～${cfg.earlyEnd}`:`${cfg.nightStart}～${cfg.nightEnd}`;
-   return `<div class="shift-track ${shiftName}"><div class="shift-label"><b>${label}</b><small>${range}</small></div><div class="shift-lane">${blocks}</div></div>`
+   return `<div class="shift-track ${shiftName}"><div class="shift-label"><b>${label}</b><small>${range}</small></div><div class="shift-lane" data-drop-machine="${esc(machineName)}" data-drop-day="${esc(dayKey)}" data-drop-shift="${shiftName}" data-shift-from="${shiftFrom}" data-shift-span="${shiftSpan}">${blocks}</div></div>`
  };
  let content='';
  for(let d=0;d<showDays;d++){
    const day=addDays(startDate,d),dayKey=fmtDate(day),dayJobs=S.schedule.filter(j=>fmtDate(j.date)===dayKey);
-   const rows=names.map(m=>{const source=dayJobs.filter(j=>j.machine===m).sort((a,b)=>a.start-b.start),normalized=[];let cursor=0;for(const j of source){const raw=Math.max(0,Math.min(1440,offset24(j.start))),from=Math.max(cursor,raw),to=Math.min(1440,from+Math.max(0,Number(j.minutes)||0));if(to-from<.5)continue;normalized.push({...j,_from:from,_to:to,_duration:to-from});cursor=to}const cap=Math.min(1440,(num(S.machines[m]?.hours)||24)*60),dayTrack=renderShift(normalized,0,earlySpan,'day',earlySpan),nightTrack=renderShift(normalized,earlySpan,1440,'night',nightSpan);return `<div class="schedule-row"><div class="machine-label"><b>${esc(m)}</b><span class="machine-menu">☷</span><small>可用工時：${(cap/60).toFixed(1)}h</small></div><div class="dual-track">${dayTrack}${nightTrack}</div></div>`}).join('');
+   const rows=names.map(m=>{const source=dayJobs.filter(j=>j.machine===m).sort((a,b)=>a.start-b.start),normalized=[];let cursor=0;for(const j of source){const raw=Math.max(0,Math.min(1440,offset24(j.start))),from=Math.max(cursor,raw),to=Math.min(1440,from+Math.max(0,Number(j.minutes)||0));if(to-from<.5)continue;normalized.push({...j,_from:from,_to:to,_duration:to-from});cursor=to}const cap=Math.min(1440,(num(S.machines[m]?.hours)||24)*60),dayTrack=renderShift(normalized,0,earlySpan,'day',earlySpan,m,dayKey),nightTrack=renderShift(normalized,earlySpan,1440,'night',nightSpan,m,dayKey);return `<div class="schedule-row"><div class="machine-label"><b>${esc(m)}</b><span class="machine-menu">☷</span><small>可用工時：${(cap/60).toFixed(1)}h</small></div><div class="dual-track">${dayTrack}${nightTrack}</div></div>`}).join('');
    const nextDay=addDays(day,1),today=new Date(),midnightOffset=(1440-nightStart)%1440,midnightLeft=midnightOffset/nightSpan*100;
    const axisHtml=`<div class="axis-date-band"><div class="axis-date-cell ${sameDay(day,today)?'today':''}">${dateText(day)}${sameDay(day,today)?'<span class="today-badge">TODAY</span>':''}</div><div class="axis-date-cell ${sameDay(nextDay,today)?'today':''}">${dateText(nextDay)}${sameDay(nextDay,today)?'<span class="today-badge">TODAY</span>':''}</div></div><div class="shift-axis day"><span class="shift-axis-label">早班</span><div class="shift-axis-lane">${makeTicks(dayStart,earlySpan)}</div></div><div class="shift-axis night"><span class="shift-axis-label">夜班</span><div class="shift-axis-lane">${makeTicks(nightStart,nightSpan)}<span class="shift-midnight" style="left:${midnightLeft}%"><b>00:00<br>${nextDay.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})}</b></span></div></div>`;
    content+=`<div class="schedule-day"><div class="schedule-day-title"><b>生產日 ${dateText(day)} ${cfg.earlyStart} ～ ${dateText(nextDay)} ${cfg.nightEnd}</b><span>${dayJobs.length} 個排程區段</span></div><div class="schedule-scroll"><div class="schedule-axis"><div class="schedule-axis-label">24 小時<br>${cfg.earlyStart}～${cfg.nightEnd}</div><div class="time-scale">${axisHtml}</div></div>${rows}</div></div>`
@@ -2032,38 +2042,54 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 </div>
 
 <script>
-/* Build 0042｜手動排程調整中心 */
+/* Build 0071｜V88 APS Drag & Drop Engine */
 (()=>{
-  const undoStack=[];let active=false,current=null;
-  const $m=id=>document.getElementById(id);
-  const copySchedule=()=>JSON.parse(JSON.stringify((S.schedule||[]).map(x=>({...x,start:new Date(x.start).toISOString(),end:new Date(x.end).toISOString(),date:new Date(x.date).toISOString(),due:x.due?new Date(x.due).toISOString():null}))));
-  const restoreSchedule=data=>data.map(x=>({...x,start:new Date(x.start),end:new Date(x.end),date:new Date(x.date),due:x.due?new Date(x.due):null}));
+  const undoStack=[],redoStack=[];let active=false,current=null,drag=null,suppressClickUntil=0;
+  const $m=id=>document.getElementById(id),SNAP=10;
+  const cloneSchedule=()=>JSON.parse(JSON.stringify((S.schedule||[]).map(x=>({...x,start:new Date(x.start).toISOString(),end:new Date(x.end).toISOString(),date:new Date(x.date).toISOString(),due:x.due?new Date(x.due).toISOString():null}))));
+  const restoreSchedule=data=>(data||[]).map(x=>({...x,start:new Date(x.start),end:new Date(x.end),date:new Date(x.date),due:x.due?new Date(x.due):null}));
+  const pushUndo=()=>{undoStack.push(cloneSchedule());if(undoStack.length>50)undoStack.shift();redoStack.length=0;syncButtons()};
+  function syncButtons(){const u=$m('manualUndo'),r=$m('manualRedo');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length}
+  function refresh(){renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();setTimeout(annotateLanes,0)}
   function installToolbar(){
     const host=document.querySelector('#schedule .actions');if(!host||$m('manualAdjustToggle'))return;
-    const note=document.createElement('div');note.id='manualModeNote';note.className='manual-mode-note';note.textContent='手動調整模式：請點擊甘特圖中的工單區塊。';host.parentElement.parentElement.appendChild(note);
+    const note=document.createElement('div');note.id='manualModeNote';note.className='manual-mode-note';note.innerHTML='手動調整模式：可直接拖曳工單到其他時間或機台；時間自動吸附 10 分鐘。點擊工單可精確輸入。';host.parentElement.parentElement.appendChild(note);
     const toggle=document.createElement('button');toggle.className='btn ghost';toggle.id='manualAdjustToggle';toggle.type='button';toggle.textContent='手動調整';
     const undo=document.createElement('button');undo.className='btn ghost';undo.id='manualUndo';undo.type='button';undo.textContent='復原';undo.disabled=true;
-    host.prepend(undo);host.prepend(toggle);
-    toggle.addEventListener('click',()=>{active=!active;document.body.classList.toggle('manual-adjust-active',active);toggle.textContent=active?'結束手動調整':'手動調整';toggle.classList.toggle('red-action',active);note.classList.toggle('show',active)});
-    undo.addEventListener('click',()=>{if(!undoStack.length)return;S.schedule=restoreSchedule(undoStack.pop());renderSchedule();if(typeof updateKpi==='function')updateKpi();undo.disabled=!undoStack.length;log('已復原上一筆手動排程調整')});
+    const redo=document.createElement('button');redo.className='btn ghost';redo.id='manualRedo';redo.type='button';redo.textContent='重做';redo.disabled=true;
+    const save=document.createElement('button');save.className='btn green';save.id='manualSavePlan';save.type='button';save.textContent='儲存排程';
+    host.prepend(save);host.prepend(redo);host.prepend(undo);host.prepend(toggle);
+    toggle.addEventListener('click',()=>{active=!active;document.body.classList.toggle('manual-adjust-active',active);toggle.textContent=active?'結束手動調整':'手動調整';toggle.classList.toggle('red-action',active);note.classList.toggle('show',active);annotateLanes()});
+    undo.addEventListener('click',()=>{if(!undoStack.length)return;redoStack.push(cloneSchedule());S.schedule=restoreSchedule(undoStack.pop());refresh();syncButtons();log('已復原上一筆手動排程調整')});
+    redo.addEventListener('click',()=>{if(!redoStack.length)return;undoStack.push(cloneSchedule());S.schedule=restoreSchedule(redoStack.pop());refresh();syncButtons();log('已重做手動排程調整')});
+    save.addEventListener('click',()=>{try{localStorage.setItem('SK_APS_MANUAL_SCHEDULE_V88',JSON.stringify({savedAt:new Date().toISOString(),schedule:cloneSchedule()}));save.textContent='✓ 已儲存';setTimeout(()=>save.textContent='儲存排程',1500);log('手動排程已儲存於此瀏覽器')}catch(e){alert('儲存失敗：'+e.message)}});
+    syncButtons();
   }
-  function machineList(){const fromMaster=Object.keys(S.machines||{});const fromSchedule=(S.schedule||[]).map(x=>x.machine);return [...new Set([...fromMaster,...fromSchedule].filter(Boolean))].sort()}
+  function annotateLanes(){document.querySelectorAll('.shift-lane[data-drop-machine]').forEach(x=>x.classList.toggle('manual-drop-enabled',active))}
+  function machineList(){const fromMaster=Object.keys(S.machines||{}),fromSchedule=(S.schedule||[]).map(x=>x.machine);return [...new Set([...fromMaster,...fromSchedule].filter(Boolean))].sort()}
   function localDate(d){const x=new Date(d),z=new Date(x.getTime()-x.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)}
   function timeText(d){return new Date(d).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',hour12:false})}
+  function findItemFromBlock(b){const start=Number(b.dataset.scheduleStart),wo=b.dataset.scheduleWo,m=b.dataset.scheduleMachine;return (S.schedule||[]).find(x=>x.wo===wo&&x.machine===m&&new Date(x.start).getTime()===start)}
   function openEditor(item){current=item;const dur=Math.round((new Date(item.end)-new Date(item.start))/60000);$m('manualWo').value=item.wo;$m('manualDuration').value=dur+' 分鐘';$m('manualDate').value=localDate(item.start);$m('manualTime').value=timeText(item.start);$m('manualMachine').innerHTML=machineList().map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');$m('manualMachine').value=item.machine;$m('manualInfo').innerHTML=`客戶：<b>${esc(item.customer||'—')}</b>　料號：<b>${esc(item.part||'—')}</b><br>原排程：${dateTimeText(item.start)} ～ ${dateTimeText(item.end)}<br>排程原因：${esc(item.reason||'—')}`;$m('manualConflict').classList.remove('show');updateEnd();$m('manualScheduleModal').hidden=false;setTimeout(()=>$m('manualTime').focus(),30)}
   function closeEditor(){$m('manualScheduleModal').hidden=true;current=null}
-  function proposed(){if(!current)return null;const v=$m('manualDate').value+'T'+$m('manualTime').value+':00';const start=new Date(v);if(Number.isNaN(start.getTime()))return null;const dur=new Date(current.end)-new Date(current.start);return {start,end:new Date(start.getTime()+dur),machine:$m('manualMachine').value}}
+  function proposed(){if(!current)return null;const v=$m('manualDate').value+'T'+$m('manualTime').value+':00',start=new Date(v);if(Number.isNaN(start.getTime()))return null;const dur=new Date(current.end)-new Date(current.start);return{start,end:new Date(start.getTime()+dur),machine:$m('manualMachine').value}}
   function updateEnd(){const p=proposed();$m('manualEnd').value=p?dateTimeText(p.end):'';showConflicts(p)}
-  function overlaps(p,ignore=current){if(!p)return[];return (S.schedule||[]).filter(x=>x!==ignore&&x.machine===p.machine&&new Date(x.start)<p.end&&new Date(x.end)>p.start).sort((a,b)=>new Date(a.start)-new Date(b.start))}
+  function overlaps(p,ignore=current){if(!p)return[];return(S.schedule||[]).filter(x=>x!==ignore&&x.machine===p.machine&&new Date(x.start)<p.end&&new Date(x.end)>p.start).sort((a,b)=>new Date(a.start)-new Date(b.start))}
   function showConflicts(p){const xs=overlaps(p),el=$m('manualConflict');if(!xs.length){el.classList.remove('show');el.textContent='';return}el.classList.add('show');el.innerHTML=`發現 ${xs.length} 個重疊排程：<br>${xs.slice(0,5).map(x=>`${esc(x.wo)}｜${dateTimeText(x.start)}～${dateTimeText(x.end)}`).join('<br>')}${xs.length>5?'<br>…':''}`}
-  function apply(){const p=proposed();if(!p||!p.machine){alert('請確認機台、日期與時間');return}const xs=overlaps(p);if(xs.length&&!$m('manualAutoShift').checked){alert('此時段與其他排程重疊，請調整時間或勾選自動順延。');return}undoStack.push(copySchedule());$m('manualUndo').disabled=false;const oldStart=new Date(current.start),delta=p.start-oldStart,dur=new Date(current.end)-oldStart;current.machine=p.machine;current.start=p.start;current.end=new Date(p.start.getTime()+dur);current.date=new Date(p.start);current.date.setHours(0,0,0,0);current.manualAdjusted=true;current.reason=(current.reason||'')+'；手動調整';
-    if(xs.length&&$m('manualAutoShift').checked){let cursor=new Date(current.end);const later=(S.schedule||[]).filter(x=>x!==current&&x.machine===p.machine&&new Date(x.end)>p.start).sort((a,b)=>new Date(a.start)-new Date(b.start));for(const x of later){const st=new Date(x.start),en=new Date(x.end),xd=en-st;if(st<cursor){x.start=new Date(cursor);x.end=new Date(cursor.getTime()+xd);x.date=new Date(x.start);x.date.setHours(0,0,0,0);x.manualAdjusted=true;x.reason=(x.reason||'')+'；因手動調整順延'}cursor=new Date(x.end)}}
-    S.schedule.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||new Date(a.start)-new Date(b.start));renderSchedule();if(typeof updateKpi==='function')updateKpi();if(typeof updateDueKpi==='function')updateDueKpi();log(`手動調整：${current.wo} → ${p.machine} ${dateTimeText(p.start)}`);closeEditor();
-  }
-  document.addEventListener('click',e=>{const b=e.target.closest('.schedule-block[data-schedule-wo]');if(!active||!b)return;e.preventDefault();const start=Number(b.dataset.scheduleStart),wo=b.dataset.scheduleWo,m=b.dataset.scheduleMachine;const item=(S.schedule||[]).find(x=>x.wo===wo&&x.machine===m&&new Date(x.start).getTime()===start);if(item)openEditor(item)});
-  ['manualMachine','manualDate','manualTime'].forEach(id=>$m(id)?.addEventListener('change',updateEnd));$m('manualSave')?.addEventListener('click',apply);$m('manualCancel')?.addEventListener('click',closeEditor);$m('manualClose')?.addEventListener('click',closeEditor);$m('manualScheduleModal')?.addEventListener('click',e=>{if(e.target===$m('manualScheduleModal'))closeEditor()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$m('manualScheduleModal').hidden)closeEditor()});
-  installToolbar();
-  const oldShow=window.showPage;window.showPage=function(id){oldShow&&oldShow(id);if(id==='schedule')setTimeout(installToolbar,0)};
+  function applyMove(item,p,autoShift=true){const xs=overlaps(p,item);if(xs.length&&!autoShift)return false;pushUndo();const dur=new Date(item.end)-new Date(item.start);item.machine=p.machine;item.start=new Date(p.start);item.end=new Date(item.start.getTime()+dur);item.minutes=dur/60000;item.date=new Date(item.start);item.date.setHours(0,0,0,0);item.manualAdjusted=true;item.reason=(item.reason||'').replace(/；手動調整/g,'')+'；手動調整';
+    if(xs.length&&autoShift){let cursor=new Date(item.end);const later=(S.schedule||[]).filter(x=>x!==item&&x.machine===p.machine&&new Date(x.end)>p.start).sort((a,b)=>new Date(a.start)-new Date(b.start));for(const x of later){const st=new Date(x.start),en=new Date(x.end),xd=en-st;if(st<cursor){x.start=new Date(cursor);x.end=new Date(cursor.getTime()+xd);x.date=new Date(x.start);x.date.setHours(0,0,0,0);x.manualAdjusted=true;x.reason=(x.reason||'').replace(/；因手動調整順延/g,'')+'；因手動調整順延'}cursor=new Date(x.end)}}
+    S.schedule.sort((a,b)=>String(a.machine).localeCompare(String(b.machine))||new Date(a.start)-new Date(b.start));refresh();syncButtons();return true}
+  function apply(){const p=proposed();if(!p||!p.machine){alert('請確認機台、日期與時間');return}if(!applyMove(current,p,$m('manualAutoShift').checked)){alert('此時段與其他排程重疊，請調整時間或勾選自動順延。');return}log(`手動調整：${current.wo} → ${p.machine} ${dateTimeText(p.start)}`);closeEditor()}
+  function laneProposal(lane,clientX,item){const rect=lane.getBoundingClientRect(),span=Number(lane.dataset.shiftSpan),from=Number(lane.dataset.shiftFrom),ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));let offset=from+ratio*span;offset=Math.round(offset/SNAP)*SNAP;const day=new Date(lane.dataset.dropDay+'T00:00:00'),cfg=getShiftSettings(),start=new Date(day);start.setMinutes(start.getMinutes()+cfg.es+offset);return{machine:lane.dataset.dropMachine,start,end:new Date(start.getTime()+(new Date(item.end)-new Date(item.start)))}}
+  function clearDragVisual(){document.querySelectorAll('.manual-drop-target').forEach(x=>x.classList.remove('manual-drop-target'));document.querySelectorAll('.manual-drag-ghost').forEach(x=>x.remove());document.body.classList.remove('manual-dragging')}
+  document.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=e.target.closest('.schedule-block[data-schedule-wo]');if(!b)return;const item=findItemFromBlock(b);if(!item)return;drag={item,block:b,startX:e.clientX,startY:e.clientY,moved:false};b.setPointerCapture?.(e.pointerId);e.preventDefault()});
+  document.addEventListener('pointermove',e=>{if(!drag)return;const dist=Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY);if(!drag.moved&&dist<6)return;drag.moved=true;document.body.classList.add('manual-dragging');let ghost=document.querySelector('.manual-drag-ghost');if(!ghost){ghost=document.createElement('div');ghost.className='manual-drag-ghost';ghost.textContent=drag.item.wo;document.body.appendChild(ghost)}ghost.style.left=(e.clientX+12)+'px';ghost.style.top=(e.clientY+12)+'px';document.querySelectorAll('.manual-drop-target').forEach(x=>x.classList.remove('manual-drop-target'));const lane=document.elementFromPoint(e.clientX,e.clientY)?.closest('.shift-lane[data-drop-machine]');if(lane)lane.classList.add('manual-drop-target')});
+  document.addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(!d.moved){clearDragVisual();return}const lane=document.elementFromPoint(e.clientX,e.clientY)?.closest('.shift-lane[data-drop-machine]');clearDragVisual();suppressClickUntil=Date.now()+500;if(!lane)return;const p=laneProposal(lane,e.clientX,d.item),xs=overlaps(p,d.item);if(xs.length&&!confirm(`此位置會與 ${xs.length} 個排程重疊。\n按「確定」後，系統會自動將後續工單順延。`))return;if(applyMove(d.item,p,true)){log(`拖曳調整：${d.item.wo} → ${p.machine} ${dateTimeText(p.start)}`)}});
+  document.addEventListener('click',e=>{const b=e.target.closest('.schedule-block[data-schedule-wo]');if(!active||!b||Date.now()<suppressClickUntil)return;e.preventDefault();const item=findItemFromBlock(b);if(item)openEditor(item)});
+  ['manualMachine','manualDate','manualTime'].forEach(id=>$m(id)?.addEventListener('change',updateEnd));$m('manualSave')?.addEventListener('click',apply);$m('manualCancel')?.addEventListener('click',closeEditor);$m('manualClose')?.addEventListener('click',closeEditor);$m('manualScheduleModal')?.addEventListener('click',e=>{if(e.target===$m('manualScheduleModal'))closeEditor()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$m('manualScheduleModal').hidden)closeEditor();if(active&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$m(e.shiftKey?'manualRedo':'manualUndo')?.click()}if(active&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();$m('manualRedo')?.click()}});
+  const oldRender=window.renderSchedule;window.renderSchedule=function(){oldRender();setTimeout(annotateLanes,0)};
+  installToolbar();setTimeout(annotateLanes,0);
 })();
 </script>
 
@@ -4718,17 +4744,17 @@ document.addEventListener("DOMContentLoaded",function(){
 </style>
 
 
-<!-- Build 0056｜核心缺產速判斷修正 -->
+<!-- Build 0071｜核心缺產速判斷修正 -->
 <script id="build0054-core-missing-speed">
 (function(){
   "use strict";
 
   function updateBuildLabel(){
-    document.title = "SEAL KING Smart APS｜Build 0056";
+    document.title = "SEAL KING Smart APS｜Build 0071";
     document.querySelectorAll(".header-time small,.version").forEach(function(el){
       const t = String(el.textContent || "");
       if(/Build\s*00\d+|Enterprise Preview/i.test(t)){
-        el.textContent = "Enterprise Preview 2｜Build 0056";
+        el.textContent = "Enterprise Preview 2｜Build 0071";
       }
     });
   }
@@ -5116,9 +5142,9 @@ document.addEventListener("DOMContentLoaded",function(){
       }
     });
 
-    document.title="SEAL KING Smart APS｜Build 0056 Knowledge Center";
+    document.title="SEAL KING Smart APS｜Build 0071 Knowledge Center";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
-      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0056";
+      if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||""))el.textContent="Enterprise Preview 2｜Build 0071";
     });
   }
 
