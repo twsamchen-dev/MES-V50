@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V83.7.0 Exact Unit Lookup</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V83.7.1 M2 Display Fix</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -505,21 +505,39 @@ function normalizeTargetUnit_(v){
   return u;
 }
 function applyTargetQtyByUnit_(r){
-  const qty=num(r.target_qty||r.planned_qty||r.plan_qty||r['預計產量']||r['目標數量']);
-  const unit=normalizeTargetUnit_(r.target_unit||r.unit||r.qty_unit||r.quantity_unit||r['單位']);
-  $('target_unit').value=unit||'';
+  r=r||{};
   $('target_roll').value='';
   $('target_m2').value='';
-  if(qty){
-    if(unit==='M2') $('target_m2').value=qty;
-    else if(unit==='R') $('target_roll').value=qty;
+
+  const rawUnit=r.target_unit||r.unit||r.qty_unit||r.quantity_unit||r['單位']||r['產量單位']||r['數量單位']||'';
+  const unit=normalizeTargetUnit_(rawUnit);
+
+  const explicitM2=num(r.target_m2||r.m2||r.convert_m2||r['目標㎡']||r['目標m2']);
+  const explicitRoll=num(r.target_roll||r.roll_qty||r['目標卷數']||r['目標R']);
+  const qty=num(r.target_qty||r.planned_qty||r.plan_qty||r.qty||r.quantity||r['預計產量']||r['目標數量']);
+
+  let appliedUnit=unit;
+  if(explicitM2>0){
+    $('target_m2').value=explicitM2;
+    appliedUnit='M2';
+  }else if(explicitRoll>0){
+    $('target_roll').value=explicitRoll;
+    appliedUnit='R';
+  }else if(qty>0&&unit==='M2'){
+    $('target_m2').value=qty;
+  }else if(qty>0&&unit==='R'){
+    $('target_roll').value=qty;
   }
+
+  $('target_unit').value=appliedUnit||'';
+
   const hint=$('targetUnitHint');
   if(hint){
-    if(unit==='M2') hint.textContent='來源單位：㎡，數量已填入「目標㎡」';
-    else if(unit==='R') hint.textContent='來源單位：R，數量已填入「目標卷數」';
-    else if(unit) hint.textContent='來源單位：'+unit+'；未自動放入 R 或㎡';
-    else hint.textContent='來源未提供單位，目標數量保持空白，請先確認來源資料';
+    if(appliedUnit==='M2') hint.textContent='來源單位：㎡，數值已顯示在下方「目標㎡」';
+    else if(appliedUnit==='R') hint.textContent='來源單位：R，數值已顯示在「目標卷數 R」';
+    else if(appliedUnit) hint.textContent='來源單位：'+appliedUnit+'；未自動放入 R 或㎡';
+    else if(qty>0) hint.textContent='已取得數量 '+qty+'，但來源未提供單位';
+    else hint.textContent='來源未提供目標數量與單位';
   }
 }
 function fillFromOrder(r){
