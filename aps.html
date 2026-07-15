@@ -6159,144 +6159,119 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-
-<!-- Build 0076｜急單雙來源即時查詢：DataHub + ERP 原始資料 -->
-<script id="build0076-urgent-server-lookup">
+<script>
+/* Build 0077｜急單帶入改用 findworkorder 即時 API */
 (function(){
-  "use strict";
-  const API_URL = window.MES_API_URL ||
-    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-  const $ = id => document.getElementById(id);
+  const API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  const $id = id => document.getElementById(id);
   const clean = v => String(v == null ? "" : v).trim();
-  const num = v => { const n=Number(String(v==null?"":v).replace(/,/g,"")); return Number.isFinite(n)?n:0; };
 
-  function jsonp(action, params={}){
+  function jsonp(action, params, timeoutMs){
     return new Promise((resolve,reject)=>{
-      const cb="APS0075_"+Date.now()+"_"+Math.floor(Math.random()*999999);
+      const cb="__apsFindWO_"+Date.now()+"_"+Math.random().toString(36).slice(2);
       const s=document.createElement("script");
-      const timer=setTimeout(()=>finish(false,new Error("工單查詢逾時，請再按一次帶入")),30000);
       let done=false;
-      function finish(ok,value){
-        if(done)return; done=true; clearTimeout(timer);
-        if(s.parentNode)s.parentNode.removeChild(s);
+      const finish=(err,data)=>{
+        if(done)return; done=true;
+        clearTimeout(timer);
         try{delete window[cb]}catch(_){window[cb]=undefined}
-        ok?resolve(value):reject(value);
-      }
-      window[cb]=res=>{
-        if(res&&res.ok===false)finish(false,new Error(res.message||"DataHub 查詢失敗"));
-        else finish(true,res||{});
+        s.remove();
+        err?reject(err):resolve(data);
       };
-      s.onerror=()=>finish(false,new Error("DataHub 連線失敗"));
-      const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();
-      s.src=API_URL+"?"+qs;
+      window[cb]=data=>finish(null,data);
+      const q=new URLSearchParams({action,callback:cb,_:Date.now(),...params});
+      s.src=API_URL+"?"+q.toString();
+      s.onerror=()=>finish(new Error("雲端查詢連線失敗"));
+      const timer=setTimeout(()=>finish(new Error("雲端查詢逾時")),timeoutMs||12000);
       document.head.appendChild(s);
     });
   }
 
-  function value(row, keys){
-    for(const k of keys){ if(row && row[k] !== undefined && clean(row[k]) !== "") return row[k]; }
-    return "";
+  function setSelectValue(el, value){
+    if(!el)return;
+    const raw=clean(value);
+    const normalized=raw.toUpperCase().replace(/㎡|M²|M\^2/g,"M2");
+    const option=[...el.options].find(o=>{
+      const ov=clean(o.value).toUpperCase().replace(/㎡|M²|M\^2/g,"M2");
+      const ot=clean(o.textContent).toUpperCase().replace(/㎡|M²|M\^2/g,"M2");
+      return ov===normalized || ot===normalized;
+    });
+    if(option) el.value=option.value;
   }
-  function localDateTime(v){
-    if(!v)return "";
-    const d=new Date(v);
+
+  function toDateTimeLocal(value){
+    if(!value)return "";
+    const d=new Date(value);
     if(Number.isNaN(d.getTime()))return "";
-    const p=n=>String(n).padStart(2,"0");
-    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-  }
-  function score(row,q){
-    const n=v=>clean(v).toUpperCase().replace(/\s+/g,"");
-    const keys=[row.work_order_no,row.order_no,row.daily_report_no,row.batch_no,row.part_no];
-    let s=0;
-    keys.forEach((v,i)=>{ if(n(v)===q)s+=100-i*5; else if(n(v).includes(q))s+=20; });
-    if(clean(row.customer))s+=3;if(clean(row.product_spec))s+=3;if(clean(row.process))s+=3;
-    return s;
-  }
-  function fill(row, query){
-    const wo=value(row,["work_order_no","order_no","daily_report_no"]);
-    const customer=value(row,["customer","客戶"]);
-    const part=value(row,["part_no","產品料號","料號"]);
-    const process=value(row,["process","process_site","製程"]);
-    const machine=value(row,["machine","machine_code","機台"]);
-    const remaining=num(value(row,["erp_remaining_qty","remaining_qty","remaining"]));
-    const target=num(value(row,["target_qty","預計產量","需求數量"]));
-    const qty=remaining>0?remaining:target;
-    const due=value(row,["due_date","預交日"]);
-    if($("urgentWo")) $("urgentWo").value=clean(wo||query);
-    if($("urgentCustomer")) $("urgentCustomer").value=clean(customer);
-    if($("urgentPart")) $("urgentPart").value=clean(part);
-    if($("urgentProcess")) $("urgentProcess").value=clean(process);
-    if($("urgentQty")) $("urgentQty").value=qty>0?qty:"";
-    if($("urgentUnit")) $("urgentUnit").value="㎡";
-    if($("urgentMachine")) $("urgentMachine").value=clean(machine);
-    if($("urgentDue")) { const dt=localDateTime(due); if(dt) $("urgentDue").value=dt; }
-    const msg=$("urgentFormMsg");
-    if(msg){msg.textContent=`已由 DataHub 即時帶入 ${clean(wo||query)}（不等待整批同步）`;msg.style.color="var(--green)";}
+    d.setHours(17,0,0,0);
+    return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   }
 
-  async function lookup(){
-    const input=clean($("urgentLookup")?.value);
-    const msg=$("urgentFormMsg");
-    if(!input){if(msg){msg.textContent="請先輸入工單、訂單、批號或料號";}return;}
-    const btn=$("loadUrgentWo");
+  function fillFromApi(row){
+    const wo=clean(row.work_order_no || row.wo || row["單號"] || row["工單號"]);
+    const qty=Number(row.erp_remaining_qty || row.remaining_qty || row.target_qty || row.planned_qty || 0);
+    $id("urgentWo").value=wo;
+    $id("urgentCustomer").value=clean(row.customer || row["客戶"]);
+    $id("urgentPart").value=clean(row.part_no || row.product_no || row["料品編號"] || row["料號"]);
+    $id("urgentProcess").value=clean(row.process || row.process_site || row["製程"] || row["站別"]);
+    $id("urgentQty").value=qty>0?qty:"";
+    setSelectValue($id("urgentUnit"), row.target_unit || row.unit || row["單位"] || "M2");
+    const machine=clean(row.machine_code || row.machine || row["機台"] || row["機台編號"]);
+    const machineSelect=$id("urgentMachine");
+    if(machineSelect){
+      if(machine && ![...machineSelect.options].some(o=>o.value===machine)){
+        machineSelect.add(new Option(machine,machine));
+      }
+      machineSelect.value=machine || "";
+    }
+    const due=toDateTimeLocal(row.due_date || row.delivery_date || row["預交日"]);
+    if(due)$id("urgentDue").value=due;
+    $id("urgentHours").value="";
+    const msg=$id("urgentFormMsg");
+    msg.textContent=`已由雲端 ${clean(row.source)||"ERP"} 帶入工單 ${wo}；請確認數量與交期後模擬。`;
+    msg.style.color="var(--green)";
+  }
+
+  async function loadUrgentByApi(){
+    const input=clean($id("urgentLookup")?.value);
+    const btn=$id("loadUrgentWo"), msg=$id("urgentFormMsg");
+    if(!input){msg.textContent="請先輸入工單號";msg.style.color="var(--yellow)";return;}
     if(btn){btn.disabled=true;btn.textContent="查詢中…";}
-    if(msg){msg.textContent=`正在雲端即時查詢 ${input}…`;msg.style.color="var(--yellow)";}
+    msg.textContent=`正在雲端即時查詢 ${input}…`;
+    msg.style.color="var(--yellow)";
     try{
-      const q=input.toUpperCase().replace(/\s+/g,"");
-      let row=null;
-      let source="";
-
-      // 1. 最快路徑：後端單筆查詢 API，不下載完整 DataHub。
-      try{
-        const direct=await jsonp("findworkorder",{q:input});
-        const directRows=Array.isArray(direct.rows)?direct.rows:[];
-        row=direct.row || direct.data || directRows[0] || null;
-        if(row)source="DataHub 單筆查詢";
-      }catch(_){ /* 舊後端尚未提供 findworkorder 時繼續備援 */ }
-
-      // 2. DataHub_WorkOrder 沒有該筆時，直接查八份 ERP 原始資料／Target 快取。
-      if(!row){
-        try{
-          const target=await jsonp("targetlookup",{q:input});
-          const targetRows=Array.isArray(target.rows)?target.rows:[];
-          row=target.row || targetRows[0] || null;
-          if(row)source="ERP 原始資料";
-        }catch(_){ /* 繼續最後備援 */ }
+      const res=await jsonp("findworkorder",{q:input},15000);
+      if(!res || res.ok===false) throw new Error(res?.message || "雲端查詢失敗");
+      const row=res.row || (Array.isArray(res.rows)?res.rows[0]:null);
+      if(!res.found || !row){
+        msg.textContent=`雲端查無 ${input}；請確認 4-3 工作表資料。`;
+        msg.style.color="var(--yellow)";
+        return;
       }
-
-      // 3. 相容舊後端：查 DataHub 分頁搜尋結果。
-      if(!row){
-        const res=await jsonp("datahubworkorders",{q:input,page:1,pageSize:50});
-        const rows=Array.isArray(res.rows)?res.rows:[];
-        rows.sort((a,b)=>score(b,q)-score(a,q));
-        row=rows[0]||null;
-        if(row)source="DataHub 工單池";
-      }
-
-      if(!row)throw new Error(`雲端 ERP 與 DataHub 都查無 ${input}；請確認最新 4-3 已同步`);
-      fill(row,input);
-      if(msg){msg.textContent=`已由${source}帶入 ${clean(value(row,["work_order_no","order_no","daily_report_no"])||input)}`;msg.style.color="var(--green)";}
+      fillFromApi(row);
     }catch(err){
-      if(msg){msg.textContent=err.message||String(err);msg.style.color="var(--yellow)";}
+      msg.textContent=`查詢失敗：${err.message || err}`;
+      msg.style.color="var(--red)";
     }finally{
       if(btn){btn.disabled=false;btn.textContent="帶入";}
     }
   }
+
   function install(){
-    const btn=$("loadUrgentWo");
-    if(!btn)return;
-    btn.onclick=null;
-    const clone=btn.cloneNode(true);
-    clone.id="loadUrgentWo";
-    clone.dataset.build0075="1";
-    btn.parentNode.replaceChild(clone,btn);
-    clone.addEventListener("click",e=>{e.preventDefault();lookup();});
-    $("urgentLookup")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();lookup();}});
-    window.loadUrgent=lookup;
+    const btn=$id("loadUrgentWo"), input=$id("urgentLookup");
+    if(!btn||!input)return;
+    btn.onclick=loadUrgentByApi;
+    window.loadUrgent=loadUrgentByApi;
+    if(!input.dataset.findWoEnter){
+      input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();loadUrgentByApi();}});
+      input.dataset.findWoEnter="1";
+    }
+    btn.dataset.build0077="1";
   }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(install,1000));
-  else setTimeout(install,1000);
-  setTimeout(install,2500);
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,100));
+  setTimeout(install,1000);
+  setTimeout(install,3000);
 })();
 </script>
+
 </body></html>
