@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V89 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V89.1 ERP Match Core</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -874,18 +874,28 @@ async function loadMatchList(force=false){
   __loadingMatch=true;
   renderTargetsLoading();
   try{
-    // V83.6.1：不再等待容易逾時的 targetmatchlist。
-    // 直接讀取 Key In，於前端依工單／命令單／日報／批號／料號建立配對。
-    await Promise.all([loadKeyInForRange(force),loadOrderList(force)]);
+    const startDate=$('rangeStart').value||today();
+    const endDate=$('rangeEnd').value||today();
+    const res=await apiGetRetry('targetmatchlist',{start:startDate,end:endDate,_:Date.now()},2);
     if(seq!==__matchReqSeq)return;
-    buildClientMatches();
+    MATCH_ROWS=(res.rows||res.data||res.list||[]).map(r=>Object.assign({},r,{
+      keyin_qty:r.actual_qty!==undefined?r.actual_qty:(r.keyin_qty!==undefined?r.keyin_qty:r.keyin_roll),
+      completion_rate:r.completion_rate!==undefined?r.completion_rate:r.completion_pct,
+      file_match_status:r.file_match_status||r.match_status||'未找到同日實績資料',
+      data_source:r.actual_source||r.data_source||'',
+      erp_taken_over:!!(r.erp_takeover||r.erp_taken_over)
+    }));
+    renderTargets();
+    updateKpi();
     const erpTakenCount=MATCH_ROWS.filter(r=>r.erp_taken_over).length;
-    $('loadMsg').textContent='全部目標 '+ALL_TARGETS.length+' 筆｜目前區間 '+TARGETS.length+' 筆｜Key In '+KEYIN_ROWS.length+' 筆｜ERP 接管 '+erpTakenCount+' 筆｜配對完成。';
+    const keyinCount=MATCH_ROWS.filter(r=>String(r.data_source)==='Key In').length;
+    $('loadMsg').textContent='後端配對引擎 '+(res.version||'V89.1')+'｜目前區間 '+MATCH_ROWS.length+' 筆｜ERP 接管 '+erpTakenCount+' 筆｜Key In '+keyinCount+' 筆。';
   }catch(e){
     if(seq===__matchReqSeq){
+      MATCH_ROWS=[];
       renderTargetsFallback();
       updateKpi();
-      $('loadMsg').textContent='Key In 讀取失敗：'+e.message+'；已保留目標資料，請按「重新計算配對」。';
+      $('loadMsg').textContent='後端配對讀取失敗：'+e.message+'；請確認 Code.gs V89.1 已重新部署。';
       throw e;
     }
   }finally{
