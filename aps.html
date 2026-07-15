@@ -6276,7 +6276,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 <script>
-/* Build 0078｜V88.1 Machine Knowledge 機台代碼／推薦整合
+/* Build 0079｜V88.2 AI 機台信心／前三順位推薦整合
    1. 急單帶入後再查 Machine_Knowledge。
    2. 畫面顯示標準機台代碼，例如 S160PP→S16、1S20→S20。
    3. select 的 value 保留完整機台名稱，排程核心仍可使用原名稱。
@@ -6336,14 +6336,30 @@ document.addEventListener("DOMContentLoaded",function(){
     sel.dataset.machineRaw=full;
   }
 
+  function confidenceStars(conf){
+    const n=Math.max(0,Math.min(100,Number(conf||0)));
+    const filled=Math.max(1,Math.min(5,Math.round(n/20)));
+    return "★".repeat(filled)+"☆".repeat(5-filled);
+  }
+
   function recommendationText(res){
     const list=Array.isArray(res?.recommendations)?res.recommendations:[];
     if(!list.length)return "";
     return list.slice(0,3).map((r,i)=>{
       const code=clean(r.machine_code)||machineCode(r.machine_raw||r.machine);
       const conf=Number(r.confidence||0);
-      return `${i+1}.${code||clean(r.machine_raw||r.machine)}${conf?`(${conf}%)`:""}`;
-    }).join("、");
+      return `${i+1}.${code||clean(r.machine_raw||r.machine)} ${confidenceStars(conf)} ${conf}%`;
+    }).join("｜");
+  }
+
+  function sourceBreakdown(best){
+    if(!best)return "";
+    const parts=[];
+    const k=Number(best.keyin_count||0),t=Number(best.target_count||0),e=Number(best.erp_count||0);
+    if(k)parts.push(`Key In ${k}`);
+    if(t)parts.push(`Target ${t}`);
+    if(e)parts.push(`ERP ${e}`);
+    return parts.join("／");
   }
 
   async function loadUrgentV881(){
@@ -6391,7 +6407,8 @@ document.addEventListener("DOMContentLoaded",function(){
       const recText=recommendationText(mk);
       const conf=Number(best?.confidence||mk?.confidence||0);
       const source=mk?.found ? "Machine Knowledge" : (clean(row.source)||"ERP");
-      msg.textContent=`已帶入 ${wo}｜指定機台 ${code||fullMachine||"未指定"}${conf?`｜信心 ${conf}%`:""}${recText?`｜推薦 ${recText}`:""}｜來源 ${source}`;
+      const breakdown=sourceBreakdown(best);
+      msg.textContent=`已帶入 ${wo}｜指定機台 ${code||fullMachine||"未指定"}${conf?`｜信心 ${confidenceStars(conf)} ${conf}%`:""}${breakdown?`｜依據 ${breakdown}`:""}${recText?`｜前三順位 ${recText}`:""}｜來源 ${source}`;
       msg.style.color="var(--green)";
     }catch(err){
       msg.textContent=`查詢失敗：${err.message||err}`;msg.style.color="var(--red)";
@@ -6409,7 +6426,7 @@ document.addEventListener("DOMContentLoaded",function(){
       input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();loadUrgentV881();}});
       input.dataset.v881Enter="1";
     }
-    btn.dataset.build0078="1";
+    btn.dataset.build0079="1";
   }
   document.addEventListener("DOMContentLoaded",()=>setTimeout(install,150));
   setTimeout(install,1200);setTimeout(install,3200);
