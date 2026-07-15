@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V89.1 ERP Match Core</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V89.4 Key In Match Display</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -94,7 +94,7 @@
     </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。</div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
 
     <div class="card col4"><h2><span id="quickTitle">五份資料工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋工單／訂單／命令單／日報／批號／投入產出料號製號／客戶／規格／機台" oninput="debouncedOrderList()"><div id="quickList" class="found" style="max-height:620px;overflow:auto">讀取後顯示</div></div>
-    <div class="card col12"><h2><span id="targetTitle">今日目標清單</span> / รายการเป้าหมาย</h2><div class="muted">依幹部目標 × 人員 Key In × ERP 正式實績比對；ERP 回寫後自動接管，歷史 Key In 保留但不重複計算。</div><div id="targetTable"></div></div>
+    <div class="card col12"><h2><span id="targetTitle">今日目標清單</span> / รายการเป้าหมาย</h2><div class="muted">依幹部目標配對同日 Key In；ERP 更新後自動排除重複 Key In，歷史紀錄仍保留。</div><div id="targetTable"></div></div>
   </div>
 </div>
 <div id="toast" class="toast"></div>
@@ -842,12 +842,12 @@ function buildClientMatches(){
     else if(adoptedQty>0)workStatus='作業中';
 
     const sample=erpUnitRows[0]||keyinUnitRows[0]||erpRelated[0]||keyinRelated[0]||{};
-    let matchText='未找到同日實績資料';
+    let matchText='尚未找到同日 Key In / ERP 實績';
     if(erpTaken){
-      matchText='ERP 已接管｜Key In 不重複計算';
+      matchText='ERP 已更新｜Key In 不重複計算';
       if(keyinQty>0)matchText+='｜保留 Key In '+Number(keyinQty.toFixed(3));
     }else if(keyinRelated.length){
-      matchText=dateKey(t.report_date)===today()?'今日 Key In 已配對':'等待 ERP 回寫｜暫採 Key In';
+      matchText=dateKey(t.report_date)===today()?'已配對當日 Key In':'已配對 Key In｜等待 ERP 更新';
     }
     if(overQty>0)matchText+='｜超產 '+Number(overQty.toFixed(3))+' '+(targetUnit==='M2'?'㎡':'R');
 
@@ -868,6 +868,16 @@ function buildClientMatches(){
   });
   renderTargets();updateKpi();
 }
+function normalizeMatchStatusText_(v){
+  let s=String(v||'').trim();
+  if(!s)return '尚未找到同日 Key In / ERP 實績';
+  s=s.replace(/ERP 5-3 已接管｜Key In 不重複計算/g,'ERP 已更新｜Key In 不重複計算');
+  s=s.replace(/ERP 已接管｜Key In 不重複計算/g,'ERP 已更新｜Key In 不重複計算');
+  s=s.replace(/今日 Key In 已配對/g,'已配對當日 Key In');
+  s=s.replace(/等待 ERP 回寫｜暫採 Key In/g,'已配對 Key In｜等待 ERP 更新');
+  s=s.replace(/未找到同日實績資料/g,'尚未找到同日 Key In / ERP 實績');
+  return s;
+}
 async function loadMatchList(force=false){
   if(__loadingMatch && !force)return;
   const seq=++__matchReqSeq;
@@ -881,7 +891,7 @@ async function loadMatchList(force=false){
     MATCH_ROWS=(res.rows||res.data||res.list||[]).map(r=>Object.assign({},r,{
       keyin_qty:r.actual_qty!==undefined?r.actual_qty:(r.keyin_qty!==undefined?r.keyin_qty:r.keyin_roll),
       completion_rate:r.completion_rate!==undefined?r.completion_rate:r.completion_pct,
-      file_match_status:r.file_match_status||r.match_status||'未找到同日實績資料',
+      file_match_status:normalizeMatchStatusText_(r.file_match_status||r.match_status||'尚未找到同日 Key In / ERP 實績'),
       data_source:r.actual_source||r.data_source||'',
       erp_taken_over:!!(r.erp_takeover||r.erp_taken_over)
     }));
@@ -889,7 +899,7 @@ async function loadMatchList(force=false){
     updateKpi();
     const erpTakenCount=MATCH_ROWS.filter(r=>r.erp_taken_over).length;
     const keyinCount=MATCH_ROWS.filter(r=>String(r.data_source)==='Key In').length;
-    $('loadMsg').textContent='後端配對引擎 '+(res.version||'V89.1')+'｜目前區間 '+MATCH_ROWS.length+' 筆｜ERP 接管 '+erpTakenCount+' 筆｜Key In '+keyinCount+' 筆。';
+    $('loadMsg').textContent='後端配對引擎 '+(res.version||'V89.1')+'｜目前區間 '+MATCH_ROWS.length+' 筆｜ERP 已更新 '+erpTakenCount+' 筆｜Key In 已配對 '+keyinCount+' 筆。';
   }catch(e){
     if(seq===__matchReqSeq){
       MATCH_ROWS=[];
@@ -912,13 +922,13 @@ async function recalculateMatches(force=true){
     if(btn){btn.disabled=false;btn.textContent='重新計算配對'}
   }
 }
-function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已接管')||v.includes('今日 Key In'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('等待 ERP 回寫'))return 'status-run';return 'status-wait'}
+function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已更新'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('等待 ERP 更新'))return 'status-run';return 'status-wait'}
 function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待配對',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
 function renderTargets(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
   const heads=[
-    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','與檔案目標配對<br>สถานะจับคู่ข้อมูล'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):(r[h[0]]||'');
@@ -935,7 +945,7 @@ function updateKpi(){
   $('kpiRoll').textContent=TARGETS.reduce((a,r)=>a+num(r.target_roll),0).toLocaleString();
   $('kpiM2').textContent=TARGETS.reduce((a,r)=>a+num(r.target_m2),0).toLocaleString();
   $('kpiOpen').textContent=rows.filter(r=>!String(r.work_status||r.status||'').includes('完成')&&!String(r.work_status||r.status||'').includes('เสร็จ')).length.toLocaleString();
-  const paired=rows.filter(r=>{const s=String(r.file_match_status||'');return s.includes('已配對')||s.includes('ERP 已接管')||s.includes('今日 Key In')||s.includes('等待 ERP 回寫')}).length;
+  const paired=rows.filter(r=>{const s=String(r.file_match_status||'');return s.includes('已配對')||s.includes('ERP 已更新')}).length;
   $('kpiPair').textContent=rows.length?Math.round(paired/rows.length*100)+'%':'0%';
 }
 
