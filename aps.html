@@ -6160,8 +6160,8 @@ document.addEventListener("DOMContentLoaded",function(){
 </script>
 
 
-<!-- Build 0075｜急單伺服器即時查詢：不等待 14,739 筆完整同步 -->
-<script id="build0075-urgent-server-lookup">
+<!-- Build 0076｜急單雙來源即時查詢：DataHub + ERP 原始資料 -->
+<script id="build0076-urgent-server-lookup">
 (function(){
   "use strict";
   const API_URL = window.MES_API_URL ||
@@ -6240,14 +6240,42 @@ document.addEventListener("DOMContentLoaded",function(){
     if(!input){if(msg){msg.textContent="請先輸入工單、訂單、批號或料號";}return;}
     const btn=$("loadUrgentWo");
     if(btn){btn.disabled=true;btn.textContent="查詢中…";}
-    if(msg){msg.textContent=`正在 DataHub 即時查詢 ${input}…`;msg.style.color="var(--yellow)";}
+    if(msg){msg.textContent=`正在雲端即時查詢 ${input}…`;msg.style.color="var(--yellow)";}
     try{
-      const res=await jsonp("datahubworkorders",{q:input,page:1,pageSize:50});
-      const rows=Array.isArray(res.rows)?res.rows:[];
-      if(!rows.length)throw new Error(`DataHub 查無 ${input}`);
       const q=input.toUpperCase().replace(/\s+/g,"");
-      rows.sort((a,b)=>score(b,q)-score(a,q));
-      fill(rows[0],input);
+      let row=null;
+      let source="";
+
+      // 1. 最快路徑：後端單筆查詢 API，不下載完整 DataHub。
+      try{
+        const direct=await jsonp("findworkorder",{q:input});
+        const directRows=Array.isArray(direct.rows)?direct.rows:[];
+        row=direct.row || direct.data || directRows[0] || null;
+        if(row)source="DataHub 單筆查詢";
+      }catch(_){ /* 舊後端尚未提供 findworkorder 時繼續備援 */ }
+
+      // 2. DataHub_WorkOrder 沒有該筆時，直接查八份 ERP 原始資料／Target 快取。
+      if(!row){
+        try{
+          const target=await jsonp("targetlookup",{q:input});
+          const targetRows=Array.isArray(target.rows)?target.rows:[];
+          row=target.row || targetRows[0] || null;
+          if(row)source="ERP 原始資料";
+        }catch(_){ /* 繼續最後備援 */ }
+      }
+
+      // 3. 相容舊後端：查 DataHub 分頁搜尋結果。
+      if(!row){
+        const res=await jsonp("datahubworkorders",{q:input,page:1,pageSize:50});
+        const rows=Array.isArray(res.rows)?res.rows:[];
+        rows.sort((a,b)=>score(b,q)-score(a,q));
+        row=rows[0]||null;
+        if(row)source="DataHub 工單池";
+      }
+
+      if(!row)throw new Error(`雲端 ERP 與 DataHub 都查無 ${input}；請確認最新 4-3 已同步`);
+      fill(row,input);
+      if(msg){msg.textContent=`已由${source}帶入 ${clean(value(row,["work_order_no","order_no","daily_report_no"])||input)}`;msg.style.color="var(--green)";}
     }catch(err){
       if(msg){msg.textContent=err.message||String(err);msg.style.color="var(--yellow)";}
     }finally{
