@@ -6274,4 +6274,146 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
+<script>
+/* Build 0078｜V88.1 Machine Knowledge 機台代碼／推薦整合
+   1. 急單帶入後再查 Machine_Knowledge。
+   2. 畫面顯示標準機台代碼，例如 S160PP→S16、1S20→S20。
+   3. select 的 value 保留完整機台名稱，排程核心仍可使用原名稱。
+   4. 顯示信心值與備援機台推薦；查不到知識庫時沿用 ERP 機台。
+*/
+(function(){
+  const API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  const $id = id => document.getElementById(id);
+  const clean = v => String(v == null ? "" : v).trim();
+
+  function machineCode(value){
+    const s=clean(value).toUpperCase().replace(/[\s\u3000]+/g,"");
+    const p=s.search(/[A-Z]/);
+    if(p<0)return "";
+    const letter=s.charAt(p);
+    const nums=(s.slice(p+1).match(/\d/g)||[]).join("");
+    return nums.length>=2 ? letter+nums.slice(0,2) : "";
+  }
+
+  function jsonp(action,params,timeoutMs){
+    return new Promise((resolve,reject)=>{
+      const cb="__apsMk_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const s=document.createElement("script");
+      let done=false;
+      const finish=(err,data)=>{
+        if(done)return;done=true;clearTimeout(timer);
+        try{delete window[cb]}catch(_){window[cb]=undefined}
+        s.remove();err?reject(err):resolve(data);
+      };
+      window[cb]=data=>finish(null,data);
+      const q=new URLSearchParams({action,callback:cb,_:Date.now(),...params});
+      s.src=API_URL+"?"+q.toString();
+      s.onerror=()=>finish(new Error("Machine Knowledge 連線失敗"));
+      const timer=setTimeout(()=>finish(new Error("Machine Knowledge 查詢逾時")),timeoutMs||12000);
+      document.head.appendChild(s);
+    });
+  }
+
+  function setMachineDisplay(fullName,code){
+    const sel=$id("urgentMachine");
+    if(!sel)return;
+    const full=clean(fullName), short=clean(code)||machineCode(full);
+    if(!full && !short){sel.value="";return;}
+    let opt=[...sel.options].find(o=>clean(o.value)===full || machineCode(o.value)===short || machineCode(o.textContent)===short);
+    if(!opt){
+      opt=new Option(short||full,full||short);
+      sel.add(opt);
+    }
+    opt.value=full||opt.value||short;
+    opt.textContent=short||full;
+    opt.title=full && short && full!==short ? `${short}｜${full}` : (full||short);
+    opt.dataset.machineCode=short;
+    opt.dataset.machineRaw=full;
+    sel.value=opt.value;
+    sel.title=opt.title;
+    sel.dataset.machineCode=short;
+    sel.dataset.machineRaw=full;
+  }
+
+  function recommendationText(res){
+    const list=Array.isArray(res?.recommendations)?res.recommendations:[];
+    if(!list.length)return "";
+    return list.slice(0,3).map((r,i)=>{
+      const code=clean(r.machine_code)||machineCode(r.machine_raw||r.machine);
+      const conf=Number(r.confidence||0);
+      return `${i+1}.${code||clean(r.machine_raw||r.machine)}${conf?`(${conf}%)`:""}`;
+    }).join("、");
+  }
+
+  async function loadUrgentV881(){
+    const input=clean($id("urgentLookup")?.value);
+    const btn=$id("loadUrgentWo"), msg=$id("urgentFormMsg");
+    if(!input){msg.textContent="請先輸入工單號";msg.style.color="var(--yellow)";return;}
+    if(btn){btn.disabled=true;btn.textContent="查詢中…";}
+    msg.textContent=`正在查詢工單與固定機台 ${input}…`;msg.style.color="var(--yellow)";
+    try{
+      const woRes=await jsonp("findworkorder",{q:input},15000);
+      if(!woRes || woRes.ok===false)throw new Error(woRes?.message||"工單查詢失敗");
+      const row=woRes.row || (Array.isArray(woRes.rows)?woRes.rows[0]:null);
+      if(!woRes.found || !row){msg.textContent=`雲端查無 ${input}`;msg.style.color="var(--yellow)";return;}
+
+      const wo=clean(row.work_order_no||row.wo||row["單號"]||row["工單號"]);
+      const qty=Number(row.erp_remaining_qty||row.remaining_qty||row.target_qty||row.planned_qty||0);
+      $id("urgentWo").value=wo;
+      $id("urgentCustomer").value=clean(row.customer||row["客戶"]);
+      $id("urgentPart").value=clean(row.part_no||row.product_no||row["料品編號"]||row["料號"]);
+      $id("urgentProcess").value=clean(row.process||row.process_site||row["製程"]||row["站別"]);
+      $id("urgentQty").value=qty>0?qty:"";
+      const unit=clean(row.target_unit||row.unit||row["單位"]||"M2").toUpperCase().replace(/㎡|M²|M\^2/g,"M2");
+      const unitSel=$id("urgentUnit");
+      if(unitSel){const uo=[...unitSel.options].find(o=>clean(o.value).toUpperCase().replace(/㎡|M²|M\^2/g,"M2")===unit||clean(o.textContent).toUpperCase().replace(/㎡|M²|M\^2/g,"M2")===unit);if(uo)unitSel.value=uo.value;}
+      const dueRaw=row.due_date||row.delivery_date||row["預交日"];
+      if(dueRaw){const d=new Date(dueRaw);if(!Number.isNaN(d.getTime())){d.setHours(17,0,0,0);$id("urgentDue").value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}}
+      $id("urgentHours").value="";
+
+      let mk=null;
+      try{
+        mk=await jsonp("machineknowledgelookup",{
+          work_order_no:wo,
+          part_no:clean(row.part_no||row.product_no||row["料號"]),
+          process:clean(row.process||row.process_site||row["製程"]),
+          product_spec:clean(row.product_spec||row.spec||row["規格"]),
+          allow_part:"1",allow_spec:"1"
+        },12000);
+      }catch(_){mk=null;}
+
+      const best=mk?.best || mk?.row || null;
+      const fullMachine=clean(best?.machine_raw||best?.machine||row.machine||row.machine_code||row["機台"]||row["機台編號"]);
+      const code=clean(best?.machine_code)||machineCode(fullMachine);
+      setMachineDisplay(fullMachine,code);
+
+      const recText=recommendationText(mk);
+      const conf=Number(best?.confidence||mk?.confidence||0);
+      const source=mk?.found ? "Machine Knowledge" : (clean(row.source)||"ERP");
+      msg.textContent=`已帶入 ${wo}｜指定機台 ${code||fullMachine||"未指定"}${conf?`｜信心 ${conf}%`:""}${recText?`｜推薦 ${recText}`:""}｜來源 ${source}`;
+      msg.style.color="var(--green)";
+    }catch(err){
+      msg.textContent=`查詢失敗：${err.message||err}`;msg.style.color="var(--red)";
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent="帶入";}
+    }
+  }
+
+  function install(){
+    const btn=$id("loadUrgentWo"),input=$id("urgentLookup");
+    if(!btn||!input)return;
+    btn.onclick=loadUrgentV881;
+    window.loadUrgent=loadUrgentV881;
+    if(!input.dataset.v881Enter){
+      input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();loadUrgentV881();}});
+      input.dataset.v881Enter="1";
+    }
+    btn.dataset.build0078="1";
+  }
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,150));
+  setTimeout(install,1200);setTimeout(install,3200);
+})();
+</script>
+
 </body></html>
