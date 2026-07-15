@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V87.3 ERP Takeover Match</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V88 Enterprise Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -902,18 +902,18 @@ async function recalculateMatches(force=true){
     if(btn){btn.disabled=false;btn.textContent='重新計算配對'}
   }
 }
-function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整'))return 'status-run';return 'status-wait'}
+function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已接管')||v.includes('今日 Key In'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('等待 ERP'))return 'status-run';return 'status-wait'}
 function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待配對',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
 function renderTargets(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
   const heads=[
-    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','與檔案目標配對<br>สถานะจับคู่ข้อมูล'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['data_source','資料來源<br>แหล่งข้อมูล'],['erp_actual_qty','ERP實績<br>ผลงาน ERP'],['retained_keyin_qty','保留Key In<br>Key In ที่เก็บไว้'],['file_match_status','與檔案目標配對<br>สถานะจับคู่ข้อมูล'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):(r[h[0]]||'');
     if(h[0]==='report_date')v=dateKey(v);
-    if(h[0]==='keyin_qty' && v!=='' && r.keyin_unit)v=v+' '+r.keyin_unit;
+    if((h[0]==='keyin_qty'||h[0]==='erp_actual_qty'||h[0]==='retained_keyin_qty') && v!=='' && r.keyin_unit)v=v+' '+r.keyin_unit;
     if(h[0]==='completion_rate')v=(v===''?'':(v==='—'?'—':v+'%'));
     if(h[0]==='file_match_status'||h[0]==='work_status')return '<td class="'+statusClass(v)+'">'+esc(v)+'</td>';
     return '<td>'+esc(v)+'</td>';
@@ -925,7 +925,7 @@ function updateKpi(){
   $('kpiRoll').textContent=TARGETS.reduce((a,r)=>a+num(r.target_roll),0).toLocaleString();
   $('kpiM2').textContent=TARGETS.reduce((a,r)=>a+num(r.target_m2),0).toLocaleString();
   $('kpiOpen').textContent=rows.filter(r=>!String(r.work_status||r.status||'').includes('完成')&&!String(r.work_status||r.status||'').includes('เสร็จ')).length.toLocaleString();
-  const paired=rows.filter(r=>String(r.file_match_status||'').includes('已配對')).length;
+  const paired=rows.filter(r=>{const x=String(r.file_match_status||'');return x.includes('已配對')||x.includes('ERP 已接管')||x.includes('等待 ERP 回寫')}).length;
   $('kpiPair').textContent=rows.length?Math.round(paired/rows.length*100)+'%':'0%';
 }
 
