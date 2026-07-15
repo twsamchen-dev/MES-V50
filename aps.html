@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜工單搜尋修正版</title>
+<title>SEAL KING Smart APS｜雲端資料讀取穩定復原版</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -1233,58 +1233,7 @@ function renderSimTimeline(arr){const original=S.schedule,old=EP.simulation;S.sc
 function urgentFromForm(){const wo=$('urgentWo').value.trim(),part=$('urgentPart').value.trim(),qty=num($('urgentQty').value),dueRaw=$('urgentDue').value;if(!wo||!part||qty<=0||!dueRaw)throw Error('請填寫急單工單、產品料號、需求數量與最晚交期');if($('urgentPre').value==='pending')throw Error('此急單仍等待前製程，暫時不能投入排程');const process=$('urgentProcess').value.trim(),machine=$('urgentMachine').value,unit=$('urgentUnit').value,ms=matchSpeed(part,process,machine,S.rows.speed||[]);let minutes=num($('urgentHours').value)*60,match='手動工時';if(!minutes&&ms){let perCycle=1;if(unit.includes('㎡'))perCycle=(ms.row.outw/1000)*ms.row.len||1;else if(unit.toUpperCase().includes('M'))perCycle=ms.row.len||1;minutes=(qty/perCycle)*ms.row.total;match=ms.level}if(!minutes)throw Error('找不到對應產速，請手動輸入預估工時');return{wo,order:'MANUAL',part,name:'手動急單',customer:$('urgentCustomer').value.trim(),batch:'',process,machine:machine||(ms?.row.machine||''),sourceMachine:machine,spec:'',due:new Date(dueRaw),planned:qty,output:0,remaining:qty,unit,minutes,cycles:0,match,urgent:true,risk:true,ready:true,status:'急單',closed:false,preprocess:'已到位',manual:true}}
 function simulateUrgent(){try{if(!S.pool.length)throw Error('請先建立工單池');if(!S.schedule.length)S.schedule=runScheduler(S.pool);const urgent=urgentFromForm(),base=S.schedule.map(x=>({...x,start:new Date(x.start),end:new Date(x.end),date:new Date(x.date)})),simPool=[urgent,...S.pool.filter(x=>x.wo!==urgent.wo)],sim=runScheduler(simPool),baseC=completionMap(base),simC=completionMap(sim);const impacts=[];for(const x of S.pool.filter(x=>!x.closed)){const b=baseC[x.wo],n=simC[x.wo];if(!n)continue;const shift=b?Math.round((n-b)/60000):0,delay=!!(x.due&&n>x.due);if(shift!==0||delay)impacts.push({wo:x.wo,customer:x.customer,due:x.due,old:b,new:n,shift,delay})}impacts.sort((a,b)=>(b.delay-a.delay)||(b.shift-a.shift));const uc=simC[urgent.wo],urgentDelay=uc>urgent.due;EP.simulation={urgent,simPool,sim,impacts};$('urgentSummary').className='';$('urgentSummary').innerHTML=`<div class="impact-cards"><div class="impact-card ${urgentDelay?'red':'green'}"><span>急單結果</span><b>${urgentDelay?'Delay':'準時'}</b></div><div class="impact-card"><span>建議機台</span><b>${esc(sim.find(x=>x.wo===urgent.wo)?.machine||'—')}</b></div><div class="impact-card"><span>預計完成</span><b style="font-size:16px">${uc?uc.toLocaleString('zh-TW',{hour12:false}):'未排入'}</b></div><div class="impact-card ${impacts.filter(x=>x.delay).length?'red':'green'}"><span>受影響 Delay</span><b>${impacts.filter(x=>x.delay).length} 張</b></div></div><div class="notice">插單後共影響 ${impacts.length} 張工單；${impacts.filter(x=>x.delay).length?'有工單超過預交日，請確認是否加班、拆單或更換機台。':'目前沒有造成其他工單超過預交日。'}</div>`;$('urgentApplyActions').style.display='flex';renderUrgentImpact();renderSimTimeline(sim);log(`急單模擬：${urgent.wo}，影響 ${impacts.length} 張，Delay ${impacts.filter(x=>x.delay).length} 張`)}catch(e){$('urgentFormMsg').textContent=e.message;$('urgentFormMsg').style.color='var(--red)'}}
 function renderUrgentImpact(){const imp=EP.simulation?.impacts||[];if(!imp.length){$('urgentImpact').className='empty';$('urgentImpact').textContent='沒有工單受到完成時間影響';return}$('urgentImpact').className='tablewrap';$('urgentImpact').innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>預交日</th><th>原完成</th><th>插單後完成</th><th>位移</th><th>結果</th></tr></thead><tbody>${imp.map(x=>`<tr class="${x.delay?'delay-row':''}"><td>${esc(x.wo)}</td><td>${esc(x.customer)}</td><td>${fmtDate(x.due)}</td><td>${x.old?x.old.toLocaleString('zh-TW',{hour12:false}):'—'}</td><td>${x.new.toLocaleString('zh-TW',{hour12:false})}</td><td>${x.shift>=0?'+':''}${x.shift} 分</td><td><span class="tag ${x.delay?'red':x.shift>0?'yellow':'green'}">${x.delay?'Delay':x.shift>0?'延後':'提前'}</span></td></tr>`).join('')}</tbody></table>`}
-async function loadUrgent(){
- const input=$('urgentLookup'),msg=$('urgentFormMsg'),btn=$('loadUrgentWo');
- const raw=String(input?.value||'').trim(),key=norm(raw);
- if(!key){msg.textContent='請先輸入工單、訂單單號、生產批號或料號';return}
- const findJob=()=>S.pool.find(j=>{
-  const values=[j.wo,j.work_order_no,j.command_no,j.order,j.order_no,j.report_no,j.daily_report_no,j.batch,j.batch_no,j.part,j.part_no,j.input_part_no,j.output_part_no,j.sourceMachine,j.machine,j.customer,j.spec,j.name,...(Array.isArray(j.aliases)?j.aliases:[])];
-  return values.some(v=>norm(v)===key);
- });
- const setBusy=(busy,text)=>{if(btn){btn.disabled=busy;btn.textContent=text||(busy?'同步中…':'帶入')}};
- let x=findJob();
- try{
-  if(!x){
-   const rowCount=window.CloudDataHubEngine57?.getCached?.().rows?.length||0;
-   msg.style.color='var(--yellow)';
-   msg.textContent=`工單池尚未找到此資料，等待 DataHub 與工單池完成…（快取 ${rowCount} 筆／工單池 ${S.pool?.length||0} 筆）`;
-   setBusy(true,'等待同步…');
-
-   // 使用目前最新版單一 DataHub 引擎，必須等到 Build0051 已完成轉換後才搜尋。
-   if(window.CloudDataHubEngine57?.sync){
-    await window.CloudDataHubEngine57.sync(false);
-   }else if(window.Build0050APSDataHub?.sync){
-    await window.Build0050APSDataHub.sync(false);
-   }
-   x=findJob();
-  }
- }catch(e){
-  console.warn('Urgent lookup DataHub sync failed',e);
-  msg.style.color='var(--red)';
-  msg.textContent=`DataHub／工單池同步失敗：${e.message||e}`;
-  setBusy(false,'帶入');
-  return;
- }finally{
-  setBusy(false,'帶入');
- }
- if(!x){
-  const state=document.getElementById('cloudDataHubState57')?.textContent||'DataHub 狀態未知';
-  msg.textContent=`找不到此工單：${raw}（目前工單池 ${S.pool?.length||0} 筆；${state}）`;
-  msg.style.color='var(--red)';
-  return;
- }
- msg.style.color='';
- $('urgentWo').value=x.wo||x.work_order_no||'';
- $('urgentCustomer').value=x.customer||'';
- $('urgentPart').value=x.part||x.part_no||'';
- $('urgentProcess').value=x.process||'';
- $('urgentQty').value=Number(x.remaining??x.erp_remaining_qty??x.planned??0)||'';
- $('urgentUnit').value=x.unit||'㎡';
- $('urgentMachine').value=x.machine||x.sourceMachine||'';
- if(x.due){const d=new Date(x.due);d.setHours(17,0,0,0);$('urgentDue').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
- $('urgentHours').value=x.minutes?(x.minutes/60).toFixed(2):'';
- msg.textContent=`已帶入工單 ${x.wo||''}｜工單池 ${S.pool?.length||0} 筆，可調整數量、交期或機台後模擬`;
-}
+function loadUrgent(){const x=S.pool.find(j=>String(j.wo)===String($('urgentLookup').value));if(!x){$('urgentFormMsg').textContent='找不到此工單';return}$('urgentWo').value=x.wo;$('urgentCustomer').value=x.customer;$('urgentPart').value=x.part;$('urgentProcess').value=x.process;$('urgentQty').value=x.remaining;$('urgentUnit').value=x.unit||'㎡';$('urgentMachine').value=x.machine||'';if(x.due){const d=new Date(x.due);d.setHours(17,0,0,0);$('urgentDue').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}$('urgentHours').value=x.minutes?(x.minutes/60).toFixed(2):'';$('urgentFormMsg').textContent='已帶入既有工單，可調整數量、交期或機台後模擬'}
 function resetUrgent(){['urgentLookup','urgentWo','urgentCustomer','urgentPart','urgentProcess','urgentQty','urgentDue','urgentHours'].forEach(id=>$(id).value='');$('urgentMachine').value='';$('urgentPre').value='ready';$('urgentSummary').className='empty';$('urgentSummary').textContent='請輸入急單進行模擬。';$('urgentImpact').className='empty';$('urgentImpact').textContent='尚未執行模擬';$('urgentTimeline').innerHTML='<div class="empty">尚未執行模擬</div>';$('urgentApplyActions').style.display='none';$('urgentFormMsg').textContent='';EP.simulation=null}
 function applyUrgent(){if(!EP.simulation)return;S.pool=EP.simulation.simPool;S.schedule=EP.simulation.sim;renderPool();renderSchedule();updateKpi();populateUrgentLists();log(`已採用急單方案：${EP.simulation.urgent.wo}`);alert('急單方案已套用到目前排程');showPage('schedule')}
 
@@ -5609,26 +5558,20 @@ document.addEventListener("DOMContentLoaded",function(){
     }catch(_){}
   }
 
-  async function installRows(rows){
-    // 將 DataHub 原始資料交給 Build0051，並等待工單池與產速配對真正完成。
-    // 不能只啟動背景轉換，否則急單頁會在 S.pool 尚未建立時先搜尋。
+  function installRows(rows){
+    // Use the existing Build0051 engine for speed matching by temporarily providing
+    // a direct, cached data source and invoking its normal conversion flow only once.
     window.__BUILD0057_DATAHUB_ROWS__ = rows;
 
     if(window.Build0051APSSpeedEngine?.sync){
-      setDataState(`DataHub 已取得 ${rows.length} 筆｜建立工單池中…`,"warn");
-      try{
-        await window.Build0051APSSpeedEngine.sync(false);
-      }catch(err){
+      // Build0072：Build0051 會直接消耗 __BUILD0057_DATAHUB_ROWS__，
+      // 因此這裡只轉換一次，不會再次讀取 DataHub。
+      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).catch(err=>{
         console.error("Build0072 speed conversion failed",err);
-        window.log?.("DataHub 已載入，但工單池／產速轉換失敗："+(err.message||err));
-        throw err;
-      }
+        window.log?.("快取已載入，但產速轉換失敗："+(err.message||err));
+      });
     }
-
-    const poolCount=Array.isArray(window.S?.pool)?window.S.pool.length:0;
-    setDataState(`DataHub ${rows.length} 筆｜工單池 ${poolCount} 筆｜Ready`,"ok");
-    window.dispatchEvent(new CustomEvent("aps-pool-ready",{detail:{rows:rows.length,pool:poolCount}}));
-    return poolCount;
+    setDataState(`DataHub 快取 ${rows.length} 筆`,"ok");
   }
 
   async function syncDataHub(force=false){
@@ -5636,8 +5579,8 @@ document.addEventListener("DOMContentLoaded",function(){
     syncPromise=(async()=>{
       const cache=getCached();
       if(cache.rows.length){
-        await installRows(cache.rows);
-        setDataState(cache.fresh?`DataHub 快取 ${cache.rows.length} 筆｜工單池 ${window.S?.pool?.length||0} 筆｜Ready`:`快取 ${cache.rows.length} 筆｜工單池 ${window.S?.pool?.length||0} 筆，背景更新中`,"ok");
+        installRows(cache.rows);
+        setDataState(cache.fresh?`DataHub 快取 ${cache.rows.length} 筆`:`快取 ${cache.rows.length} 筆，背景更新中`,"ok");
       }
 
       if(cache.fresh&&!force)return cache.rows;
@@ -5645,9 +5588,19 @@ document.addEventListener("DOMContentLoaded",function(){
       try{
         setDataState("DataHub 單一同步中…","warn");
         const rows=await fetchAll();
+        if(!rows.length){
+          if(cache.rows.length){
+            installRows(cache.rows);
+            setDataState(`DataHub 回傳 0 筆｜保留快取 ${cache.rows.length} 筆`,"warn");
+            window.log?.(`DataHub 本次回傳 0 筆，未覆蓋原快取 ${cache.rows.length} 筆`);
+            return cache.rows;
+          }
+          setDataState("DataHub 回傳 0 筆，且沒有可用快取","bad");
+          throw new Error("DataHub 回傳 0 筆");
+        }
         saveCache(rows);
-        await installRows(rows);
-        setDataState(`DataHub 已同步 ${rows.length} 筆｜工單池 ${window.S?.pool?.length||0} 筆｜Ready`,"ok");
+        installRows(rows);
+        setDataState(`DataHub 已同步 ${rows.length} 筆`,"ok");
         return rows;
       }catch(err){
         console.error(err);
@@ -5828,7 +5781,7 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    document.title="SEAL KING Smart APS｜V15.1 Enterprise Stable DataHub Pool Ready Engine";
+    document.title="SEAL KING Smart APS｜Build 0072 V87.5 Stable DataHub Cache Engine";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
         el.textContent="Enterprise Preview 2｜Build 0072";
@@ -5860,8 +5813,8 @@ document.addEventListener("DOMContentLoaded",function(){
         }catch(err){
           const cache=getCached();
           if(cache.rows.length){
-            await installRows(cache.rows);
-            setDataState(`DataHub 離線｜快取 ${cache.rows.length} 筆｜工單池 ${window.S?.pool?.length||0} 筆`,"warn");
+            installRows(cache.rows);
+            setDataState(`DataHub 離線｜使用快取 ${cache.rows.length} 筆`,"warn");
             window.log?.("DataHub 同步逾時，已使用本機快取："+err.message);
           }else{
             setDataState("DataHub 無法連線，且沒有可用快取","bad");
@@ -6111,120 +6064,109 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<!-- Fix 2026-07-15：站別兼容「加工部/加工課」＋急單多欄位搜尋與 DataHub 重同步 -->
 
-<script id="build0074-urgent-rawdata-fallback">
-(()=>{
+
+<script id="v15-3-urgent-lookup-fix">
+/* V15.3｜加工部工單＋急單多欄位搜尋修正 */
+(function(){
   "use strict";
-  const CACHE_KEY="SK_APS_DATAHUB_WORKORDERS_V57";
-  const CACHE_TS_KEY="SK_APS_DATAHUB_WORKORDERS_TS_V57";
-  const N=v=>String(v??"").trim().toUpperCase().replace(/\s+/g,"");
-  const V=(o,keys)=>{for(const k of keys){if(o&&o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=="")return o[k]}return ""};
-  const KEYS={
-    wo:["work_order_no","wo","workOrderNo","工單","工單號","單號","命令單號"],
-    order:["order_no","orderNo","訂單單號","訂單號"],
-    report:["report_no","daily_report_no","日報號"],
-    batch:["batch_no","batch","生產批號","批號"],
-    part:["part_no","part","料號","料品編號","產品料號","產出料號","投入料號"],
-    customer:["customer","cust","客戶"],
-    process:["process","process_site","製程","站別"],
-    machine:["machine","machine_code","機台","機台編號"],
-    qty:["remaining","target_qty","planned_qty","預計產量","需求數量","數量"],
-    unit:["unit","單位"],
-    due:["due_date","due","預交日","最後交期"],
-    name:["product_name","name","品名","產品名稱"],
-    spec:["product_spec","spec","規格"]
+  const $=id=>document.getElementById(id);
+  const clean=v=>String(v??"").trim();
+  const key=v=>clean(v).toUpperCase().replace(/[＊﹡]/g,"*").replace(/\s+/g,"");
+  const first=(obj,names)=>{
+    for(const n of names){const v=obj?.[n];if(v!==undefined&&v!==null&&clean(v)!=="")return v;}
+    return "";
   };
-  function cacheRows(){
-    try{const a=JSON.parse(localStorage.getItem(CACHE_KEY)||"[]");return Array.isArray(a)?a:[]}catch(_){return []}
+  const dateLocal=v=>{
+    if(!v)return "";
+    const d=v instanceof Date?v:new Date(v);
+    if(Number.isNaN(d.getTime()))return "";
+    d.setHours(17,0,0,0);
+    return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  };
+  function rawRows(){
+    const rows=[];
+    try{
+      const a=JSON.parse(localStorage.getItem("SK_APS_DATAHUB_WORKORDERS_V57")||"[]");
+      if(Array.isArray(a))rows.push(...a);
+    }catch(_){}
+    if(Array.isArray(window.__BUILD0057_DATAHUB_ROWS__))rows.push(...window.__BUILD0057_DATAHUB_ROWS__);
+    return rows;
   }
-  function allRawRows(){
-    const out=[];
-    const add=a=>{if(Array.isArray(a))out.push(...a)};
-    add(window.__BUILD0057_DATAHUB_ROWS__);
-    add(cacheRows());
-    const files=window.S?.files||{};
-    Object.values(files).forEach(f=>{
-      if(Array.isArray(f?.rows)) add(f.rows);
-      if(Array.isArray(f?.sheets)) f.sheets.forEach(s=>add(s?.rows));
-    });
-    return out;
+  function matchesPool(x,q){
+    return [x.wo,x.order,x.commandNo,x.reportNo,x.batch,x.part,x.inputPart,x.outputPart,x.machine,x.customer]
+      .some(v=>key(v)===q);
   }
-  function rawFind(key){
-    const rows=allRawRows();
-    for(const r of rows){
-      if(!r||typeof r!=="object"||Array.isArray(r))continue;
-      const vals=[...KEYS.wo,...KEYS.order,...KEYS.report,...KEYS.batch,...KEYS.part].map(k=>r[k]);
-      if(vals.some(v=>N(v)===key))return r;
-    }
-    return null;
+  function matchesRaw(r,q){
+    const fields=[
+      "work_order_no","wo","工單","工單號","單號","命令單號",
+      "order_no","訂單單號","訂單號","command_no","report_no","日報號",
+      "batch_no","生產批號","part_no","part","料品編號","產品料號","投入料號","產出料號",
+      "machine","machine_code","機台","機台編號"
+    ];
+    return fields.some(f=>key(r?.[f])===q);
   }
-  function fillFromRaw(r,raw){
-    const set=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined&&v!==null&&String(v)!=="")e.value=v};
-    const wo=V(r,KEYS.wo)||raw;
-    set("urgentWo",wo); set("urgentCustomer",V(r,KEYS.customer)); set("urgentPart",V(r,KEYS.part));
-    set("urgentProcess",V(r,KEYS.process)); set("urgentQty",V(r,KEYS.qty)); set("urgentUnit",V(r,KEYS.unit)||"㎡");
-    const due=V(r,KEYS.due); if(due){const d=new Date(due);if(!isNaN(d))set("urgentDue",d.toISOString().slice(0,16))}
-    const m=V(r,KEYS.machine); if(m)set("urgentMachine",m);
-    const msg=document.getElementById("urgentFormMsg");
-    if(msg){msg.style.color="var(--green)";msg.textContent=`已從 DataHub 原始資料帶入 ${wo}；此筆未進入待排工單池，仍可進行急單模擬。`}
-    return true;
-  }
-  function poolFind(key){
-    return (window.S?.pool||[]).find(j=>[
-      j.wo,j.work_order_no,j.command_no,j.order,j.order_no,j.report_no,j.daily_report_no,
-      j.batch,j.batch_no,j.part,j.part_no,j.input_part_no,j.output_part_no,...(Array.isArray(j.aliases)?j.aliases:[])
-    ].some(v=>N(v)===key));
-  }
-  function fillPool(x){
-    const set=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined&&v!==null)e.value=v};
-    set("urgentWo",x.wo||x.work_order_no||""); set("urgentCustomer",x.customer||""); set("urgentPart",x.part||x.part_no||"");
-    set("urgentProcess",x.process||""); set("urgentQty",x.remaining||x.planned||""); set("urgentUnit",x.unit||"㎡");
-    if(x.due){const d=new Date(x.due);if(!isNaN(d))set("urgentDue",d.toISOString().slice(0,16))}
-    if(x.machine)set("urgentMachine",x.machine);
-    const msg=document.getElementById("urgentFormMsg");if(msg){msg.style.color="var(--green)";msg.textContent=`已帶入工單 ${x.wo||""}`}
-  }
-  async function safeSync(force=false){
-    const eng=window.CloudDataHubEngine57,old=eng&&eng.__originalSync;
-    if(!old)return [];
-    const backup=cacheRows();
-    const result=await old(force);
-    if((!Array.isArray(result)||result.length===0)&&backup.length){
-      localStorage.setItem(CACHE_KEY,JSON.stringify(backup));
-      localStorage.setItem(CACHE_TS_KEY,String(Date.now()));
-      window.__BUILD0057_DATAHUB_ROWS__=backup;
-      if(window.Build0051APSSpeedEngine?.sync)await window.Build0051APSSpeedEngine.sync(false);
-      const state=document.getElementById("cloudDataHubState57");
-      if(state){state.className="cloud-datahub-state warn";state.textContent=`DataHub 本次回傳 0 筆｜保留快取 ${backup.length} 筆｜工單池 ${window.S?.pool?.length||0} 筆`}
-      return backup;
-    }
-    return result;
-  }
-  function install(){
-    const eng=window.CloudDataHubEngine57;
-    if(eng&&!eng.__safe74){eng.__safe74=true;eng.__originalSync=eng.sync.bind(eng);eng.sync=safeSync}
-    const btn=document.getElementById("loadUrgentWo");
-    if(!btn||btn.dataset.fix74)return;btn.dataset.fix74="1";
-    btn.onclick=async e=>{
-      e?.preventDefault?.();
-      const input=document.getElementById("urgentLookup"),msg=document.getElementById("urgentFormMsg");
-      const raw=String(input?.value||"").trim(),key=N(raw);
-      if(!key){if(msg)msg.textContent="請先輸入工單、訂單單號、生產批號或料號";return}
-      let x=poolFind(key);if(x){fillPool(x);return}
-      let r=rawFind(key);if(r){fillFromRaw(r,raw);return}
-      btn.disabled=true;btn.textContent="同步中…";
-      try{await window.CloudDataHubEngine57?.sync?.(true)}catch(_){ }
-      finally{btn.disabled=false;btn.textContent="帶入"}
-      x=poolFind(key);if(x){fillPool(x);return}
-      r=rawFind(key);if(r){fillFromRaw(r,raw);return}
-      const c=cacheRows().length,p=window.S?.pool?.length||0,state=document.getElementById("cloudDataHubState57")?.textContent||"";
-      if(msg){msg.style.color="var(--red)";msg.textContent=`DataHub 與工單池都找不到 ${raw}（原始快取 ${c} 筆／工單池 ${p} 筆）。請先在更新中心重新匯入最新 4-3。${state?"｜"+state:""}`}
+  function rawToJob(r){
+    const planned=Number(String(first(r,["planned_qty","target_qty","plan_qty","預計產量","需求數量"])||0).replace(/,/g,""))||0;
+    const output=Number(String(first(r,["output_qty","actual_qty","產出量","已產量"])||0).replace(/,/g,""))||0;
+    return {
+      wo:first(r,["work_order_no","wo","工單","工單號","單號","命令單號"]),
+      order:first(r,["order_no","訂單單號","訂單號"]),
+      customer:first(r,["customer","客戶"]),
+      part:first(r,["part_no","part","料品編號","產品料號","產出料號","投入料號"]),
+      process:first(r,["process","製程","站別"]),
+      machine:first(r,["machine","machine_code","機台","機台編號"]),
+      batch:first(r,["batch_no","生產批號"]),
+      remaining:Math.max(0,planned-output)||planned,
+      unit:first(r,["unit","單位"])||"㎡",
+      due:first(r,["due_date","delivery_date","預交日","最後交期"]),
+      minutes:Number(first(r,["minutes","estimated_minutes","預估工時"]))||0
     };
   }
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,800));
-  setTimeout(install,2500);
-  window.APS_BUILD="0074"; window.APS_VERSION="V87.7";
+  function fill(x,source){
+    $("urgentWo").value=clean(x.wo);
+    $("urgentCustomer").value=clean(x.customer);
+    $("urgentPart").value=clean(x.part);
+    $("urgentProcess").value=clean(x.process);
+    $("urgentQty").value=Number(x.remaining||0)>0?x.remaining:"";
+    $("urgentUnit").value=clean(x.unit)||"㎡";
+    $("urgentMachine").value=clean(x.machine);
+    const due=dateLocal(x.due);
+    if(due)$("urgentDue").value=due;
+    $("urgentHours").value=Number(x.minutes||0)>0?(Number(x.minutes)/60).toFixed(2):"";
+    $("urgentFormMsg").textContent=`已由${source}帶入工單 ${clean(x.wo)}，可調整後模擬`;
+  }
+  async function robustLoadUrgent(){
+    const input=clean($("urgentLookup")?.value);
+    const q=key(input);
+    if(!q){$("urgentFormMsg").textContent="請先輸入工單、訂單、批號或料號";return;}
+    let x=(window.S?.pool||[]).find(j=>matchesPool(j,q));
+    if(x){fill(x,"目前工單池");return;}
+    let raw=rawRows();
+    let r=raw.find(row=>matchesRaw(row,q));
+    if(r){fill(rawToJob(r),"DataHub 原始快取");return;}
+    $("urgentFormMsg").textContent="工單池未找到，正在重新同步 DataHub…";
+    try{
+      const rows=await window.CloudDataHubEngine57?.sync?.(true);
+      raw=Array.isArray(rows)?rows:rawRows();
+      r=raw.find(row=>matchesRaw(row,q));
+      if(r){fill(rawToJob(r),"DataHub 最新資料");return;}
+      // 同步後產速引擎可能重建工單池，最後再查一次。
+      await new Promise(resolve=>setTimeout(resolve,900));
+      x=(window.S?.pool||[]).find(j=>matchesPool(j,q));
+      if(x){fill(x,"更新後工單池");return;}
+    }catch(err){console.error("V15.3 urgent lookup",err);}
+    $("urgentFormMsg").textContent=`找不到 ${input}｜工單池 ${(window.S?.pool||[]).length} 筆｜DataHub 快取 ${rawRows().length} 筆`;
+  }
+  function install(){
+    const btn=$("loadUrgentWo");
+    if(!btn)return;
+    btn.onclick=robustLoadUrgent;
+    btn.dataset.v153="1";
+    window.loadUrgent=robustLoadUrgent;
+  }
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,1800));
+  setTimeout(install,3200);
 })();
 </script>
-
 </body></html>
