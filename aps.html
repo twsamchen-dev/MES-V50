@@ -6066,17 +6066,14 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 
-<script id="v15-3-urgent-lookup-fix">
-/* V15.3｜加工部工單＋急單多欄位搜尋修正 */
+<script id="v15-4-urgent-fast-lookup-fix">
+/* V15.4｜急單快速帶入：禁止按「帶入」時重新下載整個 DataHub */
 (function(){
   "use strict";
   const $=id=>document.getElementById(id);
   const clean=v=>String(v??"").trim();
   const key=v=>clean(v).toUpperCase().replace(/[＊﹡]/g,"*").replace(/\s+/g,"");
-  const first=(obj,names)=>{
-    for(const n of names){const v=obj?.[n];if(v!==undefined&&v!==null&&clean(v)!=="")return v;}
-    return "";
-  };
+  const first=(obj,names)=>{for(const n of names){const v=obj?.[n];if(v!==undefined&&v!==null&&clean(v)!=="")return v;}return "";};
   const dateLocal=v=>{
     if(!v)return "";
     const d=v instanceof Date?v:new Date(v);
@@ -6131,42 +6128,34 @@ document.addEventListener("DOMContentLoaded",function(){
     $("urgentQty").value=Number(x.remaining||0)>0?x.remaining:"";
     $("urgentUnit").value=clean(x.unit)||"㎡";
     $("urgentMachine").value=clean(x.machine);
-    const due=dateLocal(x.due);
-    if(due)$("urgentDue").value=due;
+    const due=dateLocal(x.due);if(due)$("urgentDue").value=due;
     $("urgentHours").value=Number(x.minutes||0)>0?(Number(x.minutes)/60).toFixed(2):"";
     $("urgentFormMsg").textContent=`已由${source}帶入工單 ${clean(x.wo)}，可調整後模擬`;
+    $("urgentFormMsg").style.color="var(--green)";
   }
-  async function robustLoadUrgent(){
-    const input=clean($("urgentLookup")?.value);
-    const q=key(input);
-    if(!q){$("urgentFormMsg").textContent="請先輸入工單、訂單、批號或料號";return;}
-    let x=(window.S?.pool||[]).find(j=>matchesPool(j,q));
+  function fastLoadUrgent(){
+    const input=clean($("urgentLookup")?.value),q=key(input),msg=$("urgentFormMsg");
+    if(!q){msg.textContent="請先輸入工單、訂單、批號或料號";return;}
+    msg.style.color="";
+    const x=(window.S?.pool||[]).find(j=>matchesPool(j,q));
     if(x){fill(x,"目前工單池");return;}
-    let raw=rawRows();
-    let r=raw.find(row=>matchesRaw(row,q));
-    if(r){fill(rawToJob(r),"DataHub 原始快取");return;}
-    $("urgentFormMsg").textContent="工單池未找到，正在重新同步 DataHub…";
-    try{
-      const rows=await window.CloudDataHubEngine57?.sync?.(true);
-      raw=Array.isArray(rows)?rows:rawRows();
-      r=raw.find(row=>matchesRaw(row,q));
-      if(r){fill(rawToJob(r),"DataHub 最新資料");return;}
-      // 同步後產速引擎可能重建工單池，最後再查一次。
-      await new Promise(resolve=>setTimeout(resolve,900));
-      x=(window.S?.pool||[]).find(j=>matchesPool(j,q));
-      if(x){fill(x,"更新後工單池");return;}
-    }catch(err){console.error("V15.3 urgent lookup",err);}
-    $("urgentFormMsg").textContent=`找不到 ${input}｜工單池 ${(window.S?.pool||[]).length} 筆｜DataHub 快取 ${rawRows().length} 筆`;
+    const raw=rawRows();
+    const r=raw.find(row=>matchesRaw(row,q));
+    if(r){fill(rawToJob(r),"DataHub 快取");return;}
+    const syncing=/同步中/.test($("cloudDataHubState57")?.textContent||"");
+    msg.textContent=syncing
+      ? `目前快取尚未包含 ${input}；DataHub 正在背景同步，不再等待整批下載。同步完成後再按一次「帶入」。`
+      : `找不到 ${input}｜工單池 ${(window.S?.pool||[]).length} 筆｜DataHub 快取 ${raw.length} 筆。請先按「同步 DataHub＋產速引擎」。`;
+    msg.style.color="var(--yellow)";
   }
   function install(){
-    const btn=$("loadUrgentWo");
-    if(!btn)return;
-    btn.onclick=robustLoadUrgent;
-    btn.dataset.v153="1";
-    window.loadUrgent=robustLoadUrgent;
+    const btn=$("loadUrgentWo");if(!btn)return;
+    btn.onclick=fastLoadUrgent;
+    btn.dataset.v154="1";
+    window.loadUrgent=fastLoadUrgent;
   }
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,1800));
-  setTimeout(install,3200);
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,900));
+  setTimeout(install,2200);
 })();
 </script>
 </body></html>
