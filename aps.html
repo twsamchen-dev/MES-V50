@@ -6621,5 +6621,194 @@ Build 0080｜V90.0 AI 多機台決策面板
   setTimeout(install,3500);
 })();
 </script>
+<!-- =========================================================
+Build 0080｜V90.0 AI 多機台決策面板
+用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
+不覆蓋既有 Build 0079；以附加模組方式運作。
+========================================================= -->
+<style id="build0080-v90-style">
+#v90DecisionPanel{
+  margin-top:10px;border:1px solid #334656;border-radius:10px;
+  background:linear-gradient(145deg,#0d171f,#101d25);padding:12px;
+  color:#eaf3f8;font-size:12px;line-height:1.55
+}
+#v90DecisionPanel .v90-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}
+#v90DecisionPanel .v90-title{font-size:14px;font-weight:800;color:#fff}
+#v90DecisionPanel .v90-badge{border:1px solid #3a5566;border-radius:999px;padding:3px 8px;color:#93d9ff}
+#v90DecisionPanel .v90-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#v90DecisionPanel .v90-card{border:1px solid #2c3d49;border-radius:9px;background:#0a131a;padding:9px;cursor:pointer}
+#v90DecisionPanel .v90-card:hover{border-color:#39a7d7;background:#0c1c25}
+#v90DecisionPanel .v90-card.active{border-color:#33d17a;box-shadow:inset 3px 0 #33d17a}
+#v90DecisionPanel .v90-rank{font-size:10px;color:#93a6b2}
+#v90DecisionPanel .v90-machine{font-size:18px;font-weight:900;color:#fff}
+#v90DecisionPanel .v90-score{font-size:12px;color:#55d98b}
+#v90DecisionPanel .v90-reason{margin-top:4px;color:#aebdc7}
+#v90DecisionPanel .v90-foot{margin-top:9px;color:#8fa3af}
+#v90DecisionPanel .v90-warn{color:#f7bd55}
+@media(max-width:900px){#v90DecisionPanel .v90-grid{grid-template-columns:1fr}}
+</style>
+
+<script id="build0080-v90-ai-decision">
+(function(){
+  "use strict";
+  const BUILD="0080";
+  const API_URL=window.MES_API_URL||
+    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  const $=id=>document.getElementById(id);
+  const txt=v=>String(v==null?"":v).trim();
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+
+  function machineCode(v){
+    const s=txt(v).toUpperCase().replace(/[\s\u3000]+/g,"");
+    const p=s.search(/[A-Z]/);
+    if(p<0)return "";
+    const m=s.slice(p+1).match(/\d{2}/);
+    return m?s.charAt(p)+m[0]:"";
+  }
+
+  function jsonp(action,params,timeout){
+    return new Promise((resolve,reject)=>{
+      const cb="v90cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const q=new URLSearchParams(Object.assign({},params||{},{action,callback:cb,_:Date.now()}));
+      const s=document.createElement("script");
+      const timer=setTimeout(()=>done(new Error("V90 查詢逾時")),timeout||15000);
+      function done(err,data){
+        clearTimeout(timer);
+        try{delete window[cb]}catch(_){}
+        try{s.remove()}catch(_){}
+        err?reject(err):resolve(data);
+      }
+      window[cb]=data=>done(null,data);
+      s.onerror=()=>done(new Error("V90 API 連線失敗"));
+      s.src=API_URL+"?"+q.toString();
+      document.head.appendChild(s);
+    });
+  }
+
+  function currentMachineLoads(){
+    const loads={};
+    const rows=(window.S&&Array.isArray(window.S.schedule))?window.S.schedule:[];
+    rows.forEach(r=>{
+      const code=machineCode(r.machine||r.machine_code);
+      if(!code)return;
+      loads[code]=(loads[code]||0)+num(r.minutes||((new Date(r.end)-new Date(r.start))/60000));
+    });
+    return loads;
+  }
+
+  function decisionScore(r,loads){
+    const code=machineCode(r.machine_code||r.machine_raw);
+    const confidence=num(r.confidence);
+    const keyin=num(r.keyin_count), target=num(r.target_count), erp=num(r.erp_count), uses=num(r.use_count);
+    const loadMinutes=num(loads[code]);
+    const history=Math.min(20,keyin*2.5+target*1.2+erp*.5+Math.log10(uses+1)*4);
+    const loadPenalty=Math.min(25,loadMinutes/240);
+    const score=Math.max(0,Math.min(100,confidence*.72+history-loadPenalty));
+    return Object.assign({},r,{machine_code:code,decision_score:Math.round(score),load_minutes:Math.round(loadMinutes)});
+  }
+
+  function reasons(r){
+    const a=[];
+    if(num(r.keyin_count)>0)a.push("Key In "+num(r.keyin_count)+" 次");
+    if(num(r.target_count)>0)a.push("Target "+num(r.target_count)+" 次");
+    if(num(r.erp_count)>0)a.push("ERP "+num(r.erp_count)+" 次");
+    if(num(r.load_minutes)>0)a.push("目前負載 "+num(r.load_minutes)+" 分");
+    else a.push("目前排程負載低");
+    return a.join("｜");
+  }
+
+  function ensurePanel(){
+    let p=$("v90DecisionPanel");
+    if(p)return p;
+    p=document.createElement("div");
+    p.id="v90DecisionPanel";
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
+    const msg=$("urgentMsg")||$("urgentLookupMsg");
+    const host=msg&&msg.parentElement?msg.parentElement:($("urgentLookup")?.closest(".card")||document.body);
+    if(msg&&msg.nextSibling)host.insertBefore(p,msg.nextSibling);else host.appendChild(p);
+    return p;
+  }
+
+  function setMachineSelect(code){
+    const sel=$("urgentMachine");
+    if(!sel||!code)return;
+    let opt=[...sel.options].find(o=>machineCode(o.value||o.textContent)===code);
+    if(!opt){
+      opt=document.createElement("option");
+      opt.value=code;opt.textContent=code;
+      sel.appendChild(opt);
+    }
+    sel.value=opt.value;
+    sel.dispatchEvent(new Event("change",{bubbles:true}));
+  }
+
+  function render(rows,meta){
+    const p=ensurePanel();
+    if(!rows.length){
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
+      return;
+    }
+    p.innerHTML=
+      '<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">'+
+      (meta.match_type==="work_order"?"工單歷史":"相似料號／製程")+'</div></div>'+
+      '<div class="v90-grid">'+rows.slice(0,3).map((r,i)=>
+        '<div class="v90-card '+(i===0?'active':'')+'" data-machine="'+r.machine_code+'">'+
+        '<div class="v90-rank">第 '+(i+1)+' 順位</div>'+
+        '<div class="v90-machine">'+r.machine_code+'</div>'+
+        '<div class="v90-score">決策分數 '+r.decision_score+'｜資料信心 '+num(r.confidence)+'%</div>'+
+        '<div class="v90-reason">'+reasons(r)+'</div></div>'
+      ).join("")+'</div>'+
+      '<div class="v90-foot">點選卡片可改為指定機台。決策分數已納入歷史來源與目前 APS 排程負載；不會自動拆單或直接改動正式排程。</div>';
+    p.querySelectorAll(".v90-card").forEach(c=>c.onclick=()=>{
+      p.querySelectorAll(".v90-card").forEach(x=>x.classList.remove("active"));
+      c.classList.add("active");
+      setMachineSelect(c.dataset.machine);
+    });
+  }
+
+  async function analyze(){
+    const wo=txt($("urgentWo")?.value||$("urgentLookup")?.value);
+    if(!wo)return;
+    const part=txt($("urgentPart")?.value);
+    const process=txt($("urgentProcess")?.value);
+    const spec=txt($("urgentSpec")?.value);
+    const p=ensurePanel();
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
+    try{
+      let res=await jsonp("machineknowledgelookup",{
+        work_order_no:wo,part_no:part,process:process,product_spec:spec,
+        allow_part:"1",allow_spec:"1"
+      },16000);
+      const base=Array.isArray(res?.recommendations)?res.recommendations:[];
+      const loads=currentMachineLoads();
+      const ranked=base.map(r=>decisionScore(r,loads))
+        .filter(r=>r.machine_code)
+        .sort((a,b)=>b.decision_score-a.decision_score||num(b.confidence)-num(a.confidence));
+      render(ranked,res||{});
+      window.V90MachineDecision={work_order_no:wo,recommendations:ranked,raw:res};
+    }catch(e){
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
+    }
+  }
+
+  function install(){
+    ensurePanel();
+    const btn=$("loadUrgentWo");
+    if(btn&&!btn.dataset.v90){
+      btn.dataset.v90="1";
+      btn.addEventListener("click",()=>setTimeout(analyze,500));
+    }
+    const input=$("urgentLookup");
+    if(input&&!input.dataset.v90){
+      input.dataset.v90="1";
+      input.addEventListener("keydown",e=>{if(e.key==="Enter")setTimeout(analyze,500)});
+    }
+    window.runV90MachineDecision=analyze;
+  }
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,300));
+  setTimeout(install,1500);
+  setTimeout(install,3500);
+})();
+</script>
 
 </body></html>
