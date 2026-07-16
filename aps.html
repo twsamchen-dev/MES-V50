@@ -7130,4 +7130,177 @@ Build 0080｜V90.0 AI 多機台決策面板
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
 })();
 </script>
+<script id="build0086-v92-shared-lookup-phase2">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD_0086_INSTALLED__) return;
+  window.__APS_BUILD_0086_INSTALLED__=true;
+
+  const VERSION=Object.freeze({core:'V92.2',build:'0086',engine:'Shared Lookup Phase 2'});
+  const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec';
+  const CACHE_TTL=5*60*1000;
+  const DEBOUNCE_MS=320;
+  const state={requests:0,cacheHits:0,lastMs:0,lastQuery:'',lastCount:0,lastSource:'',error:'',seq:0,cache:new Map(),installed:false};
+
+  const text=v=>String(v??'').trim();
+  const norm=v=>text(v).toUpperCase().replace(/[\s\-_/\\.]+/g,'');
+  const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
+
+  function jsonp(action,params={},timeout=18000){
+    return new Promise((resolve,reject)=>{
+      const cb='APS_SHARED_'+Date.now()+'_'+Math.floor(Math.random()*999999);
+      const s=document.createElement('script');
+      const timer=setTimeout(()=>{cleanup();reject(new Error('Shared Lookup 逾時'));},timeout);
+      function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      window[cb]=res=>{cleanup();res&&res.ok===false?reject(new Error(res.message||'Shared Lookup API error')):resolve(res||{})};
+      s.onerror=()=>{cleanup();reject(new Error('Shared Lookup 雲端連線失敗'))};
+      const q=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params));
+      s.src=API_URL+'?'+q.toString();
+      document.head.appendChild(s);
+    });
+  }
+
+  function rowKeys(r){
+    return [r?.work_order_no,r?.work_order,r?.wo,r?.order_no,r?.order,r?.command_no,r?.report_no,r?.batch_no,r?.batch,r?.part_no,r?.part,r?.input_part_no,r?.output_part_no,r?.input_lot_no,r?.output_lot_no]
+      .map(norm).filter(Boolean);
+  }
+
+  function mergeIntoPool(rows){
+    const pool=Array.isArray(window.S?.pool)?window.S.pool:[];
+    if(!pool.length||!Array.isArray(rows)||!rows.length)return 0;
+    const remoteByKey=new Map();
+    rows.forEach(r=>rowKeys(r).forEach(k=>{if(!remoteByKey.has(k))remoteByKey.set(k,[]);remoteByKey.get(k).push(r)}));
+    let merged=0;
+    pool.forEach(job=>{
+      const hits=[];
+      rowKeys(job).forEach(k=>(remoteByKey.get(k)||[]).forEach(r=>{if(!hits.includes(r))hits.push(r)}));
+      if(!hits.length)return;
+      const r=hits[0];
+      job.command_no=job.command_no||r.command_no||'';
+      job.report_no=job.report_no||r.report_no||'';
+      job.batch=job.batch||r.batch_no||'';
+      job.part=job.part||r.part_no||r.output_part_no||r.input_part_no||'';
+      job.customer=job.customer||r.customer||'';
+      job.spec=job.spec||r.product_spec||r.spec||'';
+      job.machine=job.machine||r.machine||'';
+      job.sourceMachine=job.sourceMachine||r.machine||'';
+      job.due_date=job.due_date||r.due_date||'';
+      const aliases=new Set(Array.isArray(job.aliases)?job.aliases:[]);
+      hits.forEach(x=>rowKeys(x).forEach(k=>aliases.add(k)));
+      job.aliases=[...aliases];
+      job._sharedLookup=true;
+      merged++;
+    });
+    try{window.APSDataIndex?.rebuild?.()}catch(_){ }
+    return merged;
+  }
+
+  function localMatchCount(query){
+    const q=norm(query);if(!q)return 0;
+    const pool=Array.isArray(window.S?.pool)?window.S.pool:[];
+    return pool.reduce((n,r)=>n+(rowKeys(r).some(k=>k.includes(q))?1:0),0);
+  }
+
+  function ensureCloudBox(){
+    let box=document.getElementById('apsSharedLookupBox');
+    if(box)return box;
+    const poolTable=document.getElementById('poolTable');
+    if(!poolTable||!poolTable.parentNode)return null;
+    box=document.createElement('div');
+    box.id='apsSharedLookupBox';
+    box.style.cssText='display:none;margin-top:8px;border:1px solid #294452;border-radius:8px;background:#09151d;padding:10px 12px;color:#cfe6f2;font-size:12px';
+    poolTable.parentNode.insertBefore(box,poolTable);
+    return box;
+  }
+
+  function renderCloudResult(query,res,localCount){
+    const box=ensureCloudBox();if(!box)return;
+    const rows=Array.isArray(res?.rows)?res.rows:[];
+    if(!query||!rows.length||localCount>0){box.style.display='none';box.innerHTML='';return}
+    box.style.display='block';
+    box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b style="color:#72d7ff">雲端共用索引找到 ${rows.length} 筆</b><span style="color:#8fa7b4">此資料目前不在 APS 工單池，不會自動加入排程</span></div><div style="overflow:auto;margin-top:8px"><table style="width:100%;font-size:11px"><thead><tr><th>工單</th><th>訂單／命令單</th><th>日報號</th><th>批號</th><th>料號</th><th>客戶</th><th>機台</th></tr></thead><tbody>${rows.slice(0,20).map(r=>`<tr><td>${esc(r.work_order_no||'—')}</td><td>${esc(r.order_no||r.command_no||'—')}</td><td>${esc(r.report_no||'—')}</td><td>${esc(r.batch_no||'—')}</td><td>${esc(r.part_no||r.output_part_no||r.input_part_no||'—')}</td><td>${esc(r.customer||'—')}</td><td>${esc(r.machine||'—')}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  async function sharedLookup(query){
+    const q=norm(query);
+    if(q.length<4)return null;
+    const cached=state.cache.get(q);
+    if(cached&&Date.now()-cached.at<CACHE_TTL){state.cacheHits++;state.lastMs=0;return cached.data}
+    const seq=++state.seq;const started=performance.now();state.requests++;state.error='';
+    const exact=q.length>=8?'1':'0';
+    try{
+      const res=await jsonp('sharedlookup',{q,exact,limit:30});
+      if(seq!==state.seq)return null;
+      state.lastMs=Math.round(performance.now()-started);state.lastQuery=q;state.lastCount=Number(res.count||0);state.lastSource=text(res.source);state.cache.set(q,{at:Date.now(),data:res});
+      return res;
+    }catch(err){
+      if(seq===state.seq){state.error=text(err?.message||err);console.warn('APS Shared Lookup fallback',err)}
+      return null;
+    }
+  }
+
+  async function runSearch(input){
+    const query=text(input.value);
+    if(window.EP)window.EP.poolSearch=query;
+    try{window.renderPool?.()}catch(_){ }
+    const box=ensureCloudBox();
+    if(norm(query).length<4){if(box){box.style.display='none';box.innerHTML=''}return}
+    const countEl=document.getElementById('poolCount');
+    const before=countEl?.textContent||'';
+    if(countEl)countEl.textContent=before+'｜共用索引查詢中…';
+    const res=await sharedLookup(query);
+    if(!res)return;
+    const merged=mergeIntoPool(res.rows||[]);
+    try{window.renderPool?.()}catch(_){ }
+    const localCount=localMatchCount(query);
+    renderCloudResult(query,res,localCount);
+    if(countEl){
+      const base=countEl.textContent.replace(/｜共用索引.*$/,'');
+      countEl.textContent=`${base}｜共用索引 ${res.count||0} 筆／${state.lastMs} ms${res.cache_hit?'（後端快取）':''}${merged?'／合併 '+merged+' 筆':''}`;
+    }
+  }
+
+  function installPoolSearch(){
+    const old=document.getElementById('poolSearch');
+    if(!old||old.dataset.shared0086)return false;
+    const input=old.cloneNode(true);
+    input.value=old.value;input.dataset.shared0086='1';old.replaceWith(input);
+    const delayed=debounce(()=>runSearch(input),DEBOUNCE_MS);
+    input.addEventListener('input',delayed);
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runSearch(input)}});
+    state.installed=true;
+    return true;
+  }
+
+  function applyVersion(){
+    window.APS_BUILD_LOCK=VERSION.build;
+    window.APS_VERSION=VERSION.core;
+    document.title=`SEAL KING Smart APS｜${VERSION.core} Build ${VERSION.build} ${VERSION.engine}`;
+    let st=document.getElementById('apsBuild0086BrandStyle');
+    if(!st){st=document.createElement('style');st.id='apsBuild0086BrandStyle';st.textContent=`body::after{content:"APS Build ${VERSION.build}｜${VERSION.core} ${VERSION.engine}"!important}`;(document.head||document.documentElement).appendChild(st)}
+    document.querySelectorAll('.header-time small,.version').forEach(el=>el.textContent=`Enterprise Preview 2｜Build ${VERSION.build}`);
+  }
+
+  function patchHealthPanel(){
+    const perf=window.APSPerformance;if(!perf||perf.__shared0086)return;
+    const original=perf.refresh?.bind(perf);
+    perf.refresh=function(){original?.();const el=document.getElementById('apsPerfText');if(el&&!el.textContent.includes('Shared Lookup'))el.textContent+=`\nShared Lookup：${state.installed?'OK':'等待中'}\n查詢：${state.requests} 次｜快取 ${state.cacheHits} 次\n最近：${state.lastCount} 筆／${state.lastMs} ms${state.error?'\n錯誤：'+state.error:''}`};
+    perf.__shared0086=true;
+  }
+
+  function install(){
+    applyVersion();
+    installPoolSearch();
+    patchHealthPanel();
+    console.info(`SEAL KING Smart APS ${VERSION.core} Build ${VERSION.build} | ${VERSION.engine} ready`,state);
+    window.log?.(`Build ${VERSION.build}：APS 工單池已接入 Shared Lookup；甘特圖與排程邏輯未變更`);
+  }
+
+  window.APSSharedLookup={lookup:sharedLookup,state,install};
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(install,5200),{once:true}):setTimeout(install,5200);
+  [7500,10000].forEach(ms=>setTimeout(()=>{applyVersion();if(!state.installed)installPoolSearch();patchHealthPanel()},ms));
+})();
+</script>
+
 </body></html>
