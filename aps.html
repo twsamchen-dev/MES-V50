@@ -3193,7 +3193,7 @@ Promise.all([
   hydrate('SK_APS_SPEED_MASTER_V1',[]),
   hydrate('SK_APS_SPEED_FEEDBACK_V2',[])
 ]).then(()=>{window.dispatchEvent(new CustomEvent('aps-large-store-ready'));}).catch(()=>{});
-console.info('SEAL KING Smart APS Build 0082 | IndexedDB Cache Engine loaded');
+console.debug('[APS module] IndexedDB cache engine loaded');
 })();
 </script>
 
@@ -3831,7 +3831,7 @@ window.SEAL_KING_SECURITY={
 <script id="build0048-v825-marker">
 (()=>{
   window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
-  console.info("SEAL KING Smart APS Build 0061｜V84.7 APS Core loaded");
+  console.debug("[APS module] V84.7 speed core ready");
 })();
 </script>
 
@@ -5421,7 +5421,7 @@ document.addEventListener("DOMContentLoaded",function(){
   document.addEventListener("DOMContentLoaded",()=>setTimeout(initialLoad,1800));
   setTimeout(installButtons,2600);
 
-  document.title="SEAL KING Smart APS｜Build 0061 Smart Learning APS";
+  if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0061 Smart Learning APS";
   document.querySelectorAll(".header-time small,.version").forEach(el=>{
     if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
       el.textContent="V84 Smart Learning｜Build 0061";
@@ -5833,7 +5833,7 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    document.title="SEAL KING Smart APS｜Build 0072 V87.5 Stable DataHub Cache Engine";
+    if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0072 V87.5 Stable DataHub Cache Engine";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
         el.textContent="Enterprise Preview 2｜Build 0072";
@@ -6093,7 +6093,7 @@ document.addEventListener("DOMContentLoaded",function(){
   };
   document.addEventListener("DOMContentLoaded",()=>setTimeout(update,300));
   setTimeout(update,1800);
-  console.info("SEAL KING Smart APS Build 0072｜single DataHub request + local cache fallback loaded");
+  console.debug("[APS module] DataHub single-request cache ready");
 })();
 </script>
 
@@ -6112,7 +6112,7 @@ document.addEventListener("DOMContentLoaded",function(){
   };
   document.addEventListener("DOMContentLoaded",()=>setTimeout(update,250));
   setTimeout(update,1600);
-  console.info("APS Build 0073｜safe Machine_Learning_Decision initialization loaded");
+  console.debug("[APS module] Machine Learning safe initializer ready");
 })();
 </script>
 
@@ -6980,7 +6980,7 @@ Build 0080｜V90.0 AI 多機台決策面板
     wrapSync(()=>window.Build0051APSSpeedEngine,"sync","DataHub＋產速");
     wrapSync(()=>window.Build0050APSDataHub,"sync","DataHub工單池");
     buildIndex(true);
-    document.title="SEAL KING Smart APS｜Build 0082 IndexedDB Fast";
+    if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0082 IndexedDB Fast";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{if(/Build\s*00\d+|Enterprise Preview/i.test(text(el.textContent)))el.textContent="Enterprise Preview 2｜Build 0082"});
     window.log?.("Build 0082：IndexedDB 大容量快取、資料索引與重複載入防護已啟用");
   }
@@ -7003,4 +7003,52 @@ Build 0080｜V90.0 AI 多機台決策面板
 })();
 </script>
 
+
+<script id="build0083-core-refactor-monitor">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD_0083_INSTALLED__) return;
+  window.__APS_BUILD_0083_INSTALLED__=true;
+  window.APS_BUILD_LOCK='0083';
+  const bootStart=performance.now();
+  const state=window.APSBootState={build:'0083',startedAt:Date.now(),domReadyMs:0,readyMs:0,errors:[],warnings:[]};
+  const nativeError=console.error.bind(console);
+  const nativeWarn=console.warn.bind(console);
+  console.error=(...args)=>{try{state.errors.push(args.map(String).join(' ').slice(0,500));}catch{} nativeError(...args)};
+  console.warn=(...args)=>{try{state.warnings.push(args.map(String).join(' ').slice(0,500));}catch{} nativeWarn(...args)};
+  function text(v){return String(v??'').trim()}
+  function applyBuildBrand(){
+    document.title='SEAL KING Smart APS｜Build 0083 Stable Core';
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{
+      if(/Build|Enterprise Preview/i.test(text(el.textContent))) el.textContent='Enterprise Preview 2｜Build 0083';
+    });
+  }
+  function getStats(){
+    const pool=Array.isArray(window.S?.pool)?window.S.pool.length:0;
+    const schedule=Array.isArray(window.S?.schedule)?window.S.schedule.length:0;
+    const master=window.APSLargeStore?.getSync?.('SK_APS_SPEED_MASTER_V1',[])||[];
+    const feedback=window.APSLargeStore?.getSync?.('SK_APS_SPEED_FEEDBACK_V2',[])||[];
+    return {build:'0083',readyMs:Math.round(state.readyMs),pool,schedule,master:master.length||0,feedback:feedback.length||0,errors:state.errors.length,warnings:state.warnings.length};
+  }
+  function mountPanel(){
+    if(document.getElementById('apsPerfPanel')) return;
+    const p=document.createElement('div');p.id='apsPerfPanel';
+    p.style.cssText='display:none;position:fixed;right:14px;bottom:14px;z-index:99999;width:300px;background:#071118ee;border:1px solid #31505f;border-radius:10px;padding:12px;color:#dff6ff;font:12px/1.55 Consolas,monospace;box-shadow:0 10px 30px #000a';
+    p.innerHTML='<b style="font-size:14px">APS 效能監控｜Build 0083</b><pre id="apsPerfText" style="margin:8px 0 0;white-space:pre-wrap;color:#acd7e8"></pre>';
+    document.body.appendChild(p);
+    const render=()=>{const s=getStats();const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+' MB':'瀏覽器未提供';document.getElementById('apsPerfText').textContent=`啟動完成：${s.readyMs} ms\n工單池：${s.pool} 筆\n排程：${s.schedule} 段\n產速主檔：${s.master} 筆\n產速回饋：${s.feedback} 筆\nJS 記憶體：${mem}\n錯誤：${s.errors}｜警告：${s.warnings}`};
+    document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&String(e.key).toLowerCase()==='d'){e.preventDefault();p.style.display=p.style.display==='none'?'block':'none';render();}});
+    window.APSPerformance={show(){p.style.display='block';render()},hide(){p.style.display='none'},stats:getStats};
+  }
+  function ready(){
+    if(state.readyMs) return;
+    state.readyMs=performance.now()-bootStart;
+    applyBuildBrand();mountPanel();
+    console.info('SEAL KING Smart APS Build 0083 | Stable Core ready',getStats());
+    window.log?.('Build 0083：穩定核心、IndexedDB 快取與效能監控已啟用');
+  }
+  document.addEventListener('DOMContentLoaded',()=>{state.domReadyMs=performance.now()-bootStart;applyBuildBrand();setTimeout(ready,2300)},{once:true});
+  if(document.readyState!=='loading'){state.domReadyMs=performance.now()-bootStart;applyBuildBrand();setTimeout(ready,2300)}
+})();
+</script>
 </body></html>
