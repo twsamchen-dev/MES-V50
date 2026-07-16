@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V93.5 MES 生產 Key In｜Turbo Search｜Build 0090</title>
+<title>V93.5.1 MES 生產 Key In｜Turbo Search Stable｜Build 0091</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.5 Turbo Search｜Build 0090</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.5.1 Turbo Search Stable｜Build 0091</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V93.5 Build 0090｜Key In Turbo Search
+// V93.5.1 Build 0091｜Key In Turbo Search Stable
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -169,7 +169,7 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V93.5',build:'0090',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V93.5.1',build:'0091',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
     last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
@@ -195,21 +195,59 @@ function normalizeSharedKeyInRow_(r){
     target_qty:r.target_qty||'',due_date:r.due_date||'',plan_date:r.plan_date||'',updated_at:r.updated_at||''
   });
 }
-function withTimeout_(promise,ms,label){
-  let timer;
-  return Promise.race([
-    promise,
-    new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error((label||'API')+' timeout '+ms+'ms')),ms)})
-  ]).finally(()=>clearTimeout(timer));
+function managedTimeout_(promise,ms,label){
+  let timer=null,settled=false;
+  return new Promise((resolve,reject)=>{
+    timer=setTimeout(()=>{
+      if(settled)return;
+      settled=true;
+      reject(new Error((label||'API')+' timeout '+ms+'ms'));
+    },ms);
+    Promise.resolve(promise).then(value=>{
+      if(settled)return;
+      settled=true;
+      if(timer)clearTimeout(timer);
+      resolve(value);
+    }).catch(err=>{
+      if(settled)return;
+      settled=true;
+      if(timer)clearTimeout(timer);
+      reject(err);
+    });
+  });
 }
+function withTimeout_(promise,ms,label){return managedTimeout_(promise,ms,label)}
 async function turboApiRows_(action,q,timeoutMs){
   try{
-    const res=await withTimeout_(getApi(action,{q:q,exact:1,limit:50,_:Date.now()}),timeoutMs,action);
+    const res=await managedTimeout_(getApi(action,{q:q,exact:1,limit:50,_:Date.now()}),timeoutMs,action);
     return rowsOf(res).map(normalizeSharedKeyInRow_).filter(x=>sourceMatch(x,q));
   }catch(err){
-    console.warn('Key In Turbo '+action+' skipped',err&&err.message||err);
+    const msg=String(err&&err.message||err);
+    if(!msg.includes('timeout')) console.warn('Key In Turbo '+action+' error',msg);
     return [];
   }
+}
+async function firstTurboHit_(tasks,onStage){
+  return new Promise(resolve=>{
+    let pending=tasks.length,done=false;
+    if(!pending){resolve({rows:[],action:''});return}
+    tasks.forEach(task=>{
+      if(onStage&&task.stage)onStage(task.stage);
+      task.run().then(rows=>{
+        if(done)return;
+        if(rows&&rows.length){
+          done=true;
+          resolve({rows:rows,action:task.action});
+          return;
+        }
+        pending--;
+        if(pending===0&&!done){done=true;resolve({rows:[],action:''})}
+      }).catch(()=>{
+        pending--;
+        if(pending===0&&!done){done=true;resolve({rows:[],action:''})}
+      });
+    });
+  });
 }
 async function sharedLookupKeyIn_(query,onStage){
   const q=nrm(query);if(!q||!KEYIN_SHARED_LOOKUP.enabled)return [];
@@ -220,29 +258,54 @@ async function sharedLookupKeyIn_(query,onStage){
     if(onStage)onStage('快取命中，正在帶入資料...');
     return cached.rows.map(x=>Object.assign({},x));
   }
-  const started=performance.now();KEYIN_SHARED_LOOKUP.queries++;KEYIN_SHARED_LOOKUP.lastQuery=q;
-  let rows=[];
+
+  const started=performance.now();
+  KEYIN_SHARED_LOOKUP.queries++;
+  KEYIN_SHARED_LOOKUP.lastQuery=q;
+  KEYIN_SHARED_LOOKUP.lastError='';
+
   try{
-    if(onStage)onStage('① 正在查詢高速 Shared Index...');
-    rows=await turboApiRows_('sharedindexlookup',q,3000);
-    if(!rows.length){
-      if(onStage)onStage('② 索引未命中，正在即時建立工單索引...');
-      rows=await turboApiRows_('sharedindexinstant',q,5000);
+    if(onStage)onStage('① 正在並行查詢高速索引與即時索引...');
+    const fast=await firstTurboHit_([
+      {
+        action:'sharedindexlookup',
+        stage:'',
+        run:()=>turboApiRows_('sharedindexlookup',q,8000)
+      },
+      {
+        action:'sharedindexinstant',
+        stage:'',
+        run:()=>turboApiRows_('sharedindexinstant',q,10000)
+      }
+    ],null);
+
+    let rows=fast.rows||[];
+    if(rows.length){
+      KEYIN_SHARED_LOOKUP.lastCount=rows.length;
+      KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
+      KEYIN_SHARED_LOOKUP.cache.set(q,{at:Date.now(),rows:rows});
+      if(onStage)onStage('✓ 高速索引已命中（'+KEYIN_SHARED_LOOKUP.lastElapsedMs+' ms）');
+      console.log('Key In Turbo hit',fast.action,KEYIN_SHARED_LOOKUP.lastElapsedMs+'ms',rows.length);
+      return rows;
     }
-    if(!rows.length){
-      KEYIN_SHARED_LOOKUP.fallbacks++;
-      if(onStage)onStage('③ 高速索引未命中，啟用舊共用查詢備援...');
-      rows=await turboApiRows_('sharedlookup',q,9000);
-    }
+
+    KEYIN_SHARED_LOOKUP.fallbacks++;
+    if(onStage)onStage('② 高速索引未命中，啟用舊共用查詢備援...');
+    rows=await turboApiRows_('sharedlookup',q,12000);
+
     KEYIN_SHARED_LOOKUP.lastCount=rows.length;
     KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
-    KEYIN_SHARED_LOOKUP.lastError='';
-    if(rows.length)KEYIN_SHARED_LOOKUP.cache.set(q,{at:now,rows:rows});
+    if(rows.length){
+      KEYIN_SHARED_LOOKUP.cache.set(q,{at:Date.now(),rows:rows});
+      if(onStage)onStage('✓ 備援查詢已命中（'+KEYIN_SHARED_LOOKUP.lastElapsedMs+' ms）');
+    }
     return rows;
   }catch(err){
-    KEYIN_SHARED_LOOKUP.fallbacks++;KEYIN_SHARED_LOOKUP.lastError=String(err&&err.message||err);
+    KEYIN_SHARED_LOOKUP.fallbacks++;
+    KEYIN_SHARED_LOOKUP.lastError=String(err&&err.message||err);
     KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
-    console.warn('Key In Turbo Search fallback',err);return [];
+    console.warn('Key In Turbo Search failed',KEYIN_SHARED_LOOKUP.lastError);
+    return [];
   }
 }
 
@@ -569,7 +632,7 @@ function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({s
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V93.5 Build 0090 | Turbo Search ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V93.5.1 Build 0091 | Turbo Search Stable ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
