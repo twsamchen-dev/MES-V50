@@ -17,10 +17,12 @@
 @media(max-width:900px){.multiFields{grid-template-columns:1fr 1fr}.multiHint{grid-column:span 2}}@media(max-width:560px){.multiFields{grid-template-columns:1fr}.multiHint{grid-column:span 1}}
 
 .lookupLine{display:flex;gap:8px;align-items:stretch}.lookupLine input{flex:1}.lookupBtn{width:112px;min-width:112px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer}.lookupBtn:hover{filter:brightness(.96)}.lookupBtn:disabled{opacity:.65;cursor:wait}.lookupBtn.ok{background:#16a34a}.lookupBtn.bad{background:#dc2626}.variance-over{color:#15803d;font-weight:900}.variance-gap{color:#b45309;font-weight:900}.variance-wait{color:#64748b;font-weight:800}@media(max-width:560px){.lookupLine{flex-direction:column}.lookupBtn{width:100%}}
+
+.datahubCard{grid-column:span 12;border:1px solid #bfdbfe;background:linear-gradient(135deg,#f8fbff,#eef6ff);border-radius:16px;padding:14px}.datahubHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.datahubTitle{font-size:19px;font-weight:900}.datahubBadge{display:inline-block;border-radius:999px;padding:5px 10px;background:#dbeafe;color:#1e3a8a;font-weight:900;font-size:12px}.datahubGrid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px;margin-top:12px}.dhStat{background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:10px}.dhStat b{display:block;font-size:22px;margin-top:4px}.dhOk{color:#15803d}.dhWarn{color:#b45309}.dhBad{color:#b91c1c}.dhNote{margin-top:10px;color:#475569;font-size:13px;line-height:1.6}@media(max-width:900px){.datahubGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.datahubGrid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V90.3 Target List Range Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V91.0 DataHub V2 Shadow Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -50,6 +52,22 @@
       <div class="kpi orange"><div class="label">目標 ㎡ / เป้าหมาย ตร.ม.</div><div class="num" id="kpiM2">0</div></div>
       <div class="kpi red"><div class="label">未完成 / ยังไม่เสร็จ</div><div class="num" id="kpiOpen">0</div></div>
       <div class="kpi blue"><div class="label">配對率 / อัตราจับคู่</div><div class="num" id="kpiPair">0%</div></div>
+    </div>
+
+    <div class="datahubCard">
+      <div class="datahubHead">
+        <div><span class="datahubBadge">DataHub V2｜Shadow Mode</span><div class="datahubTitle">中央工單資料健康檢查</div></div>
+        <button class="btn ghost" type="button" onclick="exportDataHubSnapshot()">匯出診斷快照</button>
+      </div>
+      <div class="datahubGrid">
+        <div class="dhStat">中央工單<b id="dhOrders">0</b></div>
+        <div class="dhStat">ERP 已接管<b id="dhErp" class="dhOk">0</b></div>
+        <div class="dhStat">Key In 已配對<b id="dhKeyin" class="dhOk">0</b></div>
+        <div class="dhStat">重複配對阻擋<b id="dhDup" class="dhWarn">0</b></div>
+        <div class="dhStat">單位待確認<b id="dhUnit" class="dhWarn">0</b></div>
+        <div class="dhStat">未找到實績<b id="dhMissing" class="dhBad">0</b></div>
+      </div>
+      <div id="dhNote" class="dhNote">目前為唯讀影子層：不覆寫 ERP、Target 或 Key In 原始資料，只統一檢查配對與健康狀態。</div>
     </div>
 
     <div class="card col8"><h2>新增 / 修改幹部目標 / เพิ่มหรือแก้ไขเป้าหมาย</h2><div class="section-note">左側集中輸入目標，右側快速選取五份資料工單。</div><div class="grid">
@@ -1009,7 +1027,7 @@ function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เ
 function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待同日 Key In / ERP 實績',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
 function renderTargets(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
-  if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
+  if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
   const heads=[
     ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
@@ -1024,6 +1042,37 @@ function renderTargets(){
     if(h[0]==='variance_text'){const c=r.variance_kind==='over'?'variance-over':(r.variance_kind==='gap'?'variance-gap':'variance-wait');return '<td class="'+c+'">'+esc(v)+'</td>';}
     return '<td>'+esc(v)+'</td>';
   }).join('')+'</tr>').join('')+'</tbody></table></div>'
+  updateDataHubHealth_();
+}
+function dataHubKey_(r){return [dateKey(r.report_date),wo12(r.work_order_no||r.command_no),norm(r.process_site).split('/')[0],norm(r.machine_code),norm(r.emp_no||r.leader_emp_no)].join('|')}
+function buildDataHubSnapshot_(){
+  const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
+  const map=new Map();
+  rows.forEach((r,i)=>{const key=dataHubKey_(r);if(!map.has(key))map.set(key,{key,rows:[],firstIndex:i});map.get(key).rows.push(r)});
+  const stats={orders:map.size,erp:0,keyin:0,duplicate:0,unitPending:0,missing:0,total:rows.length};
+  rows.forEach(r=>{const s=String(r.file_match_status||''),src=String(r.actual_source||r.data_source||'').toUpperCase();
+    if(src==='ERP'||s.includes('ERP 已更新'))stats.erp++;
+    if(src==='KEY IN'||s.includes('已配對'))stats.keyin++;
+    if(s.includes('不重複計算')||s.includes('另一筆目標採用'))stats.duplicate++;
+    if(s.includes('單位')&&(s.includes('確認')||s.includes('待確認')))stats.unitPending++;
+    if(s.includes('未找到')||s.includes('等待同日'))stats.missing++;
+  });
+  return {generated_at:new Date().toISOString(),range:{mode:currentRange,start:$('rangeStart').value,end:$('rangeEnd').value},stats,orders:[...map.values()].map(g=>({key:g.key,count:g.rows.length,rows:g.rows}))};
+}
+function updateDataHubHealth_(){
+  const snap=buildDataHubSnapshot_(),s=snap.stats;
+  if($('dhOrders'))$('dhOrders').textContent=s.orders.toLocaleString();
+  if($('dhErp'))$('dhErp').textContent=s.erp.toLocaleString();
+  if($('dhKeyin'))$('dhKeyin').textContent=s.keyin.toLocaleString();
+  if($('dhDup'))$('dhDup').textContent=s.duplicate.toLocaleString();
+  if($('dhUnit'))$('dhUnit').textContent=s.unitPending.toLocaleString();
+  if($('dhMissing'))$('dhMissing').textContent=s.missing.toLocaleString();
+  if($('dhNote'))$('dhNote').textContent='唯讀影子層｜區間 '+snap.range.start+' ~ '+snap.range.end+'｜共 '+s.total+' 筆目標，彙整為 '+s.orders+' 個唯一配對鍵。原始資料不會被覆寫。';
+}
+function exportDataHubSnapshot(){
+  const snap=buildDataHubSnapshot_();
+  const blob=new Blob([JSON.stringify(snap,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DataHub_V2_snapshot_'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);toast('DataHub 診斷快照已匯出');
 }
 function updateKpi(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
@@ -1034,6 +1083,7 @@ function updateKpi(){
   // 配對率以「已找到 ERP 或 Key In 實績來源」計算；單位待確認仍屬已配對，不應被當成未配對。
   const paired=rows.filter(r=>{const s=String(r.file_match_status||''),src=String(r.actual_source||r.data_source||'').toUpperCase();return src==='ERP'||src==='KEY IN'||s.includes('ERP 已更新')||s.includes('已配對')}).length;
   $('kpiPair').textContent=rows.length?Math.round(paired/rows.length*100)+'%':'0%';
+  updateDataHubHealth_();
 }
 
 let SCHEDULE_MODE='single',PENDING_MULTI_ROWS=[];
