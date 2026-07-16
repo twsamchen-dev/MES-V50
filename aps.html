@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0071 V88 Drag & Drop Engine";
+  content:"APS Build 0085｜V92 Core Phase 1";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -481,7 +481,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0069 V87.2 Canonical Sync</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V92 Build 0085</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -521,7 +521,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Build 0069 V87.2 Canonical Sync</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0085</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -7007,39 +7007,126 @@ Build 0080｜V90.0 AI 多機台決策面板
 </script>
 
 
-<script id="build0084-v92-stable-bootstrap-monitor">
+<script id="build0085-v92-core-phase1">
 (()=>{
   'use strict';
-  if(window.__APS_BUILD_0084_INSTALLED__) return;
-  window.__APS_BUILD_0084_INSTALLED__=true;
-  window.APS_BUILD_LOCK='0084';
+  if(window.__APS_BUILD_0085_INSTALLED__) return;
+  window.__APS_BUILD_0085_INSTALLED__=true;
+
+  const VERSION=Object.freeze({
+    product:'SEAL KING Smart APS',
+    core:'V92',
+    build:'0085',
+    engine:'Core Phase 1',
+    date:'2026-07-16'
+  });
+  window.APS_VERSION_INFO=VERSION;
+  window.APS_BUILD_LOCK=VERSION.build;
+  window.APS_VERSION=VERSION.core;
+
   const bootStart=performance.now();
-  const state=window.APSBootState={build:'0084',startedAt:Date.now(),domReadyMs:0,readyMs:0,errors:[],warnings:[]};
-  const nativeError=console.error.bind(console),nativeWarn=console.warn.bind(console);
+  const state=window.APSBootState={
+    build:VERSION.build,startedAt:Date.now(),domReadyMs:0,readyMs:0,
+    brandApplyCount:0,errors:[],warnings:[]
+  };
+
+  const nativeError=console.error.bind(console);
+  const nativeWarn=console.warn.bind(console);
   console.error=(...args)=>{try{state.errors.push(args.map(String).join(' ').slice(0,500));}catch{} nativeError(...args)};
   console.warn=(...args)=>{try{state.warnings.push(args.map(String).join(' ').slice(0,500));}catch{} nativeWarn(...args)};
-  function text(v){return String(v??'').trim()}
+
+  const txt=v=>String(v??'').trim();
+  const label=`Enterprise Preview 2｜Build ${VERSION.build}`;
+  const fullTitle=`${VERSION.product}｜${VERSION.core} Build ${VERSION.build} ${VERSION.engine}`;
+
+  function ensureBrandStyle(){
+    let st=document.getElementById('apsBuild0085BrandStyle');
+    if(!st){
+      st=document.createElement('style');
+      st.id='apsBuild0085BrandStyle';
+      st.textContent=`body::after{content:"APS Build ${VERSION.build}｜${VERSION.core} ${VERSION.engine}"!important}`;
+      (document.head||document.documentElement).appendChild(st);
+    }
+  }
+
   function applyBuildBrand(){
-    document.title='SEAL KING Smart APS｜V92 Build 0084 Stable Bootstrap';
-    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|Enterprise Preview/i.test(text(el.textContent)))el.textContent='Enterprise Preview 2｜Build 0084';});
+    state.brandApplyCount++;
+    document.title=fullTitle;
+    ensureBrandStyle();
+    document.querySelectorAll('.header-time small,.version').forEach(el=>el.textContent=label);
+    document.querySelectorAll('.aps-sec-brand p').forEach(el=>el.textContent=`管理員權限保護｜${VERSION.core} Build ${VERSION.build}`);
   }
+
   function getStats(){
-    const pool=Array.isArray(window.S?.pool)?window.S.pool.length:0,schedule=Array.isArray(window.S?.schedule)?window.S.schedule.length:0;
-    const master=window.APSLargeStore?.getSync?.('SK_APS_SPEED_MASTER_V1',[])||[],feedback=window.APSLargeStore?.getSync?.('SK_APS_SPEED_FEEDBACK_V2',[])||[];
+    const pool=Array.isArray(window.S?.pool)?window.S.pool.length:0;
+    const schedule=Array.isArray(window.S?.schedule)?window.S.schedule.length:0;
+    const master=window.APSLargeStore?.getSync?.('SK_APS_SPEED_MASTER_V1',[])||[];
+    const feedback=window.APSLargeStore?.getSync?.('SK_APS_SPEED_FEEDBACK_V2',[])||[];
     const cloud=window.APSCloudDataCenter?.status?.()||{};
-    return {build:'0084',readyMs:Math.round(state.readyMs),pool,schedule,master:master.length||0,feedback:feedback.length||0,cloudLoaded:!!cloud.loaded,bootstrapCount:Number(cloud.bootstrapCount||0),bootstrapMs:Number(cloud.lastBootstrapMs||0),errors:state.errors.length,warnings:state.warnings.length};
+    const idx=window.APSDataIndex?.state||{};
+    return {
+      build:VERSION.build,core:VERSION.core,engine:VERSION.engine,
+      readyMs:Math.round(state.readyMs),pool,schedule,
+      master:master.length||0,feedback:feedback.length||0,
+      cloudLoaded:!!cloud.loaded,bootstrapCount:Number(cloud.bootstrapCount||0),
+      bootstrapMs:Number(cloud.lastBootstrapMs||0),
+      indexRows:Number(idx.rows||0),indexBuildMs:Math.round(Number(idx.buildMs||0)),
+      errors:state.errors.length,warnings:state.warnings.length,
+      brandApplyCount:state.brandApplyCount
+    };
   }
+
   function mountPanel(){
-    if(document.getElementById('apsPerfPanel'))return;
-    const p=document.createElement('div');p.id='apsPerfPanel';p.style.cssText='display:none;position:fixed;right:14px;bottom:14px;z-index:99999;width:320px;background:#071118ee;border:1px solid #31505f;border-radius:10px;padding:12px;color:#dff6ff;font:12px/1.55 Consolas,monospace;box-shadow:0 10px 30px #000a';
-    p.innerHTML='<b style="font-size:14px">APS 系統健康檢查｜Build 0084</b><pre id="apsPerfText" style="margin:8px 0 0;white-space:pre-wrap;color:#acd7e8"></pre>';
+    if(document.getElementById('apsPerfPanel')) return;
+    const p=document.createElement('div');
+    p.id='apsPerfPanel';
+    p.style.cssText='display:none;position:fixed;right:14px;bottom:42px;z-index:99999;width:340px;background:#071118f5;border:1px solid #31505f;border-radius:10px;padding:12px;color:#dff6ff;font:12px/1.55 Consolas,monospace;box-shadow:0 10px 30px #000a';
+    p.innerHTML=`<b style="font-size:14px">APS 系統健康檢查｜Build ${VERSION.build}</b><pre id="apsPerfText" style="margin:8px 0 0;white-space:pre-wrap;color:#acd7e8"></pre>`;
     document.body.appendChild(p);
-    const render=()=>{const s=getStats(),mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+' MB':'瀏覽器未提供';document.getElementById('apsPerfText').textContent=`啟動完成：${s.readyMs} ms\n雲端載入：${s.cloudLoaded?'OK':'等待中'}\n雲端初始化：${s.bootstrapCount} 次／${s.bootstrapMs} ms\n工單池：${s.pool} 筆\n排程：${s.schedule} 段\n產速主檔：${s.master} 筆\n產速回饋：${s.feedback} 筆\nJS 記憶體：${mem}\n錯誤：${s.errors}｜警告：${s.warnings}`};
-    document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&String(e.key).toLowerCase()==='d'){e.preventDefault();p.style.display=p.style.display==='none'?'block':'none';render();}});
-    window.APSPerformance={show(){p.style.display='block';render()},hide(){p.style.display='none'},stats:getStats};
+    const render=()=>{
+      const s=getStats();
+      const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+' MB':'瀏覽器未提供';
+      const cloudStatus=s.cloudLoaded?'OK':'等待中';
+      const storageStatus=window.indexedDB?'OK':'備援模式';
+      document.getElementById('apsPerfText').textContent=
+`版本：${s.core} Build ${s.build}\n引擎：${s.engine}\n啟動完成：${s.readyMs} ms\nIndexedDB：${storageStatus}\n雲端載入：${cloudStatus}\n雲端初始化：${s.bootstrapCount} 次／${s.bootstrapMs} ms\n索引：${s.indexRows} 筆／${s.indexBuildMs} ms\n工單池：${s.pool} 筆\n排程：${s.schedule} 段\n產速主檔：${s.master} 筆\n產速回饋：${s.feedback} 筆\nJS 記憶體：${mem}\n錯誤：${s.errors}｜警告：${s.warnings}`;
+    };
+    document.addEventListener('keydown',e=>{
+      if(e.ctrlKey&&e.shiftKey&&String(e.key).toLowerCase()==='d'){
+        e.preventDefault();p.style.display=p.style.display==='none'?'block':'none';render();
+      }
+    });
+    window.APSPerformance={show(){p.style.display='block';render()},hide(){p.style.display='none'},refresh:render,stats:getStats};
   }
-  function ready(){if(state.readyMs)return;state.readyMs=performance.now()-bootStart;applyBuildBrand();mountPanel();console.info('SEAL KING Smart APS V92 Build 0084 | Stable Bootstrap ready',getStats());window.log?.('Build 0084：雲端單次啟動防護與系統健康檢查已啟用');}
-  const start=()=>{state.domReadyMs=performance.now()-bootStart;applyBuildBrand();setTimeout(ready,2300)};
+
+  function installBrandGuard(){
+    let queued=false;
+    const observer=new MutationObserver(()=>{
+      if(queued)return;queued=true;
+      requestAnimationFrame(()=>{queued=false;applyBuildBrand()});
+    });
+    observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+    window.__APS_BRAND_OBSERVER__=observer;
+    // Historical modules use delayed branding; re-assert only during startup window.
+    [0,500,1500,3000,5000,8000].forEach(ms=>setTimeout(applyBuildBrand,ms));
+    setTimeout(()=>observer.disconnect(),10000);
+  }
+
+  function ready(){
+    if(state.readyMs)return;
+    state.readyMs=performance.now()-bootStart;
+    applyBuildBrand();
+    mountPanel();
+    installBrandGuard();
+    console.info(`SEAL KING Smart APS ${VERSION.core} Build ${VERSION.build} | ${VERSION.engine} ready`,getStats());
+    window.log?.(`Build ${VERSION.build}：版本統一、健康檢查與啟動品牌鎖定已啟用`);
+  }
+
+  function start(){
+    state.domReadyMs=performance.now()-bootStart;
+    applyBuildBrand();
+    setTimeout(ready,2300);
+  }
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
 })();
 </script>
