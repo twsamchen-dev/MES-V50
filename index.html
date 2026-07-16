@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V93.5.1 MES 生產 Key In｜Turbo Search Stable｜Build 0091</title>
+<title>V93.6 MES 生產 Key In｜Ultra Fast Cache｜Build 0092</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.5.1 Turbo Search Stable｜Build 0091</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.6 Ultra Fast Cache｜Build 0092</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,26 +154,34 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V93.5.1 Build 0091｜Key In Turbo Search Stable
+// V93.6 Build 0092｜Key In Ultra Fast Cache
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
-  ttlMs:5*60*1000,
+  ttlMs:12*60*60*1000,
+  maxEntries:180,
+  storageKey:'MES_KEYIN_ULTRA_CACHE_V936',
+  storageLoaded:false,
   queries:0,
   cacheHits:0,
+  persistentHits:0,
+  aliasHits:0,
   fallbacks:0,
   lastQuery:'',
   lastCount:0,
   lastElapsedMs:0,
+  lastSource:'',
   lastError:''
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V93.5.1',build:'0091',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V93.6',build:'0092',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
+    persistent_hits:KEYIN_SHARED_LOOKUP.persistentHits,alias_hits:KEYIN_SHARED_LOOKUP.aliasHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
     last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
-    cache_size:KEYIN_SHARED_LOOKUP.cache.size,last_error:KEYIN_SHARED_LOOKUP.lastError
+    last_source:KEYIN_SHARED_LOOKUP.lastSource,cache_size:KEYIN_SHARED_LOOKUP.cache.size,
+    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,last_error:KEYIN_SHARED_LOOKUP.lastError
   };
   console.table(status);return status;
 }
@@ -195,6 +203,95 @@ function normalizeSharedKeyInRow_(r){
     target_qty:r.target_qty||'',due_date:r.due_date||'',plan_date:r.plan_date||'',updated_at:r.updated_at||''
   });
 }
+
+function keyInCacheCloneRows_(rows){
+  return (rows||[]).map(r=>Object.assign({},r));
+}
+function keyInCacheKeysFromRows_(rows){
+  const out=new Set();
+  (rows||[]).forEach(r=>{
+    [
+      r.work_order_no,r.command_no,r.order_no,r.daily_report_no,r.report_no,
+      r.batch_no,r.input_lot_no,r.output_lot_no,r.part_no,r.input_part_no,r.output_part_no
+    ].forEach(v=>{const k=nrm(v);if(k&&k.length>=4)out.add(k)});
+  });
+  return Array.from(out);
+}
+function keyInCacheTrim_(){
+  const now=Date.now();
+  const valid=[];
+  KEYIN_SHARED_LOOKUP.cache.forEach((v,k)=>{
+    if(v&&now-v.at<KEYIN_SHARED_LOOKUP.ttlMs)valid.push([k,v]);
+  });
+  valid.sort((a,b)=>(b[1].lastUsed||b[1].at)-(a[1].lastUsed||a[1].at));
+  KEYIN_SHARED_LOOKUP.cache.clear();
+  valid.slice(0,KEYIN_SHARED_LOOKUP.maxEntries).forEach(([k,v])=>KEYIN_SHARED_LOOKUP.cache.set(k,v));
+}
+function keyInCachePersist_(){
+  try{
+    keyInCacheTrim_();
+    const payload=[];
+    KEYIN_SHARED_LOOKUP.cache.forEach((v,k)=>{
+      payload.push({k,at:v.at,lastUsed:v.lastUsed||v.at,rows:v.rows});
+    });
+    localStorage.setItem(KEYIN_SHARED_LOOKUP.storageKey,JSON.stringify(payload));
+  }catch(err){
+    console.warn('Key In Ultra Cache persist skipped',String(err&&err.message||err));
+  }
+}
+function keyInCacheLoad_(){
+  if(KEYIN_SHARED_LOOKUP.storageLoaded)return;
+  KEYIN_SHARED_LOOKUP.storageLoaded=true;
+  try{
+    const now=Date.now();
+    const raw=JSON.parse(localStorage.getItem(KEYIN_SHARED_LOOKUP.storageKey)||'[]');
+    (Array.isArray(raw)?raw:[]).forEach(item=>{
+      const k=nrm(item&&item.k);
+      if(!k||!item||!Array.isArray(item.rows))return;
+      if(now-Number(item.at||0)>=KEYIN_SHARED_LOOKUP.ttlMs)return;
+      KEYIN_SHARED_LOOKUP.cache.set(k,{
+        at:Number(item.at||now),
+        lastUsed:Number(item.lastUsed||item.at||now),
+        rows:item.rows.map(normalizeSharedKeyInRow_)
+      });
+    });
+    keyInCacheTrim_();
+  }catch(err){
+    try{localStorage.removeItem(KEYIN_SHARED_LOOKUP.storageKey)}catch(_){}
+  }
+}
+function keyInCacheGet_(query){
+  keyInCacheLoad_();
+  const q=nrm(query);if(!q)return null;
+  const item=KEYIN_SHARED_LOOKUP.cache.get(q);
+  if(!item)return null;
+  if(Date.now()-item.at>=KEYIN_SHARED_LOOKUP.ttlMs){
+    KEYIN_SHARED_LOOKUP.cache.delete(q);return null;
+  }
+  item.lastUsed=Date.now();
+  KEYIN_SHARED_LOOKUP.cache.delete(q);
+  KEYIN_SHARED_LOOKUP.cache.set(q,item);
+  return keyInCacheCloneRows_(item.rows);
+}
+function keyInCachePut_(query,rows,source){
+  const clean=keyInCacheCloneRows_(rows);
+  if(!clean.length)return;
+  const now=Date.now();
+  const keys=new Set([nrm(query),...keyInCacheKeysFromRows_(clean)]);
+  keys.forEach(k=>{
+    if(!k)return;
+    KEYIN_SHARED_LOOKUP.cache.set(k,{at:now,lastUsed:now,rows:clean,source:source||''});
+  });
+  keyInCacheTrim_();
+  keyInCachePersist_();
+}
+function KeyInUltraCacheClear(){
+  KEYIN_SHARED_LOOKUP.cache.clear();
+  try{localStorage.removeItem(KEYIN_SHARED_LOOKUP.storageKey)}catch(_){}
+  console.log('Key In Ultra Cache cleared');
+  return true;
+}
+
 function managedTimeout_(promise,ms,label){
   let timer=null,settled=false;
   return new Promise((resolve,reject)=>{
@@ -251,12 +348,17 @@ async function firstTurboHit_(tasks,onStage){
 }
 async function sharedLookupKeyIn_(query,onStage){
   const q=nrm(query);if(!q||!KEYIN_SHARED_LOOKUP.enabled)return [];
-  const now=Date.now();const cached=KEYIN_SHARED_LOOKUP.cache.get(q);
-  if(cached&&now-cached.at<KEYIN_SHARED_LOOKUP.ttlMs){
-    KEYIN_SHARED_LOOKUP.cacheHits++;KEYIN_SHARED_LOOKUP.lastQuery=q;
-    KEYIN_SHARED_LOOKUP.lastCount=cached.rows.length;KEYIN_SHARED_LOOKUP.lastElapsedMs=0;
-    if(onStage)onStage('快取命中，正在帶入資料...');
-    return cached.rows.map(x=>Object.assign({},x));
+  const cached=keyInCacheGet_(q);
+  if(cached&&cached.length){
+    KEYIN_SHARED_LOOKUP.cacheHits++;
+    KEYIN_SHARED_LOOKUP.persistentHits++;
+    KEYIN_SHARED_LOOKUP.lastQuery=q;
+    KEYIN_SHARED_LOOKUP.lastCount=cached.length;
+    KEYIN_SHARED_LOOKUP.lastElapsedMs=0;
+    KEYIN_SHARED_LOOKUP.lastSource='ultra-cache';
+    if(onStage)onStage('✓ Ultra Cache 命中，立即帶入資料...');
+    console.log('Key In Ultra Cache hit',q,cached.length);
+    return cached;
   }
 
   const started=performance.now();
@@ -283,7 +385,7 @@ async function sharedLookupKeyIn_(query,onStage){
     if(rows.length){
       KEYIN_SHARED_LOOKUP.lastCount=rows.length;
       KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
-      KEYIN_SHARED_LOOKUP.cache.set(q,{at:Date.now(),rows:rows});
+      keyInCachePut_(q,rows,fast.action);KEYIN_SHARED_LOOKUP.lastSource=fast.action;
       if(onStage)onStage('✓ 高速索引已命中（'+KEYIN_SHARED_LOOKUP.lastElapsedMs+' ms）');
       console.log('Key In Turbo hit',fast.action,KEYIN_SHARED_LOOKUP.lastElapsedMs+'ms',rows.length);
       return rows;
@@ -296,7 +398,7 @@ async function sharedLookupKeyIn_(query,onStage){
     KEYIN_SHARED_LOOKUP.lastCount=rows.length;
     KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
     if(rows.length){
-      KEYIN_SHARED_LOOKUP.cache.set(q,{at:Date.now(),rows:rows});
+      keyInCachePut_(q,rows,fast.action);KEYIN_SHARED_LOOKUP.lastSource=fast.action;
       if(onStage)onStage('✓ 備援查詢已命中（'+KEYIN_SHARED_LOOKUP.lastElapsedMs+' ms）');
     }
     return rows;
@@ -581,6 +683,12 @@ async function lookupWOAsync(){
     return;
   }
   r=sourceObj(parseRawSourceToObj(r));
+  try{
+    keyInCachePut_(key,[r],'resolved-row');
+    const aliases=keyInCacheKeysFromRows_([r]);
+    if(aliases.some(a=>a!==key))KEYIN_SHARED_LOOKUP.aliasHits++;
+  }catch(_){}
+
   const displayNo = r.command_no || r.work_order_no || r.order_no || safeGet('work_order_no');
   safeSet('work_order_no', displayNo || safeGet('work_order_no'));
   safeSet('batch_no', r.batch_no || r.daily_report_no || '');
@@ -631,8 +739,9 @@ function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回
 function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{
+  keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V93.5.1 Build 0091 | Turbo Search Stable ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V93.6 Build 0092 | Ultra Fast Cache ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
