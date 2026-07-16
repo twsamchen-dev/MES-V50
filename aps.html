@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0090｜課長密碼權限穩定版";
+  content:"APS Build 0091｜APS 載入復原穩定版";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -481,7 +481,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0090</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V92 Build 0085</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -521,7 +521,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0090</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0091</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -1384,12 +1384,10 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
    const k=x=>[norm(x.part),norm(x.machine),norm(x.process)].join('|');
    const editIndex=Number($('sfEditIndex').value);
    const isEditing=Number.isInteger(editIndex)&&editIndex>=0&&editIndex<arr.length;
-   if(isEditing){
-     if(!window.APSLeaderGuard || !window.APSLeaderGuard.require('修改、重新計算並確認永久產速')){
-       msg.textContent='此功能僅限課長 11035 以工號＋密碼操作。';
-       msg.style.color='var(--red)';
-       return;
-     }
+   if(isEditing && window.APSLeaderGuard && !window.APSLeaderGuard.require('修改並確認永久產速')){
+     msg.textContent='此功能僅限課長 11035 操作。';
+     msg.style.color='var(--red)';
+     return;
    }
    const idx=isEditing?editIndex:arr.findIndex(x=>k(x)===k({
      part,
@@ -1421,8 +1419,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
      row.is_standard=true;
      row.approved_by='11035 陳善祖';
      row.approved_at=new Date().toISOString();
-     row.approval_source='edit_save_recalculate_password';
-     row.last_action='課長修改後儲存並重新計算';
+     row.approval_source='edit_save_recalculate';
    }else if(row.is_standard===undefined){
      row.is_standard=false;
    }
@@ -7440,11 +7437,11 @@ Build 0080｜V90.0 AI 多機台決策面板
 </script>
 
 
-<script id="aps-build0090-leader-password">
+<script id="aps-build0089-leader-password">
 (()=>{
   'use strict';
 
-  const BUILD='0090';
+  const BUILD='0089';
   const LEADER_ID='11035';
   const LEADER_NAME='陳善祖';
   const SESSION_KEY='SK_APS_LEADER_AUTH_V2';
@@ -7677,7 +7674,7 @@ Build 0080｜V90.0 AI 多機台決策面板
   }
 
   const style=document.createElement('style');
-  style.id='apsLeaderPasswordStyle0090';
+  style.id='apsLeaderPasswordStyle0089';
   style.textContent=`
     [data-leader-protected="1"]{position:relative}
     [data-leader-protected="1"]::after{content:"🔒";font-size:10px;margin-left:5px;opacity:.82}
@@ -7735,12 +7732,194 @@ Build 0080｜V90.0 AI 多機台決策面板
   };
 
   console.info('APS Build '+BUILD+'｜課長工號＋密碼保護 ready');
-  console.info('APS Build 0090 self-check',{
-    leader_password:true,
-    speed_auto_approve:true,
-    snapshot_guard:true,
-    clear_all_guard:true
-  });
+})();
+</script>
+
+
+<script id="aps-build0091-loading-recovery">
+(()=>{
+  'use strict';
+
+  const BUILD='0091';
+  const START_KEY='__APS_BUILD0091_START__';
+  const STATUS_ID='apsCloudStatus';
+  let bootstrapStarted=false;
+  let bootstrapFinished=false;
+  let watchdogTimer=0;
+  let dotTimer=0;
+  let dotStep=0;
+
+  function headerHost(){
+    return document.querySelector('.header-right') ||
+           document.querySelector('.enterprise-header') ||
+           document.querySelector('header') ||
+           document.body;
+  }
+
+  function ensureLoadingStyle(){
+    if(document.getElementById('apsBuild0091Style'))return;
+    const style=document.createElement('style');
+    style.id='apsBuild0091Style';
+    style.textContent=`
+      #${STATUS_ID}.aps-load-recovery{
+        display:inline-flex!important;align-items:center;gap:7px;
+        min-width:178px;padding:7px 11px;border:1px solid #36505e;
+        border-radius:999px;background:#0b171e;color:#d7e5eb;
+        font-size:11px;white-space:nowrap;order:-10;cursor:pointer
+      }
+      #${STATUS_ID}.aps-load-recovery i{
+        width:9px;height:9px;border-radius:50%;background:#f59e0b;
+        box-shadow:0 0 10px #f59e0b99;animation:aps0091Pulse 1s infinite
+      }
+      #${STATUS_ID}.aps-load-recovery.ok i{
+        background:#22c55e;box-shadow:0 0 10px #22c55e99;animation:none
+      }
+      #${STATUS_ID}.aps-load-recovery.warn i{
+        background:#f59e0b;box-shadow:0 0 10px #f59e0b99;animation:none
+      }
+      #${STATUS_ID}.aps-load-recovery.bad i{
+        background:#ef4444;box-shadow:0 0 10px #ef444499;animation:none
+      }
+      @keyframes aps0091Pulse{50%{opacity:.35;transform:scale(.72)}}
+      @media(max-width:900px){
+        #${STATUS_ID}.aps-load-recovery{display:inline-flex!important;min-width:145px;font-size:10px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureStatus(){
+    ensureLoadingStyle();
+    let el=document.getElementById(STATUS_ID);
+    if(!el){
+      el=document.createElement('div');
+      el.id=STATUS_ID;
+      headerHost().prepend(el);
+    }else if(!el.isConnected){
+      headerHost().prepend(el);
+    }else if(!el.closest('.header-right,.enterprise-header,header')){
+      headerHost().prepend(el);
+    }
+    el.classList.add('aps-load-recovery');
+    if(!el.querySelector('i'))el.innerHTML='<i></i><span>APS 載入中</span>';
+    if(!el.dataset.recoveryBound){
+      el.dataset.recoveryBound='1';
+      el.title='點一下重新載入 APS 雲端資料';
+      el.addEventListener('click',()=>startBootstrap(true));
+    }
+    return el;
+  }
+
+  function setStatus(state,message){
+    const el=ensureStatus();
+    el.className='aps-load-recovery '+(state||'');
+    const span=el.querySelector('span');
+    if(span)span.textContent=message;
+  }
+
+  function startDots(){
+    clearInterval(dotTimer);
+    dotStep=0;
+    dotTimer=setInterval(()=>{
+      if(bootstrapFinished){clearInterval(dotTimer);return}
+      dotStep=(dotStep+1)%4;
+      setStatus('', 'APS 載入中'+'.'.repeat(dotStep));
+    },420);
+  }
+
+  function renderLocalImmediately(){
+    try{window.renderPool?.()}catch(e){console.warn('renderPool local recovery',e)}
+    try{window.renderSchedule?.()}catch(e){console.warn('renderSchedule local recovery',e)}
+    try{window.renderHome?.()}catch(e){console.warn('renderHome local recovery',e)}
+    try{window.renderSpeedCenter?.()}catch(e){console.warn('renderSpeedCenter local recovery',e)}
+  }
+
+  async function startBootstrap(force){
+    if(bootstrapStarted&&!force)return;
+    bootstrapStarted=true;
+    bootstrapFinished=false;
+    setStatus('',force?'APS 重新載入中':'APS 載入中');
+    startDots();
+
+    // 本機資料先顯示，雲端同步在背景執行，避免整個 APS 畫面卡住。
+    setTimeout(renderLocalImmediately,0);
+
+    clearTimeout(watchdogTimer);
+    watchdogTimer=setTimeout(()=>{
+      if(bootstrapFinished)return;
+      setStatus('warn','APS 雲端較慢｜已用本機資料');
+      renderLocalImmediately();
+    },12000);
+
+    try{
+      const cloud=window.APSCloudDataCenter;
+      if(cloud&&typeof cloud.bootstrap==='function'){
+        await Promise.race([
+          Promise.resolve(cloud.bootstrap(!!force)),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('APS 雲端載入超過 25 秒')),25000))
+        ]);
+      }else{
+        // 等既有 Cloud DataCenter 模組完成註冊。
+        await new Promise(resolve=>setTimeout(resolve,900));
+        if(window.APSCloudDataCenter?.bootstrap){
+          await Promise.race([
+            Promise.resolve(window.APSCloudDataCenter.bootstrap(!!force)),
+            new Promise((_,reject)=>setTimeout(()=>reject(new Error('APS 雲端載入超過 25 秒')),25000))
+          ]);
+        }else{
+          throw new Error('APSCloudDataCenter 尚未載入');
+        }
+      }
+      bootstrapFinished=true;
+      clearTimeout(watchdogTimer);
+      clearInterval(dotTimer);
+      const pool=Number(window.S?.pool?.length||0);
+      const schedule=Number(window.S?.schedule?.length||0);
+      setStatus('ok',`APS 已載入｜工單 ${pool}｜排程 ${schedule}`);
+      renderLocalImmediately();
+    }catch(err){
+      bootstrapFinished=true;
+      clearTimeout(watchdogTimer);
+      clearInterval(dotTimer);
+      console.warn('APS Build 0091 background bootstrap fallback',err);
+      const pool=Number(window.S?.pool?.length||0);
+      const schedule=Number(window.S?.schedule?.length||0);
+      setStatus(pool||schedule?'warn':'bad',
+        pool||schedule
+          ?`使用本機資料｜工單 ${pool}｜排程 ${schedule}`
+          :'APS 載入失敗｜點此重試'
+      );
+      renderLocalImmediately();
+    }
+  }
+
+  function install(){
+    if(window[START_KEY])return;
+    window[START_KEY]=true;
+    ensureStatus();
+
+    // 防止後續模組重繪 Header 時把 APS 載入狀態移除。
+    const observer=new MutationObserver(()=>{
+      if(!document.getElementById(STATUS_ID)||!document.getElementById(STATUS_ID).isConnected){
+        ensureStatus();
+      }
+    });
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+
+    setTimeout(()=>startBootstrap(false),650);
+    console.info('APS Build 0091｜載入點點、Header 狀態與非阻塞啟動 ready');
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  }else{
+    install();
+  }
+
+  window.APSLoadingRecovery0091={
+    retry:()=>startBootstrap(true),
+    status:()=>({bootstrapStarted,bootstrapFinished})
+  };
 })();
 </script>
 
