@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V93.8.2 MES 生產 Key In｜DOM Turbo Line 651 Fix｜Build 0096</title>
+<title>V94 MES 生產 Key In｜DOM Performance Engine｜Build 0097</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.8.2 DOM Turbo Line 651 Fix｜Build 0096</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V94 DOM Performance Engine｜Build 0097</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V93.8.2 Build 0096｜Key In DOM Turbo Line 651 Fix
+// V94 Build 0097｜Key In DOM Performance Engine
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -175,13 +175,13 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V93.8.2',build:'0096',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V94',build:'0097',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     persistent_hits:KEYIN_SHARED_LOOKUP.persistentHits,alias_hits:KEYIN_SHARED_LOOKUP.aliasHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
     last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
     last_source:KEYIN_SHARED_LOOKUP.lastSource,cache_size:KEYIN_SHARED_LOOKUP.cache.size,
-    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,priority_enabled:true,dom_turbo:true,last_error:KEYIN_SHARED_LOOKUP.lastError
+    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,priority_enabled:true,dom_turbo:true,dom_cache:true,ui_perf:UI_PERF,last_error:KEYIN_SHARED_LOOKUP.lastError
   };
   console.table(status);return status;
 }
@@ -427,6 +427,43 @@ function rowsOf(r){if(Array.isArray(r))return r;if(Array.isArray(r?.rows))return
 function qs(id){return document.getElementById(id)}
 function safeGet(id){const el=qs(id);return el?el.value:''}
 function safeSet(id,v){const el=qs(id);if(el)el.value=v??''}
+
+const UI_CACHE={};
+const UI_PERF={search_ms:0,main_dom_ms:0,background_ms:0,total_ms:0,last_key:'',last_source:''};
+function cacheUI_(){
+  ['work_order_no','batch_no','machine_code','site','woMsg','actual_output',
+   'loadStatus','todayPlans','planTitle','planRangeText','speedHint',
+   'speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{
+    UI_CACHE[id]=document.getElementById(id);
+  });
+  return UI_CACHE;
+}
+function ui_(id){return UI_CACHE[id]||document.getElementById(id)}
+function setValueIfChanged_(el,value){
+  if(!el)return false;
+  const next=String(value??'');
+  if(el.value===next)return false;
+  el.value=next;return true;
+}
+function setHtmlIfChanged_(el,value){
+  if(!el)return false;
+  const next=String(value??'');
+  if(el.innerHTML===next)return false;
+  el.innerHTML=next;return true;
+}
+function perfNow_(){return (window.performance&&performance.now)?performance.now():Date.now()}
+function logUIPerf_(label){
+  console.log('Key In UI Performance',{
+    label:label||'lookup',
+    search_ms:UI_PERF.search_ms,
+    main_dom_ms:UI_PERF.main_dom_ms,
+    background_ms:UI_PERF.background_ms,
+    total_ms:UI_PERF.total_ms,
+    source:UI_PERF.last_source,
+    key:UI_PERF.last_key
+  });
+}
+
 function localYMD(d){
   if(!(d instanceof Date))d=new Date(d);
   if(isNaN(d))d=new Date();
@@ -674,60 +711,60 @@ function buildOrderMessage_(r,matches){
     +'站點：'+html(r.process||'-')+'｜機台：'+html(r.machine_code||'-')
     +(matches&&matches.length>1?'<br><b>此識別碼共對應 '+matches.length+' 筆資料，已優先帶入命令單；可繼續輸入完整工單縮小結果。</b>':'');
 }
-async function applyResolvedOrderDOM_(r,matches,seq){
+async function applyResolvedOrderDOM_(r,matches,seq,searchStarted){
   if(seq!==__lookupSeq)return false;
+  const totalStarted=searchStarted||perfNow_();
   const displayNo=r.command_no||r.work_order_no||r.order_no||safeGet('work_order_no');
   const batch=r.batch_no||r.daily_report_no||'';
   const machine=r.machine_code||'';
   const siteIndex=resolveSiteIndex_(r.process);
   const message=buildOrderMessage_(r,matches);
 
-  if(__domFrame){
-    const caf=window.cancelAnimationFrame||clearTimeout;
-    try{caf(__domFrame)}catch(_){}
-  }
-
+  const mainStarted=perfNow_();
+  const raf=window.requestAnimationFrame||function(cb){return setTimeout(cb,0)};
   await new Promise(resolve=>{
-    const raf=window.requestAnimationFrame||function(cb){return setTimeout(cb,0)};
-    __domFrame=raf(()=>{
-      __domFrame=0;
+    raf(()=>{
       if(seq!==__lookupSeq){resolve(false);return}
-      const woEl=qs('work_order_no');
-      const batchEl=qs('batch_no');
-      const machineEl=qs('machine_code');
-      const siteEl=qs('site');
-      const box=qs('woMsg');
+      const woEl=ui_('work_order_no');
+      const batchEl=ui_('batch_no');
+      const machineEl=ui_('machine_code');
+      const siteEl=ui_('site');
+      const box=ui_('woMsg');
 
-      if(woEl&&woEl.value!==(displayNo||woEl.value))woEl.value=displayNo||woEl.value;
-      if(batchEl&&batchEl.value!==batch)batchEl.value=batch;
-      if(machineEl&&machine&&machineEl.value!==machine)machineEl.value=machine;
+      setValueIfChanged_(woEl,displayNo||safeGet('work_order_no'));
+      setValueIfChanged_(batchEl,batch);
+      if(machine)setValueIfChanged_(machineEl,machine);
       if(siteEl&&siteIndex>=0&&siteEl.selectedIndex!==siteIndex)siteEl.selectedIndex=siteIndex;
       if(box){
-        box.className='okbox';
-        box.innerHTML=message;
+        if(box.className!=='okbox')box.className='okbox';
+        setHtmlIfChanged_(box,message);
       }
       resolve(true);
     });
   });
+  UI_PERF.main_dom_ms=Math.round(perfNow_()-mainStarted);
 
-  if(seq!==__lookupSeq)return false;
-
-  // 非必要工作延後，不阻塞工單、批號、機台與畫面訊息顯示。
+  const bgStarted=perfNow_();
   setTimeout(()=>{
     if(seq!==__lookupSeq)return;
     try{applyHistoricalSpeed()}catch(e){console.warn('Historical speed deferred error',e)}
+    UI_PERF.background_ms=Math.round(perfNow_()-bgStarted);
+    UI_PERF.total_ms=Math.round(perfNow_()-totalStarted);
+    logUIPerf_('resolved-order');
   },0);
+
   setTimeout(()=>{
     if(seq!==__lookupSeq)return;
-    const a=qs('actual_output');
-    if(a)a.focus({preventScroll:true});
+    const a=ui_('actual_output');
+    if(a){try{a.focus({preventScroll:true})}catch(_){a.focus()}}
   },16);
   return true;
 }
-
 async function lookupWOAsync(){
+  const searchStarted=perfNow_();
   const seq=++__lookupSeq;
   const key=nrm(safeGet('work_order_no'));
+  UI_PERF.last_key=key;UI_PERF.last_source='';
   if(!key)return;
   const box=qs('woMsg');
 
@@ -745,7 +782,9 @@ async function lookupWOAsync(){
       const aliases=keyInCacheKeysFromRows_([r]);
       if(aliases.some(a=>a!==key))KEYIN_SHARED_LOOKUP.aliasHits++;
     }catch(_){}
-    await applyResolvedOrderDOM_(r,matches,seq);
+    UI_PERF.last_source='ultra-cache';
+    UI_PERF.search_ms=Math.round(perfNow_()-searchStarted);
+    await applyResolvedOrderDOM_(r,matches,seq,searchStarted);
     return;
   }
 
@@ -762,6 +801,7 @@ async function lookupWOAsync(){
       });
       if(seq!==__lookupSeq)return;
       if(sharedRows.length){
+        UI_PERF.last_source=KEYIN_SHARED_LOOKUP.lastSource||'shared-index';
         sharedRows.forEach(x=>{
           if(!(App.source||[]).some(y=>
             nrm(y.work_order_no||y.command_no)===nrm(x.work_order_no||x.command_no)
@@ -816,7 +856,9 @@ async function lookupWOAsync(){
     if(aliases.some(a=>a!==key))KEYIN_SHARED_LOOKUP.aliasHits++;
   }catch(_){}
 
-  await applyResolvedOrderDOM_(r,matches,seq);
+  if(!UI_PERF.last_source)UI_PERF.last_source='resolved-row';
+  UI_PERF.search_ms=Math.round(perfNow_()-searchStarted);
+  await applyResolvedOrderDOM_(r,matches,seq,searchStarted);
 }
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
 function renderPlansHint(){const r=rangeObj();qs('planRangeText').textContent=r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';const list=currentPlans();qs('todayPlans').innerHTML=list.length?list.slice(0,20).map((p,i)=>{const o=sourceObj(p);const st=matchStatus(p);return '<div class="planItem" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' / '+(st.target?st.target.toLocaleString():'未設目標')+'</div></div></div></div>'}).join(''):'查無'+r.label+'幹部目標工單。'}
@@ -844,9 +886,10 @@ function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回
 function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{
+  cacheUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V93.8.2 Build 0096 | DOM Turbo Line 651 Fix ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V94 Build 0097 | DOM Performance Engine ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
