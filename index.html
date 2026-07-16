@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V92.4 MES 生產 Key In｜Shared Lookup Phase 4｜Build 0088</title>
+<title>V93.5 MES 生產 Key In｜Turbo Search｜Build 0090</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V92.4 Shared Lookup Phase 4｜Build 0088</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.5 Turbo Search｜Build 0090</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V92.4 Build 0088｜Key In Shared Lookup Phase 4
+// V93.5 Build 0090｜Key In Turbo Search
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -169,7 +169,7 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V92.4',build:'0088',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V93.5',build:'0090',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
     last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
@@ -195,27 +195,54 @@ function normalizeSharedKeyInRow_(r){
     target_qty:r.target_qty||'',due_date:r.due_date||'',plan_date:r.plan_date||'',updated_at:r.updated_at||''
   });
 }
-async function sharedLookupKeyIn_(query){
+function withTimeout_(promise,ms,label){
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error((label||'API')+' timeout '+ms+'ms')),ms)})
+  ]).finally(()=>clearTimeout(timer));
+}
+async function turboApiRows_(action,q,timeoutMs){
+  try{
+    const res=await withTimeout_(getApi(action,{q:q,exact:1,limit:50,_:Date.now()}),timeoutMs,action);
+    return rowsOf(res).map(normalizeSharedKeyInRow_).filter(x=>sourceMatch(x,q));
+  }catch(err){
+    console.warn('Key In Turbo '+action+' skipped',err&&err.message||err);
+    return [];
+  }
+}
+async function sharedLookupKeyIn_(query,onStage){
   const q=nrm(query);if(!q||!KEYIN_SHARED_LOOKUP.enabled)return [];
   const now=Date.now();const cached=KEYIN_SHARED_LOOKUP.cache.get(q);
   if(cached&&now-cached.at<KEYIN_SHARED_LOOKUP.ttlMs){
     KEYIN_SHARED_LOOKUP.cacheHits++;KEYIN_SHARED_LOOKUP.lastQuery=q;
     KEYIN_SHARED_LOOKUP.lastCount=cached.rows.length;KEYIN_SHARED_LOOKUP.lastElapsedMs=0;
+    if(onStage)onStage('快取命中，正在帶入資料...');
     return cached.rows.map(x=>Object.assign({},x));
   }
   const started=performance.now();KEYIN_SHARED_LOOKUP.queries++;KEYIN_SHARED_LOOKUP.lastQuery=q;
+  let rows=[];
   try{
-    const res=await getApi('sharedlookup',{q:q,exact:1,limit:50});
-    const rows=rowsOf(res).map(normalizeSharedKeyInRow_).filter(x=>sourceMatch(x,q));
+    if(onStage)onStage('① 正在查詢高速 Shared Index...');
+    rows=await turboApiRows_('sharedindexlookup',q,3000);
+    if(!rows.length){
+      if(onStage)onStage('② 索引未命中，正在即時建立工單索引...');
+      rows=await turboApiRows_('sharedindexinstant',q,5000);
+    }
+    if(!rows.length){
+      KEYIN_SHARED_LOOKUP.fallbacks++;
+      if(onStage)onStage('③ 高速索引未命中，啟用舊共用查詢備援...');
+      rows=await turboApiRows_('sharedlookup',q,9000);
+    }
     KEYIN_SHARED_LOOKUP.lastCount=rows.length;
     KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
     KEYIN_SHARED_LOOKUP.lastError='';
-    KEYIN_SHARED_LOOKUP.cache.set(q,{at:now,rows:rows});
+    if(rows.length)KEYIN_SHARED_LOOKUP.cache.set(q,{at:now,rows:rows});
     return rows;
   }catch(err){
     KEYIN_SHARED_LOOKUP.fallbacks++;KEYIN_SHARED_LOOKUP.lastError=String(err&&err.message||err);
     KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
-    console.warn('Key In sharedlookup fallback',err);return [];
+    console.warn('Key In Turbo Search fallback',err);return [];
   }
 }
 
@@ -333,7 +360,7 @@ async function loadStartup(){
     App.idx=-1;
     renderPlansHint();
     await loadKeyin(false);
-    qs('loadStatus').textContent='基本資料已讀取；需要查工單再按「讀取最新工單」';
+    qs('loadStatus').textContent='基本資料已讀取；可直接輸入工單查詢，「讀取最新工單」僅載入完整清單';
   }catch(err){
     qs('loadStatus').textContent='基本資料讀取失敗';
     if(window.MES)MES.toast('基本資料讀取失敗：'+err.message);
@@ -458,7 +485,7 @@ async function lookupWOAsync(){
     try{
       box.className='okbox';
       box.innerHTML='正在查詢共用工單索引... / กำลังค้นหาดัชนีงานร่วม';
-      const sharedRows=await sharedLookupKeyIn_(key);
+      const sharedRows=await sharedLookupKeyIn_(key,msg=>{box.className='okbox';box.innerHTML=msg+' / กำลังค้นหา...'});
       if(sharedRows.length){
         sharedRows.forEach(x=>{
           if(!(App.source||[]).some(y=>nrm(y.work_order_no||y.command_no)===nrm(x.work_order_no||x.command_no)&&nrm(y.order_no)===nrm(x.order_no))) App.source.push(x);
@@ -475,7 +502,7 @@ async function lookupWOAsync(){
       KEYIN_SHARED_LOOKUP.fallbacks++;
       box.className='okbox';
       box.innerHTML='共用索引未命中，改用原工單索引查詢...';
-      const res=await getApi('targetorderlist',{q:key,limit:20});
+      const res=await withTimeout_(getApi('targetorderlist',{q:key,limit:20,_:Date.now()}),9000,'targetorderlist');
       const rows=rowsOf(res).map(x=>sourceObj(parseRawSourceToObj(x)));
       if(rows.length){
         rows.forEach(x=>App.source.push(x));
@@ -542,7 +569,7 @@ function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({s
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V92.4 Build 0088 | Shared Lookup Phase 4 ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V93.5 Build 0090 | Turbo Search ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
