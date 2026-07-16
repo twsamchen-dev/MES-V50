@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V90.1 MES Target｜Match Precision Stable</title>
+<title>V90.2 MES Target｜Match KPI & Unit Stable</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
@@ -16,11 +16,11 @@
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes successPulse{0%{transform:scale(.98);opacity:.65}100%{transform:scale(1);opacity:1}}@keyframes fieldFlash{0%,100%{background:#fff}50%{background:#dcfce7}}
 @media(max-width:900px){.multiFields{grid-template-columns:1fr 1fr}.multiHint{grid-column:span 2}}@media(max-width:560px){.multiFields{grid-template-columns:1fr}.multiHint{grid-column:span 1}}
 
-.lookupLine{display:flex;gap:8px;align-items:stretch}.lookupLine input{flex:1}.lookupBtn{width:112px;min-width:112px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer}.lookupBtn:hover{filter:brightness(.96)}.lookupBtn:disabled{opacity:.65;cursor:wait}.lookupBtn.ok{background:#16a34a}.lookupBtn.bad{background:#dc2626}@media(max-width:560px){.lookupLine{flex-direction:column}.lookupBtn{width:100%}}
+.lookupLine{display:flex;gap:8px;align-items:stretch}.lookupLine input{flex:1}.lookupBtn{width:112px;min-width:112px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer}.lookupBtn:hover{filter:brightness(.96)}.lookupBtn:disabled{opacity:.65;cursor:wait}.lookupBtn.ok{background:#16a34a}.lookupBtn.bad{background:#dc2626}.variance-over{color:#15803d;font-weight:900}.variance-gap{color:#b45309;font-weight:900}.variance-wait{color:#64748b;font-weight:800}@media(max-width:560px){.lookupLine{flex-direction:column}.lookupBtn{width:100%}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V90.1 Match Precision Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V90.2 Match KPI & Unit Stable</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -820,10 +820,26 @@ function safeCompletion_(target,actual,targetUnit,actualUnit){
   if(!actualUnit && actual>Math.max(target*5,target+500))return {rate:'—',valid:false,reason:'實績單位待確認'};
   return {rate:Math.min(100,Math.round(actual/target*1000)/10),valid:true,reason:''};
 }
+function derivedTargetM2_(r){
+  const direct=num(r&&r.target_m2);
+  if(direct>0)return direct;
+  const roll=num(r&&(r.target_roll||r.target_qty));
+  const len=num(r&&(r.pivot_len||r.length||r['樞紐長']||r['長']));
+  const width=num(r&&(r.pivot_width||r.width||r['樞紐寬']||r['寬']));
+  return roll>0&&len>0&&width>0 ? roll*len*width/1000 : 0;
+}
+function varianceInfo_(target,actual,unit,valid){
+  if(!valid||!(target>0)||!(actual>=0))return {qty:0,text:'等待確認',kind:'wait'};
+  const diff=actual-target, label=unit==='M2'?'㎡':(unit||'R');
+  if(diff>0)return {qty:diff,text:'▲ 超產 '+Number(diff.toFixed(3)).toLocaleString()+' '+label,kind:'over'};
+  if(diff<0)return {qty:diff,text:'尚差 '+Number(Math.abs(diff).toFixed(3)).toLocaleString()+' '+label,kind:'gap'};
+  return {qty:0,text:'達成目標',kind:'over'};
+}
 function sanitizeBackendMatches_(rows){
   const seen=new Map();
   return rows.map(r=>{
     const x=Object.assign({},r);
+    const derivedM2=derivedTargetM2_(x); if(!num(x.target_m2)&&derivedM2>0)x.target_m2=Number(derivedM2.toFixed(3));
     const targetUnit=normalizeTargetUnit_(x.target_unit||(num(x.target_m2)>0?'M2':'R'))||'R';
     const target=targetUnit==='M2'?num(x.target_m2||x.target_qty):num(x.target_roll||x.target_qty);
     let actual=num(x.keyin_qty||x.actual_qty||x.erp_actual_qty||0);
@@ -847,10 +863,11 @@ function sanitizeBackendMatches_(rows){
       x.keyin_qty=actual;
       x.keyin_unit=targetUnit==='M2'?'㎡':'R';
       if(!result.valid){
-        x.completion_rate='—';x.completion_pct='—';x.work_status='資料待確認';
+        x.completion_rate='—';x.completion_pct='—';x.work_status='等待確認單位';x.variance_text='等待確認';x.variance_kind='wait';
         x.file_match_status=(x.file_match_status?normalizeMatchStatusText_(x.file_match_status)+'｜':'')+result.reason+'，未計算完成率';
       }else{
         x.completion_rate=result.rate;x.completion_pct=result.rate;
+        const vi=varianceInfo_(target,actual,targetUnit,true);x.variance_qty=vi.qty;x.variance_text=vi.text;x.variance_kind=vi.kind;
         x.work_status=actual>=target?'已完成':'作業中';
       }
     }
@@ -872,6 +889,7 @@ function erpRowsRelated_(targetRow,erpRow){
 }
 function buildClientMatches(){
   MATCH_ROWS=TARGETS.map(t=>{
+    const derivedM2=derivedTargetM2_(t); if(!num(t.target_m2)&&derivedM2>0)t.target_m2=Number(derivedM2.toFixed(3));
     const targetUnit=normalizeTargetUnit_(t.target_unit||(num(t.target_m2)?'M2':'R'));
     const keyinRelated=KEYIN_ROWS.filter(k=>rowsRelated_(t,k));
     const keyinUnitRows=keyinRelated.filter(k=>keyInQtyByUnit_(k,targetUnit)>0);
@@ -890,9 +908,10 @@ function buildClientMatches(){
     const completionResult=adoptedQty>0?safeCompletion_(target,adoptedQty,targetUnit,actualUnit):{rate:'',valid:true,reason:''};
     const completion=completionResult.rate;
     const overQty=(completionResult.valid&&target>0&&adoptedQty>target)?adoptedQty-target:0;
+    const variance=varianceInfo_(target,adoptedQty,targetUnit,completionResult.valid&&adoptedQty>0);
 
     let workStatus='未作業';
-    if(adoptedQty>0&&!completionResult.valid)workStatus='資料待確認';
+    if(adoptedQty>0&&!completionResult.valid)workStatus='等待確認單位';
     else if(adoptedQty>0&&target>0)workStatus=adoptedQty>=target?(overQty>0?'已完成（超產）':'已完成'):'作業中';
     else if(adoptedQty>0)workStatus='作業中';
 
@@ -921,7 +940,8 @@ function buildClientMatches(){
       file_match_status:matchText,
       work_status:workStatus,
       completion_rate:(erpTaken||keyinRelated.length)?completion:'',
-      completion_pct:(erpTaken||keyinRelated.length)?completion:''
+      completion_pct:(erpTaken||keyinRelated.length)?completion:'',
+      variance_qty:variance.qty,variance_text:(erpTaken||keyinRelated.length)?variance.text:'',variance_kind:variance.kind
     });
   });
   renderTargets();updateKpi();
@@ -985,21 +1005,23 @@ async function recalculateMatches(force=true){
     if(btn){btn.disabled=false;btn.textContent='重新計算配對'}
   }
 }
-function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已更新'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('資料待確認')||v.includes('單位待確認')||v.includes('等待 ERP 更新'))return 'status-run';return 'status-wait'}
+function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已更新'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('資料待確認')||v.includes('等待確認單位')||v.includes('單位待確認')||v.includes('等待 ERP 更新'))return 'status-run';return 'status-wait'}
 function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待同日 Key In / ERP 實績',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
 function renderTargets(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';return}
   const heads=[
-    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):((r[h[0]]===undefined||r[h[0]]===null)?'':r[h[0]]);
     if(h[0]==='report_date')v=dateKey(v);
+    if(h[0]==='target_m2'&&!num(v))v=derivedTargetM2_(r);
     if(h[0]==='target_roll'||h[0]==='target_m2')v=(v===''?'':Number(num(v).toFixed(3)).toLocaleString());
     if(h[0]==='keyin_qty' && v!=='' && r.keyin_unit)v=Number(num(v).toFixed(3)).toLocaleString()+' '+r.keyin_unit;
     if(h[0]==='completion_rate')v=(v===''?'':(v==='—'?'—':Number(num(v).toFixed(1))+'%'));
     if(h[0]==='file_match_status'||h[0]==='work_status')return '<td class="'+statusClass(v)+'">'+esc(v)+'</td>';
+    if(h[0]==='variance_text'){const c=r.variance_kind==='over'?'variance-over':(r.variance_kind==='gap'?'variance-gap':'variance-wait');return '<td class="'+c+'">'+esc(v)+'</td>';}
     return '<td>'+esc(v)+'</td>';
   }).join('')+'</tr>').join('')+'</tbody></table></div>'
 }
@@ -1007,9 +1029,10 @@ function updateKpi(){
   const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
   $('kpiTargets').textContent=TARGETS.length.toLocaleString();
   $('kpiRoll').textContent=TARGETS.reduce((a,r)=>a+num(r.target_roll),0).toLocaleString();
-  $('kpiM2').textContent=TARGETS.reduce((a,r)=>a+num(r.target_m2),0).toLocaleString();
+  $('kpiM2').textContent=Number(TARGETS.reduce((a,r)=>a+derivedTargetM2_(r),0).toFixed(3)).toLocaleString();
   $('kpiOpen').textContent=rows.filter(r=>!String(r.work_status||r.status||'').includes('完成')&&!String(r.work_status||r.status||'').includes('เสร็จ')).length.toLocaleString();
-  const paired=rows.filter(r=>{const s=String(r.file_match_status||'');return !r.__duplicateBlocked && !String(r.work_status||'').includes('資料待確認') && (s.includes('已配對')||s.includes('ERP 已更新'))}).length;
+  // 配對率以「已找到 ERP 或 Key In 實績來源」計算；單位待確認仍屬已配對，不應被當成未配對。
+  const paired=rows.filter(r=>{const s=String(r.file_match_status||''),src=String(r.actual_source||r.data_source||'').toUpperCase();return src==='ERP'||src==='KEY IN'||s.includes('ERP 已更新')||s.includes('已配對')}).length;
   $('kpiPair').textContent=rows.length?Math.round(paired/rows.length*100)+'%':'0%';
 }
 
