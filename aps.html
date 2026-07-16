@@ -6811,4 +6811,131 @@ Build 0080｜V90.0 AI 多機台決策面板
 })();
 </script>
 
+
+<!-- Build 0081｜資料串接索引＋載入／搜尋效能穩定化 -->
+<style id="build0081-performance-style">
+#poolCount[data-limited="1"]{color:#f7bd55}
+.aps-perf-note{font-size:11px;color:#8fa3af;margin-left:8px}
+</style>
+<script id="build0081-data-performance-core">
+(function(){
+  "use strict";
+  const BUILD="0081";
+  const MAX_RENDER_ROWS=300;
+  const SEARCH_DELAY=320;
+  const text=v=>String(v==null?"":v).trim();
+  const norm=v=>text(v).toUpperCase().replace(/[\s\-_/\\.]+/g,"");
+  const esc=v=>text(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const fmt=(v,d=2)=>{const n=Number(v);return Number.isFinite(n)&&n!==0?n.toLocaleString("zh-TW",{maximumFractionDigits:d}):"—"};
+  const debounce=(fn,ms=SEARCH_DELAY)=>{let t=0;return function(...args){clearTimeout(t);t=setTimeout(()=>fn.apply(this,args),ms)}};
+
+  const state={poolRef:null,poolLength:-1,index:null,hay:new WeakMap(),syncPromises:new Map(),lastSync:new Map()};
+  const aliases={
+    wo:["wo","work_order_no","workOrder","command_no","commandNo","工單","工單號","單號","命令單號"],
+    order:["order","order_no","sales_order_no","訂單","訂單單號"],
+    report:["report_no","report","daily_report_no","日報號","部門日報號"],
+    batch:["batch","batch_no","production_batch_no","生產批號","批號"],
+    part:["part","part_no","output_part_no","input_part_no","料號","產出料號","投入料號"],
+    lot:["output_lot_no","input_lot_no","lot_no","製號","產出製號","投入製號"],
+    machine:["machine","machine_code","sourceMachine","機台","機台編號"]
+  };
+  function first(row,keys){for(const k of keys){const v=row?.[k];if(v!==undefined&&v!==null&&text(v)!=="")return v}return ""}
+  function add(map,key,row){key=norm(key);if(!key)return;let a=map.get(key);if(!a)map.set(key,a=[]);if(!a.includes(row))a.push(row)}
+  function buildIndex(force=false){
+    const pool=Array.isArray(window.S?.pool)?window.S.pool:[];
+    if(!force&&state.poolRef===pool&&state.poolLength===pool.length&&state.index)return state.index;
+    const idx={wo:new Map(),order:new Map(),report:new Map(),batch:new Map(),part:new Map(),lot:new Map(),machine:new Map(),all:pool};
+    for(const r of pool){
+      Object.entries(aliases).forEach(([name,keys])=>add(idx[name],first(r,keys),r));
+      if(Array.isArray(r.aliases))r.aliases.forEach(v=>add(idx.wo,v,r));
+      state.hay.set(r,norm([
+        first(r,aliases.wo),first(r,aliases.order),first(r,aliases.report),first(r,aliases.batch),
+        first(r,aliases.part),first(r,aliases.lot),first(r,aliases.machine),r.customer,r.name,r.spec,r.process,r.status,
+        ...(Array.isArray(r.aliases)?r.aliases:[])
+      ].join("|")));
+    }
+    state.poolRef=pool;state.poolLength=pool.length;state.index=idx;
+    return idx;
+  }
+  function lookup(value,type="auto"){
+    const key=norm(value);if(!key)return [];
+    const idx=buildIndex();
+    if(type!=="auto"&&idx[type])return (idx[type].get(key)||[]).slice();
+    const result=[];const seen=new Set();
+    for(const name of ["wo","order","report","batch","part","lot","machine"]){
+      for(const r of idx[name].get(key)||[]){if(!seen.has(r)){seen.add(r);result.push(r)}}
+    }
+    return result;
+  }
+  function getFilteredPool(){
+    const pool=buildIndex().all;
+    const ep=window.EP||{};
+    const q=norm(document.getElementById("poolSearch")?.value||ep.poolSearch||"");
+    const machine=ep.poolMachine||"all",status=ep.poolStatus||"all";
+    const exact=q?lookup(q):null;
+    const exactSet=exact?.length?new Set(exact):null;
+    return pool.filter(x=>{
+      if(q&&!(exactSet?.has(x))&&!state.hay.get(x)?.includes(q))return false;
+      if(machine!=="all"&&text(x.machine)!==text(machine))return false;
+      if(status==="open"&&x.closed)return false;
+      if(status==="closed"&&!x.closed)return false;
+      if(status==="urgent"&&!x.urgent)return false;
+      if(status==="risk"&&!x.risk)return false;
+      if(status==="missing"){
+        const mt=text(x.match);
+        if(x.closed||((x.ready&&Number(x.minutes)>0)&&mt&&!/無產速|缺少產速|參數不足/.test(mt)))return false;
+      }
+      return true;
+    });
+  }
+  function renderPoolFast(){
+    const box=document.getElementById("poolTable"),count=document.getElementById("poolCount");if(!box)return;
+    const all=buildIndex().all;
+    if(!all.length){box.className="empty";box.textContent="沒有工單資料";if(count)count.textContent="";return}
+    let data=getFilteredPool();const total=data.length,ep=window.EP||{},key=ep.poolSort?.key||"priority",dir=ep.poolSort?.dir||1;
+    if(typeof window.poolValue==="function")data.sort((a,b)=>{const av=window.poolValue(a,key),bv=window.poolValue(b,key);return(av>bv?1:av<bv?-1:0)*dir});
+    data=data.slice(0,MAX_RENDER_ROWS);
+    if(count){count.dataset.limited=total>MAX_RENDER_ROWS?"1":"0";count.textContent=`顯示 ${data.length} / ${total} 筆${total>MAX_RENDER_ROWS?"（輸入條件可縮小範圍）":""}`}
+    const rows=data.map((x,idx)=>{
+      const mt=text(x.match),missing=!x.ready||!(Number(x.minutes)>0)||!mt||/無產速|缺少產速|參數不足/.test(mt);
+      const mode=missing?"待補產速":(x.apsMode||"ROUND");
+      const mc=missing?"red":mt==="現場回饋"?"purple":mt.includes("精確")?"green":"yellow";
+      const action=missing?`<button class="btn red" style="padding:5px 9px;font-size:12px" data-build0053-fill="${idx}" data-work-order="${esc(x.wo)}" data-part="${esc(x.part)}" data-name="${esc(x.name||x.spec)}" data-machine="${esc(x.machine||x.sourceMachine)}" data-process="${esc(x.process)}" data-remaining="${esc(x.remaining)}">補產速</button>`:`<span class="tag green">正常</span>`;
+      return `<tr class="${x.closed?"closed-row":""}"><td><span class="tag ${x.closed?"gray":x.urgent?"red":x.risk?"yellow":"blue"}">${x.closed?"已結案":x.urgent?"急單":x.risk?"風險":"一般"}</span></td><td>${esc(x.wo)}</td><td>${esc(x.part)}</td><td>${esc(x.machine||"—")}</td><td>${fmt(x.remaining)}</td><td>${esc(x.unit||"")}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString("zh-TW"):"—"}</td><td>${fmt(x.qtyPerRound||x.perRound,3)}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+"m":"—"}</td><td><span class="tag ${missing?"red":"blue"}">${esc(mode)}</span></td><td>${fmt(x.setupMinutes,1)==="—"?"0m":fmt(x.setupMinutes,1)+"m"}</td><td>${fmt(x.firstArticleMinutes,1)==="—"?"0m":fmt(x.firstArticleMinutes,1)+"m"}</td><td>${x.pureMinutes||x.productionMinutes?Math.ceil(x.pureMinutes||x.productionMinutes)+"m":"—"}</td><td>${fmt(x.cleanupMinutes,1)==="—"?"0m":fmt(x.cleanupMinutes,1)+"m"}</td><td><b>${x.minutes?Math.ceil(x.minutes)+"m":"—"}</b></td><td><span class="tag ${mc}">${esc(missing?"缺少產速":mt)}</span></td><td>${action}</td></tr>`;
+    }).join("");
+    box.className="";box.innerHTML=`<div class="tablewrap"><table><thead><tr><th>優先</th><th>工單</th><th>料號</th><th>機台</th><th>剩餘量</th><th>單位</th><th>所需回數</th><th>單回產量</th><th>單回時間</th><th>APS模式</th><th>準備／換料</th><th>首件</th><th>純生產</th><th>收尾</th><th>總占用</th><th>產速來源</th><th>處理</th></tr></thead><tbody>${rows||'<tr><td colspan="17">沒有符合篩選的工單</td></tr>'}</tbody></table></div>`;
+  }
+  function installDebouncedPoolSearch(){
+    const old=document.getElementById("poolSearch");if(!old||old.dataset.perf0081)return;
+    const input=old.cloneNode(true);input.value=old.value;input.dataset.perf0081="1";old.replaceWith(input);
+    input.addEventListener("input",debounce(()=>{if(window.EP)window.EP.poolSearch=input.value;renderPoolFast()},SEARCH_DELAY));
+    input.addEventListener("keydown",e=>{if(e.key==="Enter"){if(window.EP)window.EP.poolSearch=input.value;renderPoolFast()}});
+  }
+  function wrapSync(owner,name,key){
+    const obj=owner?.();if(!obj||typeof obj[name]!=="function"||obj[name].__perf0081)return;
+    const original=obj[name].bind(obj);
+    const wrapped=function(...args){
+      const now=Date.now(),last=state.lastSync.get(key)||0;
+      if(state.syncPromises.has(key))return state.syncPromises.get(key);
+      if(now-last<12000&&args[0]!==true){window.log?.(`${BUILD}：略過重複 ${key} 載入`);return Promise.resolve(window.S?.pool||[])}
+      let p;try{p=Promise.resolve(original(...args))}catch(e){p=Promise.reject(e)}
+      state.syncPromises.set(key,p);return p.finally(()=>{state.syncPromises.delete(key);state.lastSync.set(key,Date.now());buildIndex(true);renderPoolFast()});
+    };wrapped.__perf0081=true;obj[name]=wrapped;
+  }
+  function install(){
+    window.renderPool=renderPoolFast;
+    installDebouncedPoolSearch();
+    wrapSync(()=>window.Build0051APSSpeedEngine,"sync","DataHub＋產速");
+    wrapSync(()=>window.Build0050APSDataHub,"sync","DataHub工單池");
+    buildIndex(true);
+    document.title="SEAL KING Smart APS｜Build 0081 Data Link Fast";
+    document.querySelectorAll(".header-time small,.version").forEach(el=>{if(/Build\s*00\d+|Enterprise Preview/i.test(text(el.textContent)))el.textContent="Enterprise Preview 2｜Build 0081"});
+    window.log?.("Build 0081：資料索引、搜尋延遲與重複載入防護已啟用");
+  }
+  window.APSDataIndex={rebuild:()=>buildIndex(true),lookup,byWorkOrder:v=>lookup(v,"wo"),byOrder:v=>lookup(v,"order"),byReport:v=>lookup(v,"report"),byBatch:v=>lookup(v,"batch"),byPart:v=>lookup(v,"part"),state};
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,2200));
+  setTimeout(install,4200);
+})();
+</script>
+
 </body></html>
