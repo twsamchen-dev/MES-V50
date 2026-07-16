@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V93.7 MES 生產 Key In｜Ultra Cache Priority｜Build 0093</title>
+<title>V93.8 MES 生產 Key In｜DOM Turbo｜Build 0094</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.7 Ultra Cache Priority｜Build 0093</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.8 DOM Turbo｜Build 0094</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V93.7 Build 0093｜Key In Ultra Cache Priority
+// V93.8 Build 0094｜Key In DOM Turbo
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -175,13 +175,13 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V93.7',build:'0093',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V93.8',build:'0094',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     persistent_hits:KEYIN_SHARED_LOOKUP.persistentHits,alias_hits:KEYIN_SHARED_LOOKUP.aliasHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
     last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
     last_source:KEYIN_SHARED_LOOKUP.lastSource,cache_size:KEYIN_SHARED_LOOKUP.cache.size,
-    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,priority_enabled:true,last_error:KEYIN_SHARED_LOOKUP.lastError
+    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,priority_enabled:true,dom_turbo:true,last_error:KEYIN_SHARED_LOOKUP.lastError
   };
   console.table(status);return status;
 }
@@ -648,57 +648,168 @@ function applyHistoricalSpeed(){
   if(hint)hint.textContent='✓ 已自動帶出（'+level.name+'，'+sample.length+' 筆'+(approved.length?'，課長已確認':'')+'）：一回 '+Number(q.toFixed(2))+' '+(unit.toUpperCase()==='PCS'?'片':'卷')+'，中位數 '+Number(min.toFixed(2))+' 分鐘；約 '+uph.toFixed(1)+'/小時，可信度 '+confidence+'% / ระบบกรอกข้อมูลเดิมให้อัตโนมัติ';
 }
 function lookupWO(){clearTimeout(__lookupTimer);__lookupTimer=setTimeout(()=>lookupWOAsync(),350)}
+async 
+let __lookupSeq=0;
+let __domFrame=0;
+function nextFrame_(){
+  return new Promise(resolve=>{
+    const raf=window.requestAnimationFrame||function(cb){return setTimeout(cb,0)};
+    raf(()=>resolve());
+  });
+}
+function resolveSiteIndex_(process){
+  const sel=qs('site');
+  if(!sel||!process)return -1;
+  for(let i=0;i<sel.options.length;i++){
+    const t=sel.options[i].textContent||sel.options[i].value;
+    if(t.includes(process)||process.includes(sel.options[i].value))return i;
+  }
+  return -1;
+}
+function buildOrderMessage_(r,matches){
+  return '<b>已帶入工單 / พบข้อมูลงานแล้ว</b><br>'
+    +'來源：'+html(r.source||'-')+'<br>'
+    +'命令單：'+html(r.command_no||r.work_order_no||'-')+'｜訂單：'+html(r.order_no||'-')+'｜日報：'+html(r.daily_report_no||'-')+'<br>'
+    +'客戶：'+html(r.customer||'-')+'｜料號：'+html(r.part_no||'-')+'<br>'
+    +'規格：'+html(r.product_spec||'-')+'<br>'
+    +'站點：'+html(r.process||'-')+'｜機台：'+html(r.machine_code||'-')
+    +(matches&&matches.length>1?'<br><b>此識別碼共對應 '+matches.length+' 筆資料，已優先帶入命令單；可繼續輸入完整工單縮小結果。</b>':'');
+}
+async function applyResolvedOrderDOM_(r,matches,seq){
+  if(seq!==__lookupSeq)return false;
+  const displayNo=r.command_no||r.work_order_no||r.order_no||safeGet('work_order_no');
+  const batch=r.batch_no||r.daily_report_no||'';
+  const machine=r.machine_code||'';
+  const siteIndex=resolveSiteIndex_(r.process);
+  const message=buildOrderMessage_(r,matches);
+
+  if(__domFrame){
+    const caf=window.cancelAnimationFrame||clearTimeout;
+    try{caf(__domFrame)}catch(_){}
+  }
+
+  await new Promise(resolve=>{
+    const raf=window.requestAnimationFrame||function(cb){return setTimeout(cb,0)};
+    __domFrame=raf(()=>{
+      __domFrame=0;
+      if(seq!==__lookupSeq){resolve(false);return}
+      const woEl=qs('work_order_no');
+      const batchEl=qs('batch_no');
+      const machineEl=qs('machine_code');
+      const siteEl=qs('site');
+      const box=qs('woMsg');
+
+      if(woEl&&woEl.value!==(displayNo||woEl.value))woEl.value=displayNo||woEl.value;
+      if(batchEl&&batchEl.value!==batch)batchEl.value=batch;
+      if(machineEl&&machine&&machineEl.value!==machine)machineEl.value=machine;
+      if(siteEl&&siteIndex>=0&&siteEl.selectedIndex!==siteIndex)siteEl.selectedIndex=siteIndex;
+      if(box){
+        box.className='okbox';
+        box.innerHTML=message;
+      }
+      resolve(true);
+    });
+  });
+
+  if(seq!==__lookupSeq)return false;
+
+  // 非必要工作延後，不阻塞工單、批號、機台與畫面訊息顯示。
+  setTimeout(()=>{
+    if(seq!==__lookupSeq)return;
+    try{applyHistoricalSpeed()}catch(e){console.warn('Historical speed deferred error',e)}
+  },0);
+  setTimeout(()=>{
+    if(seq!==__lookupSeq)return;
+    const a=qs('actual_output');
+    if(a)a.focus({preventScroll:true});
+  },16);
+  return true;
+}
+
 async function lookupWOAsync(){
+  const seq=++__lookupSeq;
   const key=nrm(safeGet('work_order_no'));
   if(!key)return;
   const box=qs('woMsg');
 
-  // V93.7：Ultra Cache 絕對第一順位；命中時不掃 App.source、不呼叫任何 API。
+  // Ultra Cache 絕對第一順位；命中後不掃 App.source、不呼叫 API。
   const priorityRows=keyInPriorityCacheRows_(key);
   let matches=priorityRows.length?priorityRows:(App.source||[]).filter(x=>sourceMatch(x,key));
-  let r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0];
+  let r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)
+    ||matches.find(x=>nrm(x.order_no)===key)
+    ||matches[0];
+
   if(priorityRows.length){
-    box.className='okbox';
-    box.innerHTML='✓ Ultra Cache 命中，正在立即帶入資料...';
+    r=sourceObj(parseRawSourceToObj(r));
+    try{
+      keyInCachePut_(key,[r],'ultra-cache-priority');
+      const aliases=keyInCacheKeysFromRows_([r]);
+      if(aliases.some(a=>a!==key))KEYIN_SHARED_LOOKUP.aliasHits++;
+    }catch(_){}
+    await applyResolvedOrderDOM_(r,matches,seq);
+    return;
   }
 
-  // V92.4：本機未命中時優先查 Shared Data Engine，不再要求先下載全部工單。
-  if(!r && key.length>=6){
+  // 本機未命中時，查高速 Shared Index。
+  if(!r&&key.length>=6){
     try{
+      if(seq!==__lookupSeq)return;
       box.className='okbox';
-      box.innerHTML='正在查詢共用工單索引... / กำลังค้นหาดัชนีงานร่วม';
-      const sharedRows=await sharedLookupKeyIn_(key,msg=>{box.className='okbox';box.innerHTML=msg+' / กำลังค้นหา...'});
+      box.innerHTML='正在查詢高速共用索引... / กำลังค้นหาดัชนีงานร่วม';
+      const sharedRows=await sharedLookupKeyIn_(key,msg=>{
+        if(seq!==__lookupSeq)return;
+        box.className='okbox';
+        box.innerHTML=msg+' / กำลังค้นหา...';
+      });
+      if(seq!==__lookupSeq)return;
       if(sharedRows.length){
         sharedRows.forEach(x=>{
-          if(!(App.source||[]).some(y=>nrm(y.work_order_no||y.command_no)===nrm(x.work_order_no||x.command_no)&&nrm(y.order_no)===nrm(x.order_no))) App.source.push(x);
+          if(!(App.source||[]).some(y=>
+            nrm(y.work_order_no||y.command_no)===nrm(x.work_order_no||x.command_no)
+            &&nrm(y.order_no)===nrm(x.order_no)
+          ))App.source.push(x);
         });
         matches=sharedRows.filter(x=>sourceMatch(x,key));
-        r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0]||sharedRows[0];
+        r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)
+          ||matches.find(x=>nrm(x.order_no)===key)
+          ||matches[0]
+          ||sharedRows[0];
       }
-    }catch(e){console.warn('sharedlookup failed',e)}
+    }catch(e){
+      if(seq===__lookupSeq)console.warn('sharedlookup failed',e);
+    }
   }
 
-  // 舊 API 保留為備援，確保 Shared API 暫時異常時現場仍可查詢。
-  if(!r && key.length>=8){
+  // 舊 API 最後備援。
+  if(!r&&key.length>=8){
     try{
+      if(seq!==__lookupSeq)return;
       KEYIN_SHARED_LOOKUP.fallbacks++;
       box.className='okbox';
       box.innerHTML='共用索引未命中，改用原工單索引查詢...';
       const res=await withTimeout_(getApi('targetorderlist',{q:key,limit:20,_:Date.now()}),9000,'targetorderlist');
+      if(seq!==__lookupSeq)return;
       const rows=rowsOf(res).map(x=>sourceObj(parseRawSourceToObj(x)));
       if(rows.length){
         rows.forEach(x=>App.source.push(x));
         matches=rows.filter(x=>sourceMatch(x,key));
-        r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0]||rows[0];
+        r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)
+          ||matches.find(x=>nrm(x.order_no)===key)
+          ||matches[0]
+          ||rows[0];
       }
-    }catch(e){console.warn('targetorderlist fallback failed',e)}
+    }catch(e){
+      if(seq===__lookupSeq)console.warn('targetorderlist fallback failed',e);
+    }
   }
 
+  if(seq!==__lookupSeq)return;
   if(!r){
     box.className='alert';
     box.innerHTML='查無工單，請確認 ERP 資料已更新；也可按「讀取最新工單」載入完整清單。';
     return;
   }
+
   r=sourceObj(parseRawSourceToObj(r));
   try{
     keyInCachePut_(key,[r],'resolved-row');
@@ -706,29 +817,7 @@ async function lookupWOAsync(){
     if(aliases.some(a=>a!==key))KEYIN_SHARED_LOOKUP.aliasHits++;
   }catch(_){}
 
-  const displayNo = r.command_no || r.work_order_no || r.order_no || safeGet('work_order_no');
-  safeSet('work_order_no', displayNo || safeGet('work_order_no'));
-  safeSet('batch_no', r.batch_no || r.daily_report_no || '');
-  if(r.machine_code) safeSet('machine_code', r.machine_code);
-  if(r.process){
-    const sel=qs('site');
-    if(sel){
-      for(let i=0;i<sel.options.length;i++){
-        const t=sel.options[i].textContent||sel.options[i].value;
-        if(t.includes(r.process)||r.process.includes(sel.options[i].value)){sel.selectedIndex=i;break}
-      }
-    }
-  }
-  box.className='okbox';
-  box.innerHTML='<b>已帶入工單 / พบข้อมูลงานแล้ว</b><br>'
-    +'來源：'+html(r.source||'-')+'<br>'
-    +'命令單：'+html(r.command_no||r.work_order_no||'-')+'｜訂單：'+html(r.order_no||'-')+'｜日報：'+html(r.daily_report_no||'-')+'<br>'
-    +'客戶：'+html(r.customer||'-')+'｜料號：'+html(r.part_no||'-')+'<br>'
-    +'規格：'+html(r.product_spec||'-')+'<br>'
-    +'站點：'+html(r.process||'-')+'｜機台：'+html(r.machine_code||'-')
-    +(matches&&matches.length>1?'<br><b>此識別碼共對應 '+matches.length+' 筆資料，已優先帶入命令單；可繼續輸入完整工單縮小結果。</b>':'');
-  applyHistoricalSpeed();
-  setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},50)
+  await applyResolvedOrderDOM_(r,matches,seq);
 }
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
 function renderPlansHint(){const r=rangeObj();qs('planRangeText').textContent=r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';const list=currentPlans();qs('todayPlans').innerHTML=list.length?list.slice(0,20).map((p,i)=>{const o=sourceObj(p);const st=matchStatus(p);return '<div class="planItem" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' / '+(st.target?st.target.toLocaleString():'未設目標')+'</div></div></div></div>'}).join(''):'查無'+r.label+'幹部目標工單。'}
@@ -758,7 +847,7 @@ function exportCSV(){const headers=['created_at','report_date','week_no','site',
 document.addEventListener('DOMContentLoaded',()=>{
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V93.7 Build 0093 | Ultra Cache Priority ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V93.8 Build 0094 | DOM Turbo ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
