@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0085｜V92 Core Phase 1";
+  content:"APS Build 0090｜課長密碼權限穩定版";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -481,7 +481,7 @@ body::after{
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V92 Build 0085</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜Build 0090</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -521,7 +521,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0085</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0090</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -1384,10 +1384,12 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
    const k=x=>[norm(x.part),norm(x.machine),norm(x.process)].join('|');
    const editIndex=Number($('sfEditIndex').value);
    const isEditing=Number.isInteger(editIndex)&&editIndex>=0&&editIndex<arr.length;
-   if(isEditing && window.APSLeaderGuard && !window.APSLeaderGuard.require('修改並確認永久產速')){
-     msg.textContent='此功能僅限課長 11035 操作。';
-     msg.style.color='var(--red)';
-     return;
+   if(isEditing){
+     if(!window.APSLeaderGuard || !window.APSLeaderGuard.require('修改、重新計算並確認永久產速')){
+       msg.textContent='此功能僅限課長 11035 以工號＋密碼操作。';
+       msg.style.color='var(--red)';
+       return;
+     }
    }
    const idx=isEditing?editIndex:arr.findIndex(x=>k(x)===k({
      part,
@@ -1419,7 +1421,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
      row.is_standard=true;
      row.approved_by='11035 陳善祖';
      row.approved_at=new Date().toISOString();
-     row.approval_source='edit_save_recalculate';
+     row.approval_source='edit_save_recalculate_password';
+     row.last_action='課長修改後儲存並重新計算';
    }else if(row.is_standard===undefined){
      row.is_standard=false;
    }
@@ -7437,11 +7440,11 @@ Build 0080｜V90.0 AI 多機台決策面板
 </script>
 
 
-<script id="aps-build0089-leader-password">
+<script id="aps-build0090-leader-password">
 (()=>{
   'use strict';
 
-  const BUILD='0089';
+  const BUILD='0090';
   const LEADER_ID='11035';
   const LEADER_NAME='陳善祖';
   const SESSION_KEY='SK_APS_LEADER_AUTH_V2';
@@ -7674,7 +7677,7 @@ Build 0080｜V90.0 AI 多機台決策面板
   }
 
   const style=document.createElement('style');
-  style.id='apsLeaderPasswordStyle0089';
+  style.id='apsLeaderPasswordStyle0090';
   style.textContent=`
     [data-leader-protected="1"]{position:relative}
     [data-leader-protected="1"]::after{content:"🔒";font-size:10px;margin-left:5px;opacity:.82}
@@ -7732,6 +7735,12 @@ Build 0080｜V90.0 AI 多機台決策面板
   };
 
   console.info('APS Build '+BUILD+'｜課長工號＋密碼保護 ready');
+  console.info('APS Build 0090 self-check',{
+    leader_password:true,
+    speed_auto_approve:true,
+    snapshot_guard:true,
+    clear_all_guard:true
+  });
 })();
 </script>
 
