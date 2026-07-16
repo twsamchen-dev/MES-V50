@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V82.6 MES 生產 Key In｜Unified Order Index</title>
+<title>V92.4 MES 生產 Key In｜Shared Lookup Phase 4｜Build 0088</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V82.6 Unified Order Index</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V92.4 Shared Lookup Phase 4｜Build 0088</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,6 +154,71 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
+// V92.4 Build 0088｜Key In Shared Lookup Phase 4
+const KEYIN_SHARED_LOOKUP={
+  enabled:true,
+  cache:new Map(),
+  ttlMs:5*60*1000,
+  queries:0,
+  cacheHits:0,
+  fallbacks:0,
+  lastQuery:'',
+  lastCount:0,
+  lastElapsedMs:0,
+  lastError:''
+};
+function KeyInSharedLookupStatus(){
+  const status={
+    version:'V92.4',build:'0088',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
+    fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
+    last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
+    cache_size:KEYIN_SHARED_LOOKUP.cache.size,last_error:KEYIN_SHARED_LOOKUP.lastError
+  };
+  console.table(status);return status;
+}
+function normalizeSharedKeyInRow_(r){
+  r=r||{};
+  return sourceObj({
+    source:r.source||'Shared Data Engine',
+    work_order_no:r.work_order_no||r.command_no||'',
+    command_no:r.command_no||r.work_order_no||'',
+    order_no:r.order_no||'',
+    daily_report_no:r.report_no||r.daily_report_no||'',
+    report_no:r.report_no||r.daily_report_no||'',
+    part_no:r.part_no||r.output_part_no||r.input_part_no||'',
+    input_part_no:r.input_part_no||'',output_part_no:r.output_part_no||'',
+    batch_no:r.batch_no||r.output_lot_no||r.input_lot_no||'',
+    input_lot_no:r.input_lot_no||'',output_lot_no:r.output_lot_no||'',
+    customer:r.customer||'',product_spec:r.product_spec||'',
+    process:r.process||'',machine_code:r.machine||r.machine_code||'',machine:r.machine||r.machine_code||'',
+    target_qty:r.target_qty||'',due_date:r.due_date||'',plan_date:r.plan_date||'',updated_at:r.updated_at||''
+  });
+}
+async function sharedLookupKeyIn_(query){
+  const q=nrm(query);if(!q||!KEYIN_SHARED_LOOKUP.enabled)return [];
+  const now=Date.now();const cached=KEYIN_SHARED_LOOKUP.cache.get(q);
+  if(cached&&now-cached.at<KEYIN_SHARED_LOOKUP.ttlMs){
+    KEYIN_SHARED_LOOKUP.cacheHits++;KEYIN_SHARED_LOOKUP.lastQuery=q;
+    KEYIN_SHARED_LOOKUP.lastCount=cached.rows.length;KEYIN_SHARED_LOOKUP.lastElapsedMs=0;
+    return cached.rows.map(x=>Object.assign({},x));
+  }
+  const started=performance.now();KEYIN_SHARED_LOOKUP.queries++;KEYIN_SHARED_LOOKUP.lastQuery=q;
+  try{
+    const res=await getApi('sharedlookup',{q:q,exact:1,limit:50});
+    const rows=rowsOf(res).map(normalizeSharedKeyInRow_).filter(x=>sourceMatch(x,q));
+    KEYIN_SHARED_LOOKUP.lastCount=rows.length;
+    KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
+    KEYIN_SHARED_LOOKUP.lastError='';
+    KEYIN_SHARED_LOOKUP.cache.set(q,{at:now,rows:rows});
+    return rows;
+  }catch(err){
+    KEYIN_SHARED_LOOKUP.fallbacks++;KEYIN_SHARED_LOOKUP.lastError=String(err&&err.message||err);
+    KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
+    console.warn('Key In sharedlookup fallback',err);return [];
+  }
+}
+
 const LS_PROFILE='MES_KEYIN_FAST_PROFILE_V70';
 const LS_RECENT='MES_KEYIN_RECENT_V70';
 function rowsOf(r){if(Array.isArray(r))return r;if(Array.isArray(r?.rows))return r.rows;if(Array.isArray(r?.data))return r.data;if(Array.isArray(r?.list))return r.list;if(Array.isArray(r?.items))return r.items;return []}
@@ -385,32 +450,44 @@ async function lookupWOAsync(){
   const key=nrm(safeGet('work_order_no'));
   if(!key)return;
   const box=qs('woMsg');
-  if(!App.source.length){
-    box.className='alert';
-    box.innerHTML='工單資料尚未載入。請先按「讀取最新工單」。';
-    return;
-  }
-  let matches=App.source.filter(x=>sourceMatch(x,key));
+  let matches=(App.source||[]).filter(x=>sourceMatch(x,key));
   let r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0];
 
-  if(!r && key.length>=8){
+  // V92.4：本機未命中時優先查 Shared Data Engine，不再要求先下載全部工單。
+  if(!r && key.length>=6){
     try{
       box.className='okbox';
-      box.innerHTML='查詢雲端工單中...';
+      box.innerHTML='正在查詢共用工單索引... / กำลังค้นหาดัชนีงานร่วม';
+      const sharedRows=await sharedLookupKeyIn_(key);
+      if(sharedRows.length){
+        sharedRows.forEach(x=>{
+          if(!(App.source||[]).some(y=>nrm(y.work_order_no||y.command_no)===nrm(x.work_order_no||x.command_no)&&nrm(y.order_no)===nrm(x.order_no))) App.source.push(x);
+        });
+        matches=sharedRows.filter(x=>sourceMatch(x,key));
+        r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0]||sharedRows[0];
+      }
+    }catch(e){console.warn('sharedlookup failed',e)}
+  }
+
+  // 舊 API 保留為備援，確保 Shared API 暫時異常時現場仍可查詢。
+  if(!r && key.length>=8){
+    try{
+      KEYIN_SHARED_LOOKUP.fallbacks++;
+      box.className='okbox';
+      box.innerHTML='共用索引未命中，改用原工單索引查詢...';
       const res=await getApi('targetorderlist',{q:key,limit:20});
       const rows=rowsOf(res).map(x=>sourceObj(parseRawSourceToObj(x)));
       if(rows.length){
         rows.forEach(x=>App.source.push(x));
-        matches=rows.filter(x=>sourceMatch(x,key));r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0]||rows[0];
+        matches=rows.filter(x=>sourceMatch(x,key));
+        r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0]||rows[0];
       }
-    }catch(e){
-      console.warn('targetorderlist fallback failed',e);
-    }
+    }catch(e){console.warn('targetorderlist fallback failed',e)}
   }
 
   if(!r){
     box.className='alert';
-    box.innerHTML='查無工單，請確認是否已上傳每日資料。';
+    box.innerHTML='查無工單，請確認 ERP 資料已更新；也可按「讀取最新工單」載入完整清單。';
     return;
   }
   r=sourceObj(parseRawSourceToObj(r));
@@ -463,7 +540,10 @@ const data={site:safeGet('site'),report_date:safeGet('report_date'),work_order_n
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
 function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
-document.addEventListener('DOMContentLoaded',()=>{safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup()});
+document.addEventListener('DOMContentLoaded',()=>{
+  safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
+  console.log('SEAL KING Smart Key In V92.4 Build 0088 | Shared Lookup Phase 4 ready',KeyInSharedLookupStatus());
+});
 </script>
 </body>
 </html>
