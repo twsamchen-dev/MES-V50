@@ -7437,15 +7437,73 @@ Build 0080｜V90.0 AI 多機台決策面板
 </script>
 
 
-<script id="aps-build0088-leader-permission">
+<script id="aps-build0089-leader-password">
 (()=>{
   'use strict';
 
-  const BUILD='0088';
+  const BUILD='0089';
   const LEADER_ID='11035';
   const LEADER_NAME='陳善祖';
-  const SESSION_KEY='SK_APS_LEADER_AUTH_V1';
+  const SESSION_KEY='SK_APS_LEADER_AUTH_V2';
+  const PASSWORD_KEY='SK_APS_LEADER_PASSWORD_HASH_V1';
   const SESSION_MINUTES=30;
+  let bypassOnce=false;
+
+  // 純前端同步 SHA-256；只保存雜湊，不保存明文密碼。
+  function sha256(ascii){
+    function rightRotate(value,amount){return (value>>>amount)|(value<<(32-amount))}
+    const mathPow=Math.pow,maxWord=mathPow(2,32),lengthProperty='length';
+    let i,j,result='',words=[],asciiBitLength=ascii[lengthProperty]*8;
+    let hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],primeCounter=k[lengthProperty];
+    const isComposite={};
+    for(let candidate=2;primeCounter<64;candidate++){
+      if(!isComposite[candidate]){
+        for(i=0;i<313;i+=candidate)isComposite[i]=candidate;
+        hash[primeCounter]=(mathPow(candidate,.5)*maxWord)|0;
+        k[primeCounter++]=(mathPow(candidate,1/3)*maxWord)|0;
+      }
+    }
+    ascii+='\x80';
+    while(ascii[lengthProperty]%64-56)ascii+='\x00';
+    for(i=0;i<ascii[lengthProperty];i++){
+      j=ascii.charCodeAt(i);
+      if(j>>8)return '';
+      words[i>>2]|=j<<((3-i)%4)*8;
+    }
+    words[words[lengthProperty]]=((asciiBitLength/maxWord)|0);
+    words[words[lengthProperty]]=asciiBitLength;
+    for(j=0;j<words[lengthProperty];){
+      const w=words.slice(j,j+=16),oldHash=hash;
+      hash=hash.slice(0,8);
+      for(i=0;i<64;i++){
+        const w15=w[i-15],w2=w[i-2];
+        const a=hash[0],e=hash[4];
+        const temp1=hash[7]
+          +(rightRotate(e,6)^rightRotate(e,11)^rightRotate(e,25))
+          +((e&hash[5])^((~e)&hash[6]))
+          +k[i]
+          +(w[i]=(i<16)?w[i]:(
+            w[i-16]
+            +(rightRotate(w15,7)^rightRotate(w15,18)^(w15>>>3))
+            +w[i-7]
+            +(rightRotate(w2,17)^rightRotate(w2,19)^(w2>>>10))
+          )|0);
+        const temp2=(rightRotate(a,2)^rightRotate(a,13)^rightRotate(a,22))
+          +((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+        hash=[(temp1+temp2)|0].concat(hash);
+        hash[4]=(hash[4]+temp1)|0;
+        hash.pop();
+      }
+      for(i=0;i<8;i++)hash[i]=(hash[i]+oldHash[i])|0;
+    }
+    for(i=0;i<8;i++){
+      for(j=3;j+1;j--){
+        const b=(hash[i]>>(j*8))&255;
+        result+=((b<16)?'0':'')+b.toString(16);
+      }
+    }
+    return result;
+  }
 
   function now(){return Date.now()}
   function readSession(){
@@ -7465,8 +7523,42 @@ Build 0080｜V90.0 AI 多機台決策面板
     sessionStorage.removeItem(SESSION_KEY);
     applyVisualState();
   }
+  function getPasswordHash(){
+    return localStorage.getItem(PASSWORD_KEY)||'';
+  }
+  function setupPassword(){
+    const p1=prompt(
+      '【首次設定課長密碼】\n'+
+      '課長工號：'+LEADER_ID+'\n'+
+      '請設定至少 6 碼的新密碼：'
+    );
+    if(p1===null)return false;
+    if(String(p1).length<6){
+      alert('密碼至少需要 6 碼。');
+      return false;
+    }
+    const p2=prompt('請再次輸入新密碼：');
+    if(p2===null||p1!==p2){
+      alert('兩次密碼不一致，設定已取消。');
+      return false;
+    }
+    localStorage.setItem(PASSWORD_KEY,sha256(LEADER_ID+'|'+p1));
+    alert('課長密碼設定完成。請妥善保存密碼。');
+    return true;
+  }
+  function verifyPassword(password){
+    const stored=getPasswordHash();
+    return !!stored&&stored===sha256(LEADER_ID+'|'+String(password||''));
+  }
   function requireLeader(action){
     if(readSession())return true;
+
+    let stored=getPasswordHash();
+    if(!stored){
+      if(!setupPassword())return false;
+      stored=getPasswordHash();
+    }
+
     const id=prompt(
       '【課長權限驗證】\n'+
       (action?('操作：'+action+'\n'):'')+
@@ -7474,11 +7566,31 @@ Build 0080｜V90.0 AI 多機台決策面板
     );
     if(id===null)return false;
     if(String(id).trim()!==LEADER_ID){
-      alert('權限不足：此功能僅限課長 11035 操作。');
+      alert('權限不足：工號錯誤。');
       return false;
     }
+
+    const password=prompt('請輸入課長密碼：');
+    if(password===null)return false;
+    if(!verifyPassword(password)){
+      alert('課長密碼錯誤，操作已取消。');
+      return false;
+    }
+
     writeSession();
     try{window.log?.('課長權限已解鎖：'+LEADER_ID+' '+LEADER_NAME+'（本分頁 '+SESSION_MINUTES+' 分鐘）')}catch(_){}
+    return true;
+  }
+  function changePassword(){
+    if(!requireLeader('變更課長密碼'))return false;
+    const p1=prompt('請輸入至少 6 碼的新密碼：');
+    if(p1===null)return false;
+    if(String(p1).length<6){alert('密碼至少需要 6 碼。');return false}
+    const p2=prompt('請再次輸入新密碼：');
+    if(p2===null||p1!==p2){alert('兩次密碼不一致。');return false}
+    localStorage.setItem(PASSWORD_KEY,sha256(LEADER_ID+'|'+p1));
+    clearSession();
+    alert('課長密碼已更新，請重新登入。');
     return true;
   }
 
@@ -7490,7 +7602,6 @@ Build 0080｜V90.0 AI 多機台決策面板
     );
     return value!==null&&String(value).trim()===phrase;
   }
-
   function editingExistingSpeed(){
     const e=document.getElementById('sfEditIndex');
     return !!(e&&String(e.value).trim()!=='');
@@ -7506,6 +7617,7 @@ Build 0080｜V90.0 AI 多機台決策面板
   ].join(',');
 
   document.addEventListener('click',event=>{
+    if(bypassOnce){bypassOnce=false;return}
     const target=event.target.closest?.(protectedSelector+',#saveSpeedFeedback');
     if(!target)return;
 
@@ -7517,7 +7629,7 @@ Build 0080｜V90.0 AI 多機台決策面板
     else if(target.id==='sysClearSnapshots') action='清除工單池／排程快照';
     else if(target.id==='sysClearAllStorage') action='清除全部 APS 永久資料';
     else if(target.id==='saveSpeedFeedback'&&editingExistingSpeed()) action='儲存、重新計算並確認永久產速';
-    else return; // 新增現場學習資料仍可由現場填寫。
+    else return;
 
     if(!requireLeader(action)){
       event.preventDefault();
@@ -7526,15 +7638,12 @@ Build 0080｜V90.0 AI 多機台決策面板
     }
 
     if(target.id==='sysClearSnapshots'&&!exactConfirm('清除工單池／排程快照','CLEAR SNAPSHOT')){
-      event.preventDefault();
-      event.stopImmediatePropagation();
+      event.preventDefault();event.stopImmediatePropagation();
       alert('確認文字不正確，已取消清除。');
       return;
     }
-
     if(target.id==='sysClearAllStorage'&&!exactConfirm('清除全部 APS 永久資料','DELETE APS')){
-      event.preventDefault();
-      event.stopImmediatePropagation();
+      event.preventDefault();event.stopImmediatePropagation();
       alert('確認文字不正確，已取消清除。');
       return;
     }
@@ -7543,39 +7652,37 @@ Build 0080｜V90.0 AI 多機台決策面板
   function decorate(el,label){
     if(!el)return;
     el.dataset.leaderProtected='1';
-    if(!el.dataset.originalTitle)el.dataset.originalTitle=el.title||'';
-    el.title='🔒 課長 11035 專屬｜'+label;
+    el.title='🔒 課長工號＋密碼專屬｜'+label;
   }
-
   function applyVisualState(){
     const unlocked=!!readSession();
     document.documentElement.classList.toggle('aps-leader-unlocked',unlocked);
-
     decorate(document.getElementById('sysSaveSnapshot'),'保存工單池／排程快照');
     decorate(document.getElementById('sysClearSnapshots'),'清除工單池／排程快照');
     decorate(document.getElementById('sysClearAllStorage'),'清除全部 APS 永久資料');
-
     document.querySelectorAll('[data-speed-approve]').forEach(e=>decorate(e,'確認標準產速'));
     document.querySelectorAll('[data-edit-feedback]').forEach(e=>decorate(e,'修改永久產速'));
     document.querySelectorAll('[data-delete-feedback]').forEach(e=>decorate(e,'刪除永久產速'));
-
     const save=document.getElementById('saveSpeedFeedback');
     if(save&&editingExistingSpeed())decorate(save,'儲存、重新計算並確認');
+    const note=document.getElementById('apsLeaderAuthNote');
+    if(note){
+      note.textContent=unlocked
+        ?'🔓 課長模式已解鎖（30 分鐘）'
+        :'🔒 高風險操作需課長工號＋密碼';
+    }
   }
 
   const style=document.createElement('style');
-  style.id='apsLeaderPermissionStyle0088';
+  style.id='apsLeaderPasswordStyle0089';
   style.textContent=`
     [data-leader-protected="1"]{position:relative}
-    [data-leader-protected="1"]::after{
-      content:"🔒";font-size:10px;margin-left:5px;opacity:.82
-    }
+    [data-leader-protected="1"]::after{content:"🔒";font-size:10px;margin-left:5px;opacity:.82}
     .aps-leader-unlocked [data-leader-protected="1"]::after{content:"🔓"}
-    .aps-leader-auth-note{
-      display:inline-flex;align-items:center;gap:7px;padding:6px 9px;
-      border:1px solid #3b4e5a;border-radius:7px;background:#0b151b;
-      color:#a9bbc5;font-size:11px;margin-left:8px
-    }
+    .aps-leader-auth-note{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;
+      border:1px solid #3b4e5a;border-radius:7px;background:#0b151b;color:#a9bbc5;
+      font-size:11px;margin-left:8px}
+    .aps-password-action{padding:6px 9px!important;font-size:11px!important}
   `;
   document.head.appendChild(style);
 
@@ -7590,8 +7697,21 @@ Build 0080｜V90.0 AI 多機台決策面板
       const note=document.createElement('span');
       note.id='apsLeaderAuthNote';
       note.className='aps-leader-auth-note';
-      note.textContent='🔒 高風險操作僅限課長 11035';
       host.prepend(note);
+
+      const change=document.createElement('button');
+      change.type='button';
+      change.className='btn ghost aps-password-action';
+      change.textContent='變更課長密碼';
+      change.onclick=changePassword;
+      host.appendChild(change);
+
+      const lock=document.createElement('button');
+      lock.type='button';
+      lock.className='btn ghost aps-password-action';
+      lock.textContent='鎖定課長模式';
+      lock.onclick=()=>{clearSession();alert('課長模式已鎖定。')};
+      host.appendChild(lock);
     }
   });
 
@@ -7600,10 +7720,18 @@ Build 0080｜V90.0 AI 多機台決策面板
     isAuthorized:()=>!!readSession(),
     lock:clearSession,
     unlock:()=>requireLeader('解鎖課長功能'),
+    changePassword,
+    resetPassword:()=>{
+      if(!confirm('確定要清除本機課長密碼設定？清除後需重新設定。'))return false;
+      localStorage.removeItem(PASSWORD_KEY);
+      clearSession();
+      alert('本機課長密碼設定已清除。');
+      return true;
+    },
     info:()=>readSession()
   };
 
-  console.info('APS Build '+BUILD+'｜課長權限與高風險清除保護 ready');
+  console.info('APS Build '+BUILD+'｜課長工號＋密碼保護 ready');
 })();
 </script>
 
