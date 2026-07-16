@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V93.8.1 MES 生產 Key In｜DOM Turbo Hotfix｜Build 0095</title>
+<title>V93.8.2 MES 生產 Key In｜DOM Turbo Line 651 Fix｜Build 0096</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.8.1 DOM Turbo Hotfix｜Build 0095</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.8.2 DOM Turbo Line 651 Fix｜Build 0096</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V93.8.1 Build 0095｜Key In DOM Turbo Hotfix
+// V93.8.2 Build 0096｜Key In DOM Turbo Line 651 Fix
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -175,7 +175,7 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V93.8.1',build:'0095',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V93.8.2',build:'0096',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     persistent_hits:KEYIN_SHARED_LOOKUP.persistentHits,alias_hits:KEYIN_SHARED_LOOKUP.aliasHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
@@ -648,7 +648,6 @@ function applyHistoricalSpeed(){
   if(hint)hint.textContent='✓ 已自動帶出（'+level.name+'，'+sample.length+' 筆'+(approved.length?'，課長已確認':'')+'）：一回 '+Number(q.toFixed(2))+' '+(unit.toUpperCase()==='PCS'?'片':'卷')+'，中位數 '+Number(min.toFixed(2))+' 分鐘；約 '+uph.toFixed(1)+'/小時，可信度 '+confidence+'% / ระบบกรอกข้อมูลเดิมให้อัตโนมัติ';
 }
 function lookupWO(){clearTimeout(__lookupTimer);__lookupTimer=setTimeout(()=>lookupWOAsync(),350)}
-async 
 let __lookupSeq=0;
 let __domFrame=0;
 function nextFrame_(){
@@ -847,7 +846,7 @@ function exportCSV(){const headers=['created_at','report_date','week_no','site',
 document.addEventListener('DOMContentLoaded',()=>{
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V93.8.1 Build 0095 | DOM Turbo Hotfix ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V93.8.2 Build 0096 | DOM Turbo Line 651 Fix ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
