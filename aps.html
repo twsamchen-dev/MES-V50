@@ -3222,6 +3222,9 @@ const MACHINE_CENTER_KEY = "SK_APS_MACHINE_CENTER_V1";
 const CLOUD = {
   loading: false,
   loaded: false,
+  bootstrapPromise: null,
+  bootstrapCount: 0,
+  lastBootstrapMs: 0,
   saving: new Set(),
   timers: {},
   meta: {},
@@ -3585,80 +3588,79 @@ async function saveAllCloud(silent=false){
   if(!silent) window.log?.("APS DataCenter：全部資料已保存至 Google Sheets");
 }
 
-async function bootstrapCloud(){
-  if(CLOUD.loading) return;
-  CLOUD.loading=true;
-  ensureCloudUI();
-  setCloudStatus("loading","正在載入","讀取 Google Sheets APS DataCenter");
+async function bootstrapCloud(force=false){
+  if(CLOUD.bootstrapPromise) return CLOUD.bootstrapPromise;
+  if(CLOUD.loaded&&!force) return {ok:true,cached:true,meta:CLOUD.meta};
 
-  try{
-    const res=await jsonp("apsbootstrap");
-    const state=window.S;
-    let loadedCount=0;
+  CLOUD.bootstrapCount+=1;
+  const started=performance.now();
+  CLOUD.bootstrapPromise=(async()=>{
+    CLOUD.loading=true;
+    ensureCloudUI();
+    setCloudStatus("loading","正在載入","讀取 Google Sheets APS DataCenter");
 
-    if(res.workpool?.length){
-      state.pool=revivePool(res.workpool);
-      loadedCount+=res.workpool.length;
-    }
-    if(res.schedule?.length){
-      state.schedule=reviveSchedule(res.schedule);
-      loadedCount+=res.schedule.length;
-    }
-    if(applyMachineRows(res.machine_master||res.machineMaster||[])){
-      loadedCount+=(res.machine_master||res.machineMaster||[]).length;
-    }
-    if(applySpeedRows(res.speed_master||res.speedMaster||[])){
-      loadedCount+=(res.speed_master||res.speedMaster||[]).length;
-    }
-    applySettingsRows(res.settings||[]);
-    applyManpowerRows(res.manpower||[]);
-    applyPreprocessRows(res.preprocess||res.preProcess||[]);
-
-    CLOUD.meta=res.meta||{};
-    CLOUD.loaded=true;
-    renderAfterCloudLoad();
-
-    /* Build 0061 V84.7 APS Core：
-       雲端資料成功載入後立即建立本機快照。
-       API 暫時逾時時仍可先顯示最近一次可用資料。 */
-    try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
-
-    if(loadedCount>0){
-      setCloudStatus(
-        "ok",
-        `已載入｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,
-        cloudMetaText(CLOUD.meta)
-      );
-      window.log?.(`APS DataCenter 已載入：工單池 ${state.pool.length} 筆、排程 ${state.schedule.length} 段`);
-    }else{
-      const localCount=(state.pool?.length||0)+(state.schedule?.length||0);
-      if(localCount>0){
-        setCloudStatus("warn","雲端空白","偵測到本機已有資料，正在建立第一份雲端資料");
-        await saveAllCloud(true);
-      }else{
-        setCloudStatus("warn","尚無資料","第一次使用請上傳 ERP 並建立工單池；完成後會自動保存");
-      }
-    }
-  }catch(err){
-    console.error("APS cloud bootstrap failed",err);
     try{
-      window.SKAPSSystem?.restoreSnapshots?.();
+      const res=await jsonp("apsbootstrap");
+      const state=window.S;
+      let loadedCount=0;
+
+      if(res.workpool?.length){
+        state.pool=revivePool(res.workpool);
+        loadedCount+=res.workpool.length;
+      }
+      if(res.schedule?.length){
+        state.schedule=reviveSchedule(res.schedule);
+        loadedCount+=res.schedule.length;
+      }
+      if(applyMachineRows(res.machine_master||res.machineMaster||[])){
+        loadedCount+=(res.machine_master||res.machineMaster||[]).length;
+      }
+      if(applySpeedRows(res.speed_master||res.speedMaster||[])){
+        loadedCount+=(res.speed_master||res.speedMaster||[]).length;
+      }
+      applySettingsRows(res.settings||[]);
+      applyManpowerRows(res.manpower||[]);
+      applyPreprocessRows(res.preprocess||res.preProcess||[]);
+
+      CLOUD.meta=res.meta||{};
+      CLOUD.loaded=true;
       renderAfterCloudLoad();
-    }catch(e){
-      console.warn("APS local fallback failed",e);
+
+      try{ window.SKAPSSystem?.saveSnapshots?.(true); }catch(e){ console.warn("APS snapshot save skipped",e); }
+
+      if(loadedCount>0){
+        setCloudStatus("ok",`已載入｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,cloudMetaText(CLOUD.meta));
+        window.log?.(`APS DataCenter 已載入：工單池 ${state.pool.length} 筆、排程 ${state.schedule.length} 段`);
+      }else{
+        const localCount=(state.pool?.length||0)+(state.schedule?.length||0);
+        if(localCount>0){
+          setCloudStatus("warn","雲端空白","偵測到本機已有資料，正在建立第一份雲端資料");
+          await saveAllCloud(true);
+        }else{
+          setCloudStatus("warn","尚無資料","第一次使用請上傳 ERP 並建立工單池；完成後會自動保存");
+        }
+      }
+      return {ok:true,cached:false,loadedCount,meta:CLOUD.meta};
+    }catch(err){
+      console.error("APS cloud bootstrap failed",err);
+      try{
+        window.SKAPSSystem?.restoreSnapshots?.();
+        renderAfterCloudLoad();
+      }catch(e){
+        console.warn("APS local fallback failed",e);
+      }
+      const localPool=window.S?.pool?.length||0;
+      const localSchedule=window.S?.schedule?.length||0;
+      setCloudStatus(localPool||localSchedule ? "warn" : "bad",localPool||localSchedule?`使用本機備援｜工單池 ${localPool}｜排程 ${localSchedule}`:"連線失敗",`${err.message}；已嘗試載入最近一次本機快照`);
+      return {ok:false,error:err,localPool,localSchedule};
+    }finally{
+      CLOUD.loading=false;
+      CLOUD.lastBootstrapMs=Math.round(performance.now()-started);
     }
-    const localPool=window.S?.pool?.length||0;
-    const localSchedule=window.S?.schedule?.length||0;
-    setCloudStatus(
-      localPool||localSchedule ? "warn" : "bad",
-      localPool||localSchedule
-        ? `使用本機備援｜工單池 ${localPool}｜排程 ${localSchedule}`
-        : "連線失敗",
-      `${err.message}；已嘗試載入最近一次本機快照`
-    );
-  }finally{
-    CLOUD.loading=false;
-  }
+  })();
+
+  try{return await CLOUD.bootstrapPromise;}
+  finally{CLOUD.bootstrapPromise=null;}
 }
 
 function wrapFunction(name,after){
@@ -3780,18 +3782,19 @@ function installHooks(){
   }
 }
 
-document.addEventListener("DOMContentLoaded",()=>{
+function startAPSCloudOnce(){
+  if(window.__APS_CLOUD_START_ONCE__) return;
+  window.__APS_CLOUD_START_ONCE__=true;
   ensureCloudUI();
-  setTimeout(()=>{
-    installHooks();
-    bootstrapCloud();
-  },850);
-});
-
-setTimeout(()=>{
   installHooks();
-  if(!CLOUD.loaded&&!CLOUD.loading) bootstrapCloud();
-},1800);
+  setTimeout(()=>bootstrapCloud(false),850);
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener("DOMContentLoaded",startAPSCloudOnce,{once:true});
+}else{
+  startAPSCloudOnce();
+}
 
 window.APSCloudDataCenter={
   bootstrap:bootstrapCloud,
@@ -7004,51 +7007,40 @@ Build 0080｜V90.0 AI 多機台決策面板
 </script>
 
 
-<script id="build0083-core-refactor-monitor">
+<script id="build0084-v92-stable-bootstrap-monitor">
 (()=>{
   'use strict';
-  if(window.__APS_BUILD_0083_INSTALLED__) return;
-  window.__APS_BUILD_0083_INSTALLED__=true;
-  window.APS_BUILD_LOCK='0083';
+  if(window.__APS_BUILD_0084_INSTALLED__) return;
+  window.__APS_BUILD_0084_INSTALLED__=true;
+  window.APS_BUILD_LOCK='0084';
   const bootStart=performance.now();
-  const state=window.APSBootState={build:'0083',startedAt:Date.now(),domReadyMs:0,readyMs:0,errors:[],warnings:[]};
-  const nativeError=console.error.bind(console);
-  const nativeWarn=console.warn.bind(console);
+  const state=window.APSBootState={build:'0084',startedAt:Date.now(),domReadyMs:0,readyMs:0,errors:[],warnings:[]};
+  const nativeError=console.error.bind(console),nativeWarn=console.warn.bind(console);
   console.error=(...args)=>{try{state.errors.push(args.map(String).join(' ').slice(0,500));}catch{} nativeError(...args)};
   console.warn=(...args)=>{try{state.warnings.push(args.map(String).join(' ').slice(0,500));}catch{} nativeWarn(...args)};
   function text(v){return String(v??'').trim()}
   function applyBuildBrand(){
-    document.title='SEAL KING Smart APS｜Build 0083 Stable Core';
-    document.querySelectorAll('.header-time small,.version').forEach(el=>{
-      if(/Build|Enterprise Preview/i.test(text(el.textContent))) el.textContent='Enterprise Preview 2｜Build 0083';
-    });
+    document.title='SEAL KING Smart APS｜V92 Build 0084 Stable Bootstrap';
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|Enterprise Preview/i.test(text(el.textContent)))el.textContent='Enterprise Preview 2｜Build 0084';});
   }
   function getStats(){
-    const pool=Array.isArray(window.S?.pool)?window.S.pool.length:0;
-    const schedule=Array.isArray(window.S?.schedule)?window.S.schedule.length:0;
-    const master=window.APSLargeStore?.getSync?.('SK_APS_SPEED_MASTER_V1',[])||[];
-    const feedback=window.APSLargeStore?.getSync?.('SK_APS_SPEED_FEEDBACK_V2',[])||[];
-    return {build:'0083',readyMs:Math.round(state.readyMs),pool,schedule,master:master.length||0,feedback:feedback.length||0,errors:state.errors.length,warnings:state.warnings.length};
+    const pool=Array.isArray(window.S?.pool)?window.S.pool.length:0,schedule=Array.isArray(window.S?.schedule)?window.S.schedule.length:0;
+    const master=window.APSLargeStore?.getSync?.('SK_APS_SPEED_MASTER_V1',[])||[],feedback=window.APSLargeStore?.getSync?.('SK_APS_SPEED_FEEDBACK_V2',[])||[];
+    const cloud=window.APSCloudDataCenter?.status?.()||{};
+    return {build:'0084',readyMs:Math.round(state.readyMs),pool,schedule,master:master.length||0,feedback:feedback.length||0,cloudLoaded:!!cloud.loaded,bootstrapCount:Number(cloud.bootstrapCount||0),bootstrapMs:Number(cloud.lastBootstrapMs||0),errors:state.errors.length,warnings:state.warnings.length};
   }
   function mountPanel(){
-    if(document.getElementById('apsPerfPanel')) return;
-    const p=document.createElement('div');p.id='apsPerfPanel';
-    p.style.cssText='display:none;position:fixed;right:14px;bottom:14px;z-index:99999;width:300px;background:#071118ee;border:1px solid #31505f;border-radius:10px;padding:12px;color:#dff6ff;font:12px/1.55 Consolas,monospace;box-shadow:0 10px 30px #000a';
-    p.innerHTML='<b style="font-size:14px">APS 效能監控｜Build 0083</b><pre id="apsPerfText" style="margin:8px 0 0;white-space:pre-wrap;color:#acd7e8"></pre>';
+    if(document.getElementById('apsPerfPanel'))return;
+    const p=document.createElement('div');p.id='apsPerfPanel';p.style.cssText='display:none;position:fixed;right:14px;bottom:14px;z-index:99999;width:320px;background:#071118ee;border:1px solid #31505f;border-radius:10px;padding:12px;color:#dff6ff;font:12px/1.55 Consolas,monospace;box-shadow:0 10px 30px #000a';
+    p.innerHTML='<b style="font-size:14px">APS 系統健康檢查｜Build 0084</b><pre id="apsPerfText" style="margin:8px 0 0;white-space:pre-wrap;color:#acd7e8"></pre>';
     document.body.appendChild(p);
-    const render=()=>{const s=getStats();const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+' MB':'瀏覽器未提供';document.getElementById('apsPerfText').textContent=`啟動完成：${s.readyMs} ms\n工單池：${s.pool} 筆\n排程：${s.schedule} 段\n產速主檔：${s.master} 筆\n產速回饋：${s.feedback} 筆\nJS 記憶體：${mem}\n錯誤：${s.errors}｜警告：${s.warnings}`};
+    const render=()=>{const s=getStats(),mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+' MB':'瀏覽器未提供';document.getElementById('apsPerfText').textContent=`啟動完成：${s.readyMs} ms\n雲端載入：${s.cloudLoaded?'OK':'等待中'}\n雲端初始化：${s.bootstrapCount} 次／${s.bootstrapMs} ms\n工單池：${s.pool} 筆\n排程：${s.schedule} 段\n產速主檔：${s.master} 筆\n產速回饋：${s.feedback} 筆\nJS 記憶體：${mem}\n錯誤：${s.errors}｜警告：${s.warnings}`};
     document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&String(e.key).toLowerCase()==='d'){e.preventDefault();p.style.display=p.style.display==='none'?'block':'none';render();}});
     window.APSPerformance={show(){p.style.display='block';render()},hide(){p.style.display='none'},stats:getStats};
   }
-  function ready(){
-    if(state.readyMs) return;
-    state.readyMs=performance.now()-bootStart;
-    applyBuildBrand();mountPanel();
-    console.info('SEAL KING Smart APS Build 0083 | Stable Core ready',getStats());
-    window.log?.('Build 0083：穩定核心、IndexedDB 快取與效能監控已啟用');
-  }
-  document.addEventListener('DOMContentLoaded',()=>{state.domReadyMs=performance.now()-bootStart;applyBuildBrand();setTimeout(ready,2300)},{once:true});
-  if(document.readyState!=='loading'){state.domReadyMs=performance.now()-bootStart;applyBuildBrand();setTimeout(ready,2300)}
+  function ready(){if(state.readyMs)return;state.readyMs=performance.now()-bootStart;applyBuildBrand();mountPanel();console.info('SEAL KING Smart APS V92 Build 0084 | Stable Bootstrap ready',getStats());window.log?.('Build 0084：雲端單次啟動防護與系統健康檢查已啟用');}
+  const start=()=>{state.domReadyMs=performance.now()-bootStart;applyBuildBrand();setTimeout(ready,2300)};
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
 })();
 </script>
 </body></html>
