@@ -1069,7 +1069,7 @@ async function handleFiles(files){
 function renderFiles(){
  const daily=['order','workorder','output','input'];
  let masterCount=0;
- try{masterCount=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]').length}catch(e){}
+ try{masterCount=(window.APSLargeStore?.getSync('SK_APS_SPEED_MASTER_V1',[])||[]).length}catch(e){}
  const speedUploaded=!!S.files.speed;
  $('filechips').innerHTML=[
    ...daily.map(t=>`<span class="chip ${S.files[t]?'ok':'warn'}">${S.files[t]?'✓':'○'} ${typeNames[t]}（每日）</span>`),
@@ -1848,7 +1848,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   function downloadSettings(){
     const ids=['startDate','days','dayStart','defaultHours','machinesPerOperator','operators','urgentDays','riskDays','earlyShiftStart','earlyShiftEnd','nightShiftStart','nightShiftEnd'];const settings={};ids.forEach(id=>{const e=document.getElementById(id);if(e)settings[id]=e.value});
     const machines={};document.querySelectorAll('[data-machine-hours]').forEach(e=>machines[e.dataset.machineHours]=e.value);
-    let feedback=[],master=[];try{feedback=JSON.parse(localStorage.getItem('SK_APS_SPEED_FEEDBACK_V1')||'[]')}catch{}try{master=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]')}catch{}
+    let feedback=[],master=[];try{feedback=JSON.parse(localStorage.getItem('SK_APS_SPEED_FEEDBACK_V1')||'[]')}catch{}try{master=(window.APSLargeStore?.getSync('SK_APS_SPEED_MASTER_V1',[])||[])}catch{}
     const payload={version:3,type:'SEAL_KING_APS_SETTINGS',exportedAt:new Date().toISOString(),scheduleSettings:settings,shiftSettings:loadShiftSettings(),machineHours:machines,speedMaster:master,speedFeedback:feedback};
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='SEAL_KING_APS_設定備份_'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }
@@ -3147,6 +3147,56 @@ window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats
 </script>
 
 
+
+<script id="build0082-indexeddb-cache-engine">
+(()=>{
+'use strict';
+const DB_NAME='SK_APS_CACHE_DB_V1', STORE='kv', VERSION=1;
+const mem=new Map();
+let dbPromise=null;
+function openDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise=new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return;}
+    const req=indexedDB.open(DB_NAME,VERSION);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE);};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error('IndexedDB open failed'));
+  });
+  return dbPromise;
+}
+async function idbGet(key){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+async function idbSet(key,value){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(value,key);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);});}
+async function idbDel(key){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(key);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);});}
+function parse(v,fallback){if(v===undefined||v===null||v==='')return fallback;if(typeof v==='object')return v;try{return JSON.parse(v)}catch{return fallback}}
+function getSync(key,fallback=[]){
+  if(mem.has(key)) return mem.get(key);
+  try{const raw=localStorage.getItem(key);if(raw!==null){const v=parse(raw,fallback);mem.set(key,v);return v;}}catch{}
+  return fallback;
+}
+async function hydrate(key,fallback=[]){
+  if(mem.has(key))return mem.get(key);
+  try{const v=await idbGet(key);if(v!==undefined){mem.set(key,v);return v;}}catch(e){console.warn('APS IndexedDB hydrate failed',key,e)}
+  return getSync(key,fallback);
+}
+async function set(key,value,{mirrorSmall=true}={}){
+  mem.set(key,value);
+  try{await idbSet(key,value);}catch(e){console.warn('APS IndexedDB save failed',key,e)}
+  if(mirrorSmall){
+    try{const raw=JSON.stringify(value);if(raw.length<700000)localStorage.setItem(key,raw);else localStorage.removeItem(key);}catch(e){try{localStorage.removeItem(key)}catch{} console.warn('APS localStorage mirror skipped',key,e)}
+  }else{try{localStorage.removeItem(key)}catch{}}
+  return true;
+}
+async function remove(key){mem.delete(key);try{localStorage.removeItem(key)}catch{}try{await idbDel(key)}catch{}}
+window.APSLargeStore={getSync,hydrate,set,remove,mem,openDB};
+Promise.all([
+  hydrate('SK_APS_SPEED_MASTER_V1',[]),
+  hydrate('SK_APS_SPEED_FEEDBACK_V2',[])
+]).then(()=>{window.dispatchEvent(new CustomEvent('aps-large-store-ready'));}).catch(()=>{});
+console.info('SEAL KING Smart APS Build 0082 | IndexedDB Cache Engine loaded');
+})();
+</script>
+
 <script id="build0043-cloud-datacenter-js">
 (()=>{
 'use strict';
@@ -3353,8 +3403,8 @@ function applyMachineRows(rows){
 }
 
 function speedRows(){
-  const master=parseJSON(localStorage.getItem(SPEED_MASTER_KEY),[]);
-  const feedback=parseJSON(localStorage.getItem(SPEED_FEEDBACK_KEY),[]);
+  const master=window.APSLargeStore?.getSync(SPEED_MASTER_KEY,[])||parseJSON(localStorage.getItem(SPEED_MASTER_KEY),[]);
+  const feedback=window.APSLargeStore?.getSync(SPEED_FEEDBACK_KEY,[])||parseJSON(localStorage.getItem(SPEED_FEEDBACK_KEY),[]);
   return [
     ...master.map(x=>({...x,_aps_speed_kind:"master"})),
     ...feedback.map(x=>({...x,_aps_speed_kind:"feedback"}))
@@ -3373,8 +3423,10 @@ function applySpeedRows(rows){
     if(kind==="feedback") feedback.push(x);
     else master.push(x);
   });
-  localStorage.setItem(SPEED_MASTER_KEY,JSON.stringify(master));
-  localStorage.setItem(SPEED_FEEDBACK_KEY,JSON.stringify(feedback));
+  // Build 0082: large datasets live in memory + IndexedDB. localStorage only keeps a small mirror.
+  window.APSLargeStore?.set(SPEED_MASTER_KEY,master,{mirrorSmall:false});
+  window.APSLargeStore?.set(SPEED_FEEDBACK_KEY,feedback,{mirrorSmall:true});
+  try{localStorage.removeItem(SPEED_MASTER_KEY)}catch{}
   return true;
 }
 
@@ -3753,7 +3805,7 @@ window.APSCloudDataCenter={
 
 
 <script id="build0046-1-missing-speed-js">
-(()=>{'use strict';const ST={rows:[],filtered:[]};const N=v=>String(v??'').trim().replace(/\s+/g,'').toUpperCase(),NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0},E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function P(o,ks){o=o||{};for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k];return ''}function speedRows(){let a=[],b=[];try{a=JSON.parse(localStorage.getItem('SK_APS_SPEED_MASTER_V1')||'[]')}catch{}try{b=JSON.parse(localStorage.getItem('SK_APS_SPEED_FEEDBACK_V2')||'[]')}catch{}return[...a,...b]}function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}function scan(){const p=pool(),sp=speedRows(),exact=new Map(),byPart=new Map();sp.forEach(x=>{const part=N(P(x,['part','part_no','料號'])),m=N(P(x,['machine','machine_code','機台'])),pr=N(P(x,['process','process_site','製程'])),k=[part,m,pr].join('|');if(k.replace(/\|/g,''))exact.set(k,x);if(part){if(!byPart.has(part))byPart.set(part,[]);byPart.get(part).push(x)}});let matched=0;ST.rows=[];p.forEach((x,i)=>{const wo=P(x,['wo','work_order_no','order_no','工單']),part=P(x,['part','part_no','料號']),spec=P(x,['name','product_spec','spec','規格']),machine=P(x,['machine','machine_code','機台']),process=P(x,['process','process_site','製程']),k=[N(part),N(machine),N(process)].join('|'),hit=exact.get(k),same=byPart.get(N(part))||[];if(hit&&((inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='FIXED'&&NUM(P(hit,['total','run','固定運轉時間','加總min']))>0)||(inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='LENGTH'&&NUM(P(hit,['speed','speedMpm','標準速度','運轉速度']))>0)||(NUM(P(hit,['speed','標準速度']))>0))){matched++;return}let reason='',code='',suggest='';if(!part){reason='工單沒有可比對的料號';code='part';suggest='先補齊料號'}else if(hit){reason='已有主檔，但標準產速為 0';code='speed';suggest='補登回數／產速'}else if(same.length){const mm=same.some(y=>N(P(y,['machine','machine_code','機台']))===N(machine));if(!mm){reason='此料號已有產速，但缺少目前機台';code='machine';suggest='參考同料號其他機台'}else{reason='此料號與機台已有資料，但缺少目前製程';code='process';suggest='確認製程後建立'}}else{reason='固定產速主檔找不到此料號';code='part';suggest='建立新產品產速'}ST.rows.push({i,wo,part,spec,machine,process,reason,code,suggest})});render(p.length,matched)}function render(total,matched){const q=N(document.getElementById('missingSpeedSearch')?.value),mf=N(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';const rows=ST.rows.filter(r=>{const h=N([r.wo,r.part,r.spec,r.machine,r.process,r.reason].join(' '));return(!q||h.includes(q))&&(!mf||N(r.machine)===mf)&&(!rf||r.code===rf)});ST.filtered=rows;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=total?Math.round(matched/total*1000)/10:0;set('msPoolCount',total.toLocaleString('zh-TW'));set('msMatchedCount',matched.toLocaleString('zh-TW'));set('msMissingCount',ST.rows.length.toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',rows.length+' 筆');const sm=document.getElementById('missingSpeedSummary');if(sm)sm.textContent=!total?'尚未建立工單池。請先到 ERP 資料更新頁建立工單池。':!ST.rows?`產速完整率 ${cov.toFixed(1)}%。目前工單池全部都有可用標準產速。`:`發現 ${ST.rows.length} 筆工單缺少完整產速設定；AI 僅整理與提醒，不會自動修改固定主檔。`;const sel=document.getElementById('missingSpeedMachine');if(sel){const cur=sel.value,ms=[...new Set(ST.rows.map(r=>String(r.machine||'').trim()).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${E(m)}">${E(m)}</option>`).join('');sel.value=cur}const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="8" class="missing-speed-empty">${total&&!ST.rows.length?'目前沒有缺產速工單':'沒有符合篩選條件的資料'}</td></tr>`;return}body.innerHTML=rows.map(r=>`<tr><td><span class="tag yellow">待確認</span></td><td>${E(r.wo||'-')}</td><td>${E(r.part||'-')}</td><td class="spec">${E(r.spec||'-')}</td><td>${E(r.machine||'-')}</td><td>${E(r.process||'-')}</td><td><div class="missing-speed-reason">${E(r.reason)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms="feedback" data-i="${r.i}">${E(r.suggest)}</button><button class="btn ghost" data-ms="copy" data-i="${r.i}">複製資料</button></div></td></tr>`).join('')}function go(r){[...document.querySelectorAll('[data-page]')].find(x=>String(x.dataset.page||'').toLowerCase().includes('speed')||String(x.textContent||'').includes('產速回饋'))?.click();[['speedFbPart',r.part],['speedFeedbackPart',r.part],['speedFbMachine',r.machine],['speedFeedbackMachine',r.machine],['speedFbProcess',r.process],['speedFeedbackProcess',r.process],['speedFbName',r.spec],['speedFeedbackName',r.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});window.log?.(`AI 缺產速：已帶入 ${r.part||r.wo||'待確認工單'} 到產速回饋中心`)}function install(){const ref=document.getElementById('missingSpeedRefresh');if(ref&&!ref.dataset.h){ref.dataset.h='1';ref.addEventListener('click',scan)}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.dataset.h){e.dataset.h='1';e.addEventListener(id==='missingSpeedSearch'?'input':'change',()=>render(pool().length,Math.max(0,pool().length-ST.rows.length)))}});const goBtn=document.getElementById('missingSpeedGoFeedback');if(goBtn&&!goBtn.dataset.h){goBtn.dataset.h='1';goBtn.addEventListener('click',()=>{const r=ST.filtered[0]||ST.rows[0];if(r)go(r)})}const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.h){body.dataset.h='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms]');if(!b)return;const r=ST.rows.find(x=>String(x.i)===String(b.dataset.i));if(!r)return;if(b.dataset.ms==='feedback')go(r);else{const v=`工單：${r.wo}\n料號：${r.part}\n規格：${r.spec}\n機台：${r.machine}\n製程：${r.process}\n缺漏：${r.reason}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製資料',1200)}catch{window.prompt('請複製以下資料',v)}}})}const bb=document.getElementById('buildPool');if(bb&&!bb.dataset.ms){bb.dataset.ms='1';bb.addEventListener('click',()=>setTimeout(scan,500))}document.querySelectorAll('[data-page="missingSpeed"]').forEach(t=>{if(!t.dataset.ms){t.dataset.ms='1';t.addEventListener('click',()=>setTimeout(scan,100))}});setTimeout(scan,1300)}document.addEventListener('DOMContentLoaded',install);setTimeout(install,1800);window.APSMissingSpeed={scan,rows:()=>ST.rows.slice(),state:ST};})();
+(()=>{'use strict';const ST={rows:[],filtered:[]};const N=v=>String(v??'').trim().replace(/\s+/g,'').toUpperCase(),NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0},E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function P(o,ks){o=o||{};for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k];return ''}function speedRows(){let a=[],b=[];try{a=(window.APSLargeStore?.getSync('SK_APS_SPEED_MASTER_V1',[])||[])}catch{}try{b=(window.APSLargeStore?.getSync('SK_APS_SPEED_FEEDBACK_V2',[])||[])}catch{}return[...a,...b]}function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}function scan(){const p=pool(),sp=speedRows(),exact=new Map(),byPart=new Map();sp.forEach(x=>{const part=N(P(x,['part','part_no','料號'])),m=N(P(x,['machine','machine_code','機台'])),pr=N(P(x,['process','process_site','製程'])),k=[part,m,pr].join('|');if(k.replace(/\|/g,''))exact.set(k,x);if(part){if(!byPart.has(part))byPart.set(part,[]);byPart.get(part).push(x)}});let matched=0;ST.rows=[];p.forEach((x,i)=>{const wo=P(x,['wo','work_order_no','order_no','工單']),part=P(x,['part','part_no','料號']),spec=P(x,['name','product_spec','spec','規格']),machine=P(x,['machine','machine_code','機台']),process=P(x,['process','process_site','製程']),k=[N(part),N(machine),N(process)].join('|'),hit=exact.get(k),same=byPart.get(N(part))||[];if(hit&&((inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='FIXED'&&NUM(P(hit,['total','run','固定運轉時間','加總min']))>0)||(inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='LENGTH'&&NUM(P(hit,['speed','speedMpm','標準速度','運轉速度']))>0)||(NUM(P(hit,['speed','標準速度']))>0))){matched++;return}let reason='',code='',suggest='';if(!part){reason='工單沒有可比對的料號';code='part';suggest='先補齊料號'}else if(hit){reason='已有主檔，但標準產速為 0';code='speed';suggest='補登回數／產速'}else if(same.length){const mm=same.some(y=>N(P(y,['machine','machine_code','機台']))===N(machine));if(!mm){reason='此料號已有產速，但缺少目前機台';code='machine';suggest='參考同料號其他機台'}else{reason='此料號與機台已有資料，但缺少目前製程';code='process';suggest='確認製程後建立'}}else{reason='固定產速主檔找不到此料號';code='part';suggest='建立新產品產速'}ST.rows.push({i,wo,part,spec,machine,process,reason,code,suggest})});render(p.length,matched)}function render(total,matched){const q=N(document.getElementById('missingSpeedSearch')?.value),mf=N(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';const rows=ST.rows.filter(r=>{const h=N([r.wo,r.part,r.spec,r.machine,r.process,r.reason].join(' '));return(!q||h.includes(q))&&(!mf||N(r.machine)===mf)&&(!rf||r.code===rf)});ST.filtered=rows;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=total?Math.round(matched/total*1000)/10:0;set('msPoolCount',total.toLocaleString('zh-TW'));set('msMatchedCount',matched.toLocaleString('zh-TW'));set('msMissingCount',ST.rows.length.toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',rows.length+' 筆');const sm=document.getElementById('missingSpeedSummary');if(sm)sm.textContent=!total?'尚未建立工單池。請先到 ERP 資料更新頁建立工單池。':!ST.rows?`產速完整率 ${cov.toFixed(1)}%。目前工單池全部都有可用標準產速。`:`發現 ${ST.rows.length} 筆工單缺少完整產速設定；AI 僅整理與提醒，不會自動修改固定主檔。`;const sel=document.getElementById('missingSpeedMachine');if(sel){const cur=sel.value,ms=[...new Set(ST.rows.map(r=>String(r.machine||'').trim()).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${E(m)}">${E(m)}</option>`).join('');sel.value=cur}const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="8" class="missing-speed-empty">${total&&!ST.rows.length?'目前沒有缺產速工單':'沒有符合篩選條件的資料'}</td></tr>`;return}body.innerHTML=rows.map(r=>`<tr><td><span class="tag yellow">待確認</span></td><td>${E(r.wo||'-')}</td><td>${E(r.part||'-')}</td><td class="spec">${E(r.spec||'-')}</td><td>${E(r.machine||'-')}</td><td>${E(r.process||'-')}</td><td><div class="missing-speed-reason">${E(r.reason)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms="feedback" data-i="${r.i}">${E(r.suggest)}</button><button class="btn ghost" data-ms="copy" data-i="${r.i}">複製資料</button></div></td></tr>`).join('')}function go(r){[...document.querySelectorAll('[data-page]')].find(x=>String(x.dataset.page||'').toLowerCase().includes('speed')||String(x.textContent||'').includes('產速回饋'))?.click();[['speedFbPart',r.part],['speedFeedbackPart',r.part],['speedFbMachine',r.machine],['speedFeedbackMachine',r.machine],['speedFbProcess',r.process],['speedFeedbackProcess',r.process],['speedFbName',r.spec],['speedFeedbackName',r.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});window.log?.(`AI 缺產速：已帶入 ${r.part||r.wo||'待確認工單'} 到產速回饋中心`)}function install(){const ref=document.getElementById('missingSpeedRefresh');if(ref&&!ref.dataset.h){ref.dataset.h='1';ref.addEventListener('click',scan)}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.dataset.h){e.dataset.h='1';e.addEventListener(id==='missingSpeedSearch'?'input':'change',()=>render(pool().length,Math.max(0,pool().length-ST.rows.length)))}});const goBtn=document.getElementById('missingSpeedGoFeedback');if(goBtn&&!goBtn.dataset.h){goBtn.dataset.h='1';goBtn.addEventListener('click',()=>{const r=ST.filtered[0]||ST.rows[0];if(r)go(r)})}const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.h){body.dataset.h='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms]');if(!b)return;const r=ST.rows.find(x=>String(x.i)===String(b.dataset.i));if(!r)return;if(b.dataset.ms==='feedback')go(r);else{const v=`工單：${r.wo}\n料號：${r.part}\n規格：${r.spec}\n機台：${r.machine}\n製程：${r.process}\n缺漏：${r.reason}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製資料',1200)}catch{window.prompt('請複製以下資料',v)}}})}const bb=document.getElementById('buildPool');if(bb&&!bb.dataset.ms){bb.dataset.ms='1';bb.addEventListener('click',()=>setTimeout(scan,500))}document.querySelectorAll('[data-page="missingSpeed"]').forEach(t=>{if(!t.dataset.ms){t.dataset.ms='1';t.addEventListener('click',()=>setTimeout(scan,100))}});setTimeout(scan,1300)}document.addEventListener('DOMContentLoaded',install);setTimeout(install,1800);window.APSMissingSpeed={scan,rows:()=>ST.rows.slice(),state:ST};})();
 </script>
 
 <script id="build0042-security-js">
@@ -6928,13 +6980,26 @@ Build 0080｜V90.0 AI 多機台決策面板
     wrapSync(()=>window.Build0051APSSpeedEngine,"sync","DataHub＋產速");
     wrapSync(()=>window.Build0050APSDataHub,"sync","DataHub工單池");
     buildIndex(true);
-    document.title="SEAL KING Smart APS｜Build 0081 Data Link Fast";
-    document.querySelectorAll(".header-time small,.version").forEach(el=>{if(/Build\s*00\d+|Enterprise Preview/i.test(text(el.textContent)))el.textContent="Enterprise Preview 2｜Build 0081"});
-    window.log?.("Build 0081：資料索引、搜尋延遲與重複載入防護已啟用");
+    document.title="SEAL KING Smart APS｜Build 0082 IndexedDB Fast";
+    document.querySelectorAll(".header-time small,.version").forEach(el=>{if(/Build\s*00\d+|Enterprise Preview/i.test(text(el.textContent)))el.textContent="Enterprise Preview 2｜Build 0082"});
+    window.log?.("Build 0082：IndexedDB 大容量快取、資料索引與重複載入防護已啟用");
   }
   window.APSDataIndex={rebuild:()=>buildIndex(true),lookup,byWorkOrder:v=>lookup(v,"wo"),byOrder:v=>lookup(v,"order"),byReport:v=>lookup(v,"report"),byBatch:v=>lookup(v,"batch"),byPart:v=>lookup(v,"part"),state};
   document.addEventListener("DOMContentLoaded",()=>setTimeout(install,2200));
   setTimeout(install,4200);
+})();
+</script>
+
+
+<script id="build0082-storage-diagnostics">
+(()=>{
+  let ran=false;
+  async function run(){if(ran)return;ran=true;try{
+    await window.APSLargeStore?.openDB?.();
+    console.info('APS Build 0082 storage ready',{indexedDB:true,master:(window.APSLargeStore?.getSync('SK_APS_SPEED_MASTER_V1',[])||[]).length,feedback:(window.APSLargeStore?.getSync('SK_APS_SPEED_FEEDBACK_V2',[])||[]).length});
+    window.log?.('Build 0082：IndexedDB 大容量快取已就緒');
+  }catch(e){console.warn('APS Build 0082 storage fallback',e);window.log?.('Build 0082：IndexedDB 無法使用，已採記憶體備援');}}
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',run,{once:true}):run();
 })();
 </script>
 
