@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V93.6 MES 生產 Key In｜Ultra Fast Cache｜Build 0092</title>
+<title>V93.7 MES 生產 Key In｜Ultra Cache Priority｜Build 0093</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.6 Ultra Fast Cache｜Build 0092</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V93.7 Ultra Cache Priority｜Build 0093</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V93.6 Build 0092｜Key In Ultra Fast Cache
+// V93.7 Build 0093｜Key In Ultra Cache Priority
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -175,13 +175,13 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V93.6',build:'0092',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V93.7',build:'0093',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     persistent_hits:KEYIN_SHARED_LOOKUP.persistentHits,alias_hits:KEYIN_SHARED_LOOKUP.aliasHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
     last_count:KEYIN_SHARED_LOOKUP.lastCount,last_elapsed_ms:KEYIN_SHARED_LOOKUP.lastElapsedMs,
     last_source:KEYIN_SHARED_LOOKUP.lastSource,cache_size:KEYIN_SHARED_LOOKUP.cache.size,
-    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,last_error:KEYIN_SHARED_LOOKUP.lastError
+    cache_ttl_hours:KEYIN_SHARED_LOOKUP.ttlMs/3600000,priority_enabled:true,last_error:KEYIN_SHARED_LOOKUP.lastError
   };
   console.table(status);return status;
 }
@@ -346,18 +346,28 @@ async function firstTurboHit_(tasks,onStage){
     });
   });
 }
-async function sharedLookupKeyIn_(query,onStage){
-  const q=nrm(query);if(!q||!KEYIN_SHARED_LOOKUP.enabled)return [];
-  const cached=keyInCacheGet_(q);
-  if(cached&&cached.length){
+
+function keyInPriorityCacheRows_(query){
+  const q=nrm(query);if(!q)return [];
+  const started=performance.now();
+  const rows=keyInCacheGet_(q)||[];
+  if(rows.length){
     KEYIN_SHARED_LOOKUP.cacheHits++;
     KEYIN_SHARED_LOOKUP.persistentHits++;
     KEYIN_SHARED_LOOKUP.lastQuery=q;
-    KEYIN_SHARED_LOOKUP.lastCount=cached.length;
-    KEYIN_SHARED_LOOKUP.lastElapsedMs=0;
-    KEYIN_SHARED_LOOKUP.lastSource='ultra-cache';
-    if(onStage)onStage('✓ Ultra Cache 命中，立即帶入資料...');
-    console.log('Key In Ultra Cache hit',q,cached.length);
+    KEYIN_SHARED_LOOKUP.lastCount=rows.length;
+    KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.max(0,Math.round(performance.now()-started));
+    KEYIN_SHARED_LOOKUP.lastSource='ultra-cache-priority';
+    console.log('Key In Ultra Cache PRIORITY hit',q,KEYIN_SHARED_LOOKUP.lastElapsedMs+'ms',rows.length);
+  }
+  return rows;
+}
+
+async function sharedLookupKeyIn_(query,onStage){
+  const q=nrm(query);if(!q||!KEYIN_SHARED_LOOKUP.enabled)return [];
+  const cached=keyInPriorityCacheRows_(q);
+  if(cached.length){
+    if(onStage)onStage('✓ Ultra Cache 第一順位命中，立即帶入資料...');
     return cached;
   }
 
@@ -387,7 +397,7 @@ async function sharedLookupKeyIn_(query,onStage){
       KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
       keyInCachePut_(q,rows,fast.action);KEYIN_SHARED_LOOKUP.lastSource=fast.action;
       if(onStage)onStage('✓ 高速索引已命中（'+KEYIN_SHARED_LOOKUP.lastElapsedMs+' ms）');
-      console.log('Key In Turbo hit',fast.action,KEYIN_SHARED_LOOKUP.lastElapsedMs+'ms',rows.length);
+      console.log('Key In Turbo hit',fast.action,KEYIN_SHARED_LOOKUP.lastElapsedMs+'ms',rows.length,'aliases',keyInCacheKeysFromRows_(rows));
       return rows;
     }
 
@@ -398,7 +408,7 @@ async function sharedLookupKeyIn_(query,onStage){
     KEYIN_SHARED_LOOKUP.lastCount=rows.length;
     KEYIN_SHARED_LOOKUP.lastElapsedMs=Math.round(performance.now()-started);
     if(rows.length){
-      keyInCachePut_(q,rows,fast.action);KEYIN_SHARED_LOOKUP.lastSource=fast.action;
+      keyInCachePut_(q,rows,'sharedlookup');KEYIN_SHARED_LOOKUP.lastSource='sharedlookup';
       if(onStage)onStage('✓ 備援查詢已命中（'+KEYIN_SHARED_LOOKUP.lastElapsedMs+' ms）');
     }
     return rows;
@@ -642,8 +652,15 @@ async function lookupWOAsync(){
   const key=nrm(safeGet('work_order_no'));
   if(!key)return;
   const box=qs('woMsg');
-  let matches=(App.source||[]).filter(x=>sourceMatch(x,key));
+
+  // V93.7：Ultra Cache 絕對第一順位；命中時不掃 App.source、不呼叫任何 API。
+  const priorityRows=keyInPriorityCacheRows_(key);
+  let matches=priorityRows.length?priorityRows:(App.source||[]).filter(x=>sourceMatch(x,key));
   let r=matches.find(x=>nrm(x.command_no||x.work_order_no)===key)||matches.find(x=>nrm(x.order_no)===key)||matches[0];
+  if(priorityRows.length){
+    box.className='okbox';
+    box.innerHTML='✓ Ultra Cache 命中，正在立即帶入資料...';
+  }
 
   // V92.4：本機未命中時優先查 Shared Data Engine，不再要求先下載全部工單。
   if(!r && key.length>=6){
@@ -741,7 +758,7 @@ function exportCSV(){const headers=['created_at','report_date','week_no','site',
 document.addEventListener('DOMContentLoaded',()=>{
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V93.6 Build 0092 | Ultra Fast Cache ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V93.7 Build 0093 | Ultra Cache Priority ready',KeyInSharedLookupStatus());
 });
 </script>
 </body>
