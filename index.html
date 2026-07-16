@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V94 MES 生產 Key In｜DOM Performance Engine｜Build 0097</title>
+<title>V94 MES 生產 Key In｜Stable Final｜Build 0098</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -55,7 +55,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V94 DOM Performance Engine｜Build 0097</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V94 Stable Final｜Build 0098</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -154,7 +154,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V94 Build 0097｜Key In DOM Performance Engine
+// V94 Build 0098｜Key In Stable Final
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -175,7 +175,7 @@ const KEYIN_SHARED_LOOKUP={
 };
 function KeyInSharedLookupStatus(){
   const status={
-    version:'V94',build:'0097',enabled:KEYIN_SHARED_LOOKUP.enabled,
+    version:'V94',build:'0098',enabled:KEYIN_SHARED_LOOKUP.enabled,
     queries:KEYIN_SHARED_LOOKUP.queries,cache_hits:KEYIN_SHARED_LOOKUP.cacheHits,
     persistent_hits:KEYIN_SHARED_LOOKUP.persistentHits,alias_hits:KEYIN_SHARED_LOOKUP.aliasHits,
     fallbacks:KEYIN_SHARED_LOOKUP.fallbacks,last_query:KEYIN_SHARED_LOOKUP.lastQuery,
@@ -889,7 +889,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   cacheUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V94 Build 0097 | DOM Performance Engine ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V94 Build 0098 | Stable Final ready',KeyInSharedLookupStatus());
+  console.log('V94 Stable Final self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 </script>
 </body>
