@@ -8094,4 +8094,105 @@ Build 0080｜V90.0 AI 多機台決策面板
 })();
 </script>
 
+
+<script>
+/* Build 0092｜APS 真正資料鏈復原＋防呆整合 */
+(()=>{
+  'use strict';
+  const BUILD='0092';
+  const STATUS_ID='apsRecoveryStatus0092';
+  let running=false;
+  let retryTimer=null;
+
+  function stateCount(){
+    return {
+      pool:Array.isArray(window.S?.pool)?window.S.pool.length:0,
+      schedule:Array.isArray(window.S?.schedule)?window.S.schedule.length:0
+    };
+  }
+  function ensureStatus(){
+    let el=document.getElementById(STATUS_ID);
+    if(el)return el;
+    el=document.createElement('button');
+    el.id=STATUS_ID;
+    el.type='button';
+    el.style.cssText='position:fixed;right:14px;bottom:12px;z-index:100000;border:1px solid #35505e;border-radius:8px;background:#0b1820;color:#dce9ee;padding:7px 10px;font:11px Microsoft JhengHei,Arial;cursor:pointer;box-shadow:0 6px 20px #0008';
+    el.title='點一下重新執行 APS 資料復原';
+    el.onclick=()=>recover(true);
+    document.body.appendChild(el);
+    return el;
+  }
+  function show(text,type='loading'){
+    const el=ensureStatus();
+    const c={loading:'#f59e0b',ok:'#22c55e',warn:'#f59e0b',bad:'#ef4444'}[type]||'#9ca3af';
+    el.style.borderColor=c;
+    el.textContent=`APS Build ${BUILD}｜${text}`;
+  }
+  function renderAll(){
+    ['renderPool','renderSchedule','renderHome','renderStats','renderSpeedCenter'].forEach(n=>{
+      try{typeof window[n]==='function'&&window[n]()}catch(e){console.warn(BUILD,n,e)}
+    });
+  }
+  async function withTimeout(p,ms,label){
+    return Promise.race([
+      Promise.resolve(p),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error(label+'逾時')),ms))
+    ]);
+  }
+  async function recover(force=false){
+    if(running)return;
+    running=true;
+    clearTimeout(retryTimer);
+    show(force?'手動重新載入中':'資料復原中');
+    const errors=[];
+    try{
+      // 1. 先讀 APS DataCenter。bootstrap 內部即使失敗也可能回傳 ok:false，因此必須明確檢查。
+      if(window.APSCloudDataCenter?.bootstrap){
+        try{
+          const r=await withTimeout(window.APSCloudDataCenter.bootstrap(true),35000,'APS 雲端');
+          if(r&&r.ok===false) throw (r.error instanceof Error?r.error:new Error(r.error?.message||'APS 雲端回傳失敗'));
+        }catch(e){errors.push('DataCenter：'+e.message)}
+      }else errors.push('DataCenter：模組不存在');
+
+      let c=stateCount();
+      // 2. 雲端 APS 表為空時，直接由 DataHub 八份 ERP 重建工單池。
+      if(c.pool===0){
+        const engine=window.Build0051APSSpeedEngine?.sync?window.Build0051APSSpeedEngine:
+                     window.Build0050APSDataHub?.sync?window.Build0050APSDataHub:
+                     window.CloudDataHubEngine57?.sync?window.CloudDataHubEngine57:null;
+        if(engine){
+          try{await withTimeout(engine.sync(true),60000,'DataHub 工單池重建')}
+          catch(e){errors.push('DataHub：'+e.message)}
+        }else errors.push('DataHub：同步引擎不存在');
+      }
+
+      c=stateCount();
+      renderAll();
+      if(c.pool>0||c.schedule>0){
+        show(`已恢復｜工單 ${c.pool}｜排程 ${c.schedule}`,'ok');
+        try{window.SKAPSSystem?.saveSnapshots?.(true)}catch(e){}
+      }else{
+        const detail=errors.join('；')||'雲端與 DataHub 都沒有回傳資料';
+        show('仍為 0｜點此重試','bad');
+        console.error('APS Build 0092 recovery failed:',detail);
+        const p=document.getElementById('apsCloudPanelText');
+        if(p)p.textContent=detail;
+        // 不清除本機資料、不自動覆寫空白雲端；20 秒後僅再嘗試一次。
+        if(!force)retryTimer=setTimeout(()=>recover(true),20000);
+      }
+    }catch(e){
+      show('復原失敗｜點此重試','bad');
+      console.error('APS Build 0092 fatal',e);
+    }finally{running=false}
+  }
+  function install(){
+    ensureStatus();
+    // 等所有既有模組完成註冊後再執行，避免初始化順序互撞。
+    setTimeout(()=>recover(false),2600);
+    window.APSRecovery0092={recover,state:stateCount};
+  }
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();
+})();
+</script>
+
 </body></html>
