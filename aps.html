@@ -458,7 +458,7 @@ function anomalyList(value){
 
 <style id="apsBuild00471StableStyle">
 body::after{
-  content:"APS Build 0085｜V92 Core Phase 1";
+  content:"APS Build 0091｜APS 載入復原穩定版";
   position:fixed;right:11px;bottom:10px;z-index:9998;
   padding:5px 8px;border-radius:6px;border:1px solid #38505e;
   background:#10191fdc;color:#9fc9da;font-size:10px;
@@ -521,7 +521,7 @@ body::after{
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0085</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0091</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -4570,7 +4570,14 @@ window.SEAL_KING_SECURITY={
   }
 
   async function sync(showPageAfter = true){
-    if(syncing) return;
+    if(syncing){
+      const waitStart=Date.now();
+      while(syncing && Date.now()-waitStart<90000){
+        await new Promise(resolve=>setTimeout(resolve,250));
+      }
+      if(syncing) throw new Error("Build0051 產速配對仍在執行，等待逾時");
+      return Array.isArray(window.S?.pool)?window.S.pool:[];
+    }
     syncing = true;
 
     const btn = document.getElementById("buildPool");
@@ -4619,6 +4626,7 @@ window.SEAL_KING_SECURITY={
       if(showPageAfter && typeof window.showPage === "function"){
         window.showPage("pool");
       }
+      return pool;
     }catch(err){
       console.error("Build0051 sync failed", err);
       const cache = window.CloudDataHubEngine57?.getCached?.();
@@ -4629,6 +4637,7 @@ window.SEAL_KING_SECURITY={
       }else{
         window.log?.("APS 產速引擎同步失敗："+(err.message||err));
       }
+      throw err;
     }finally{
       syncing = false;
       if(btn){
@@ -7732,6 +7741,258 @@ Build 0080｜V90.0 AI 多機台決策面板
   };
 
   console.info('APS Build '+BUILD+'｜課長工號＋密碼保護 ready');
+})();
+</script>
+
+
+<script id="aps-build0091-loading-recovery">
+(()=>{
+  'use strict';
+
+  const BUILD='0091';
+  const START_KEY='__APS_BUILD0091_START__';
+  const STATUS_ID='apsCloudStatus';
+  let bootstrapStarted=false;
+  let bootstrapFinished=false;
+  let watchdogTimer=0;
+  let dotTimer=0;
+  let dotStep=0;
+
+  function headerHost(){
+    return document.querySelector('.header-right') ||
+           document.querySelector('.enterprise-header') ||
+           document.querySelector('header') ||
+           document.body;
+  }
+
+  function ensureLoadingStyle(){
+    if(document.getElementById('apsBuild0091Style'))return;
+    const style=document.createElement('style');
+    style.id='apsBuild0091Style';
+    style.textContent=`
+      #${STATUS_ID}.aps-load-recovery{
+        display:inline-flex!important;align-items:center;gap:7px;
+        min-width:178px;padding:7px 11px;border:1px solid #36505e;
+        border-radius:999px;background:#0b171e;color:#d7e5eb;
+        font-size:11px;white-space:nowrap;order:-10;cursor:pointer
+      }
+      #${STATUS_ID}.aps-load-recovery i{
+        width:9px;height:9px;border-radius:50%;background:#f59e0b;
+        box-shadow:0 0 10px #f59e0b99;animation:aps0091Pulse 1s infinite
+      }
+      #${STATUS_ID}.aps-load-recovery.ok i{
+        background:#22c55e;box-shadow:0 0 10px #22c55e99;animation:none
+      }
+      #${STATUS_ID}.aps-load-recovery.warn i{
+        background:#f59e0b;box-shadow:0 0 10px #f59e0b99;animation:none
+      }
+      #${STATUS_ID}.aps-load-recovery.bad i{
+        background:#ef4444;box-shadow:0 0 10px #ef444499;animation:none
+      }
+      @keyframes aps0091Pulse{50%{opacity:.35;transform:scale(.72)}}
+      @media(max-width:900px){
+        #${STATUS_ID}.aps-load-recovery{display:inline-flex!important;min-width:145px;font-size:10px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureStatus(){
+    ensureLoadingStyle();
+    let el=document.getElementById(STATUS_ID);
+    if(!el){
+      el=document.createElement('div');
+      el.id=STATUS_ID;
+      headerHost().prepend(el);
+    }else if(!el.isConnected){
+      headerHost().prepend(el);
+    }else if(!el.closest('.header-right,.enterprise-header,header')){
+      headerHost().prepend(el);
+    }
+    el.classList.add('aps-load-recovery');
+    if(!el.querySelector('i'))el.innerHTML='<i></i><span>APS 載入中</span>';
+    if(!el.dataset.recoveryBound){
+      el.dataset.recoveryBound='1';
+      el.title='點一下重新載入 APS 雲端資料';
+      el.addEventListener('click',()=>startBootstrap(true));
+    }
+    return el;
+  }
+
+  function setStatus(state,message){
+    const el=ensureStatus();
+    el.className='aps-load-recovery '+(state||'');
+    const span=el.querySelector('span');
+    if(span)span.textContent=message;
+  }
+
+  function startDots(){
+    clearInterval(dotTimer);
+    dotStep=0;
+    dotTimer=setInterval(()=>{
+      if(bootstrapFinished){clearInterval(dotTimer);return}
+      dotStep=(dotStep+1)%4;
+      setStatus('', 'APS 載入中'+'.'.repeat(dotStep));
+    },420);
+  }
+
+  function renderLocalImmediately(){
+    try{window.renderPool?.()}catch(e){console.warn('renderPool local recovery',e)}
+    try{window.renderSchedule?.()}catch(e){console.warn('renderSchedule local recovery',e)}
+    try{window.renderHome?.()}catch(e){console.warn('renderHome local recovery',e)}
+    try{window.renderSpeedCenter?.()}catch(e){console.warn('renderSpeedCenter local recovery',e)}
+  }
+
+  async function startBootstrap(force){
+    if(bootstrapStarted&&!force)return;
+    bootstrapStarted=true;
+    bootstrapFinished=false;
+    setStatus('',force?'APS 重新載入中':'APS 載入中');
+    startDots();
+
+    // 本機資料先顯示，雲端同步在背景執行，避免整個 APS 畫面卡住。
+    setTimeout(renderLocalImmediately,0);
+
+    clearTimeout(watchdogTimer);
+    watchdogTimer=setTimeout(()=>{
+      if(bootstrapFinished)return;
+      setStatus('warn','APS 雲端較慢｜已用本機資料');
+      renderLocalImmediately();
+    },12000);
+
+    try{
+      const cloud=window.APSCloudDataCenter;
+      if(cloud&&typeof cloud.bootstrap==='function'){
+        await Promise.race([
+          Promise.resolve(cloud.bootstrap(!!force)),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('APS 雲端載入超過 25 秒')),25000))
+        ]);
+      }else{
+        // 等既有 Cloud DataCenter 模組完成註冊。
+        await new Promise(resolve=>setTimeout(resolve,900));
+        if(window.APSCloudDataCenter?.bootstrap){
+          await Promise.race([
+            Promise.resolve(window.APSCloudDataCenter.bootstrap(!!force)),
+            new Promise((_,reject)=>setTimeout(()=>reject(new Error('APS 雲端載入超過 25 秒')),25000))
+          ]);
+        }else{
+          throw new Error('APSCloudDataCenter 尚未載入');
+        }
+      }
+      bootstrapFinished=true;
+      clearTimeout(watchdogTimer);
+      clearInterval(dotTimer);
+      const pool=Number(window.S?.pool?.length||0);
+      const schedule=Number(window.S?.schedule?.length||0);
+      setStatus('ok',`APS 已載入｜工單 ${pool}｜排程 ${schedule}`);
+      renderLocalImmediately();
+    }catch(err){
+      bootstrapFinished=true;
+      clearTimeout(watchdogTimer);
+      clearInterval(dotTimer);
+      console.warn('APS Build 0091 background bootstrap fallback',err);
+      const pool=Number(window.S?.pool?.length||0);
+      const schedule=Number(window.S?.schedule?.length||0);
+      setStatus(pool||schedule?'warn':'bad',
+        pool||schedule
+          ?`使用本機資料｜工單 ${pool}｜排程 ${schedule}`
+          :'APS 載入失敗｜點此重試'
+      );
+      renderLocalImmediately();
+    }
+  }
+
+  function install(){
+    if(window[START_KEY])return;
+    window[START_KEY]=true;
+    ensureStatus();
+
+    // 防止後續模組重繪 Header 時把 APS 載入狀態移除。
+    const observer=new MutationObserver(()=>{
+      if(!document.getElementById(STATUS_ID)||!document.getElementById(STATUS_ID).isConnected){
+        ensureStatus();
+      }
+    });
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+
+    setTimeout(()=>startBootstrap(false),650);
+    console.info('APS Build 0091｜載入點點、Header 狀態與非阻塞啟動 ready');
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  }else{
+    install();
+  }
+
+  window.APSLoadingRecovery0091={
+    retry:()=>startBootstrap(true),
+    status:()=>({bootstrapStarted,bootstrapFinished})
+  };
+})();
+</script>
+
+
+<script>
+/* Build 0093｜真正資料鏈修復：DataHub下載完成後，必須等待產速轉換完成才更新畫面 */
+(()=>{
+'use strict';
+const BUILD='0093';
+let running=false;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function counts(){return {pool:Array.isArray(window.S?.pool)?window.S.pool.length:0,schedule:Array.isArray(window.S?.schedule)?window.S.schedule.length:0}}
+function status(text,type='loading'){
+  let el=document.getElementById('apsRecoveryStatus0093');
+  if(!el){
+    el=document.createElement('button');el.id='apsRecoveryStatus0093';el.type='button';
+    el.style.cssText='position:fixed;right:14px;bottom:12px;z-index:100001;border:1px solid #f59e0b;border-radius:8px;background:#0b1820;color:#fff;padding:7px 10px;font:11px Microsoft JhengHei,Arial;cursor:pointer;box-shadow:0 6px 20px #0008';
+    el.onclick=()=>recover(true);document.body.appendChild(el);
+  }
+  el.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b';
+  el.textContent=`APS Build ${BUILD}｜${text}`;
+}
+function render(){['renderPool','renderSchedule','renderHome','updateKpi','renderQuality','renderSpeedCenter'].forEach(n=>{try{typeof window[n]==='function'&&window[n]()}catch(e){console.warn(BUILD,n,e)}})}
+async function waitPool(ms=90000){
+ const t=Date.now();
+ while(Date.now()-t<ms){const c=counts();if(c.pool>0)return c;await sleep(500)}
+ return counts();
+}
+async function recover(force=false){
+ if(running)return;running=true;status(force?'手動重新同步中':'DataHub 資料同步中');
+ try{
+   let raw=[];
+   if(window.CloudDataHubEngine57?.sync){
+     raw=await window.CloudDataHubEngine57.sync(!!force);
+   }
+   if(!Array.isArray(raw)||!raw.length){
+     const cache=window.CloudDataHubEngine57?.getCached?.();
+     raw=Array.isArray(cache?.rows)?cache.rows:[];
+   }
+   if(!raw.length)throw new Error('DataHub 回傳 0 筆，而且本機沒有快取');
+   status(`DataHub ${raw.length} 筆｜產速配對中`);
+   window.__BUILD0057_DATAHUB_ROWS__=raw.slice();
+   if(!window.Build0051APSSpeedEngine?.sync)throw new Error('Build0051 產速引擎不存在');
+   const pool=await window.Build0051APSSpeedEngine.sync(false);
+   let c=counts();
+   if(!c.pool)c=await waitPool(30000);
+   if(!c.pool)throw new Error(`DataHub 有 ${raw.length} 筆，但轉換後工單池仍為 0`);
+   render();
+   status(`已載入｜工單 ${c.pool}｜排程 ${c.schedule}`,'ok');
+   document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|Enterprise Preview/i.test(el.textContent||''))el.textContent='Enterprise Preview 2｜Build 0093 Recovery';});
+ }catch(err){
+   console.error('APS Build 0093 recovery failed',err);
+   status(`失敗：${err.message||err}｜點此重試`,'bad');
+   const hint=document.querySelector('.alert-list')||document.querySelector('.side-card');
+   if(hint)hint.setAttribute('title',String(err.message||err));
+ }finally{running=false}
+}
+function install(){
+ document.querySelectorAll('#apsRecoveryStatus0091,#apsRecoveryStatus0092,.aps-load-recovery').forEach(el=>el.remove());
+ status('準備載入');
+ setTimeout(()=>recover(false),3200);
+ window.APSRecovery0093={recover,counts};
+}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();
 })();
 </script>
 
