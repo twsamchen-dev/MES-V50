@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.9.2.1</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0102.2.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -697,7 +697,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101.9</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0102</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -737,7 +737,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.9.2.1</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0102.2.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -2685,18 +2685,67 @@ function evaluateUrgentOption(base,urgent,machine){
   const score=delayCount*1e9+(urgentDelay?5e8:0)+totalShift*1e4+affected*100+(finish?finish.getTime()/1e10:1e9);
   return{machine,urgent:forced,simPool,sim,impacts,finish,urgentDelay,delayCount,totalShift,affected,score};
 }
+
+function urgentDateTimeText(v){
+  if(!v)return '—';
+  const d=new Date(v);
+  return Number.isNaN(d.getTime())?'—':d.toLocaleString('zh-TW',{hour12:false});
+}
+function urgentDueCompare(finish,due){
+  if(!finish||!due)return{label:'無法比較',className:'',detail:'缺少完成時間或交期'};
+  const f=new Date(finish),d=new Date(due);
+  const diff=Math.round((d-f)/60000);
+  const abs=Math.abs(diff);
+  const days=Math.floor(abs/1440);
+  const hours=Math.floor((abs%1440)/60);
+  const mins=abs%60;
+  const parts=[];
+  if(days)parts.push(days+' 天');
+  if(hours)parts.push(hours+' 小時');
+  if(mins||!parts.length)parts.push(mins+' 分');
+  if(diff>=0)return{label:'提前 '+parts.join(' '),className:'green',detail:'可於最新交期前完成'};
+  return{label:'Delay '+parts.join(' '),className:'red',detail:'超過最新交期'};
+}
+
 function selectUrgentOption(index){
   const opt=EP.simulationOptions?.[index]; if(!opt)return;
   EP.selectedSimulationIndex=index; EP.simulation={urgent:opt.urgent,simPool:opt.simPool,sim:opt.sim,impacts:opt.impacts};
   document.querySelectorAll('.ai-option').forEach((e,i)=>e.classList.toggle('selected',i===index));
   renderUrgentImpact();renderSimTimeline(opt.sim);
-  const status=opt.urgentDelay?'急單延遲':'急單準時';
-  $('urgentSummary').querySelector('.urgent-ai-note').innerHTML=`目前選擇：<b>${esc(opt.machine)}</b>｜${status}｜影響 ${opt.affected} 張｜新增 Delay ${opt.delayCount} 張｜累計順延 ${opt.totalShift} 分鐘。`;
+  const cmp=urgentDueCompare(opt.finish,opt.urgent?.due);
+  $('urgentSummary').querySelector('.urgent-ai-note').innerHTML=`目前選擇：<b>${esc(opt.machine)}</b>｜最新交期：<b>${urgentDateTimeText(opt.urgent?.due)}</b>｜模擬完成：<b>${urgentDateTimeText(opt.finish)}</b>｜結果：<b>${cmp.label}</b>｜影響 ${opt.affected} 張｜新增 Delay ${opt.delayCount} 張。`;
 }
 function renderUrgentOptions(options){
   const best=options[0];
+  const cmp=urgentDueCompare(best.finish,best.urgent?.due);
   $('urgentSummary').className='';
-  $('urgentSummary').innerHTML=`<div class="impact-cards"><div class="impact-card ${best.urgentDelay?'red':'green'}"><span>AI 最佳方案</span><b>${best.urgentDelay?'仍延遲':'準時'}</b></div><div class="impact-card green"><span>建議機台</span><b>${esc(best.machine)}</b></div><div class="impact-card"><span>預計完成</span><b style="font-size:16px">${best.finish?best.finish.toLocaleString('zh-TW',{hour12:false}):'未排入'}</b></div><div class="impact-card ${best.delayCount?'red':'green'}"><span>新增 Delay</span><b>${best.delayCount} 張</b></div></div><div class="ai-option-grid">${options.map((o,i)=>`<div class="ai-option ${i===0?'selected best':''}" data-ai-option="${i}"><h4>${esc(o.machine)}${i===0?'<span class="ai-badge">AI 建議</span>':''}</h4><div class="score">急單：<b>${o.urgentDelay?'Delay':'準時'}</b><br>完成：<b>${o.finish?o.finish.toLocaleString('zh-TW',{hour12:false}):'未排入'}</b><br>受影響：<b>${o.affected} 張</b><br>新增 Delay：<b>${o.delayCount} 張</b><br>累計順延：<b>${o.totalShift} 分</b></div></div>`).join('')}</div><div class="urgent-ai-note">目前選擇：<b>${esc(best.machine)}</b>｜影響 ${best.affected} 張｜新增 Delay ${best.delayCount} 張｜累計順延 ${best.totalShift} 分鐘。</div>`;
+  $('urgentSummary').innerHTML=`
+    <div class="impact-cards">
+      <div class="impact-card"><span>最新交期</span><b style="font-size:16px">${urgentDateTimeText(best.urgent?.due)}</b></div>
+      <div class="impact-card"><span>模擬完成</span><b style="font-size:16px">${urgentDateTimeText(best.finish)}</b></div>
+      <div class="impact-card ${cmp.className}"><span>交期結果</span><b>${cmp.label}</b><small>${cmp.detail}</small></div>
+      <div class="impact-card green"><span>建議機台</span><b>${esc(best.machine)}</b></div>
+      <div class="impact-card ${best.delayCount?'red':'green'}"><span>其他工單新增 Delay</span><b>${best.delayCount} 張</b></div>
+    </div>
+    <div class="ai-option-grid">
+      ${options.map((o,i)=>{
+        const c=urgentDueCompare(o.finish,o.urgent?.due);
+        return `<div class="ai-option ${i===0?'selected best':''}" data-ai-option="${i}">
+          <h4>${esc(o.machine)}${i===0?'<span class="ai-badge">AI 建議</span>':''}</h4>
+          <div class="score">
+            最新交期：<b>${urgentDateTimeText(o.urgent?.due)}</b><br>
+            模擬完成：<b>${urgentDateTimeText(o.finish)}</b><br>
+            交期結果：<b>${c.label}</b><br>
+            受影響：<b>${o.affected} 張</b><br>
+            新增 Delay：<b>${o.delayCount} 張</b><br>
+            累計順延：<b>${o.totalShift} 分</b>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="urgent-ai-note">
+      目前選擇：<b>${esc(best.machine)}</b>｜最新交期：<b>${urgentDateTimeText(best.urgent?.due)}</b>｜模擬完成：<b>${urgentDateTimeText(best.finish)}</b>｜結果：<b>${cmp.label}</b>｜影響 ${best.affected} 張｜新增 Delay ${best.delayCount} 張。
+    </div>`;
   document.querySelectorAll('[data-ai-option]').forEach(el=>el.onclick=()=>selectUrgentOption(Number(el.dataset.aiOption)));
 }
 simulateUrgent=function(){try{
@@ -7055,7 +7104,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0101.9｜V90.0 AI 多機台決策面板
+Build 0102｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7208,7 +7257,7 @@ Build 0101.9｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0101.9.2.1"!important;
+  content:"APS V95 Enterprise｜Build 0102.2.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7220,8 +7269,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0101.9.2.1';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.9.2.1';
+  const LABEL='V95 Enterprise｜Build 0102.2.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0102.2.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7242,16 +7291,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0101.9';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0102';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.9.2.1')
-          .replace(/Build\s*0085/gi,'Build 0101.9')
-          .replace(/Build\s*0091/gi,'Build 0101.9')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101.9');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0102.2.1')
+          .replace(/Build\s*0085/gi,'Build 0102')
+          .replace(/Build\s*0091/gi,'Build 0102')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0102');
       }
     });
 
@@ -7387,7 +7436,7 @@ body::after{
 
 
 <style id="aps-v95-build01002-urgent-layout-fix">
-/* Build 0101.9 — 急單表單版面修正 */
+/* Build 0102 — 急單表單版面修正 */
 #urgent .urgent-form{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:16px 18px!important;
@@ -7470,7 +7519,7 @@ body::after{
 
   const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
   const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
-  const VERSION_LABEL='V95 Enterprise｜Build 0101.9.2';
+  const VERSION_LABEL='V95 Enterprise｜Build 0102.2';
 
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const rowsOfSnapshot=key=>{
@@ -7579,15 +7628,15 @@ body::after{
       el.textContent=VERSION_LABEL;
     });
     document.querySelectorAll('.aps-sec-brand p').forEach(el=>{
-      el.textContent='管理員權限保護｜V95 Build 0101.9';
+      el.textContent='管理員權限保護｜V95 Build 0102';
     });
     document.querySelectorAll('body *').forEach(el=>{
       if(el.children.length) return;
       const t=String(el.textContent||'');
       if(/APS Optimizer Build 0097\.3\.1|APS Build 0100(?:\.\d+)?/i.test(t)){
         el.textContent=t
-          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101.9')
-          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101.9.2');
+          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0102')
+          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0102.2');
       }
     });
   }
@@ -8449,6 +8498,14 @@ window.addEventListener('error',function(e){
 },true);
 </script>
 
+
+<style id="aps-build0102-due-result-style">
+#urgent .impact-card small{display:block;margin-top:6px;color:#a8bbc7;font-size:12px}
+#urgent .impact-cards{grid-template-columns:repeat(5,minmax(130px,1fr))!important}
+@media(max-width:1200px){#urgent .impact-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:650px){#urgent .impact-cards{grid-template-columns:1fr!important}}
+</style>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -8637,7 +8694,7 @@ window.addEventListener('error',function(e){
 })();
 </script>
 <!-- =========================================================
-Build 0101.9｜V90.0 AI 多機台決策面板
+Build 0102｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
