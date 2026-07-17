@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.1</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.2.2.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -697,7 +697,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101.2</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -737,7 +737,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.1</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.2.2.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -7044,7 +7044,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0101｜V90.0 AI 多機台決策面板
+Build 0101.2｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7197,7 +7197,7 @@ Build 0101｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0101.1"!important;
+  content:"APS V95 Enterprise｜Build 0101.2.2.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7209,8 +7209,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0101.1';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.1';
+  const LABEL='V95 Enterprise｜Build 0101.2.2.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.2.2.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7231,16 +7231,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0101';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0101.2';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.1')
-          .replace(/Build\s*0085/gi,'Build 0101')
-          .replace(/Build\s*0091/gi,'Build 0101')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.2.2.1')
+          .replace(/Build\s*0085/gi,'Build 0101.2')
+          .replace(/Build\s*0091/gi,'Build 0101.2')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101.2');
       }
     });
 
@@ -7376,7 +7376,7 @@ body::after{
 
 
 <style id="aps-v95-build01002-urgent-layout-fix">
-/* Build 0101 — 急單表單版面修正 */
+/* Build 0101.2 — 急單表單版面修正 */
 #urgent .urgent-form{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:16px 18px!important;
@@ -7459,7 +7459,7 @@ body::after{
 
   const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
   const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
-  const VERSION_LABEL='V95 Enterprise｜Build 0101';
+  const VERSION_LABEL='V95 Enterprise｜Build 0101.2.2';
 
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const rowsOfSnapshot=key=>{
@@ -7568,15 +7568,15 @@ body::after{
       el.textContent=VERSION_LABEL;
     });
     document.querySelectorAll('.aps-sec-brand p').forEach(el=>{
-      el.textContent='管理員權限保護｜V95 Build 0101';
+      el.textContent='管理員權限保護｜V95 Build 0101.2';
     });
     document.querySelectorAll('body *').forEach(el=>{
       if(el.children.length) return;
       const t=String(el.textContent||'');
       if(/APS Optimizer Build 0097\.3\.1|APS Build 0100(?:\.\d+)?/i.test(t)){
         el.textContent=t
-          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101')
-          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101');
+          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101.2')
+          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101.2.2');
       }
     });
   }
@@ -7751,13 +7751,13 @@ body::after{
             <div class="urgent-field"><label>單位</label><select id="urgentUnit"><option>㎡</option><option>R</option><option>M</option><option>PCS</option></select></div>
 
             <div class="urgent-field"><label>原交期 *</label>
-              <div class="urgent-date"><input id="urgentOriginalDueDate" type="date"><select id="urgentOriginalDueTime">${this.timeOptions()}</select></div>
+              <div class="urgent-date"><div class="urgent-date-input"><input id="urgentOriginalDueDate" type="date"><button type="button" class="urgent-calendar-btn" data-date-target="urgentOriginalDueDate" aria-label="選擇原交期日期">📅</button></div><select id="urgentOriginalDueTime">${this.timeOptions()}</select></div>
             </div>
             <div class="urgent-field"><label>最新交期 *</label>
-              <div class="urgent-date"><input id="urgentDueDate" type="date"><select id="urgentDueTime">${this.timeOptions()}</select></div>
+              <div class="urgent-date"><div class="urgent-date-input"><input id="urgentDueDate" type="date"><button type="button" class="urgent-calendar-btn" data-date-target="urgentDueDate" aria-label="選擇最新交期日期">📅</button></div><select id="urgentDueTime">${this.timeOptions()}</select></div>
             </div>
 
-            <div class="urgent-field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select></div>
+            <div class="urgent-field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select><div class="urgent-machine-autofill-note">帶入工單後自動選取原工單機台，可再手動調整。</div></div>
             <div class="urgent-field"><label>預估工時（hr）</label><input id="urgentHours" type="number" min="0" step="0.1" placeholder="空白則依產速表"></div>
 
             <div class="urgent-panel-box">
@@ -7824,6 +7824,73 @@ body::after{
       this.update();
     }
 
+    normalizeWo(v){return String(v||'').trim().toUpperCase()}
+
+    findWorkOrderRow(){
+      const wo=this.normalizeWo(this.el('urgentWo')?.value||this.el('urgentLookup')?.value);
+      if(!wo)return null;
+      const pools=[]
+        .concat(Array.isArray(window.S?.pool)?window.S.pool:[])
+        .concat(Array.isArray(window.S?.rows?.workpool)?window.S.rows.workpool:[])
+        .concat(Array.isArray(window.S?.rows?.datahub)?window.S.rows.datahub:[]);
+      return pools.find(r=>{
+        const keys=[r.wo,r.work_order_no,r.workOrderNo,r.order,r.order_no,r.command_no,r.daily_no,r.batch];
+        return keys.some(x=>this.normalizeWo(x)===wo);
+      })||null;
+    }
+
+    ensureMachineOption(machine){
+      machine=String(machine||'').trim().toUpperCase();
+      const sel=this.el('urgentMachine');
+      if(!sel||!machine)return '';
+      let op=[...sel.options].find(o=>String(o.value||'').trim().toUpperCase()===machine);
+      if(!op){
+        op=document.createElement('option');
+        op.value=machine;
+        op.textContent=machine;
+        sel.appendChild(op);
+      }
+      sel.value=op.value;
+      return machine;
+    }
+
+    autofillOrderFields(){
+      const row=this.findWorkOrderRow();
+      if(!row)return false;
+
+      const machine=row.machine||row.machine_code||row.sourceMachine||row.assigned_machine||row.primary_machine||'';
+      const process=row.process||row.process_site||row.site||row.operation||'';
+
+      if(machine)this.ensureMachineOption(machine);
+
+      const processSel=this.el('urgentProcess');
+      if(process&&processSel){
+        let op=[...processSel.options].find(o=>String(o.value||o.textContent).trim()===String(process).trim());
+        if(!op){
+          op=document.createElement('option');
+          op.value=String(process).trim();
+          op.textContent=String(process).trim();
+          processSel.appendChild(op);
+        }
+        processSel.value=op.value;
+      }
+
+      this.update();
+      return !!machine;
+    }
+
+    openDatePicker(targetId){
+      const input=this.el(targetId);
+      if(!input)return;
+      try{
+        if(typeof input.showPicker==='function') input.showPicker();
+        else input.focus();
+      }catch(_){
+        input.focus();
+        input.click();
+      }
+    }
+
     update(){
       const req=[
         this.el('urgentPublisherEmp').value,
@@ -7859,11 +7926,21 @@ body::after{
 
     bind(){
       this.el('urgentPublisherEmp').addEventListener('change',()=>this.fillPublisher());
-      this.el('loadUrgentWo').addEventListener('click',()=>{if(this.legacy.load)this.legacy.load();setTimeout(()=>this.update(),100)});
+      this.el('loadUrgentWo').addEventListener('click',()=>{
+        if(this.legacy.load)this.legacy.load();
+        [120,350,800].forEach(ms=>setTimeout(()=>{
+          this.autofillOrderFields();
+          this.update();
+        },ms));
+      });
       this.el('simulateUrgent').addEventListener('click',()=>{if(this.legacy.simulate)this.legacy.simulate();else alert('找不到模擬函式')});
       this.el('applyUrgent').addEventListener('click',()=>{if(this.legacy.apply)this.legacy.apply();else alert('找不到發布函式')});
       this.el('discardUrgent').addEventListener('click',()=>this.reset());
       this.el('resetUrgent').addEventListener('click',()=>this.reset());
+
+      this.section.querySelectorAll('.urgent-calendar-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>this.openDatePicker(btn.dataset.dateTarget));
+      });
 
       this.section.querySelectorAll('input,select').forEach(el=>{
         el.addEventListener('input',()=>this.update());
@@ -7896,6 +7973,40 @@ body::after{
   else boot();
 })();
 </script>
+
+
+<style id="aps-v95-build01012-date-machine-fix">
+#urgent .urgent-date-input{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 48px;
+  gap:8px;
+}
+#urgent .urgent-date-input input[type="date"]{
+  min-width:0;
+  color-scheme:dark;
+}
+#urgent .urgent-date-input input[type="date"]::-webkit-calendar-picker-indicator{
+  opacity:1!important;
+  cursor:pointer!important;
+  filter:invert(1)!important;
+}
+#urgent .urgent-calendar-btn{
+  height:46px;
+  border:1px solid #3b5875;
+  border-radius:9px;
+  background:#13263a;
+  color:#fff;
+  font-size:20px;
+  cursor:pointer;
+}
+#urgent .urgent-calendar-btn:hover{filter:brightness(1.15)}
+#urgent .urgent-machine-autofill-note{
+  margin-top:6px;
+  font-size:12px;
+  color:#8fd3ff;
+}
+</style>
 
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
@@ -8085,7 +8196,7 @@ body::after{
 })();
 </script>
 <!-- =========================================================
-Build 0101｜V90.0 AI 多機台決策面板
+Build 0101.2｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
