@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0100.4.1</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -697,7 +697,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0100.4</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -737,7 +737,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0100.4.1</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -7044,7 +7044,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0100.4｜V90.0 AI 多機台決策面板
+Build 0101｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7197,7 +7197,7 @@ Build 0100.4｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0100.4.1"!important;
+  content:"APS V95 Enterprise｜Build 0101.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7209,8 +7209,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0100.4.1';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0100.4.1';
+  const LABEL='V95 Enterprise｜Build 0101.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7231,16 +7231,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0100.4';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0101';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0100.4.1')
-          .replace(/Build\s*0085/gi,'Build 0100.4')
-          .replace(/Build\s*0091/gi,'Build 0100.4')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0100.4');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.1')
+          .replace(/Build\s*0085/gi,'Build 0101')
+          .replace(/Build\s*0091/gi,'Build 0101')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101');
       }
     });
 
@@ -7376,7 +7376,7 @@ body::after{
 
 
 <style id="aps-v95-build01002-urgent-layout-fix">
-/* Build 0100.4 — 急單表單版面修正 */
+/* Build 0101 — 急單表單版面修正 */
 #urgent .urgent-form{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:16px 18px!important;
@@ -7459,7 +7459,7 @@ body::after{
 
   const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
   const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
-  const VERSION_LABEL='V95 Enterprise｜Build 0100.4';
+  const VERSION_LABEL='V95 Enterprise｜Build 0101';
 
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const rowsOfSnapshot=key=>{
@@ -7568,15 +7568,15 @@ body::after{
       el.textContent=VERSION_LABEL;
     });
     document.querySelectorAll('.aps-sec-brand p').forEach(el=>{
-      el.textContent='管理員權限保護｜V95 Build 0100.4';
+      el.textContent='管理員權限保護｜V95 Build 0101';
     });
     document.querySelectorAll('body *').forEach(el=>{
       if(el.children.length) return;
       const t=String(el.textContent||'');
       if(/APS Optimizer Build 0097\.3\.1|APS Build 0100(?:\.\d+)?/i.test(t)){
         el.textContent=t
-          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0100.4')
-          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0100.4');
+          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101')
+          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101');
       }
     });
   }
@@ -7639,6 +7639,263 @@ body::after{
   border-color:#4f7aa3!important;
 }
 </style>
+
+
+<style id="aps-v95-build0101-urgent-module-style">
+#urgent .grid{align-items:start}
+#urgent .urgent-module-card{background:linear-gradient(145deg,#111b23,#0b1319);border:1px solid #2c3c47;border-radius:12px;padding:16px}
+#urgent .urgent-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+#urgent .urgent-publisher-grid{display:grid;grid-template-columns:170px repeat(3,minmax(0,1fr));gap:12px;align-items:end}
+#urgent .urgent-panel-box{grid-column:span 2;border:1px solid #6c3036;background:#24171a;border-radius:12px;padding:14px}
+#urgent .urgent-field{min-width:0}
+#urgent .urgent-field.full{grid-column:span 2}
+#urgent .urgent-field label{display:block;font-size:13px;font-weight:900;color:#dce6ed;margin-bottom:7px}
+#urgent .urgent-field input,#urgent .urgent-field select{width:100%;height:46px;background:#071526;color:#f7fbff;border:1px solid #31516e;border-radius:9px;padding:0 12px;font-size:15px}
+#urgent .urgent-field input[readonly]{background:#102237;color:#fff;-webkit-text-fill-color:#fff;opacity:1;font-weight:900}
+#urgent #urgentPublisherEmp{font-size:19px;font-weight:900}
+#urgent .urgent-inline{display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:8px}
+#urgent .urgent-date{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px}
+#urgent .urgent-pre-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#urgent .urgent-pre-grid input{position:absolute;opacity:0}
+#urgent .urgent-pre-grid label{display:flex;align-items:center;justify-content:center;min-height:48px;margin:0;border:1px solid #354858;background:#111d27;border-radius:9px;color:#d5dee5;cursor:pointer;text-align:center;padding:8px}
+#urgent .urgent-pre-grid input:checked+label{background:#8e181e;border-color:#ed3740;color:#fff}
+#urgent .urgent-progress{grid-column:span 2;border:1px solid #30414e;background:#09131a;border-radius:10px;padding:10px}
+#urgent .urgent-progress-top{display:flex;justify-content:space-between;font-size:12px}
+#urgent .urgent-progress-track{height:8px;background:#25343f;border-radius:99px;overflow:hidden;margin-top:8px}
+#urgent .urgent-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e);transition:.2s}
+#urgent .urgent-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#urgent .urgent-help{font-size:12px;color:#ffb7bb;margin-top:10px}
+#urgent #simulateUrgent:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:1150px){
+ #urgent .urgent-publisher-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+ #urgent .urgent-module-grid{grid-template-columns:1fr}
+ #urgent .urgent-panel-box,#urgent .urgent-field.full,#urgent .urgent-progress{grid-column:span 1}
+ #urgent .urgent-publisher-grid{grid-template-columns:1fr}
+ #urgent .urgent-pre-grid{grid-template-columns:1fr}
+}
+</style>
+
+
+<script id="aps-v95-build0101-urgent-module">
+(()=>{
+  'use strict';
+  if(window.__APS_URGENT_0101__) return;
+  window.__APS_URGENT_0101__=true;
+
+  const PEOPLE={
+    "10660":{name:"劉玉珍",dept:"生管課",role:"事務員"},
+    "10870":{name:"許顥瀚",dept:"生管課",role:"課長"},
+    "11026":{name:"褚政怡",dept:"生管課",role:"事務員"},
+    "10385":{name:"黃耀緯",dept:"加工課",role:"副課長"},
+    "10649":{name:"周淑鈴",dept:"加工-工業",role:"班長"},
+    "11035":{name:"陳善祖",dept:"加工課",role:"課長"}
+  };
+
+  class UrgentOrderModule{
+    constructor(){
+      this.legacy={
+        simulate:typeof window.simulateUrgent==='function'?window.simulateUrgent:null,
+        apply:typeof window.applyUrgent==='function'?window.applyUrgent:null,
+        reset:typeof window.resetUrgent==='function'?window.resetUrgent:null,
+        load:typeof window.loadUrgent==='function'?window.loadUrgent:null
+      };
+    }
+
+    html(){
+      return `
+      <div class="grid">
+        <div class="card col5 urgent-module-card">
+          <div class="section-kicker">DYNAMIC RESCHEDULING</div>
+          <h2>急單／插單 Key In</h2>
+          <div class="sub">先模擬，不直接改動正式排程。模擬確認後才發布至 Key In 通知中心。</div>
+
+          <div class="urgent-module-grid" style="margin-top:14px">
+            <div class="urgent-panel-box">
+              <div class="urgent-publisher-grid">
+                <div class="urgent-field">
+                  <label>發布人工號 *</label>
+                  <select id="urgentPublisherEmp">
+                    <option value="">請選擇</option>
+                    ${Object.keys(PEOPLE).map(x=>`<option value="${x}">${x}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="urgent-field"><label>發布人姓名</label><input id="urgentPublisherName" readonly placeholder="自動帶入"></div>
+                <div class="urgent-field"><label>部門</label><input id="urgentPublisherDept" readonly placeholder="自動帶入"></div>
+                <div class="urgent-field"><label>職稱</label><input id="urgentPublisherRole" readonly placeholder="自動帶入"></div>
+              </div>
+              <div class="urgent-help">只有授權人員可以正式發布急單。</div>
+            </div>
+
+            <div class="urgent-field full">
+              <label>從既有工單快速帶入</label>
+              <div class="urgent-inline">
+                <input id="urgentLookup" list="woList" placeholder="輸入工單號">
+                <button class="btn ghost" id="loadUrgentWo" type="button">帶入</button>
+              </div>
+              <datalist id="woList"></datalist>
+            </div>
+
+            <div class="urgent-field"><label>急單工單 *</label><input id="urgentWo" placeholder="例如 MM2608010111"></div>
+            <div class="urgent-field"><label>客戶 *</label><input id="urgentCustomer"></div>
+            <div class="urgent-field"><label>產品料號 *</label><input id="urgentPart"></div>
+            <div class="urgent-field"><label>製程 *</label>
+              <select id="urgentProcess">
+                <option value="">請選擇製程</option>
+                <option>分條</option><option>複捲</option><option>覆卷</option><option>線軸覆卷</option>
+                <option>裁切</option><option>上膠</option><option>包裝</option><option>檢驗</option><option>其他</option>
+              </select>
+            </div>
+            <div class="urgent-field"><label>需求數量 *</label><input id="urgentQty" type="number" min="0" step="0.01"></div>
+            <div class="urgent-field"><label>單位</label><select id="urgentUnit"><option>㎡</option><option>R</option><option>M</option><option>PCS</option></select></div>
+
+            <div class="urgent-field"><label>原交期 *</label>
+              <div class="urgent-date"><input id="urgentOriginalDueDate" type="date"><select id="urgentOriginalDueTime">${this.timeOptions()}</select></div>
+            </div>
+            <div class="urgent-field"><label>最新交期 *</label>
+              <div class="urgent-date"><input id="urgentDueDate" type="date"><select id="urgentDueTime">${this.timeOptions()}</select></div>
+            </div>
+
+            <div class="urgent-field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select></div>
+            <div class="urgent-field"><label>預估工時（hr）</label><input id="urgentHours" type="number" min="0" step="0.1" placeholder="空白則依產速表"></div>
+
+            <div class="urgent-panel-box">
+              <div class="urgent-field"><label>前製程狀態 *</label>
+                <div class="urgent-pre-grid">
+                  <div><input type="radio" name="urgentPreMode" id="urgentPreReady" value="ready" checked><label for="urgentPreReady">半成品已到位</label></div>
+                  <div><input type="radio" name="urgentPreMode" id="urgentPrePending" value="pending"><label for="urgentPrePending">等待前製程</label></div>
+                  <div><input type="radio" name="urgentPreMode" id="urgentPreOverride" value="override"><label for="urgentPreOverride">主管允許先排</label></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="urgent-field"><label>插單原因分類 *</label>
+              <select id="urgentReasonType">
+                <option value="">請選擇原因</option>
+                <option>客戶急件</option><option>交期變更</option><option>交期 Delay</option>
+                <option>品質異常</option><option>重工</option><option>業務要求</option>
+                <option>廠長指示</option><option>課長調整</option><option>設備異常</option><option>其他</option>
+              </select>
+            </div>
+            <div class="urgent-field"><label>詳細原因 *</label><input id="urgentReason" placeholder="例如：ABSTO 客戶要求提前一天"></div>
+            <div class="urgent-field full"><label>備註</label><input id="urgentNote" placeholder="補充說明，可留白"></div>
+
+            <div class="urgent-progress">
+              <div class="urgent-progress-top"><span>資料完整度</span><b id="urgentProgressText">0%</b></div>
+              <div class="urgent-progress-track"><div id="urgentProgressFill" class="urgent-progress-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="urgent-actions">
+            <button class="btn red" id="simulateUrgent" type="button" disabled>開始插單模擬</button>
+            <button class="btn ghost" id="resetUrgent" type="button">清除</button>
+          </div>
+          <div id="urgentFormMsg" class="hint">請完整填寫必填資料。</div>
+        </div>
+
+        <div class="card col7">
+          <div class="section-kicker">WHAT-IF ANALYSIS</div><h2>模擬結果</h2>
+          <div id="urgentSummary" class="empty">請先建立正常排程，再輸入急單進行模擬。</div>
+          <div class="actions" id="urgentApplyActions" style="display:none">
+            <button class="btn green" id="applyUrgent" type="button">正式發布</button>
+            <button class="btn ghost" id="discardUrgent" type="button">取消模擬</button>
+          </div>
+        </div>
+
+        <div class="card col12"><h2>受影響工單／Delay 分析</h2><div id="urgentImpact" class="empty">尚未執行模擬</div></div>
+        <div class="card col12"><h2>插單後排程預覽</h2><div id="urgentTimeline"><div class="empty">尚未執行模擬</div></div></div>
+      </div>`;
+    }
+
+    timeOptions(){
+      return ['08:30','12:00','17:00','20:30','23:59'].map(x=>`<option value="${x}" ${x==='17:00'?'selected':''}>${x}</option>`).join('');
+    }
+
+    el(id){return document.getElementById(id)}
+    pre(){return document.querySelector('input[name="urgentPreMode"]:checked')?.value||''}
+    dateTime(dateId,timeId){const d=this.el(dateId)?.value,t=this.el(timeId)?.value;return d&&t?`${d}T${t}`:''}
+
+    fillPublisher(){
+      const p=PEOPLE[this.el('urgentPublisherEmp')?.value]||{};
+      this.el('urgentPublisherName').value=p.name||'';
+      this.el('urgentPublisherDept').value=p.dept||'';
+      this.el('urgentPublisherRole').value=p.role||'';
+      this.update();
+    }
+
+    update(){
+      const req=[
+        this.el('urgentPublisherEmp').value,
+        this.el('urgentWo').value.trim(),
+        this.el('urgentCustomer').value.trim(),
+        this.el('urgentPart').value.trim(),
+        this.el('urgentProcess').value,
+        Number(this.el('urgentQty').value)>0?'1':'',
+        this.dateTime('urgentOriginalDueDate','urgentOriginalDueTime'),
+        this.dateTime('urgentDueDate','urgentDueTime'),
+        this.pre(),
+        this.el('urgentReasonType').value,
+        this.el('urgentReason').value.trim()
+      ];
+      const done=req.filter(Boolean).length,pct=Math.round(done/req.length*100);
+      this.el('urgentProgressText').textContent=pct+'%';
+      this.el('urgentProgressFill').style.width=pct+'%';
+      this.el('simulateUrgent').disabled=pct<100;
+      this.el('urgentFormMsg').textContent=pct<100?`尚缺 ${req.length-done} 項必填資料`:'資料完整，可開始模擬';
+      this.el('urgentFormMsg').style.color=pct<100?'var(--yellow)':'var(--green)';
+    }
+
+    reset(){
+      ['urgentLookup','urgentWo','urgentCustomer','urgentPart','urgentQty','urgentOriginalDueDate','urgentDueDate','urgentHours','urgentReason','urgentNote'].forEach(id=>{const e=this.el(id);if(e)e.value=''});
+      ['urgentPublisherEmp','urgentProcess','urgentMachine','urgentReasonType'].forEach(id=>{const e=this.el(id);if(e)e.value=''});
+      this.el('urgentOriginalDueTime').value='17:00';
+      this.el('urgentDueTime').value='17:00';
+      this.el('urgentPreReady').checked=true;
+      this.fillPublisher();
+      if(this.legacy.reset) try{this.legacy.reset()}catch(_){}
+      this.update();
+    }
+
+    bind(){
+      this.el('urgentPublisherEmp').addEventListener('change',()=>this.fillPublisher());
+      this.el('loadUrgentWo').addEventListener('click',()=>{if(this.legacy.load)this.legacy.load();setTimeout(()=>this.update(),100)});
+      this.el('simulateUrgent').addEventListener('click',()=>{if(this.legacy.simulate)this.legacy.simulate();else alert('找不到模擬函式')});
+      this.el('applyUrgent').addEventListener('click',()=>{if(this.legacy.apply)this.legacy.apply();else alert('找不到發布函式')});
+      this.el('discardUrgent').addEventListener('click',()=>this.reset());
+      this.el('resetUrgent').addEventListener('click',()=>this.reset());
+
+      this.section.querySelectorAll('input,select').forEach(el=>{
+        el.addEventListener('input',()=>this.update());
+        el.addEventListener('change',()=>this.update());
+      });
+    }
+
+    init(){
+      this.section=document.getElementById('urgent');
+      if(!this.section)return;
+      this.section.innerHTML=this.html();
+      this.bind();
+
+      if(typeof window.populateUrgentLists==='function'){
+        try{window.populateUrgentLists()}catch(_){}
+      }
+
+      this.fillPublisher();
+      this.update();
+      window.UrgentOrderModule0101=this;
+    }
+  }
+
+  function boot(){
+    const mod=new UrgentOrderModule();
+    mod.init();
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
+  else boot();
+})();
+</script>
 
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
@@ -7828,7 +8085,7 @@ body::after{
 })();
 </script>
 <!-- =========================================================
-Build 0100.4｜V90.0 AI 多機台決策面板
+Build 0101｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
