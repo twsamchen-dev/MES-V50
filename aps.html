@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.8.2.1</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.9.2.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -697,7 +697,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101.8</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101.9</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -737,7 +737,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.8.2.1</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.9.2.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -1644,7 +1644,7 @@ function urgentFromForm(){
 }
 function simulateUrgent(){try{if(!S.pool.length)throw Error('請先建立工單池');if(!S.schedule.length)S.schedule=runScheduler(S.pool);const urgent=urgentFromForm(),base=S.schedule.map(x=>({...x,start:new Date(x.start),end:new Date(x.end),date:new Date(x.date)})),simPool=[urgent,...S.pool.filter(x=>x.wo!==urgent.wo)],sim=runScheduler(simPool),baseC=completionMap(base),simC=completionMap(sim);const impacts=[];for(const x of S.pool.filter(x=>!x.closed)){const b=baseC[x.wo],n=simC[x.wo];if(!n)continue;const shift=b?Math.round((n-b)/60000):0,delay=!!(x.due&&n>x.due);if(shift!==0||delay)impacts.push({wo:x.wo,customer:x.customer,due:x.due,old:b,new:n,shift,delay})}impacts.sort((a,b)=>(b.delay-a.delay)||(b.shift-a.shift));const uc=simC[urgent.wo],urgentDelay=uc>urgent.due;EP.simulation={urgent,simPool,sim,impacts};$('urgentSummary').className='';$('urgentSummary').innerHTML=`<div class="impact-cards"><div class="impact-card ${urgentDelay?'red':'green'}"><span>急單結果</span><b>${urgentDelay?'Delay':'準時'}</b></div><div class="impact-card"><span>建議機台</span><b>${esc(sim.find(x=>x.wo===urgent.wo)?.machine||'—')}</b></div><div class="impact-card"><span>預計完成</span><b style="font-size:16px">${uc?uc.toLocaleString('zh-TW',{hour12:false}):'未排入'}</b></div><div class="impact-card ${impacts.filter(x=>x.delay).length?'red':'green'}"><span>受影響 Delay</span><b>${impacts.filter(x=>x.delay).length} 張</b></div></div><div class="notice">插單後共影響 ${impacts.length} 張工單；${impacts.filter(x=>x.delay).length?'有工單超過預交日，請確認是否加班、拆單或更換機台。':'目前沒有造成其他工單超過預交日。'}</div>`;$('urgentApplyActions').style.display='flex';renderUrgentImpact();renderSimTimeline(sim);log(`急單模擬：${urgent.wo}，影響 ${impacts.length} 張，Delay ${impacts.filter(x=>x.delay).length} 張`)}catch(e){$('urgentFormMsg').textContent=e.message;$('urgentFormMsg').style.color='var(--red)'}}
 function renderUrgentImpact(){const imp=EP.simulation?.impacts||[];if(!imp.length){$('urgentImpact').className='empty';$('urgentImpact').textContent='沒有工單受到完成時間影響';return}$('urgentImpact').className='tablewrap';$('urgentImpact').innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>預交日</th><th>原完成</th><th>插單後完成</th><th>位移</th><th>結果</th></tr></thead><tbody>${imp.map(x=>`<tr class="${x.delay?'delay-row':''}"><td>${esc(x.wo)}</td><td>${esc(x.customer)}</td><td>${fmtDate(x.due)}</td><td>${x.old?x.old.toLocaleString('zh-TW',{hour12:false}):'—'}</td><td>${x.new.toLocaleString('zh-TW',{hour12:false})}</td><td>${x.shift>=0?'+':''}${x.shift} 分</td><td><span class="tag ${x.delay?'red':x.shift>0?'yellow':'green'}">${x.delay?'Delay':x.shift>0?'延後':'提前'}</span></td></tr>`).join('')}</tbody></table>`}
-function loadUrgent(){const x=S.pool.find(j=>String(j.wo)===String($('urgentLookup').value));if(!x){$('urgentFormMsg').textContent='找不到此工單';return}$('urgentWo').value=x.wo;$('urgentCustomer').value=x.customer;$('urgentPart').value=x.part;$('urgentProcess').value=x.process;$('urgentQty').value=x.remaining;$('urgentUnit').value=x.unit||'㎡';$('urgentMachine').value=x.machine||'';if(x.due){const d=new Date(x.due);d.setHours(17,0,0,0);setUrgentDateFields(d,d);$('urgentFormMsg').textContent='已帶入既有工單，可調整數量、交期或機台後模擬';updateUrgentFormState()}
+function loadUrgent(){const x=S.pool.find(j=>String(j.wo)===String($('urgentLookup').value));if(!x){$('urgentFormMsg').textContent='找不到此工單';return}$('urgentWo').value=x.wo;$('urgentCustomer').value=x.customer;$('urgentPart').value=x.part;$('urgentProcess').value=x.process;$('urgentQty').value=x.remaining;$('urgentUnit').value=x.unit||'㎡';$('urgentMachine').value=x.machine||'';if(x.due){const d=new Date(x.due);d.setHours(17,0,0,0);setUrgentDateFields(d,d);$('urgentFormMsg').textContent='已帶入既有工單，可調整數量、交期或機台後模擬';updateUrgentFormState()}}
 function resetUrgent(){['urgentLookup','urgentWo','urgentCustomer','urgentPart','urgentProcess','urgentQty','urgentOriginalDueDate','urgentDueDate','urgentHours','urgentReasonType','urgentReason','urgentNote'].forEach(id=>$(id).value='');$('urgentMachine').value='';$('urgentPreReady').checked=true;$('urgentOriginalDueTime').value='17:00';$('urgentDueTime').value='17:00';$('urgentPublisherEmp').value='';fillUrgentPublisher();$('urgentSummary').className='empty';$('urgentSummary').textContent='請輸入急單進行模擬。';$('urgentImpact').className='empty';$('urgentImpact').textContent='尚未執行模擬';$('urgentTimeline').innerHTML='<div class="empty">尚未執行模擬</div>';$('urgentApplyActions').style.display='none';$('urgentFormMsg').textContent='';EP.simulation=null;updateUrgentFormState()}
 async function applyUrgent(){
   if(!EP.simulation)return;
@@ -7055,7 +7055,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0101.8｜V90.0 AI 多機台決策面板
+Build 0101.9｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7208,7 +7208,7 @@ Build 0101.8｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0101.8.2.1"!important;
+  content:"APS V95 Enterprise｜Build 0101.9.2.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7220,8 +7220,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0101.8.2.1';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.8.2.1';
+  const LABEL='V95 Enterprise｜Build 0101.9.2.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.9.2.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7242,16 +7242,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0101.8';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0101.9';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.8.2.1')
-          .replace(/Build\s*0085/gi,'Build 0101.8')
-          .replace(/Build\s*0091/gi,'Build 0101.8')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101.8');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.9.2.1')
+          .replace(/Build\s*0085/gi,'Build 0101.9')
+          .replace(/Build\s*0091/gi,'Build 0101.9')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101.9');
       }
     });
 
@@ -7387,7 +7387,7 @@ body::after{
 
 
 <style id="aps-v95-build01002-urgent-layout-fix">
-/* Build 0101.8 — 急單表單版面修正 */
+/* Build 0101.9 — 急單表單版面修正 */
 #urgent .urgent-form{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:16px 18px!important;
@@ -7470,7 +7470,7 @@ body::after{
 
   const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
   const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
-  const VERSION_LABEL='V95 Enterprise｜Build 0101.8.2';
+  const VERSION_LABEL='V95 Enterprise｜Build 0101.9.2';
 
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const rowsOfSnapshot=key=>{
@@ -7579,15 +7579,15 @@ body::after{
       el.textContent=VERSION_LABEL;
     });
     document.querySelectorAll('.aps-sec-brand p').forEach(el=>{
-      el.textContent='管理員權限保護｜V95 Build 0101.8';
+      el.textContent='管理員權限保護｜V95 Build 0101.9';
     });
     document.querySelectorAll('body *').forEach(el=>{
       if(el.children.length) return;
       const t=String(el.textContent||'');
       if(/APS Optimizer Build 0097\.3\.1|APS Build 0100(?:\.\d+)?/i.test(t)){
         el.textContent=t
-          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101.8')
-          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101.8.2');
+          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101.9')
+          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101.9.2');
       }
     });
   }
@@ -8439,6 +8439,16 @@ body::after{
 })();
 </script>
 
+
+<script id="aps-v95-build01019-jsonp-guard">
+window.addEventListener('error',function(e){
+  const msg=String(e?.message||'');
+  if(/_apsMk_|callback is not defined/i.test(msg)){
+    e.preventDefault();
+  }
+},true);
+</script>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -8627,7 +8637,7 @@ body::after{
 })();
 </script>
 <!-- =========================================================
-Build 0101.8｜V90.0 AI 多機台決策面板
+Build 0101.9｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
