@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.4.2.1</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0101.5.2.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -697,7 +697,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101.4</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0101.5</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -737,7 +737,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.4.2.1</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0101.5.2.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -7043,7 +7043,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0101.4｜V90.0 AI 多機台決策面板
+Build 0101.5｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7196,7 +7196,7 @@ Build 0101.4｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0101.4.2.1"!important;
+  content:"APS V95 Enterprise｜Build 0101.5.2.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7208,8 +7208,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0101.4.2.1';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.4.2.1';
+  const LABEL='V95 Enterprise｜Build 0101.5.2.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0101.5.2.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7230,16 +7230,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0101.4';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0101.5';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.4.2.1')
-          .replace(/Build\s*0085/gi,'Build 0101.4')
-          .replace(/Build\s*0091/gi,'Build 0101.4')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101.4');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0101.5.2.1')
+          .replace(/Build\s*0085/gi,'Build 0101.5')
+          .replace(/Build\s*0091/gi,'Build 0101.5')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0101.5');
       }
     });
 
@@ -7375,7 +7375,7 @@ body::after{
 
 
 <style id="aps-v95-build01002-urgent-layout-fix">
-/* Build 0101.4 — 急單表單版面修正 */
+/* Build 0101.5 — 急單表單版面修正 */
 #urgent .urgent-form{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:16px 18px!important;
@@ -7458,7 +7458,7 @@ body::after{
 
   const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
   const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
-  const VERSION_LABEL='V95 Enterprise｜Build 0101.4.2';
+  const VERSION_LABEL='V95 Enterprise｜Build 0101.5.2';
 
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const rowsOfSnapshot=key=>{
@@ -7567,15 +7567,15 @@ body::after{
       el.textContent=VERSION_LABEL;
     });
     document.querySelectorAll('.aps-sec-brand p').forEach(el=>{
-      el.textContent='管理員權限保護｜V95 Build 0101.4';
+      el.textContent='管理員權限保護｜V95 Build 0101.5';
     });
     document.querySelectorAll('body *').forEach(el=>{
       if(el.children.length) return;
       const t=String(el.textContent||'');
       if(/APS Optimizer Build 0097\.3\.1|APS Build 0100(?:\.\d+)?/i.test(t)){
         el.textContent=t
-          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101.4')
-          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101.4.2');
+          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0101.5')
+          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0101.5.2');
       }
     });
   }
@@ -8090,6 +8090,82 @@ body::after{
 #urgent .urgent-field input:invalid{border-color:#ef4444}
 </style>
 
+
+<script id="aps-v95-build01015-required-state-fix">
+(()=>{
+  'use strict';
+
+  if(window.__APS_URGENT_REQUIRED_01015__) return;
+  window.__APS_URGENT_REQUIRED_01015__=true;
+
+  const $id=id=>document.getElementById(id);
+  const value=id=>String($id(id)?.value||'').trim();
+  const preValue=()=>document.querySelector('input[name="urgentPreMode"]:checked')?.value||'';
+
+  function requiredState(){
+    return [
+      {label:'客戶',ok:!!value('urgentCustomer')},
+      {label:'料號',ok:!!value('urgentPart')},
+      {label:'製程',ok:!!value('urgentProcess')},
+      {label:'數量',ok:Number(value('urgentQty'))>0},
+      {label:'單位',ok:!!value('urgentUnit')},
+      {label:'原交期',ok:!!value('urgentOriginalDueDate') && !!value('urgentOriginalDueTime')},
+      {label:'最新交期',ok:!!value('urgentDueDate') && !!value('urgentDueTime')},
+      {label:'前製程狀態',ok:!!preValue()}
+    ];
+  }
+
+  function refreshUrgentRequiredState(){
+    const btn=$id('simulateUrgent');
+    const text=$id('urgentProgressText');
+    const fill=$id('urgentProgressFill');
+    const msg=$id('urgentFormMsg');
+    if(!btn||!text||!fill||!msg) return false;
+
+    const items=requiredState();
+    const done=items.filter(x=>x.ok).length;
+    const missing=items.filter(x=>!x.ok);
+    const ready=missing.length===0;
+    const pct=Math.round(done/items.length*100);
+
+    btn.disabled=!ready;
+    btn.style.pointerEvents=ready?'auto':'none';
+    btn.style.opacity=ready?'1':'.45';
+
+    text.textContent=ready?'8 / 8｜可開始模擬':`${done} / 8`;
+    fill.style.width=pct+'%';
+
+    msg.textContent=ready
+      ?'必要欄位已完成，可以開始插單模擬'
+      :'尚缺：'+missing.map(x=>x.label).join('、');
+    msg.style.color=ready?'var(--green)':'var(--yellow)';
+
+    return ready;
+  }
+
+  function bind(){
+    const section=document.getElementById('urgent');
+    if(!section) return;
+
+    section.addEventListener('input',refreshUrgentRequiredState,true);
+    section.addEventListener('change',refreshUrgentRequiredState,true);
+    section.addEventListener('click',()=>setTimeout(refreshUrgentRequiredState,0),true);
+
+    // 工單帶入屬於程式寫值，不一定觸發 input/change，因此定時同步狀態。
+    refreshUrgentRequiredState();
+    setInterval(refreshUrgentRequiredState,350);
+
+    window.refreshUrgentRequiredState=refreshUrgentRequiredState;
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',bind,{once:true});
+  }else{
+    bind();
+  }
+})();
+</script>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -8278,7 +8354,7 @@ body::after{
 })();
 </script>
 <!-- =========================================================
-Build 0101.4｜V90.0 AI 多機台決策面板
+Build 0101.5｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
