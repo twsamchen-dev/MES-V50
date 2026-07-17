@@ -25,6 +25,15 @@
 .planStatus{text-align:right;white-space:nowrap}
 .progressText{font-size:12px;color:#64748b;margin-top:3px}
 
+
+/* V98.3：手機版幹部目標清單固定高度、收合、搜尋與摘要 */
+.planSummaryBar{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 8px}
+.planSummaryChip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;background:#fff;border:1px solid #dbe4f0;color:#334155}
+.planSummaryChip.done{background:#dcfce7;color:#166534;border-color:#bbf7d0}.planSummaryChip.run{background:#fff7ed;color:#c2410c;border-color:#fed7aa}.planSummaryChip.none{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.planListTools{display:flex;gap:8px;align-items:center;margin:8px 0}.planSearch{flex:1;min-width:0;padding:8px 10px!important;min-height:36px!important}.planToggleBtn{border:0;border-radius:10px;padding:8px 11px;font-weight:900;cursor:pointer;background:#e0e7ff;color:#1e40af;white-space:nowrap}
+.planListViewport{max-height:280px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;border-top:1px solid #dbe4f0}
+.planListViewport.collapsed{display:none}.planItem.planDone{opacity:.7}.planItem.planDone:hover{opacity:1}.planItem.planRun{background:#fffbeb}.planItem.planNone{background:#fff}
+@media(max-width:720px){.planListViewport{max-height:230px}.planListTools{align-items:stretch}.planToggleBtn{min-width:112px}.planSummaryBar{margin-top:8px}.planItem{padding:10px 4px}.planTop{display:block}.planStatus{text-align:left;margin-top:7px;white-space:normal}.planSearch{font-size:16px}}
 .fastPanel{margin-top:12px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:16px;padding:12px}
 .fastTitle{font-weight:900;color:#1e3a8a;margin-bottom:8px}
 .quickBtns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
@@ -115,7 +124,12 @@
         <button id="range_week" class="rangeBtn" onclick="setPlanRange('week')">一周 / 1 สัปดาห์</button>
         <button id="range_month" class="rangeBtn" onclick="setPlanRange('month')">本月 / เดือนนี้</button>
       </div>
-      <div class="hint" id="todayPlans">啟動中...。</div>
+      <div id="planSummaryBar" class="planSummaryBar"></div>
+      <div class="planListTools">
+        <input id="planSearch" class="planSearch" placeholder="搜尋工單、客戶、機台 / ค้นหาใบงาน ลูกค้า เครื่อง" oninput="renderPlansHint()">
+        <button id="planToggleBtn" class="planToggleBtn" type="button" onclick="togglePlanList()">收合 / ย่อ</button>
+      </div>
+      <div id="todayPlans" class="hint planListViewport">啟動中...。</div>
     </div>
   </div>
 
@@ -166,7 +180,7 @@
 </div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
 const KEYIN_SHARED_LOOKUP={
@@ -524,18 +538,21 @@ function rawRangeObj_(mode,base){
 function resolveRangeObj_(mode,rows,dateFn){
   const selected=dk(safeGet('report_date'))||isoDate();
   let r=rawRangeObj_(mode,selected);
-  const dates=(rows||[]).map(x=>dk(dateFn(x))).filter(Boolean);
+  const dates=Array.from(new Set((rows||[]).map(x=>dk(dateFn(x))).filter(Boolean))).sort();
   const hasData=dates.some(d=>d>=r.start&&d<=r.end);
   if(!hasData&&dates.length){
-    const latest=dates.sort().pop();
+    const latest=dates[dates.length-1];
     r=rawRangeObj_(mode,latest);
     r.fallback=true;
   }
   return r;
 }
-function rangeObj(){return resolveRangeObj_(App.range,App.plans,rowDate)}
+function planRowDate_(r){
+  return dk(r.report_date||r['日期']||r['工單日期']||r.plan_date||r.planned_finish||r.due_date||r['預交日']);
+}
+function rangeObj(){return resolveRangeObj_(App.range,App.plans,planRowDate_)}
 function inRange(v){const d=dk(v);if(!d)return false;const r=rangeObj();return d>=r.start&&d<=r.end}
-function rowDate(r){return dk(r.report_date||r.planned_finish||r.plan_date||r.due_date||r['日期']||r['工單日期']||r.updated_at||r.created_at)}
+function rowDate(r){return planRowDate_(r)}
 function firstNonEmpty(...vals){for(const v of vals){if(String(v??'').trim()!=='')return v}return ''}
 function sourceObj(r){
   const raw = r.raw_text || r.raw || Object.values(r||{}).join('｜');
@@ -996,18 +1013,38 @@ async function lookupWOAsync(){
   await applyResolvedOrderDOM_(r,matches,seq,searchStarted);
 }
 function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
+function planSearchText_(p){
+  const o=sourceObj(p);
+  return nrm([o.work_order_no,o.command_no,o.order_no,o.daily_report_no,o.report_no,o.batch_no,o.part_no,o.customer,o.product_spec,o.machine_code,o.process,empDisplay(p),roleDisplay(p)].join(' '));
+}
+function syncPlanCollapseUI_(){
+  const box=qs('todayPlans'),btn=qs('planToggleBtn');
+  if(box)box.classList.toggle('collapsed',!!App.planCollapsed);
+  if(btn)btn.textContent=App.planCollapsed?'展開 / ขยาย':'收合 / ย่อ';
+}
+function togglePlanList(){App.planCollapsed=!App.planCollapsed;syncPlanCollapseUI_()}
 function renderPlansHint(){
   const r=rangeObj(),box=qs('todayPlans');
   qs('planRangeText').textContent=(r.fallback?'最新資料｜':'')+r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');
   qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';
   if(box)box.innerHTML='<span class="hint">整理資料中… / กำลังจัดข้อมูล…</span>';
   requestAnimationFrame(()=>{
-    const list=currentPlans(r),actualMap=buildActualMap_(),visible=list.slice(0,20);
+    const list=currentPlans(r),actualMap=buildActualMap_();
+    const enriched=list.map(p=>({p,st:matchStatus(p,actualMap)}));
+    const q=nrm(safeGet('planSearch'));
+    const filtered=enriched.filter(x=>!q||planSearchText_(x.p).includes(q));
+    App.planView=filtered.map(x=>x.p);
+    const done=enriched.filter(x=>x.st.label==='作業完成'||x.st.label==='已超目標').length;
+    const run=enriched.filter(x=>x.st.actual>0&&x.st.label!=='作業完成'&&x.st.label!=='已超目標').length;
+    const none=Math.max(0,enriched.length-done-run);
+    const summary=qs('planSummaryBar');
+    if(summary)summary.innerHTML='<span class="planSummaryChip">共 '+enriched.length+' 張 / '+enriched.length+' งาน</span><span class="planSummaryChip done">完成 '+done+'</span><span class="planSummaryChip run">生產中 '+run+'</span><span class="planSummaryChip none">未開始 '+none+'</span>'+(q?'<span class="planSummaryChip">搜尋結果 '+filtered.length+'</span>':'');
     if(!box)return;
-    box.innerHTML=visible.length?visible.map((p,i)=>{const o=sourceObj(p);const st=matchStatus(p,actualMap);return '<div class="planItem" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">累積完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' R / '+(st.target?st.target.toLocaleString()+' R':'未設 R 目標')+'</div><div class="progressText">'+(st.matchedKey?'跨日累積 '+st.count+' 筆':'尚無配對實績')+'</div></div></div></div>'}).join(''):'查無'+r.label+'幹部目標工單。';
+    box.innerHTML=filtered.length?filtered.map((x,i)=>{const p=x.p,o=sourceObj(p),st=x.st;const itemCls=st.label==='作業完成'||st.label==='已超目標'?'planDone':st.actual>0?'planRun':'planNone';return '<div class="planItem '+itemCls+'" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint">姓名 / ชื่อ：'+html(empDisplay(p)||'-')+'｜角色 / ตำแหน่ง：'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">累積完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' R / '+(st.target?st.target.toLocaleString()+' R':'未設 R 目標')+'</div><div class="progressText">'+(st.matchedKey?'跨日累積 '+st.count+' 筆':'尚無配對實績')+'</div></div></div></div>'}).join(''):(q?'查無符合「'+html(safeGet('planSearch'))+'」的工單。':'查無 '+r.label+' 幹部目標工單（'+r.start+(r.start!==r.end?' ~ '+r.end:'')+'）。');
+    syncPlanCollapseUI_();
   });
 }
-function pickPlan(i){const p=currentPlans()[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);lookupWO();setTimeout(applyHistoricalSpeed,120)}
+function pickPlan(i){const p=App.planView[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);lookupWO();setTimeout(applyHistoricalSpeed,120);const input=qs('work_order_no');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.focus(),280)}if(window.matchMedia&&window.matchMedia('(max-width:720px)').matches){App.planCollapsed=true;syncPlanCollapseUI_()}}
 function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+rangeObj().label+'幹部目標工單')}
 function nextOrder(){const list=currentPlans();if(!list.length){if(window.MES)MES.toast('沒有可跳轉工單');return}App.idx=(App.idx+1)%list.length;pickPlan(App.idx)}
 
@@ -1032,9 +1069,11 @@ function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({s
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{
   cacheUI_();
+  App.planCollapsed=!!(window.matchMedia&&window.matchMedia('(max-width:720px)').matches);
+  syncPlanCollapseUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();setInterval(()=>{if(document.visibilityState==='visible')loadUrgentNotices()},NOTICE_UI.refreshMs);
-  console.log('SEAL KING Smart Key In V94.3 Build 0099 | Stable Final ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V98.3 Build 0102 | Mobile Target List ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 </script>
