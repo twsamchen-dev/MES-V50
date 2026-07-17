@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜雲端資料讀取穩定復原版</title>
+<title>SEAL KING Smart APS｜Build 0097 急單發布中心</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -126,6 +126,14 @@ body{background:#050b0f;color:#f7f9fa}
 
 /* Build 0042｜前製程自動判定與批次確認 */
 .pre-batchbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;background:#0b151c;border:1px solid #29404b;border-bottom:0;border-radius:9px 9px 0 0;position:sticky;left:0;z-index:5}.pre-batchbar .btn{padding:8px 11px;font-size:12px}.pre-batchbar .count{margin-left:auto;color:#80d9ff;font-size:12px}.pre-auto-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:#123143;color:#7dd7ff;font-size:10px;margin-top:4px}.pre-table th:first-child,.pre-table td:first-child{position:sticky;left:0;z-index:3;background:#0c171e}.pre-table th:first-child{z-index:6}.pre-table input[type=checkbox]{width:18px;height:18px;accent-color:#20b67a}.pre-select.auto-value{border-color:#286987;box-shadow:inset 3px 0 #2aa9d6}.pre-rule-note{font-size:11px;color:#93a8b5;line-height:1.45;margin-top:4px;max-width:190px}.pre-row.selected td{background:#12304255}.pre-row.selected td:first-child{background:#123042}.pre-auto-summary{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}.pre-auto-summary span{padding:5px 8px;border:1px solid #2b4655;border-radius:999px;font-size:11px;color:#bcd0db;background:#0b161d}
+
+.urgent-auth-box{grid-column:span 2;border:1px solid #613036;background:#251417;border-radius:10px;padding:11px}
+.urgent-auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.urgent-auth-meta{font-size:12px;color:#ffb5b9;margin-top:7px}
+.urgent-required-note{grid-column:span 2;color:#ffb5b9;font-size:12px}
+.urgent-publish-ok{border-left:4px solid #22c55e;background:#0e3127;padding:10px 12px;border-radius:8px;color:#9ef0cd;margin-top:10px}
+@media(max-width:720px){.urgent-auth-grid{grid-template-columns:1fr}.urgent-auth-box{grid-column:span 1}.urgent-required-note{grid-column:span 1}}
+
 </style>
 <style>
 .production-midnight{position:absolute;top:0;bottom:0;transform:translateX(-50%);pointer-events:none;z-index:3}.production-midnight i{position:absolute;top:0;bottom:-430px;border-left:1px dashed rgba(255,115,115,.85)}.production-midnight b{position:absolute;top:-24px;left:6px;white-space:nowrap;font-size:10px;color:#ff8f8f;font-weight:700}.schedule-day-title b{font-size:14px}.time-scale{position:relative}
@@ -489,7 +497,7 @@ const txt=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function badge(){let e=document.getElementById('aps0094Status');if(!e){e=document.createElement('button');e.id='aps0094Status';e.type='button';e.style.cssText='position:fixed;right:14px;bottom:12px;z-index:2147483647;padding:8px 11px;border-radius:8px;border:1px solid #f59e0b;background:#07141d;color:#fff;font:12px Microsoft JhengHei,Arial;box-shadow:0 5px 18px #000a;cursor:pointer';e.onclick=()=>run(true);document.documentElement.appendChild(e)}return e}
 function state(message,type='wait'){const e=badge();e.textContent='APS Build '+BUILD+'｜'+message;e.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b'}
-function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0096.3'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
+function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0097'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
 function jsonp(action,params={},timeoutMs=45000){return new Promise((resolve,reject)=>{const cb='APS0096_'+Date.now()+'_'+Math.floor(Math.random()*1e6),s=document.createElement('script');let settled=false,timer=null;const tombstone=()=>{window[cb]=function(){};setTimeout(()=>{try{delete window[cb]}catch(_){window[cb]=undefined}},120000)};const clean=(keepCallback=false)=>{if(timer)clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);if(keepCallback)tombstone();else{try{delete window[cb]}catch(_){window[cb]=undefined}}};timer=setTimeout(()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 逾時 '+Math.round(timeoutMs/1000)+' 秒'))},timeoutMs);window[cb]=res=>{if(settled)return;settled=true;clean(false);if(res&&res.ok===false)reject(new Error(res.message||res.error||action+' 回傳失敗'));else resolve(res||{})};s.onerror=()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 連線失敗'))};s.src=API+'?'+new URLSearchParams({...params,action,callback:cb,_:Date.now()});document.head.appendChild(s)})}
 async function fetchRows(){let all=[],page=1,total=1;while(all.length<total&&page<=40){state('下載 DataHub 第 '+page+' 頁');let r;try{r=await jsonp('datahubworkorders',{page,pageSize:200},45000)}catch(firstErr){state('第 '+page+' 頁重試中');await sleep(1200);r=await jsonp('datahubworkorders',{page,pageSize:200,retry:1},45000)}const rows=Array.isArray(r.rows)?r.rows:Array.isArray(r.data)?r.data:[];total=Number(r.total||rows.length||0);all.push(...rows);if(!rows.length)break;page++}return all}
 function fallbackConvert(rows){return rows.map(r=>{const due=r.due_date?new Date(r.due_date):null;const target=num(r.target_qty),remain=num(r.erp_remaining_qty)||target,status=txt(r.status);return{wo:txt(r.work_order_no||r.order_no),order:txt(r.order_no),command_no:txt(r.work_order_no),report_no:txt(r.daily_report_no),batch:txt(r.batch_no),part:txt(r.part_no),name:txt(r.product_spec),spec:txt(r.product_spec),customer:txt(r.customer),process:txt(r.process),machine:txt(r.machine||r.machine_code),sourceMachine:txt(r.machine||r.machine_code),due:due&&!isNaN(due)?due:null,planned:target,remaining:remain,output:Math.max(0,target-remain),unit:'m²',minutes:0,ready:false,closed:/C|結案|完成|已結/i.test(status),status,source:txt(r.source_list||'DataHub_WorkOrder'),aliases:[r.work_order_no,r.order_no,r.daily_report_no,r.batch_no,r.part_no].filter(Boolean).map(String)}}).filter(x=>x.wo&&!x.closed)}
@@ -615,12 +623,34 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <section id="urgent" class="page"><div class="grid">
 <div class="card col5"><div class="section-kicker">DYNAMIC RESCHEDULING</div><h2>急單／插單 Key In</h2><div class="sub">先模擬，不直接改動正式排程。系統會比較插單前後完成時間並標出 Delay。</div>
 <div class="urgent-form">
+<div class="urgent-auth-box">
+  <div class="urgent-auth-grid">
+    <div class="field"><label>發布人工號 *</label>
+      <select id="urgentPublisherEmp" onchange="fillUrgentPublisher()">
+        <option value="">請選擇發布人</option>
+        <option value="10660">10660｜劉玉珍</option>
+        <option value="10870">10870｜許顥瀚</option>
+        <option value="11026">11026｜褚政怡</option>
+        <option value="10385">10385｜黃耀緯</option>
+        <option value="10649">10649｜周淑鈴</option>
+        <option value="11035">11035｜陳善祖</option>
+      </select>
+    </div>
+    <div class="field"><label>發布人姓名 *</label><input id="urgentPublisherName" readonly placeholder="由工號自動帶入"></div>
+    <div class="field"><label>部門</label><input id="urgentPublisherDept" readonly></div>
+    <div class="field"><label>職稱</label><input id="urgentPublisherRole" readonly></div>
+  </div>
+  <div class="urgent-auth-meta">只有生管課與加工課授權幹部可正式發布急單。</div>
+</div>
 <div class="field span2"><label>從既有工單快速帶入</label><div class="inline-field"><input id="urgentLookup" list="woList" placeholder="輸入工單號"><datalist id="woList"></datalist><button class="btn ghost" id="loadUrgentWo">帶入</button></div></div>
-<div class="field"><label>急單工單 *</label><input id="urgentWo" placeholder="例如 WO260999"></div><div class="field"><label>客戶</label><input id="urgentCustomer"></div>
-<div class="field"><label>產品料號 *</label><input id="urgentPart"></div><div class="field"><label>製程</label><input id="urgentProcess" placeholder="裁切／複捲／分條"></div>
+<div class="field"><label>急單工單 *</label><input id="urgentWo" placeholder="例如 WO260999"></div><div class="field"><label>客戶 *</label><input id="urgentCustomer"></div>
+<div class="field"><label>產品料號 *</label><input id="urgentPart"></div><div class="field"><label>製程 *</label><input id="urgentProcess" placeholder="裁切／複捲／分條"></div>
 <div class="field"><label>需求數量 *</label><input id="urgentQty" type="number" min="0" step="0.01"></div><div class="field"><label>單位</label><select id="urgentUnit"><option>㎡</option><option>R</option><option>M</option><option>PCS</option></select></div>
-<div class="field"><label>最晚交期 *</label><input id="urgentDue" type="datetime-local"></div><div class="field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select></div>
-<div class="field"><label>預估工時（hr）</label><input id="urgentHours" type="number" min="0" step="0.1" placeholder="空白則依產速表"></div><div class="field"><label>前製程狀態</label><select id="urgentPre"><option value="ready">半成品已到位</option><option value="pending">等待前製程</option></select></div>
+<div class="field"><label>原交期 *</label><input id="urgentOriginalDue" type="datetime-local"></div><div class="field"><label>最新交期 *</label><input id="urgentDue" type="datetime-local"></div><div class="field"><label>指定機台</label><select id="urgentMachine"><option value="">自動選擇</option></select></div>
+<div class="field"><label>預估工時（hr）</label><input id="urgentHours" type="number" min="0" step="0.1" placeholder="空白則依產速表"></div><div class="field"><label>前製程狀態 *</label><select id="urgentPre"><option value="ready">半成品已到位</option><option value="pending">等待前製程</option></select></div>
+<div class="field span2"><label>插單原因 *</label><input id="urgentReason" placeholder="例如：客戶急件／交期提前／缺料恢復"></div>
+<div class="field span2"><label>備註</label><input id="urgentNote" placeholder="補充說明，可留白"></div>
+<div class="urgent-required-note">＊完整填寫並完成模擬後，按「採用此方案」才會正式發布到 Key In 人員網頁。</div>
 </div><div class="actions"><button class="btn red" id="simulateUrgent">開始插單模擬</button><button class="btn ghost" id="resetUrgent">清除</button></div><div id="urgentFormMsg" class="hint"></div></div>
 <div class="card col7"><div class="section-kicker">WHAT-IF ANALYSIS</div><h2>模擬結果</h2><div id="urgentSummary" class="empty">請先建立正常排程，再輸入急單進行模擬。</div><div class="actions" id="urgentApplyActions" style="display:none"><button class="btn green" id="applyUrgent">採用此方案</button><button class="btn ghost" id="discardUrgent">取消模擬</button></div></div>
 <div class="card col12"><h2>受影響工單／Delay 分析</h2><div id="urgentImpact" class="empty">尚未執行模擬</div></div>
@@ -1253,12 +1283,114 @@ schedule=function(){if(!S.pool.length){alert('請先建立工單池');return}try
 
 function completionMap(arr){const m={};for(const x of arr){if(!m[x.wo]||x.end>m[x.wo])m[x.wo]=x.end}return m}
 function renderSimTimeline(arr){const original=S.schedule,old=EP.simulation;S.schedule=arr;renderTimeline('urgentTimeline');S.schedule=original;EP.simulation=old}
-function urgentFromForm(){const wo=$('urgentWo').value.trim(),part=$('urgentPart').value.trim(),qty=num($('urgentQty').value),dueRaw=$('urgentDue').value;if(!wo||!part||qty<=0||!dueRaw)throw Error('請填寫急單工單、產品料號、需求數量與最晚交期');if($('urgentPre').value==='pending')throw Error('此急單仍等待前製程，暫時不能投入排程');const process=$('urgentProcess').value.trim(),machine=$('urgentMachine').value,unit=$('urgentUnit').value,ms=matchSpeed(part,process,machine,S.rows.speed||[]);let minutes=num($('urgentHours').value)*60,match='手動工時';if(!minutes&&ms){let perCycle=1;if(unit.includes('㎡'))perCycle=(ms.row.outw/1000)*ms.row.len||1;else if(unit.toUpperCase().includes('M'))perCycle=ms.row.len||1;minutes=(qty/perCycle)*ms.row.total;match=ms.level}if(!minutes)throw Error('找不到對應產速，請手動輸入預估工時');return{wo,order:'MANUAL',part,name:'手動急單',customer:$('urgentCustomer').value.trim(),batch:'',process,machine:machine||(ms?.row.machine||''),sourceMachine:machine,spec:'',due:new Date(dueRaw),planned:qty,output:0,remaining:qty,unit,minutes,cycles:0,match,urgent:true,risk:true,ready:true,status:'急單',closed:false,preprocess:'已到位',manual:true}}
+
+const URGENT_PUBLISHERS={
+  "10660":{name:"劉玉珍",dept:"生管課",role:"事務員"},
+  "10870":{name:"許顥瀚",dept:"生管課",role:"課長"},
+  "11026":{name:"褚政怡",dept:"生管課",role:"事務員"},
+  "10385":{name:"黃耀緯",dept:"加工課",role:"副課長"},
+  "10649":{name:"周淑鈴",dept:"加工-工業",role:"班長"},
+  "11035":{name:"陳善祖",dept:"加工課",role:"課長"}
+};
+function fillUrgentPublisher(){
+  const emp=$('urgentPublisherEmp').value;
+  const p=URGENT_PUBLISHERS[emp]||{};
+  $('urgentPublisherName').value=p.name||'';
+  $('urgentPublisherDept').value=p.dept||'';
+  $('urgentPublisherRole').value=p.role||'';
+}
+
+function urgentFromForm(){
+  const publisherEmp=$('urgentPublisherEmp').value.trim();
+  const publisher=URGENT_PUBLISHERS[publisherEmp];
+  const wo=$('urgentWo').value.trim();
+  const customer=$('urgentCustomer').value.trim();
+  const part=$('urgentPart').value.trim();
+  const process=$('urgentProcess').value.trim();
+  const qty=num($('urgentQty').value);
+  const originalDueRaw=$('urgentOriginalDue').value;
+  const dueRaw=$('urgentDue').value;
+  const reason=$('urgentReason').value.trim();
+  const note=$('urgentNote').value.trim();
+
+  if(!publisher)throw Error('請選擇有權限的發布人');
+  if(!wo||!customer||!part||!process||qty<=0||!originalDueRaw||!dueRaw||!reason){
+    throw Error('請完整填寫發布人、工單、客戶、料號、製程、數量、原交期、最新交期與插單原因');
+  }
+  if($('urgentPre').value==='pending')throw Error('此急單仍等待前製程，暫時不能投入排程');
+
+  const machine=$('urgentMachine').value,unit=$('urgentUnit').value;
+  const ms=matchSpeed(part,process,machine,S.rows.speed||[]);
+  let minutes=num($('urgentHours').value)*60,match='手動工時';
+  if(!minutes&&ms){
+    let perCycle=1;
+    if(unit.includes('㎡'))perCycle=(ms.row.outw/1000)*ms.row.len||1;
+    else if(unit.toUpperCase().includes('M'))perCycle=ms.row.len||1;
+    minutes=(qty/perCycle)*ms.row.total;
+    match=ms.level;
+  }
+  if(!minutes)throw Error('找不到對應產速，請手動輸入預估工時');
+
+  return{
+    wo,order:'MANUAL',part,name:'手動急單',customer,batch:'',process,
+    machine:machine||(ms?.row.machine||''),sourceMachine:machine,spec:'',
+    originalDue:new Date(originalDueRaw),due:new Date(dueRaw),
+    planned:qty,output:0,remaining:qty,unit,minutes,cycles:0,match,
+    urgent:true,risk:true,ready:true,status:'急單',closed:false,
+    preprocess:'已到位',manual:true,reason,note,
+    publisher_emp_no:publisherEmp,publisher_name:publisher.name,
+    publisher_dept:publisher.dept,publisher_role:publisher.role
+  };
+}
 function simulateUrgent(){try{if(!S.pool.length)throw Error('請先建立工單池');if(!S.schedule.length)S.schedule=runScheduler(S.pool);const urgent=urgentFromForm(),base=S.schedule.map(x=>({...x,start:new Date(x.start),end:new Date(x.end),date:new Date(x.date)})),simPool=[urgent,...S.pool.filter(x=>x.wo!==urgent.wo)],sim=runScheduler(simPool),baseC=completionMap(base),simC=completionMap(sim);const impacts=[];for(const x of S.pool.filter(x=>!x.closed)){const b=baseC[x.wo],n=simC[x.wo];if(!n)continue;const shift=b?Math.round((n-b)/60000):0,delay=!!(x.due&&n>x.due);if(shift!==0||delay)impacts.push({wo:x.wo,customer:x.customer,due:x.due,old:b,new:n,shift,delay})}impacts.sort((a,b)=>(b.delay-a.delay)||(b.shift-a.shift));const uc=simC[urgent.wo],urgentDelay=uc>urgent.due;EP.simulation={urgent,simPool,sim,impacts};$('urgentSummary').className='';$('urgentSummary').innerHTML=`<div class="impact-cards"><div class="impact-card ${urgentDelay?'red':'green'}"><span>急單結果</span><b>${urgentDelay?'Delay':'準時'}</b></div><div class="impact-card"><span>建議機台</span><b>${esc(sim.find(x=>x.wo===urgent.wo)?.machine||'—')}</b></div><div class="impact-card"><span>預計完成</span><b style="font-size:16px">${uc?uc.toLocaleString('zh-TW',{hour12:false}):'未排入'}</b></div><div class="impact-card ${impacts.filter(x=>x.delay).length?'red':'green'}"><span>受影響 Delay</span><b>${impacts.filter(x=>x.delay).length} 張</b></div></div><div class="notice">插單後共影響 ${impacts.length} 張工單；${impacts.filter(x=>x.delay).length?'有工單超過預交日，請確認是否加班、拆單或更換機台。':'目前沒有造成其他工單超過預交日。'}</div>`;$('urgentApplyActions').style.display='flex';renderUrgentImpact();renderSimTimeline(sim);log(`急單模擬：${urgent.wo}，影響 ${impacts.length} 張，Delay ${impacts.filter(x=>x.delay).length} 張`)}catch(e){$('urgentFormMsg').textContent=e.message;$('urgentFormMsg').style.color='var(--red)'}}
 function renderUrgentImpact(){const imp=EP.simulation?.impacts||[];if(!imp.length){$('urgentImpact').className='empty';$('urgentImpact').textContent='沒有工單受到完成時間影響';return}$('urgentImpact').className='tablewrap';$('urgentImpact').innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>預交日</th><th>原完成</th><th>插單後完成</th><th>位移</th><th>結果</th></tr></thead><tbody>${imp.map(x=>`<tr class="${x.delay?'delay-row':''}"><td>${esc(x.wo)}</td><td>${esc(x.customer)}</td><td>${fmtDate(x.due)}</td><td>${x.old?x.old.toLocaleString('zh-TW',{hour12:false}):'—'}</td><td>${x.new.toLocaleString('zh-TW',{hour12:false})}</td><td>${x.shift>=0?'+':''}${x.shift} 分</td><td><span class="tag ${x.delay?'red':x.shift>0?'yellow':'green'}">${x.delay?'Delay':x.shift>0?'延後':'提前'}</span></td></tr>`).join('')}</tbody></table>`}
-function loadUrgent(){const x=S.pool.find(j=>String(j.wo)===String($('urgentLookup').value));if(!x){$('urgentFormMsg').textContent='找不到此工單';return}$('urgentWo').value=x.wo;$('urgentCustomer').value=x.customer;$('urgentPart').value=x.part;$('urgentProcess').value=x.process;$('urgentQty').value=x.remaining;$('urgentUnit').value=x.unit||'㎡';$('urgentMachine').value=x.machine||'';if(x.due){const d=new Date(x.due);d.setHours(17,0,0,0);$('urgentDue').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}$('urgentHours').value=x.minutes?(x.minutes/60).toFixed(2):'';$('urgentFormMsg').textContent='已帶入既有工單，可調整數量、交期或機台後模擬'}
-function resetUrgent(){['urgentLookup','urgentWo','urgentCustomer','urgentPart','urgentProcess','urgentQty','urgentDue','urgentHours'].forEach(id=>$(id).value='');$('urgentMachine').value='';$('urgentPre').value='ready';$('urgentSummary').className='empty';$('urgentSummary').textContent='請輸入急單進行模擬。';$('urgentImpact').className='empty';$('urgentImpact').textContent='尚未執行模擬';$('urgentTimeline').innerHTML='<div class="empty">尚未執行模擬</div>';$('urgentApplyActions').style.display='none';$('urgentFormMsg').textContent='';EP.simulation=null}
-function applyUrgent(){if(!EP.simulation)return;S.pool=EP.simulation.simPool;S.schedule=EP.simulation.sim;renderPool();renderSchedule();updateKpi();populateUrgentLists();log(`已採用急單方案：${EP.simulation.urgent.wo}`);alert('急單方案已套用到目前排程');showPage('schedule')}
+function loadUrgent(){const x=S.pool.find(j=>String(j.wo)===String($('urgentLookup').value));if(!x){$('urgentFormMsg').textContent='找不到此工單';return}$('urgentWo').value=x.wo;$('urgentCustomer').value=x.customer;$('urgentPart').value=x.part;$('urgentProcess').value=x.process;$('urgentQty').value=x.remaining;$('urgentUnit').value=x.unit||'㎡';$('urgentMachine').value=x.machine||'';if(x.due){const d=new Date(x.due);d.setHours(17,0,0,0);$('urgentOriginalDue').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);$('urgentDue').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}$('urgentHours').value=x.minutes?(x.minutes/60).toFixed(2):'';$('urgentFormMsg').textContent='已帶入既有工單，可調整數量、交期或機台後模擬'}
+function resetUrgent(){['urgentLookup','urgentWo','urgentCustomer','urgentPart','urgentProcess','urgentQty','urgentOriginalDue','urgentDue','urgentHours','urgentReason','urgentNote'].forEach(id=>$(id).value='');$('urgentMachine').value='';$('urgentPre').value='ready';$('urgentPublisherEmp').value='';fillUrgentPublisher();$('urgentSummary').className='empty';$('urgentSummary').textContent='請輸入急單進行模擬。';$('urgentImpact').className='empty';$('urgentImpact').textContent='尚未執行模擬';$('urgentTimeline').innerHTML='<div class="empty">尚未執行模擬</div>';$('urgentApplyActions').style.display='none';$('urgentFormMsg').textContent='';EP.simulation=null}
+async function applyUrgent(){
+  if(!EP.simulation)return;
+  const btn=$('applyUrgent');
+  const u=EP.simulation.urgent;
+  try{
+    btn.disabled=true;
+    btn.textContent='發布中...';
+    const payload={
+      publisher_emp_no:u.publisher_emp_no,
+      work_order_no:u.wo,
+      customer:u.customer,
+      part_no:u.part,
+      process:u.process,
+      qty:u.remaining,
+      unit:u.unit,
+      original_due:u.originalDue.toISOString(),
+      new_due:u.due.toISOString(),
+      machine:u.machine||'',
+      estimated_hours:(u.minutes/60).toFixed(2),
+      preprocess_status:'ready',
+      reason:u.reason,
+      note:u.note||'',
+      aps_result:'APS 插單模擬已採用',
+      affected_jobs:(EP.simulation.impacts||[]).length,
+      delay_jobs:(EP.simulation.impacts||[]).filter(x=>x.delay).length
+    };
+    const saved=await jsonp('urgentcreate',payload,30000);
+    S.pool=EP.simulation.simPool;
+    S.schedule=EP.simulation.sim;
+    renderPool();renderSchedule();updateKpi();populateUrgentLists();
+    $('urgentFormMsg').className='urgent-publish-ok';
+    $('urgentFormMsg').textContent='已正式發布急單 '+saved.urgent_id+'，Key In 人員網頁將顯示通知。';
+    log(`已發布急單：${u.wo}｜${u.publisher_name}｜${saved.urgent_id}`);
+    alert('急單已套用排程並發布到 Key In 通知中心');
+    showPage('schedule');
+  }catch(e){
+    $('urgentFormMsg').className='hint';
+    $('urgentFormMsg').style.color='var(--red)';
+    $('urgentFormMsg').textContent='發布失敗：'+e.message;
+    alert('急單發布失敗：'+e.message);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='採用此方案';
+  }
+}
 
 $('poolSearch').oninput=e=>{EP.poolSearch=e.target.value;renderPool()};$('poolStatus').onchange=e=>{EP.poolStatus=e.target.value;renderPool()};$('poolMachine').onchange=e=>{EP.poolMachine=e.target.value;renderPool()};$('clearPoolFilters').onclick=()=>{$('poolSearch').value='';$('poolStatus').value='all';$('poolMachine').value='all';EP.poolSearch='';EP.poolStatus='all';EP.poolMachine='all';renderPool()};$('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;$('loadUrgentWo').onclick=loadUrgent;$('applyUrgent').onclick=applyUrgent;$('discardUrgent').onclick=resetUrgent;
 // Update bindings replaced by function overrides
@@ -7909,7 +8041,7 @@ function render(){
  const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="9" class="missing-speed-empty">${st.missingConfigs?'沒有符合篩選條件的資料':'目前沒有真正缺產速設定'}</td></tr>`;return}
  body.innerHTML=rows.map((g,i)=>{const jobs=g.jobs.slice(0,3).join('、')+(g.jobs.length>3?`…另 ${g.jobs.length-3} 筆`:'');return `<tr><td><span class="tag yellow">待確認</span></td><td><strong>${esc(g.part)}</strong><div class="ms-order-count">${esc(g.process||'未指定製程')}｜${esc(g.machine||'未指定機台')}</div></td><td><strong>${g.jobs.length.toLocaleString('zh-TW')} 筆</strong><div class="ms-order-count">${esc(jobs)}</div></td><td>${esc(g.part||'—')}</td><td class="spec">${esc(g.spec||'—')}</td><td>${esc(g.machine||'—')}</td><td>${esc(g.process||'—')}</td><td><div class="missing-speed-reason">${esc(g.reason)}</div><div class="ms-recommend">建議：${esc(g.suggest)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms93="feedback" data-i="${i}">補產速</button><button class="btn ghost" data-ms93="copy" data-i="${i}">複製設定</button></div></td></tr>`}).join('');
 }
-function gotoFeedback(g){if(typeof window.showPage==='function')window.showPage('speedFeedback');[['speedFbPart',g.part],['speedFeedbackPart',g.part],['speedFbMachine',g.machine],['speedFeedbackMachine',g.machine],['speedFbProcess',g.process],['speedFeedbackProcess',g.process],['speedFbName',g.spec],['speedFeedbackName',g.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});document.querySelector('#speedFeedbackFormCard')?.scrollIntoView({behavior:'smooth',block:'start'});window.log?.(`Build 0096.3：已帶入缺產速設定 ${g.part}｜${g.process||'未指定製程'}｜${g.machine||'未指定機台'}`)}
+function gotoFeedback(g){if(typeof window.showPage==='function')window.showPage('speedFeedback');[['speedFbPart',g.part],['speedFeedbackPart',g.part],['speedFbMachine',g.machine],['speedFeedbackMachine',g.machine],['speedFbProcess',g.process],['speedFeedbackProcess',g.process],['speedFbName',g.spec],['speedFeedbackName',g.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});document.querySelector('#speedFeedbackFormCard')?.scrollIntoView({behavior:'smooth',block:'start'});window.log?.(`Build 0097：已帶入缺產速設定 ${g.part}｜${g.process||'未指定製程'}｜${g.machine||'未指定機台'}`)}
 function install(){updateLabels();const refresh=document.getElementById('missingSpeedRefresh');if(refresh){refresh.onclick=scan}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e){e.oninput=id==='missingSpeedSearch'?render:e.oninput;e.onchange=id==='missingSpeedSearch'?e.onchange:render}});const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.ms00963){body.dataset.ms00963='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms93]');if(!b)return;const g=state.filtered[Number(b.dataset.i)];if(!g)return;if(b.dataset.ms93==='feedback')gotoFeedback(g);else{const v=`缺產速設定\n料號：${g.part}\n製程：${g.process}\n機台：${g.machine}\n影響工單：${g.jobs.length}\n工單：${g.jobs.join('、')}\n原因：${g.reason}\n建議：${g.suggest}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製設定',1200)}catch{window.prompt('請複製以下資料',v)}}})}document.querySelectorAll('[data-page="missingSpeed"]').forEach(e=>e.addEventListener('click',()=>setTimeout(scan,80)));const oldScan=window.APSMissingSpeed?.scan;window.APSMissingSpeed={...(window.APSMissingSpeed||{}),scan,rows:()=>state.groups.slice(),state,legacyScan:oldScan};setTimeout(scan,1800);setInterval(()=>{if(document.getElementById('missingSpeed')?.classList.contains('active'))scan()},10000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
