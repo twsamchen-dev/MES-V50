@@ -7750,4 +7750,102 @@ Build 0080｜V90.0 AI 多機台決策面板
 })();
 </script>
 
+
+
+<style id="build00962-validation-style">
+#apsValidationPage .validation-hero{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:stretch}
+#apsValidationPage .health-ring{min-height:190px;display:grid;place-items:center;text-align:center;background:radial-gradient(circle,#183027 0,#0b161b 68%);border:1px solid #315044;border-radius:12px}
+#apsValidationPage .health-ring strong{font-size:52px;line-height:1;color:#7ee2ad}#apsValidationPage .health-ring span{display:block;color:#9db0aa;margin-top:8px}
+#apsValidationPage .validation-grid{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:10px}
+#apsValidationPage .vbox{background:#0b151b;border:1px solid #2c3c45;border-radius:10px;padding:13px;min-height:96px}
+#apsValidationPage .vbox b{display:block;font-size:12px;color:#9fb0ba;margin-bottom:8px}#apsValidationPage .vbox strong{font-size:25px}
+#apsValidationPage .ok{color:#62d79a}.warn{color:#f5be55}.bad{color:#ff7580}
+#apsValidationPage .validation-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+#apsValidationPage .validation-sections{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#apsValidationPage .check-list{display:grid;gap:7px}.check-row{display:grid;grid-template-columns:24px 1fr auto;gap:9px;align-items:center;padding:9px 10px;border:1px solid #263842;border-radius:8px;background:#0a1318}.check-row small{color:#91a2ac}.check-row em{font-style:normal;font-weight:700}
+#apsValidationPage .order-list{max-height:280px;overflow:auto;border:1px solid #293943;border-radius:9px}.order-line{display:grid;grid-template-columns:1fr 120px 120px;gap:8px;padding:8px 10px;border-bottom:1px solid #22323b;font-size:12px}.order-line:last-child{border-bottom:0}
+#apsValidationPage .sim-card{border:1px solid #344651;border-radius:10px;padding:12px;background:#0b151b;margin-top:8px}.sim-score{font-size:30px;font-weight:800}.sim-reasons{font-size:12px;color:#aab8c0;line-height:1.7;margin-top:6px}
+#apsValidationPage pre{white-space:pre-wrap;background:#060d11;border:1px solid #263740;border-radius:9px;padding:12px;color:#bcd2dc;max-height:330px;overflow:auto}
+@media(max-width:1100px){#apsValidationPage .validation-grid{grid-template-columns:repeat(2,1fr)}#apsValidationPage .validation-sections{grid-template-columns:1fr}}
+@media(max-width:700px){#apsValidationPage .validation-hero{grid-template-columns:1fr}#apsValidationPage .validation-grid{grid-template-columns:1fr}}
+</style>
+<script id="build00962-validation-ai-sandbox">
+(()=>{
+'use strict';
+if(window.__APS_BUILD_00962_INSTALLED__)return;window.__APS_BUILD_00962_INSTALLED__=true;
+const BUILD='0096.2',CORE='V96.2',ENGINE='Validation + AI Sandbox';
+const $=id=>document.getElementById(id),txt=v=>String(v??'').trim(),num=v=>Number(v)||0;
+const esc=v=>txt(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=d=>{const x=new Date(d);return Number.isNaN(+x)?'':x.toISOString().slice(0,10)};
+const fmt=n=>Number(n||0).toLocaleString('zh-TW');
+const schedule=()=>Array.isArray(window.S?.schedule)?window.S.schedule.filter(x=>x&&x.start&&x.end):[];
+const pool=()=>Array.isArray(window.S?.pool)?window.S.pool:[];
+function selectedDate(){return $('dashboardDate')?.value||$('startDate')?.value||new Date().toISOString().slice(0,10)}
+function productionWindow(date){const d=new Date(date+'T08:30:00');const e=new Date(d);e.setDate(e.getDate()+1);return {start:d,end:e}}
+function overlap(a0,a1,b0,b1){return Math.max(0,(Math.min(+a1,+b1)-Math.max(+a0,+b0))/60000)}
+function key(x){return txt(x?.wo||x?.work_order_no||x?.workOrderNo||x?.order_no)}
+function machine(x){return txt(x?.machine||x?.machine_code||x?.machineCode)}
+function daySegments(){const w=productionWindow(selectedDate());return schedule().map(x=>({...x,_mins:overlap(new Date(x.start),new Date(x.end),w.start,w.end)})).filter(x=>x._mins>0)}
+function enabledMachines(){const m=window.S?.machines||{};const a=Object.keys(m).filter(k=>m[k]?.enabled!==false);return a.length?a:[...new Set(schedule().map(machine).filter(Boolean))]}
+function overlapIssues(rows){const by={};rows.forEach(x=>(by[machine(x)]??=[]).push(x));const issues=[];Object.entries(by).forEach(([m,list])=>{list.sort((a,b)=>new Date(a.start)-new Date(b.start));for(let i=1;i<list.length;i++){const p=list[i-1],c=list[i];if(new Date(c.start)<new Date(p.end))issues.push({machine:m,a:key(p),b:key(c),minutes:Math.round(overlap(new Date(p.start),new Date(p.end),new Date(c.start),new Date(c.end)))})}});return issues}
+function calculate(){
+ const date=selectedDate(),w=productionWindow(date),rows=daySegments(),jobs=[...new Set(rows.map(key).filter(Boolean))],machines=enabledMachines();
+ const production=rows.reduce((a,x)=>a+x._mins,0);let capacity=0;machines.forEach(m=>capacity+=(num(window.S?.machines?.[m]?.hours)||24)*60);if(!capacity)capacity=Math.max(1,machines.length)*1440;
+ const idle=Math.max(0,capacity-production),util=capacity?production/capacity*100:0,issues=overlapIssues(rows),p=pool(),pmap=new Map(p.map(x=>[key(x),x]));
+ const urgent=jobs.filter(k=>!!pmap.get(k)?.urgent).length;
+ const overdue=p.filter(x=>{if(x.closed)return false;const d=new Date(x.due||x.due_date||x.delivery_date);return !Number.isNaN(+d)&&d<w.end}).length;
+ const missing=p.filter(x=>!x.closed&&!x.ready).length;
+ const picker=$('dashboardDate')?.value||'',start=$('startDate')?.value||'',dateSync=!picker||!start||picker===start;
+ const dashboardStats=window.APSBuild0096?.getDayStats?.();const kpiJobs=dashboardStats?.todayJobs?.size;
+ const kpiMatch=kpiJobs==null||Number(kpiJobs)===jobs.length;
+ const checks=[
+  {name:'日期同步',ok:dateSync,detail:`Dashboard ${picker||'—'}｜Gantt ${start||'—'}`},
+  {name:'KPI／甘特工單一致',ok:kpiMatch,detail:`KPI ${kpiJobs??'—'}｜甘特 ${jobs.length}`},
+  {name:'工單重疊',ok:issues.length===0,detail:issues.length?`${issues.length} 個重疊`:'未發現重疊'},
+  {name:'DataHub 工單池',ok:p.length>0,detail:`${fmt(p.length)} 筆`},
+  {name:'排程資料',ok:schedule().length>0,detail:`${fmt(schedule().length)} 區段`},
+  {name:'機台資料',ok:machines.length>0,detail:`${machines.length} 台`},
+  {name:'產速完整度',ok:missing===0,warning:missing>0,detail:`缺少 ${missing} 筆`}
+ ];
+ let deductions=0;checks.forEach(c=>{if(!c.ok)deductions+=c.warning?4:12});if(util<20)deductions+=5;if(overdue)deductions+=Math.min(15,overdue*2);const health=Math.max(0,100-deductions);
+ const dueScore=Math.max(0,100-Math.min(100,overdue*12));const idleScore=Math.max(0,100-Math.min(100,idle/capacity*100));const urgentScore=urgent?Math.max(50,100-issues.length*10):100;const apsScore=Math.round(dueScore*.5+idleScore*.3+urgentScore*.2);
+ return {date,w,rows,jobs,machines,production,capacity,idle,util,issues,p,pmap,urgent,overdue,missing,dateSync,kpiMatch,checks,health,dueScore,idleScore,urgentScore,apsScore};
+}
+function statusClass(c){return c.ok?'ok':c.warning?'warn':'bad'}
+function makeNav(){
+ if(document.querySelector('[data-page="apsValidation"]'))return;
+ const nav=document.querySelector('.side-nav');if(!nav)return;
+ const b=document.createElement('button');b.className='tab';b.dataset.page='apsValidation';b.innerHTML='<span>⚙</span>APS 驗證中心';nav.appendChild(b);
+ b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$('apsValidationPage')?.classList.add('active');render()});
+}
+function makePage(){if($('apsValidationPage'))return;const host=document.querySelector('.workspace')||document.querySelector('main')||document.body;const p=document.createElement('section');p.id='apsValidationPage';p.className='page';p.innerHTML=`
+ <div class="page-toolbar"><div><div class="section-kicker">APS VALIDATION CENTER</div><h2>APS 驗證中心｜Build ${BUILD}</h2><div class="sub">依優先順序：交期 → Idle 最少 → 急單，先驗證再採用建議。</div></div></div>
+ <div class="validation-toolbar"><button class="btn green" id="runValidation00962">開始驗證</button><button class="btn ghost" id="exportValidationTxt00962">匯出 TXT</button><button class="btn ghost" id="exportValidationCsv00962">匯出 CSV</button><button class="btn yellow" id="runSandbox00962">AI 模擬分析</button><span class="sub" id="validationTime00962"></span></div>
+ <div class="validation-hero"><div class="health-ring"><div><strong id="healthScore00962">—</strong><span>APS Health / 100</span></div></div><div class="validation-grid" id="validationMetrics00962"></div></div>
+ <div class="validation-sections" style="margin-top:12px"><div class="card"><h2>系統驗證</h2><div class="check-list" id="validationChecks00962"></div></div><div class="card"><h2>排程品質</h2><div class="check-list" id="qualityChecks00962"></div></div></div>
+ <div class="validation-sections" style="margin-top:12px"><div class="card"><h2>本生產日工單</h2><div class="order-list" id="validationOrders00962"></div></div><div class="card"><h2>AI Sandbox（只分析，不改正式排程）</h2><div id="sandboxResult00962" class="sub">按「AI 模擬分析」產生交期、Idle、急單評分與改善建議。</div></div></div>
+ <div class="card" style="margin-top:12px"><h2>驗證報告</h2><pre id="validationReport00962">尚未執行驗證。</pre></div>`;host.appendChild(p);
+ $('runValidation00962').onclick=render;$('runSandbox00962').onclick=renderSandbox;$('exportValidationTxt00962').onclick=()=>download('txt');$('exportValidationCsv00962').onclick=()=>download('csv');
+}
+let last=null;
+function render(){last=calculate();const s=last;$('validationTime00962').textContent=`最後驗證：${new Date().toLocaleString('zh-TW')}`;$('healthScore00962').textContent=s.health;$('healthScore00962').className=s.health>=90?'ok':s.health>=75?'warn':'bad';
+ const metrics=[['生產日',s.date],['今日排程工單',s.jobs.length],['排程工時',(s.production/60).toFixed(1)+' hr'],['機台負荷',Math.round(s.util)+'%'],['Idle',(s.idle/60).toFixed(1)+' hr'],['急單',s.urgent],['逾期風險',s.overdue],['重疊',s.issues.length]];
+ $('validationMetrics00962').innerHTML=metrics.map(([a,b])=>`<div class="vbox"><b>${esc(a)}</b><strong>${esc(b)}</strong></div>`).join('');
+ $('validationChecks00962').innerHTML=s.checks.map(c=>`<div class="check-row"><span class="${statusClass(c)}">${c.ok?'✔':c.warning?'⚠':'✖'}</span><div>${esc(c.name)}<br><small>${esc(c.detail)}</small></div><em class="${statusClass(c)}">${c.ok?'PASS':c.warning?'WARN':'FAIL'}</em></div>`).join('');
+ const quality=[['交期風險',s.overdue?`${s.overdue} 張需處理`:'安全',s.overdue===0],['Idle 比例',`${(100-s.util).toFixed(1)}%`,s.util>=70],['急單排入',`${s.urgent} 張`,true],['機台重疊',`${s.issues.length} 個`,s.issues.length===0],['缺少產速',`${s.missing} 筆`,s.missing===0]];
+ $('qualityChecks00962').innerHTML=quality.map(([a,b,ok])=>`<div class="check-row"><span class="${ok?'ok':'warn'}">${ok?'✔':'⚠'}</span><div>${esc(a)}</div><em class="${ok?'ok':'warn'}">${esc(b)}</em></div>`).join('');
+ $('validationOrders00962').innerHTML=s.jobs.length?s.jobs.map(wo=>{const x=s.pmap.get(wo)||{};return `<div class="order-line"><b>${esc(wo)}</b><span>${esc(x.due||x.due_date||'無交期')}</span><span>${x.urgent?'<em class="bad">急單</em>':'一般'}</span></div>`}).join(''):'<div class="empty">本生產日沒有排程工單</div>';
+ $('validationReport00962').textContent=reportText(s);return s;
+}
+function reportText(s){const passed=s.checks.filter(x=>x.ok).length,warn=s.checks.filter(x=>!x.ok&&x.warning).length,fail=s.checks.filter(x=>!x.ok&&!x.warning).length;return `APS Validation Report\nBuild：${BUILD} ${ENGINE}\n時間：${new Date().toLocaleString('zh-TW')}\n生產日：${s.date}\n\nHealth Score：${s.health}/100\nAPS 排程分數：${s.apsScore}/100\n通過：${passed}\n警告：${warn}\n錯誤：${fail}\n\n交期風險：${s.overdue}\nIdle：${(s.idle/60).toFixed(1)} hr\n急單：${s.urgent}\n重疊：${s.issues.length}\n缺少產速：${s.missing}\n\n${s.checks.map(x=>`${x.ok?'[PASS]':x.warning?'[WARN]':'[FAIL]'} ${x.name}｜${x.detail}`).join('\n')}`}
+function renderSandbox(){const s=render();const suggestions=[];if(s.overdue)suggestions.push(`先處理 ${s.overdue} 張交期風險工單，避免為填 Idle 而延後近交期工單。`);if(s.util<70)suggestions.push(`目前機台負荷 ${Math.round(s.util)}%，優先將可執行短工單填入 ${(s.idle/60).toFixed(1)} 小時空檔。`);if(s.urgent)suggestions.push(`${s.urgent} 張急單先模擬插單；只有不增加逾期或影響最小的方案才建議採用。`);if(s.issues.length)suggestions.push(`先解除 ${s.issues.length} 個機台重疊，再進行其他最佳化。`);if(!suggestions.length)suggestions.push('目前排程結構穩定，可進一步比較換線次數與共用機台方案。');
+ $('sandboxResult00962').innerHTML=`<div class="sim-card"><div>APS Score</div><div class="sim-score ${s.apsScore>=90?'ok':s.apsScore>=75?'warn':'bad'}">${s.apsScore}/100</div><div class="sim-reasons">交期 ${Math.round(s.dueScore)} 分（50%）｜Idle ${Math.round(s.idleScore)} 分（30%）｜急單 ${Math.round(s.urgentScore)} 分（20%）</div></div>${suggestions.map((x,i)=>`<div class="sim-card"><b>建議 ${i+1}</b><div class="sim-reasons">${esc(x)}</div></div>`).join('')}<div class="notice" style="margin-top:10px">此模擬只提供分析，不會修改正式排程。</div>`;
+}
+function download(type){const s=last||render();let data,name,mime;if(type==='csv'){const rows=[['項目','數值'],['Build',BUILD],['生產日',s.date],['Health',s.health],['APS Score',s.apsScore],['今日排程工單',s.jobs.length],['排程工時hr',(s.production/60).toFixed(1)],['Idle hr',(s.idle/60).toFixed(1)],['急單',s.urgent],['逾期風險',s.overdue],['重疊',s.issues.length],['缺少產速',s.missing]];data='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');name=`APS_Validation_${s.date}.csv`;mime='text/csv;charset=utf-8'}else{data=reportText(s);name=`APS_Validation_${s.date}.txt`;mime='text/plain;charset=utf-8'}const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function brand(){window.APS_BUILD_LOCK=BUILD;window.APS_VERSION=CORE;document.title=`SEAL KING Smart APS｜${CORE} Build ${BUILD} ${ENGINE}`;document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|V9|Enterprise/i.test(el.textContent||''))el.textContent=`${CORE}｜Build ${BUILD}`})}
+function init(){makePage();makeNav();brand();window.APSValidationCenter={render,calculate,runSandbox:renderSandbox};console.info(`APS Build ${BUILD}｜${ENGINE} ready`)}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(init,1200),{once:true}):setTimeout(init,1200);
+})();
+</script>
+
 </body></html>
