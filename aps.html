@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜Build 0097.3.1 急單發布中心 UI 優化</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0100</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -608,7 +608,7 @@ body::after{
 <script id="aps-build0094-direct-recovery">
 (()=>{
 'use strict';
-const BUILD='0096.3';
+const BUILD='0100';
 const API=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec';
 let running=false;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -631,7 +631,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V92 Build 0085</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0100</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -671,7 +671,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>Enterprise Preview 2｜Build 0091</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0100</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -6976,7 +6976,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0080｜V90.0 AI 多機台決策面板
+Build 0100｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7126,6 +7126,86 @@ Build 0080｜V90.0 AI 多機台決策面板
 })();
 </script>
 
+
+<style id="aps-v95-build0100-canonical-style">
+body::after{
+  content:"APS V95 Enterprise｜Build 0100"!important;
+}
+.v95-version-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid #8c5d20;background:#33270f;color:#ffe4a3;
+  border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;
+}
+</style>
+<script id="aps-v95-build0100-canonical">
+(()=>{
+  'use strict';
+
+  const LABEL='V95 Enterprise｜Build 0100';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0100';
+
+  window.APS_VERSION='V95';
+  window.APS_BUILD='0100';
+  window.APS_BUILD_LOCK='0100';
+  window.APS_VERSION_INFO={
+    product:'SEAL KING Smart APS',
+    core:'V95',
+    build:'0100',
+    engine:'Enterprise',
+    date:'2026-07-17'
+  };
+
+  function normalizeVisibleVersion(){
+    document.title=FULL;
+
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{
+      if(el) el.textContent=LABEL;
+    });
+
+    const security=document.querySelector('.aps-sec-brand p');
+    if(security) security.textContent='管理員權限保護｜V95 Build 0100';
+
+    document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
+      const txt=String(el.textContent||'');
+      if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
+        el.textContent=txt
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0100')
+          .replace(/Build\s*0085/gi,'Build 0100')
+          .replace(/Build\s*0091/gi,'Build 0100')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0100');
+      }
+    });
+
+    const kicker=document.querySelector('#missingSpeed .section-kicker');
+    if(kicker) kicker.textContent='V95｜AI MISSING SPEED CENTER';
+
+    document.querySelectorAll('[data-version-label]').forEach(el=>{
+      el.textContent=LABEL;
+    });
+  }
+
+  function install(){
+    normalizeVisibleVersion();
+
+    // Legacy modules may rewrite labels after cloud loading. Keep only the displayed
+    // version synchronized; no scheduling or DataHub logic is changed.
+    const observer=new MutationObserver(()=>{
+      clearTimeout(window.__apsV95VersionTimer);
+      window.__apsV95VersionTimer=setTimeout(normalizeVisibleVersion,40);
+    });
+    observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+
+    [500,1500,3500,7000].forEach(ms=>setTimeout(normalizeVisibleVersion,ms));
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  }else{
+    install();
+  }
+})();
+</script>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -7225,7 +7305,7 @@ Build 0080｜V90.0 AI 多機台決策面板
     if(p)return p;
     p=document.createElement("div");
     p.id="v90DecisionPanel";
-    p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
     const msg=$("urgentMsg")||$("urgentLookupMsg");
     const host=msg&&msg.parentElement?msg.parentElement:($("urgentLookup")?.closest(".card")||document.body);
     if(msg&&msg.nextSibling)host.insertBefore(p,msg.nextSibling);else host.appendChild(p);
@@ -7248,11 +7328,11 @@ Build 0080｜V90.0 AI 多機台決策面板
   function render(rows,meta){
     const p=ensurePanel();
     if(!rows.length){
-      p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
       return;
     }
     p.innerHTML=
-      '<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">'+
+      '<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">'+
       (meta.match_type==="work_order"?"工單歷史":"相似料號／製程")+'</div></div>'+
       '<div class="v90-grid">'+rows.slice(0,3).map((r,i)=>
         '<div class="v90-card '+(i===0?'active':'')+'" data-machine="'+r.machine_code+'">'+
@@ -7276,7 +7356,7 @@ Build 0080｜V90.0 AI 多機台決策面板
     const process=txt($("urgentProcess")?.value);
     const spec=txt($("urgentSpec")?.value);
     const p=ensurePanel();
-    p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
     try{
       let res=await jsonp("machineknowledgelookup",{
         work_order_no:wo,part_no:part,process:process,product_spec:spec,
@@ -7290,7 +7370,7 @@ Build 0080｜V90.0 AI 多機台決策面板
       render(ranked,res||{});
       window.V90MachineDecision={work_order_no:wo,recommendations:ranked,raw:res};
     }catch(e){
-      p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
     }
   }
 
@@ -7314,7 +7394,7 @@ Build 0080｜V90.0 AI 多機台決策面板
 })();
 </script>
 <!-- =========================================================
-Build 0080｜V90.0 AI 多機台決策面板
+Build 0100｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -7414,7 +7494,7 @@ Build 0080｜V90.0 AI 多機台決策面板
     if(p)return p;
     p=document.createElement("div");
     p.id="v90DecisionPanel";
-    p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
     const msg=$("urgentMsg")||$("urgentLookupMsg");
     const host=msg&&msg.parentElement?msg.parentElement:($("urgentLookup")?.closest(".card")||document.body);
     if(msg&&msg.nextSibling)host.insertBefore(p,msg.nextSibling);else host.appendChild(p);
@@ -7437,11 +7517,11 @@ Build 0080｜V90.0 AI 多機台決策面板
   function render(rows,meta){
     const p=ensurePanel();
     if(!rows.length){
-      p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
       return;
     }
     p.innerHTML=
-      '<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">'+
+      '<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">'+
       (meta.match_type==="work_order"?"工單歷史":"相似料號／製程")+'</div></div>'+
       '<div class="v90-grid">'+rows.slice(0,3).map((r,i)=>
         '<div class="v90-card '+(i===0?'active':'')+'" data-machine="'+r.machine_code+'">'+
@@ -7465,7 +7545,7 @@ Build 0080｜V90.0 AI 多機台決策面板
     const process=txt($("urgentProcess")?.value);
     const spec=txt($("urgentSpec")?.value);
     const p=ensurePanel();
-    p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
     try{
       let res=await jsonp("machineknowledgelookup",{
         work_order_no:wo,part_no:part,process:process,product_spec:spec,
@@ -7479,7 +7559,7 @@ Build 0080｜V90.0 AI 多機台決策面板
       render(ranked,res||{});
       window.V90MachineDecision={work_order_no:wo,recommendations:ranked,raw:res};
     }catch(e){
-      p.innerHTML='<div class="v90-head"><div class="v90-title">V90 AI 多機台決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
     }
   }
 
