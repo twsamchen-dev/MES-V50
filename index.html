@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V94.3 MES 生產 Key In｜急單通知版｜Build 0099</title>
+<title>V97 MES 生產 Key In｜智慧通知中心｜Build 0100</title>
 <link rel="stylesheet" href="style.css">
-<script src="api.js"></script>
+<script src="api.js">
+</script>
 <style>
 .nav{display:none!important}
 .rangeBar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
@@ -52,25 +53,15 @@
 @keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.62}}
 
 
-.urgentNoticePanel{display:none;border:2px solid #dc2626;background:linear-gradient(135deg,#fff1f2,#fff7ed);border-radius:18px;padding:14px;margin-bottom:14px;box-shadow:0 10px 24px rgba(220,38,38,.12)}
-.urgentNoticePanel.show{display:block}
-.urgentNoticeHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.urgentNoticeTitle{font-size:20px;font-weight:900;color:#b91c1c}
-.urgentNoticeCount{border-radius:999px;background:#dc2626;color:#fff;padding:5px 10px;font-size:12px;font-weight:900}
-.urgentNoticeList{display:grid;gap:10px;margin-top:10px}
-.urgentNoticeItem{border:1px solid #fecaca;background:#fff;border-radius:14px;padding:12px}
-.urgentNoticeItem.read{opacity:.66;border-color:#d1d5db}
-.urgentNoticeTop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.urgentNoticeWo{font-size:18px;font-weight:900;color:#991b1b}
-.urgentNoticeMeta{font-size:13px;color:#475569;line-height:1.7;margin-top:7px}
-.urgentReadBtn{border:0;border-radius:10px;padding:8px 12px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer}
-.urgentReadBtn:disabled{background:#94a3b8}
+/* V97 智慧通知中心 */
+.urgentNoticePanel{display:none;border:1px solid #cbd5e1;background:linear-gradient(135deg,#f8fafc,#eef2ff);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 12px 28px rgba(15,23,42,.10)}
+.urgentNoticePanel.show{display:block}.urgentNoticeHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.urgentNoticeTitle{font-size:21px;font-weight:950;color:#0f172a}.urgentNoticeSub{font-size:12px;color:#64748b;margin-top:3px;line-height:1.55}.urgentNoticeCount{border-radius:999px;background:#dc2626;color:#fff;padding:6px 11px;font-size:12px;font-weight:900}.noticeKpis{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.noticeKpi{border:1px solid #dbe4f0;background:#fff;border-radius:12px;padding:7px 10px;font-size:12px;font-weight:900;color:#334155}.noticeTools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}.noticeSearch{flex:1;min-width:220px;border:1px solid #cbd5e1;border-radius:12px;padding:9px 11px;background:#fff}.noticeChip{border:1px solid #cbd5e1;border-radius:999px;padding:7px 11px;background:#fff;color:#334155;font-weight:900;cursor:pointer}.noticeChip.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}.urgentNoticeList{display:grid;gap:10px;margin-top:12px}.noticeGroup{border:1px solid #dbe4f0;border-radius:15px;background:rgba(255,255,255,.74);overflow:hidden}.noticeGroupTitle{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-weight:950;cursor:pointer;color:#1e293b}.noticeGroupBody{display:grid;gap:9px;padding:0 10px 10px}.noticeGroup.collapsed .noticeGroupBody{display:none}.urgentNoticeItem{border:1px solid #fecaca;border-left:6px solid #dc2626;background:#fff;border-radius:14px;padding:12px;box-shadow:0 3px 12px rgba(15,23,42,.05)}.urgentNoticeItem.read{border-color:#d1d5db;border-left-color:#94a3b8;background:#f8fafc}.urgentNoticeItem.type-due{border-left-color:#ea580c}.urgentNoticeItem.type-aps{border-left-color:#ca8a04}.urgentNoticeItem.type-info{border-left-color:#2563eb}.urgentNoticeItem.type-quality{border-left-color:#7e22ce}.urgentNoticeItem.type-machine{border-left-color:#334155}.urgentNoticeTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}.urgentNoticeWo{font-size:17px;font-weight:950;color:#0f172a;overflow-wrap:anywhere}.noticeBadges{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.noticeBadge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:950;background:#eef2ff;color:#1e40af}.noticeBadge.unread{background:#fee2e2;color:#b91c1c}.noticeBadge.read{background:#e2e8f0;color:#475569}.noticeBadge.priority{background:#fff7ed;color:#c2410c}.noticeGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 14px;margin-top:10px}.noticeField{min-width:0}.noticeLabel{font-size:11px;font-weight:900;color:#64748b}.noticeValue{font-size:13px;font-weight:800;color:#1e293b;overflow-wrap:anywhere}.noticeDue{color:#b91c1c}.noticeCountdown{font-weight:950}.noticeTextBox{margin-top:9px;padding:9px 10px;border-radius:11px;background:#f8fafc;border:1px solid #e2e8f0}.noticeTranslation{margin-top:5px;padding-top:5px;border-top:1px dashed #cbd5e1;color:#334155}.noticeActions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}.noticeDetailBtn{border:1px solid #cbd5e1;border-radius:10px;padding:8px 11px;background:#fff;color:#334155;font-weight:900;cursor:pointer}.urgentReadBtn{border:0;border-radius:10px;padding:8px 12px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer}.urgentReadBtn:disabled{background:#94a3b8;cursor:not-allowed}.noticeDetails{display:none;margin-top:9px;padding-top:9px;border-top:1px dashed #cbd5e1}.noticeDetails.show{display:block}.noticeEmpty{padding:18px;text-align:center;color:#64748b;background:#fff;border-radius:13px}@media(max-width:720px){.noticeGrid{grid-template-columns:1fr}.noticeTools{align-items:stretch}.noticeSearch{width:100%}.urgentNoticeTitle{font-size:19px}.urgentNoticeItem{padding:11px}}
 
 </style>
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V94.3 急單通知版｜Build 0099</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V97 智慧通知中心｜Build 0100</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -86,13 +77,9 @@
   </div>
 
   <div id="urgentNoticePanel" class="urgentNoticePanel col12">
-    <div class="urgentNoticeHead">
-      <div>
-        <div class="urgentNoticeTitle">🔴 急單／插單通知 / แจ้งงานด่วน</div>
-        <div class="miniText">請優先確認最新交期與指定機台，閱讀後按「確認已讀」。</div>
-      </div>
-      <span id="urgentNoticeCount" class="urgentNoticeCount">0 筆未讀</span>
-    </div>
+    <div class="urgentNoticeHead"><div><div class="urgentNoticeTitle">🔔 通知中心 / ศูนย์แจ้งเตือน</div><div class="urgentNoticeSub">多筆通知依「未讀 → 優先等級 → 最新交期 → 發布時間」排序。請逐筆閱讀並確認。<br>เรียงตาม ยังไม่ได้อ่าน → ความสำคัญ → กำหนดส่ง → เวลาประกาศ</div></div><span id="urgentNoticeCount" class="urgentNoticeCount">0 筆未讀 / 0 ยังไม่ได้อ่าน</span></div>
+    <div class="noticeKpis"><span id="noticeKpiUnread" class="noticeKpi">🔴 未讀 0</span><span id="noticeKpiTotal" class="noticeKpi">📋 全部 0</span><span id="noticeKpiDue" class="noticeKpi">⏱ 24小時內 0</span></div>
+    <div class="noticeTools"><input id="noticeSearch" class="noticeSearch" placeholder="搜尋工單、客戶、料號、機台 / ค้นหาใบงาน ลูกค้า รหัสสินค้า เครื่องจักร" oninput="renderUrgentNotices()"><button id="noticeFilterUnread" class="noticeChip active" onclick="setNoticeFilter('unread')">未讀 / ยังไม่ได้อ่าน</button><button id="noticeFilterAll" class="noticeChip" onclick="setNoticeFilter('all')">全部 / ทั้งหมด</button><button id="noticeLangBi" class="noticeChip active" onclick="setNoticeLanguage('bi')">中泰</button><button id="noticeLangZh" class="noticeChip" onclick="setNoticeLanguage('zh')">中文</button><button id="noticeLangTh" class="noticeChip" onclick="setNoticeLanguage('th')">ไทย</button></div>
     <div id="urgentNoticeList" class="urgentNoticeList"></div>
   </div>
 
@@ -180,7 +167,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V94.3 Build 0099｜Key In Stable Final
+// V97 Build 0100｜Key In Stable + Smart Notification Center
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -590,58 +577,27 @@ async function getApi(action,params){if(window.MES&&typeof MES.get==='function')
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
 
 function urgentEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
-async function loadUrgentNotices(){
-  try{
-    const empNo=String(safeGet('emp_no')||'').split(/[\s,，]+/).filter(Boolean)[0]||'';
-    const r=await getApi('urgentorders',{emp_no:empNo,_:Date.now()});
-    App.urgentOrders=rowsOf(r);
-    renderUrgentNotices();
-  }catch(e){
-    console.warn('urgentorders',e);
-  }
-}
-function renderUrgentNotices(){
-  const panel=qs('urgentNoticePanel'),list=qs('urgentNoticeList'),count=qs('urgentNoticeCount');
-  if(!panel||!list||!count)return;
-  const rows=(App.urgentOrders||[]).filter(r=>!String(r.status||'').match(/closed|completed|cancelled/i));
-  if(!rows.length){panel.classList.remove('show');list.innerHTML='';return}
-  panel.classList.add('show');
-  const unread=rows.filter(r=>!r.is_read).length;
-  count.textContent=unread+' 筆未讀';
-  list.innerHTML=rows.map(r=>`
-    <div class="urgentNoticeItem ${r.is_read?'read':''}">
-      <div class="urgentNoticeTop">
-        <div>
-          <div class="urgentNoticeWo">${urgentEsc(r.work_order_no||'—')}｜${urgentEsc(r.process||'')}</div>
-          <div class="smallPill">${r.is_read?'已讀':'未讀'}</div>
-        </div>
-        <button class="urgentReadBtn" ${r.is_read?'disabled':''} onclick="markUrgentRead('${urgentEsc(r.urgent_id)}')">${r.is_read?'已確認':'確認已讀 / รับทราบ'}</button>
-      </div>
-      <div class="urgentNoticeMeta">
-        客戶：${urgentEsc(r.customer||'—')}｜料號：${urgentEsc(r.part_no||'—')}<br>
-        數量：${urgentEsc(r.qty||'0')} ${urgentEsc(r.unit||'')}｜指定機台：${urgentEsc(r.machine||'自動選擇')}<br>
-        原交期：${urgentEsc(r.original_due||'—')}<br>
-        <b style="color:#b91c1c">最新交期：${urgentEsc(r.new_due||'—')}</b><br>
-        發布人：${urgentEsc(r.publisher_name||'')}（${urgentEsc(r.publisher_dept||'')}）｜原因：${urgentEsc(r.reason||'—')}
-        ${r.note?'<br>備註：'+urgentEsc(r.note):''}
-      </div>
-    </div>`).join('');
-}
-async function markUrgentRead(urgentId){
-  const empNos=String(safeGet('emp_no')||'').split(/[\s,，]+/).filter(Boolean);
-  const names=String(safeGet('emp_name')||'').split(/[\s,，、]+/).filter(Boolean);
-  if(!empNos.length||!names.length){
-    alert('請先填寫工號與姓名，再確認急單已讀 / กรุณากรอกรหัสและชื่อก่อน');
-    return;
-  }
-  try{
-    await getApi('urgentread',{urgent_id:urgentId,reader_emp_no:empNos[0],reader_name:names[0],source:'keyin',_:Date.now()});
-    if(window.MES)MES.toast('急單已確認閱讀');
-    await loadUrgentNotices();
-  }catch(e){alert('急單已讀紀錄失敗：'+e.message)}
-}
+const NOTICE_UI={filter:'unread',lang:'bi',collapsed:{read:true,unread:false},refreshMs:30000};
+const NOTICE_TH_DICT={'客戶提前出貨':'ลูกค้าขอให้จัดส่งเร็วขึ้น','客戶要求提前交貨':'ลูกค้าขอให้ส่งมอบเร็วขึ้น','交期變更':'เปลี่ยนกำหนดส่ง','機台故障':'เครื่องจักรขัดข้อง','等待前製程':'รอกระบวนการก่อนหน้า','半成品已到位':'ชิ้นงานกึ่งสำเร็จพร้อมแล้ว','主管允許先排':'หัวหน้าอนุมัติให้จัดก่อน','急單':'งานด่วน','插單':'แทรกงาน','客戶改期':'ลูกค้าเปลี่ยนกำหนดส่ง'};
+function noticeNormalizeBool(v){return v===true||v===1||String(v).toLowerCase()==='true'||String(v)==='1'}
+function noticeTypeInfo(r){const raw=String(r.notification_type||r.type||'urgent').toLowerCase();if(/due|交期/.test(raw))return {key:'due',icon:'🟠',zh:'交期變更',th:'เปลี่ยนกำหนดส่ง'};if(/aps|schedule|排程/.test(raw))return {key:'aps',icon:'🟡',zh:'APS 排程',th:'ตาราง APS'};if(/quality|品質/.test(raw))return {key:'quality',icon:'🟣',zh:'品質通知',th:'แจ้งคุณภาพ'};if(/machine|equipment|機台|設備/.test(raw))return {key:'machine',icon:'⚫',zh:'設備通知',th:'แจ้งเครื่องจักร'};if(/info|notice|公告|一般/.test(raw))return {key:'info',icon:'🔵',zh:'一般通知',th:'ประกาศทั่วไป'};return {key:'urgent',icon:'🔴',zh:'急單',th:'งานด่วน'}}
+function noticePriority(r){let n=Number(r.priority_level||r.priority||5);if(!Number.isFinite(n)||n<1)n=5;if(n>5)n=5;return {n,stars:'★'.repeat(n)+'☆'.repeat(5-n)}}
+function noticeDateMs(v){if(!v)return 0;const s=String(v).trim().replace(/\//g,'-');const d=new Date(s.includes('T')?s:s.replace(' ','T'));return Number.isFinite(d.getTime())?d.getTime():0}
+function noticeCountdown(v){const due=noticeDateMs(v);if(!due)return {text:'—'};const ms=due-Date.now(),abs=Math.abs(ms),h=Math.floor(abs/3600000),min=Math.floor(abs%3600000/60000);return ms<0?{text:`逾期 ${h}小時${min}分 / เกินกำหนด ${h}ชม.${min}น.`}:{text:`剩餘 ${h}小時${min}分 / เหลือ ${h}ชม.${min}น.`}}
+function noticeTextPair(r,base){const original=String(r[base+'_original']||r[base]||'').trim();let zh=String(r[base+'_zh']||'').trim(),th=String(r[base+'_th']||'').trim();const lang=String(r[base+'_lang']||r.original_language||'').toLowerCase();if(!zh&&!th){if(lang==='th')th=original;else zh=original}if(!th&&zh)th=NOTICE_TH_DICT[zh]||'';return {original,zh,th}}
+function noticePairHtml(labelZh,labelTh,pair){let body='';if(NOTICE_UI.lang==='zh')body=pair.zh||pair.original||'—';else if(NOTICE_UI.lang==='th')body=pair.th||pair.original||'—';else{const first=pair.zh||pair.original||'—';body=urgentEsc(first);if(pair.th&&pair.th!==first)body+=`<div class="noticeTranslation"><b>🇹🇭 ไทย</b><br>${urgentEsc(pair.th)}</div>`;return `<div class="noticeTextBox"><div class="noticeLabel">${labelZh} / ${labelTh}</div><div class="noticeValue">${body}</div></div>`}return `<div class="noticeTextBox"><div class="noticeLabel">${NOTICE_UI.lang==='th'?labelTh:labelZh}</div><div class="noticeValue">${urgentEsc(body)}</div></div>`}
+function setNoticeFilter(v){NOTICE_UI.filter=v;const u=qs('noticeFilterUnread'),a=qs('noticeFilterAll');if(u)u.classList.toggle('active',v==='unread');if(a)a.classList.toggle('active',v==='all');renderUrgentNotices()}
+function setNoticeLanguage(v){NOTICE_UI.lang=v;[['Bi','bi'],['Zh','zh'],['Th','th']].forEach(x=>{const e=qs('noticeLang'+x[0]);if(e)e.classList.toggle('active',v===x[1])});try{localStorage.setItem('MES_NOTICE_LANG',v)}catch(e){}renderUrgentNotices()}
+function toggleNoticeGroup(k){NOTICE_UI.collapsed[k]=!NOTICE_UI.collapsed[k];renderUrgentNotices()}
+function toggleNoticeDetails(id){const e=qs('notice_detail_'+String(id).replace(/[^a-zA-Z0-9_-]/g,'_'));if(e)e.classList.toggle('show')}
+async function loadUrgentNotices(){try{const empNo=String(safeGet('emp_no')||'').split(/[\s,，]+/).filter(Boolean)[0]||'';const r=await getApi('urgentorders',{emp_no:empNo,_:Date.now()});App.urgentOrders=rowsOf(r).map(x=>Object.assign({},x,{is_read:noticeNormalizeBool(x.is_read)}));renderUrgentNotices()}catch(e){console.warn('urgentorders',e)}}
+function noticeCardHtml(r){const t=noticeTypeInfo(r),p=noticePriority(r),cd=noticeCountdown(r.new_due),id=urgentEsc(r.urgent_id||''),reason=noticeTextPair(r,'reason'),note=noticeTextPair(r,'note'),safeId=String(r.urgent_id||'').replace(/[^a-zA-Z0-9_-]/g,'_');return `<div class="urgentNoticeItem type-${t.key} ${r.is_read?'read':''}"><div class="urgentNoticeTop"><div><div class="urgentNoticeWo">${t.icon} ${urgentEsc(r.work_order_no||'—')}｜${urgentEsc(r.process||'—')}</div><div class="noticeBadges"><span class="noticeBadge">${t.zh} / ${t.th}</span><span class="noticeBadge priority">${p.stars}</span><span class="noticeBadge ${r.is_read?'read':'unread'}">${r.is_read?'✓ 已讀 / อ่านแล้ว':'● 未讀 / ยังไม่ได้อ่าน'}</span></div></div><div class="miniText">${urgentEsc(r.urgent_id||'')}</div></div><div class="noticeGrid"><div class="noticeField"><div class="noticeLabel">客戶 / ลูกค้า</div><div class="noticeValue">${urgentEsc(r.customer||'—')}</div></div><div class="noticeField"><div class="noticeLabel">料號 / รหัสสินค้า</div><div class="noticeValue">${urgentEsc(r.part_no||'—')}</div></div><div class="noticeField"><div class="noticeLabel">數量 / จำนวน</div><div class="noticeValue">${urgentEsc(r.qty||'0')} ${urgentEsc(r.unit||'')}</div></div><div class="noticeField"><div class="noticeLabel">指定機台 / เครื่องจักรที่กำหนด</div><div class="noticeValue">${urgentEsc(r.machine||'自動選擇 / เลือกอัตโนมัติ')}</div></div><div class="noticeField"><div class="noticeLabel">原交期 / กำหนดส่งเดิม</div><div class="noticeValue">${urgentEsc(r.original_due||'—')}</div></div><div class="noticeField"><div class="noticeLabel">最新交期 / กำหนดส่งใหม่</div><div class="noticeValue noticeDue">${urgentEsc(r.new_due||'—')}<br><span class="noticeCountdown">${urgentEsc(cd.text)}</span></div></div></div>${noticePairHtml('原因','สาเหตุ',reason)}<div id="notice_detail_${safeId}" class="noticeDetails">${note.original||note.zh||note.th?noticePairHtml('備註','หมายเหตุ',note):''}<div class="noticeGrid"><div class="noticeField"><div class="noticeLabel">前製程 / กระบวนการก่อนหน้า</div><div class="noticeValue">${urgentEsc(r.preprocess_status||'—')}</div></div><div class="noticeField"><div class="noticeLabel">發布人 / ผู้ประกาศ</div><div class="noticeValue">${urgentEsc(r.publisher_emp_no||'')} ${urgentEsc(r.publisher_name||'')}｜${urgentEsc(r.publisher_dept||'')}</div></div><div class="noticeField"><div class="noticeLabel">發布時間 / เวลาประกาศ</div><div class="noticeValue">${urgentEsc(r.created_at||'—')}</div></div><div class="noticeField"><div class="noticeLabel">確認時間 / เวลาอ่าน</div><div class="noticeValue">${urgentEsc(r.read_at||'—')}</div></div></div></div><div class="noticeActions"><button class="noticeDetailBtn" onclick="toggleNoticeDetails('${id}')">查看詳情 / ดูรายละเอียด</button><button class="urgentReadBtn" ${r.is_read?'disabled':''} onclick="markUrgentRead('${id}')">${r.is_read?'✓ 已確認 / รับทราบแล้ว':'確認已讀 / ยืนยันว่าอ่านแล้ว'}</button></div></div>`}
+function renderUrgentNotices(){const panel=qs('urgentNoticePanel'),list=qs('urgentNoticeList'),count=qs('urgentNoticeCount');if(!panel||!list||!count)return;let rows=(App.urgentOrders||[]).filter(r=>!/closed|completed|cancelled|已解除|完成/i.test(String(r.status||'')));if(!rows.length){panel.classList.remove('show');list.innerHTML='';return}panel.classList.add('show');rows.sort((a,b)=>Number(a.is_read)-Number(b.is_read)||noticePriority(b).n-noticePriority(a).n||((noticeDateMs(a.new_due)||9e15)-(noticeDateMs(b.new_due)||9e15))||String(b.created_at||'').localeCompare(String(a.created_at||'')));const unreadAll=rows.filter(r=>!r.is_read),dueSoon=rows.filter(r=>{const d=noticeDateMs(r.new_due)-Date.now();return d>=0&&d<=86400000}).length;count.textContent=`${unreadAll.length} 筆未讀 / ${unreadAll.length} ยังไม่ได้อ่าน`;if(qs('noticeKpiUnread'))qs('noticeKpiUnread').textContent=`🔴 未讀 ${unreadAll.length} / ยังไม่ได้อ่าน ${unreadAll.length}`;if(qs('noticeKpiTotal'))qs('noticeKpiTotal').textContent=`📋 全部 ${rows.length} / ทั้งหมด ${rows.length}`;if(qs('noticeKpiDue'))qs('noticeKpiDue').textContent=`⏱ 24小時內 ${dueSoon} / ภายใน 24ชม. ${dueSoon}`;const q=String(safeGet('noticeSearch')||'').trim().toLowerCase();if(q)rows=rows.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));if(NOTICE_UI.filter==='unread')rows=rows.filter(r=>!r.is_read);const groups=[['unread','🔴 未讀通知 / ยังไม่ได้อ่าน',rows.filter(r=>!r.is_read)],['read','✅ 已讀通知 / อ่านแล้ว',rows.filter(r=>r.is_read)]];list.innerHTML=groups.filter(g=>g[2].length).map(g=>`<section class="noticeGroup ${NOTICE_UI.collapsed[g[0]]?'collapsed':''}"><div class="noticeGroupTitle" onclick="toggleNoticeGroup('${g[0]}')"><span>${g[1]} (${g[2].length})</span><span>${NOTICE_UI.collapsed[g[0]]?'▶':'▼'}</span></div><div class="noticeGroupBody">${g[2].map(noticeCardHtml).join('')}</div></section>`).join('')||'<div class="noticeEmpty">目前沒有符合條件的通知 / ไม่มีการแจ้งเตือนที่ตรงกับเงื่อนไข</div>'}
+async function markUrgentRead(urgentId){const empNos=String(safeGet('emp_no')||'').split(/[\s,，]+/).filter(Boolean),names=String(safeGet('emp_name')||'').split(/[\s,，、]+/).filter(Boolean);if(!empNos.length||!names.length){alert('請先填寫工號與姓名，再確認已讀。\nกรุณากรอกรหัสพนักงานและชื่อก่อนยืนยัน');return}const emp=App.employees.find(e=>String(e.emp_no||e['工號']||'').trim()===empNos[0]),official=String(emp&&(emp.emp_name||emp['姓名'])||'').trim();if(emp&&official&&official!==names[0]){alert(`工號與姓名不一致，請重新確認。\nรหัสพนักงานและชื่อไม่ตรงกัน\n\n${empNos[0]} 應為 ${official}`);return}if(!confirm(`確認以 ${empNos[0]} ${names[0]} 身分閱讀此通知？\nยืนยันว่าอ่านการแจ้งเตือนนี้ในชื่อ ${empNos[0]} ${names[0]} หรือไม่?`))return;try{await getApi('urgentread',{urgent_id:urgentId,reader_emp_no:empNos[0],reader_name:names[0],source:'keyin',_:Date.now()});if(window.MES)MES.toast('已確認閱讀 / ยืนยันการอ่านแล้ว');await loadUrgentNotices()}catch(e){alert('已讀紀錄失敗 / บันทึกการอ่านไม่สำเร็จ：'+e.message)}}
 
 async function loadStartup(){
+  try{const lang=localStorage.getItem('MES_NOTICE_LANG');if(['bi','zh','th'].includes(lang))NOTICE_UI.lang=lang}catch(e){}
+  setNoticeLanguage(NOTICE_UI.lang);
   qs('loadStatus').textContent='讀取基本資料...';
   try{
     const [e,p,sf]=await Promise.all([getApi('listEmployees'),getApi('listTargetPlans'),getApi('speedfeedback')]);
@@ -968,7 +924,7 @@ function exportCSV(){const headers=['created_at','report_date','week_no','site',
 document.addEventListener('DOMContentLoaded',()=>{
   cacheUI_();
   keyInCacheLoad_();
-  safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();setInterval(loadUrgentNotices,60000);
+  safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();setInterval(()=>{if(document.visibilityState==='visible')loadUrgentNotices()},NOTICE_UI.refreshMs);
   console.log('SEAL KING Smart Key In V94.3 Build 0099 | Stable Final ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
