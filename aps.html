@@ -481,7 +481,7 @@ body::after{
 <script id="aps-build0094-direct-recovery">
 (()=>{
 'use strict';
-const BUILD='0096';
+const BUILD='0096.3';
 const API=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec';
 let running=false;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -489,7 +489,7 @@ const txt=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function badge(){let e=document.getElementById('aps0094Status');if(!e){e=document.createElement('button');e.id='aps0094Status';e.type='button';e.style.cssText='position:fixed;right:14px;bottom:12px;z-index:2147483647;padding:8px 11px;border-radius:8px;border:1px solid #f59e0b;background:#07141d;color:#fff;font:12px Microsoft JhengHei,Arial;box-shadow:0 5px 18px #000a;cursor:pointer';e.onclick=()=>run(true);document.documentElement.appendChild(e)}return e}
 function state(message,type='wait'){const e=badge();e.textContent='APS Build '+BUILD+'｜'+message;e.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b'}
-function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0096'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
+function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0096.3'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
 function jsonp(action,params={},timeoutMs=45000){return new Promise((resolve,reject)=>{const cb='APS0096_'+Date.now()+'_'+Math.floor(Math.random()*1e6),s=document.createElement('script');let settled=false,timer=null;const tombstone=()=>{window[cb]=function(){};setTimeout(()=>{try{delete window[cb]}catch(_){window[cb]=undefined}},120000)};const clean=(keepCallback=false)=>{if(timer)clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);if(keepCallback)tombstone();else{try{delete window[cb]}catch(_){window[cb]=undefined}}};timer=setTimeout(()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 逾時 '+Math.round(timeoutMs/1000)+' 秒'))},timeoutMs);window[cb]=res=>{if(settled)return;settled=true;clean(false);if(res&&res.ok===false)reject(new Error(res.message||res.error||action+' 回傳失敗'));else resolve(res||{})};s.onerror=()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 連線失敗'))};s.src=API+'?'+new URLSearchParams({...params,action,callback:cb,_:Date.now()});document.head.appendChild(s)})}
 async function fetchRows(){let all=[],page=1,total=1;while(all.length<total&&page<=40){state('下載 DataHub 第 '+page+' 頁');let r;try{r=await jsonp('datahubworkorders',{page,pageSize:200},45000)}catch(firstErr){state('第 '+page+' 頁重試中');await sleep(1200);r=await jsonp('datahubworkorders',{page,pageSize:200,retry:1},45000)}const rows=Array.isArray(r.rows)?r.rows:Array.isArray(r.data)?r.data:[];total=Number(r.total||rows.length||0);all.push(...rows);if(!rows.length)break;page++}return all}
 function fallbackConvert(rows){return rows.map(r=>{const due=r.due_date?new Date(r.due_date):null;const target=num(r.target_qty),remain=num(r.erp_remaining_qty)||target,status=txt(r.status);return{wo:txt(r.work_order_no||r.order_no),order:txt(r.order_no),command_no:txt(r.work_order_no),report_no:txt(r.daily_report_no),batch:txt(r.batch_no),part:txt(r.part_no),name:txt(r.product_spec),spec:txt(r.product_spec),customer:txt(r.customer),process:txt(r.process),machine:txt(r.machine||r.machine_code),sourceMachine:txt(r.machine||r.machine_code),due:due&&!isNaN(due)?due:null,planned:target,remaining:remain,output:Math.max(0,target-remain),unit:'m²',minutes:0,ready:false,closed:/C|結案|完成|已結/i.test(status),status,source:txt(r.source_list||'DataHub_WorkOrder'),aliases:[r.work_order_no,r.order_no,r.daily_report_no,r.batch_no,r.part_no].filter(Boolean).map(String)}}).filter(x=>x.wo&&!x.closed)}
@@ -7845,6 +7845,73 @@ function download(type){const s=last||render();let data,name,mime;if(type==='csv
 function brand(){window.APS_BUILD_LOCK=BUILD;window.APS_VERSION=CORE;document.title=`SEAL KING Smart APS｜${CORE} Build ${BUILD} ${ENGINE}`;document.querySelectorAll('.header-time small,.version').forEach(el=>{if(/Build|V9|Enterprise/i.test(el.textContent||''))el.textContent=`${CORE}｜Build ${BUILD}`})}
 function init(){makePage();makeNav();brand();window.APSValidationCenter={render,calculate,runSandbox:renderSandbox};console.info(`APS Build ${BUILD}｜${ENGINE} ready`)}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(init,1200),{once:true}):setTimeout(init,1200);
+})();
+</script>
+
+
+<style id="aps-build0096-3-missing-speed-accurate-css">
+#missingSpeed .missing-speed-kpis{grid-template-columns:repeat(4,minmax(170px,1fr))}
+#missingSpeed .missing-speed-kpi small{display:block;color:#738792;font-size:11px;margin-top:5px;line-height:1.45}
+#missingSpeed .ms-config-count{font-weight:800;color:#ffcc70}
+#missingSpeed .ms-order-count{font-size:11px;color:#9fb0ba;margin-top:4px}
+#missingSpeed .ms-recommend{color:#7fd9ff;font-size:11px;line-height:1.45}
+#missingSpeed .ms-invalid-note{color:#8c9aa3}
+@media(max-width:900px){#missingSpeed .missing-speed-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#missingSpeed .missing-speed-kpis{grid-template-columns:1fr}}
+</style>
+<script id="aps-build0096-3-missing-speed-accurate-js">
+(()=>{
+'use strict';
+const state={groups:[],filtered:[],stats:{}};
+const text=v=>String(v??'').trim();
+const norm=v=>text(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－]/g,'-');
+const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
+function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}
+function isCancelled(x){return /取消|作廢|VOID|CANCEL/i.test(text(x.status))}
+function isActionable(x){return !!text(x.wo)&&!x.closed&&!isCancelled(x)&&num(x.remaining)>0}
+function validRequirement(x){return isActionable(x)&&!!text(x.part)}
+function groupKey(x){return [norm(x.part),norm(x.process)||'未指定製程',norm(x.sourceMachine||x.machine)||'未指定機台'].join('|')}
+function reasonFor(x){
+ if(!text(x.part))return {code:'part',label:'工單缺少料號，無法比對',suggest:'先補齊工單料號'};
+ if(!text(x.process)&&!text(x.sourceMachine||x.machine))return {code:'process',label:'製程與機台皆未提供',suggest:'確認製程與可用機台'};
+ if(!text(x.process))return {code:'process',label:'缺少製程，無法確認產速模式',suggest:'確認製程後建立產速'};
+ if(!text(x.sourceMachine||x.machine))return {code:'machine',label:'沒有指定／建議機台',suggest:'設定可用機台或共用機台'};
+ if(/參數不足|產速為0|為 0/i.test(text(x.match)))return {code:'speed',label:'已有相近主檔，但運算參數不足',suggest:'補登回數、速度或固定工時'};
+ return {code:'part',label:'智慧產速引擎找不到可用對應',suggest:'建立新料號產速或確認同系列沿用'};
+}
+function updateLabels(){
+ const cards=document.querySelectorAll('#missingSpeed .missing-speed-kpi');
+ const labels=['有效待排工單','已有可用產速','真正缺產速設定','產速覆蓋率'];
+ const notes=['排除結案、取消、剩餘量為 0','以 APS 智慧配對結果為準','依料號＋製程＋機台去重','可直接進入排程的比例'];
+ cards.forEach((card,i)=>{const s=card.querySelector('span');if(s)s.textContent=labels[i]||s.textContent;let sm=card.querySelector('small');if(!sm){sm=document.createElement('small');card.appendChild(sm)}sm.textContent=notes[i]||''});
+ const sub=document.querySelector('#missingSpeed .page-toolbar .sub');if(sub)sub.textContent='只統計仍需排程的有效工單，並以 APS 智慧產速配對結果為準；相同料號／製程／機台只算一項缺漏設定，不再把歷史與重複工單全部累加。';
+ const kicker=document.querySelector('#missingSpeed .section-kicker');if(kicker)kicker.textContent='BUILD 0096.3｜MISSING SPEED ACCURATE';
+ const head=document.querySelector('#missingSpeed .missing-speed-table thead tr');if(head)head.innerHTML='<th>狀態</th><th>缺漏設定</th><th>影響工單</th><th>料號</th><th>規格範例</th><th>機台</th><th>製程</th><th>缺漏原因／建議</th><th>處理</th>';
+}
+function scan(){
+ updateLabels();
+ const all=pool(),active=all.filter(isActionable),valid=active.filter(validRequirement),invalid=active.filter(x=>!validRequirement(x));
+ const matched=valid.filter(x=>x.ready&&num(x.minutes)>0),missing=valid.filter(x=>!(x.ready&&num(x.minutes)>0));
+ const map=new Map();
+ missing.forEach((x,i)=>{const k=groupKey(x),r=reasonFor(x);if(!map.has(k))map.set(k,{key:k,part:text(x.part),process:text(x.process),machine:text(x.sourceMachine||x.machine),spec:text(x.spec||x.name),reason:r.label,code:r.code,suggest:r.suggest,jobs:[],sample:x});const g=map.get(k);g.jobs.push(text(x.wo));if(!g.spec)g.spec=text(x.spec||x.name)});
+ state.groups=[...map.values()].sort((a,b)=>b.jobs.length-a.jobs.length||a.part.localeCompare(b.part,'zh-Hant'));
+ state.stats={all:all.length,active:active.length,valid:valid.length,matched:matched.length,missingOrders:missing.length,missingConfigs:state.groups.length,invalid:invalid.length,excluded:all.length-active.length};
+ render();
+}
+function render(){
+ updateLabels();const st=state.stats,q=norm(document.getElementById('missingSpeedSearch')?.value),mf=norm(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';
+ const rows=state.groups.filter(g=>{const blob=norm([g.part,g.process,g.machine,g.spec,g.reason,g.jobs.join(' ')].join(' '));return(!q||blob.includes(q))&&(!mf||norm(g.machine)===mf)&&(!rf||g.code===rf)});state.filtered=rows;
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=st.valid?st.matched/st.valid*100:0;
+ set('msPoolCount',(st.active||0).toLocaleString('zh-TW'));set('msMatchedCount',(st.matched||0).toLocaleString('zh-TW'));set('msMissingCount',(st.missingConfigs||0).toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',`顯示 ${rows.length}／${st.missingConfigs||0} 項設定`);
+ const sum=document.getElementById('missingSpeedSummary');if(sum){if(!st.active)sum.textContent='目前沒有有效待排工單。';else if(!st.missingConfigs)sum.textContent=`有效待排 ${st.active} 筆，已有產速 ${st.matched} 筆，產速覆蓋率 ${cov.toFixed(1)}%。目前沒有真正缺產速設定。`;else sum.innerHTML=`有效待排 <b>${st.active.toLocaleString('zh-TW')}</b> 筆；已有可用產速 <b>${st.matched.toLocaleString('zh-TW')}</b> 筆；缺產速工單 <b>${st.missingOrders.toLocaleString('zh-TW')}</b> 筆，但去除重複後真正需要建立的產速設定為 <b class="ms-config-count">${st.missingConfigs.toLocaleString('zh-TW')} 項</b>。另排除 ${st.excluded||0} 筆結案／取消／零剩餘資料，${st.invalid||0} 筆資料異常未列入產速缺漏。`;}
+ const sel=document.getElementById('missingSpeedMachine');if(sel){const old=sel.value,ms=[...new Set(state.groups.map(g=>g.machine).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');sel.value=ms.includes(old)?old:''}
+ const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="9" class="missing-speed-empty">${st.missingConfigs?'沒有符合篩選條件的資料':'目前沒有真正缺產速設定'}</td></tr>`;return}
+ body.innerHTML=rows.map((g,i)=>{const jobs=g.jobs.slice(0,3).join('、')+(g.jobs.length>3?`…另 ${g.jobs.length-3} 筆`:'');return `<tr><td><span class="tag yellow">待確認</span></td><td><strong>${esc(g.part)}</strong><div class="ms-order-count">${esc(g.process||'未指定製程')}｜${esc(g.machine||'未指定機台')}</div></td><td><strong>${g.jobs.length.toLocaleString('zh-TW')} 筆</strong><div class="ms-order-count">${esc(jobs)}</div></td><td>${esc(g.part||'—')}</td><td class="spec">${esc(g.spec||'—')}</td><td>${esc(g.machine||'—')}</td><td>${esc(g.process||'—')}</td><td><div class="missing-speed-reason">${esc(g.reason)}</div><div class="ms-recommend">建議：${esc(g.suggest)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms93="feedback" data-i="${i}">補產速</button><button class="btn ghost" data-ms93="copy" data-i="${i}">複製設定</button></div></td></tr>`}).join('');
+}
+function gotoFeedback(g){if(typeof window.showPage==='function')window.showPage('speedFeedback');[['speedFbPart',g.part],['speedFeedbackPart',g.part],['speedFbMachine',g.machine],['speedFeedbackMachine',g.machine],['speedFbProcess',g.process],['speedFeedbackProcess',g.process],['speedFbName',g.spec],['speedFeedbackName',g.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});document.querySelector('#speedFeedbackFormCard')?.scrollIntoView({behavior:'smooth',block:'start'});window.log?.(`Build 0096.3：已帶入缺產速設定 ${g.part}｜${g.process||'未指定製程'}｜${g.machine||'未指定機台'}`)}
+function install(){updateLabels();const refresh=document.getElementById('missingSpeedRefresh');if(refresh){refresh.onclick=scan}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e){e.oninput=id==='missingSpeedSearch'?render:e.oninput;e.onchange=id==='missingSpeedSearch'?e.onchange:render}});const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.ms00963){body.dataset.ms00963='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms93]');if(!b)return;const g=state.filtered[Number(b.dataset.i)];if(!g)return;if(b.dataset.ms93==='feedback')gotoFeedback(g);else{const v=`缺產速設定\n料號：${g.part}\n製程：${g.process}\n機台：${g.machine}\n影響工單：${g.jobs.length}\n工單：${g.jobs.join('、')}\n原因：${g.reason}\n建議：${g.suggest}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製設定',1200)}catch{window.prompt('請複製以下資料',v)}}})}document.querySelectorAll('[data-page="missingSpeed"]').forEach(e=>e.addEventListener('click',()=>setTimeout(scan,80)));const oldScan=window.APSMissingSpeed?.scan;window.APSMissingSpeed={...(window.APSMissingSpeed||{}),scan,rows:()=>state.groups.slice(),state,legacyScan:oldScan};setTimeout(scan,1800);setInterval(()=>{if(document.getElementById('missingSpeed')?.classList.contains('active'))scan()},10000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
 
