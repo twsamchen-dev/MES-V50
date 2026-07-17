@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0100</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0100.2.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -631,7 +631,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0100</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0100.2</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -671,7 +671,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0100</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0100.2.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -802,8 +802,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <div class="mode-card">
   <div class="mode-card-title">前製程狀態 *</div>
   <div class="mode-options">
-    <div class="mode-option"><input type="radio" name="urgentPreMode" id="urgentPreReady" value="ready" checked><label for="urgentPreReady">已到位</label></div>
-    <div class="mode-option"><input type="radio" name="urgentPreMode" id="urgentPrePending" value="pending"><label for="urgentPrePending">等待中</label></div>
+    <div class="mode-option"><input type="radio" name="urgentPreMode" id="urgentPreReady" value="ready" checked><label for="urgentPreReady">半成品已到位</label></div>
+    <div class="mode-option"><input type="radio" name="urgentPreMode" id="urgentPrePending" value="pending"><label for="urgentPrePending">等待前製程</label></div>
     <div class="mode-option"><input type="radio" name="urgentPreMode" id="urgentPreOverride" value="override"><label for="urgentPreOverride">主管允許先排</label></div>
   </div>
 </div>
@@ -812,6 +812,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   <option value="">請選擇原因</option>
   <option value="客戶急件">客戶急件</option>
   <option value="客戶改期">客戶改期</option>
+  <option value="交期變更">交期變更</option>
+  <option value="交期Delay">交期 Delay</option>
   <option value="缺料恢復">缺料恢復</option>
   <option value="品質異常補排">品質異常補排</option>
   <option value="生產異常補排">生產異常補排</option>
@@ -1538,7 +1540,7 @@ function urgentFromForm(){
   if(!wo||!customer||!part||!process||qty<=0||!originalDueRaw||!dueRaw||!reasonType||!reasonDetail){
     throw Error('請完整填寫發布人、工單、客戶、料號、製程、數量、原交期、最新交期與插單原因');
   }
-  const preMode=urgentPreValue();if(preMode==='pending')throw Error('前製程狀態為等待中，請改為已到位或由主管允許先排');
+  const preMode=urgentPreValue();if(preMode==='pending')throw Error('前製程尚未完成，請選擇「半成品已到位」或「主管允許先排」');
 
   const machine=$('urgentMachine').value,unit=$('urgentUnit').value;
   const ms=matchSpeed(part,process,machine,S.rows.speed||[]);
@@ -6976,7 +6978,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0100｜V90.0 AI 多機台決策面板
+Build 0100.2｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7129,7 +7131,7 @@ Build 0100｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0100"!important;
+  content:"APS V95 Enterprise｜Build 0100.2.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7141,8 +7143,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0100';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0100';
+  const LABEL='V95 Enterprise｜Build 0100.2.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0100.2.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7163,16 +7165,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0100';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0100.2';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0100')
-          .replace(/Build\s*0085/gi,'Build 0100')
-          .replace(/Build\s*0091/gi,'Build 0100')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0100');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0100.2.1')
+          .replace(/Build\s*0085/gi,'Build 0100.2')
+          .replace(/Build\s*0091/gi,'Build 0100.2')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0100.2');
       }
     });
 
@@ -7205,6 +7207,181 @@ body::after{
   }
 })();
 </script>
+
+
+<style id="aps-v95-build01001-publisher-fix">
+#urgent .urgent-auth-grid{
+  grid-template-columns:minmax(210px,.9fr) minmax(220px,1fr) minmax(210px,1fr) minmax(180px,.9fr)!important;
+  gap:14px!important;
+}
+#urgent #urgentPublisherEmp{
+  min-width:210px!important;
+  width:100%!important;
+  height:52px!important;
+  font-size:21px!important;
+  font-weight:900!important;
+  letter-spacing:1px!important;
+  padding:0 46px 0 16px!important;
+}
+#urgent #urgentPublisherName,
+#urgent #urgentPublisherDept,
+#urgent #urgentPublisherRole{
+  height:52px!important;
+  font-size:18px!important;
+  font-weight:800!important;
+  color:#ffffff!important;
+  background:#0d1b2e!important;
+  border-color:#3b5875!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#ffffff!important;
+}
+#urgent #urgentPublisherName::placeholder,
+#urgent #urgentPublisherDept::placeholder,
+#urgent #urgentPublisherRole::placeholder{
+  color:#94a3b8!important;
+  opacity:1!important;
+}
+#urgent .urgent-auth-grid .field label{
+  font-size:15px!important;
+  font-weight:900!important;
+}
+@media(max-width:1180px){
+  #urgent .urgent-auth-grid{grid-template-columns:1fr 1fr!important}
+}
+@media(max-width:720px){
+  #urgent .urgent-auth-grid{grid-template-columns:1fr!important}
+  #urgent #urgentPublisherEmp{min-width:0!important}
+}
+</style>
+
+
+<script id="aps-v95-build01001-publisher-fix-js">
+(()=>{
+  const PUBLISHERS={
+    "10660":{name:"劉玉珍",dept:"生管課",role:"事務員"},
+    "10870":{name:"許顥瀚",dept:"生管課",role:"課長"},
+    "11026":{name:"褚政怡",dept:"生管課",role:"事務員"},
+    "10385":{name:"黃耀緯",dept:"加工課",role:"副課長"},
+    "10649":{name:"周淑鈴",dept:"加工-工業",role:"班長"},
+    "11035":{name:"陳善祖",dept:"加工課",role:"課長"}
+  };
+
+  function forcePublisherAutofill(){
+    const emp=document.getElementById('urgentPublisherEmp');
+    const name=document.getElementById('urgentPublisherName');
+    const dept=document.getElementById('urgentPublisherDept');
+    const role=document.getElementById('urgentPublisherRole');
+    if(!emp||!name||!dept||!role)return;
+
+    const p=PUBLISHERS[String(emp.value||'').trim()]||{};
+    name.value=p.name||'';
+    dept.value=p.dept||'';
+    role.value=p.role||'';
+
+    name.dispatchEvent(new Event('input',{bubbles:true}));
+    dept.dispatchEvent(new Event('input',{bubbles:true}));
+    role.dispatchEvent(new Event('input',{bubbles:true}));
+
+    if(typeof window.updateUrgentFormState==='function'){
+      try{window.updateUrgentFormState()}catch(_){}
+    }
+  }
+
+  function install(){
+    const emp=document.getElementById('urgentPublisherEmp');
+    if(!emp)return;
+    emp.removeEventListener('change',forcePublisherAutofill);
+    emp.addEventListener('change',forcePublisherAutofill);
+    emp.addEventListener('input',forcePublisherAutofill);
+    forcePublisherAutofill();
+
+    // Browser may restore the previous selected value after DOMContentLoaded.
+    setTimeout(forcePublisherAutofill,300);
+    setTimeout(forcePublisherAutofill,1000);
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  }else{
+    install();
+  }
+})();
+</script>
+
+
+<style id="aps-v95-build01002-urgent-layout-fix">
+/* Build 0100.2 — 急單表單版面修正 */
+#urgent .urgent-form{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px 18px!important;
+  align-items:start!important;
+}
+#urgent .field,
+#urgent .mode-card{
+  min-width:0!important;
+}
+#urgent .field label,
+#urgent .mode-card-title{
+  font-size:14px!important;
+  font-weight:900!important;
+  margin-bottom:8px!important;
+  color:#e5edf4!important;
+}
+#urgent .field input,
+#urgent .field select{
+  width:100%!important;
+  min-width:0!important;
+  height:50px!important;
+  font-size:16px!important;
+  border-radius:10px!important;
+}
+#urgent .date-time-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 140px!important;
+  gap:10px!important;
+}
+#urgent .mode-card{
+  min-height:118px!important;
+  border:1px solid #34414c!important;
+  background:#0b141b!important;
+  border-radius:12px!important;
+  padding:14px!important;
+}
+#urgent .mode-options{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#urgent .mode-option label{
+  min-height:52px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:10px 8px!important;
+  font-size:15px!important;
+  line-height:1.25!important;
+  white-space:normal!important;
+  word-break:keep-all!important;
+  text-align:center!important;
+}
+#urgent .field.span2{
+  grid-column:span 2!important;
+}
+#urgent .urgent-required-note,
+#urgent .form-progress{
+  grid-column:span 2!important;
+}
+@media(max-width:900px){
+  #urgent .urgent-form{grid-template-columns:1fr!important}
+  #urgent .field.span2,
+  #urgent .urgent-required-note,
+  #urgent .form-progress{grid-column:span 1!important}
+}
+@media(max-width:640px){
+  #urgent .date-time-row{grid-template-columns:1fr 120px!important}
+  #urgent .mode-options{grid-template-columns:1fr!important}
+}
+</style>
 
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
@@ -7394,7 +7571,7 @@ body::after{
 })();
 </script>
 <!-- =========================================================
-Build 0100｜V90.0 AI 多機台決策面板
+Build 0100.2｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
