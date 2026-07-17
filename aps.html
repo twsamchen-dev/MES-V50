@@ -6620,7 +6620,156 @@ document.addEventListener("DOMContentLoaded",function(){
 </script>
 <!-- =========================================================
 Build 0080｜V90.0 AI 多機台決策面板
-用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
+用途：直接貼在 aps.html 最底下、
+
+<script id="build0096-1-date-sync-stable">
+(()=>{
+  'use strict';
+  const BUILD='0096.1';
+  const DATE_KEY='SK_APS_CURRENT_PRODUCTION_DATE_00961';
+  const $id=id=>document.getElementById(id);
+  const pad=v=>String(v).padStart(2,'0');
+  const localKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const valid=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''));
+  const todayKey=()=>localKey(new Date());
+  const parse=v=>{
+    if(!valid(v))return null;
+    const [y,m,d]=v.split('-').map(Number);
+    const x=new Date(y,m-1,d,0,0,0,0);
+    return Number.isNaN(+x)?null:x;
+  };
+
+  let syncing=false;
+  let current='';
+  let refreshTimer=0;
+
+  function initialDate(){
+    const dash=$id('dashboardDate')?.value;
+    const start=$id('startDate')?.value;
+    const saved=localStorage.getItem(DATE_KEY);
+    return valid(dash)?dash:valid(start)?start:valid(saved)?saved:todayKey();
+  }
+
+  function writeInputs(value){
+    syncing=true;
+    const dash=$id('dashboardDate');
+    const start=$id('startDate');
+    if(dash&&dash.value!==value)dash.value=value;
+    if(start&&start.value!==value)start.value=value;
+    syncing=false;
+  }
+
+  function updateWeekFoot(value){
+    const d=parse(value);if(!d)return;
+    const offset=(d.getDay()+6)%7;
+    const a=new Date(d);a.setDate(a.getDate()-offset);
+    const b=new Date(a);b.setDate(b.getDate()+6);
+    const card=$id('kpiReady')?.closest('.metric-card');
+    const foot=card?.querySelector('small');
+    if(foot)foot.textContent=`${localKey(a)}～${localKey(b)}`;
+  }
+
+  function forceVersion(){
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{
+      if(el&&/APS|Build/i.test(el.textContent||''))el.textContent='APS Date Sync Build 0096.1';
+    });
+  }
+
+  function refreshAll(reason){
+    clearTimeout(refreshTimer);
+    refreshTimer=setTimeout(()=>{
+      writeInputs(current);
+      try{window.renderSchedule?.()}catch(err){console.warn('0096.1 renderSchedule',err)}
+      try{window.updateKpi?.()}catch(err){console.warn('0096.1 updateKpi',err)}
+      try{window.renderQuality?.()}catch(err){console.warn('0096.1 renderQuality',err)}
+      try{window.updateDueKpi?.()}catch(err){}
+      try{window.APSBuild0096?.refreshDashboard?.()}catch(err){console.warn('0096.1 dashboard',err)}
+      updateWeekFoot(current);
+      forceVersion();
+      document.dispatchEvent(new CustomEvent('aps-production-date-synced',{detail:{date:current,reason:reason||'refresh'}}));
+    },30);
+  }
+
+  function setDate(value,reason,doRefresh=true){
+    const next=valid(value)?value:todayKey();
+    const changed=next!==current;
+    current=next;
+    localStorage.setItem(DATE_KEY,current);
+    writeInputs(current);
+    if(doRefresh||changed)refreshAll(reason||'setDate');
+    return current;
+  }
+
+  // renderTimeline / scheduler 共用同一個生產日起始日。
+  window.getStart=function(){return parse(current)||new Date()};
+
+  function bindInput(id){
+    const el=$id(id);if(!el||el.dataset.dateSync00961)return;
+    el.dataset.dateSync00961='1';
+    ['change','input'].forEach(type=>el.addEventListener(type,()=>{
+      if(syncing)return;
+      setDate(el.value,id+':'+type,true);
+    }));
+  }
+
+  function bindToday(){
+    const btn=$id('goToday');if(!btn||btn.dataset.dateSync00961)return;
+    btn.dataset.dateSync00961='1';
+    btn.addEventListener('click',e=>{
+      // 舊版 click handler 執行後，再以本地日期統一所有模組。
+      setTimeout(()=>setDate(todayKey(),'today-button',true),0);
+    });
+  }
+
+  const previousRenderSchedule=window.renderSchedule;
+  if(typeof previousRenderSchedule==='function'&&!previousRenderSchedule.__dateSync00961){
+    const wrapped=function(){
+      writeInputs(current);
+      const result=previousRenderSchedule.apply(this,arguments);
+      setTimeout(()=>{
+        writeInputs(current);
+        try{window.APSBuild0096?.refreshDashboard?.()}catch(_){ }
+        updateWeekFoot(current);
+        forceVersion();
+      },0);
+      return result;
+    };
+    wrapped.__dateSync00961=true;
+    window.renderSchedule=wrapped;
+  }
+
+  function bind(){
+    bindInput('dashboardDate');
+    bindInput('startDate');
+    bindToday();
+    if(!current)current=initialDate();
+    setDate(current,'initial',true);
+  }
+
+  // 防止 DataHub、快照復原或其他舊版模組把其中一個日期欄位改回舊值。
+  setInterval(()=>{
+    const dash=$id('dashboardDate');
+    const start=$id('startDate');
+    if(!current)current=initialDate();
+    if((dash&&dash.value!==current)||(start&&start.value!==current))writeInputs(current);
+    forceVersion();
+  },500);
+
+  window.APSDateSync00961={
+    get date(){return current},
+    setDate,
+    refresh:()=>refreshAll('manual-refresh'),
+    today:()=>setDate(todayKey(),'api-today',true)
+  };
+
+  document.addEventListener('DOMContentLoaded',bind);
+  if(document.readyState!=='loading')setTimeout(bind,0);
+  [400,1200,3000,6000].forEach(ms=>setTimeout(bind,ms));
+  console.info('APS Build '+BUILD+'｜Date Sync Stable ready');
+})();
+</script>
+
+</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
 <style id="build0080-v90-style">
