@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0100.2.1</title>
+<title>SEAL KING Smart APS｜V95 Enterprise｜Build 0100.3.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -631,7 +631,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
-    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0100.2</p></div></div>
+    <div class="aps-sec-brand"><div class="aps-sec-logo">S</div><div><h1>SEAL KING Smart APS</h1><p>管理員權限保護｜V95 Build 0100.3</p></div></div>
     <div id="apsSecuritySetup" hidden>
       <div class="aps-sec-title" id="apsSecurityTitle">首次設定管理員密碼</div>
       <div class="aps-sec-note">此密碼只儲存在這台電腦的瀏覽器。請設定至少 6 碼，完成後才能進入系統。</div>
@@ -671,7 +671,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="system-title"><h1>SEAL KING Smart APS</h1><p>加工課智慧排程與決策平台</p></div>
   </div>
   <div class="header-right">
-    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0100.2.1</small></div>
+    <div class="header-time"><span id="liveClock"></span><small>V95 Enterprise｜Build 0100.3.1</small></div>
     <div class="header-menu-wrap">
       <button class="icon-button header-menu-trigger" id="notificationBtn" type="button" title="通知" aria-expanded="false" aria-controls="notificationMenu">♧<b id="notificationBadge">5</b></button>
       <div class="header-dropdown notification-dropdown" id="notificationMenu" hidden>
@@ -6978,7 +6978,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 <!-- =========================================================
-Build 0100.2｜V90.0 AI 多機台決策面板
+Build 0100.3｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
 
 <script id="build0096-1-date-sync-stable">
@@ -7131,7 +7131,7 @@ Build 0100.2｜V90.0 AI 多機台決策面板
 
 <style id="aps-v95-build0100-canonical-style">
 body::after{
-  content:"APS V95 Enterprise｜Build 0100.2.1"!important;
+  content:"APS V95 Enterprise｜Build 0100.3.1"!important;
 }
 .v95-version-chip{
   display:inline-flex;align-items:center;gap:7px;
@@ -7143,8 +7143,8 @@ body::after{
 (()=>{
   'use strict';
 
-  const LABEL='V95 Enterprise｜Build 0100.2.1';
-  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0100.2.1';
+  const LABEL='V95 Enterprise｜Build 0100.3.1';
+  const FULL='SEAL KING Smart APS｜V95 Enterprise｜Build 0100.3.1';
 
   window.APS_VERSION='V95';
   window.APS_BUILD='0100';
@@ -7165,16 +7165,16 @@ body::after{
     });
 
     const security=document.querySelector('.aps-sec-brand p');
-    if(security) security.textContent='管理員權限保護｜V95 Build 0100.2';
+    if(security) security.textContent='管理員權限保護｜V95 Build 0100.3';
 
     document.querySelectorAll('.aps-load-recovery,.aps-data-center-toast,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(el=>{
       const txt=String(el.textContent||'');
       if(/APS Build\s*0096\.3|Build\s*0085|Build\s*0091|Build\s*0097/i.test(txt)){
         el.textContent=txt
-          .replace(/APS Build\s*0096\.3/gi,'APS Build 0100.2.1')
-          .replace(/Build\s*0085/gi,'Build 0100.2')
-          .replace(/Build\s*0091/gi,'Build 0100.2')
-          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0100.2');
+          .replace(/APS Build\s*0096\.3/gi,'APS Build 0100.3.1')
+          .replace(/Build\s*0085/gi,'Build 0100.3')
+          .replace(/Build\s*0091/gi,'Build 0100.3')
+          .replace(/Build\s*0097(?:\.\d+)?/gi,'Build 0100.3');
       }
     });
 
@@ -7310,7 +7310,7 @@ body::after{
 
 
 <style id="aps-v95-build01002-urgent-layout-fix">
-/* Build 0100.2 — 急單表單版面修正 */
+/* Build 0100.3 — 急單表單版面修正 */
 #urgent .urgent-form{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:16px 18px!important;
@@ -7382,6 +7382,184 @@ body::after{
   #urgent .mode-options{grid-template-columns:1fr!important}
 }
 </style>
+
+
+<script id="aps-v95-build01003-data-restore">
+(()=>{
+  'use strict';
+
+  if(window.__APS_V95_01003_INSTALLED__) return;
+  window.__APS_V95_01003_INSTALLED__=true;
+
+  const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
+  const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
+  const VERSION_LABEL='V95 Enterprise｜Build 0100.3';
+
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const rowsOfSnapshot=key=>{
+    try{
+      const x=JSON.parse(localStorage.getItem(key)||'null');
+      return x&&Array.isArray(x.rows)?x.rows:[];
+    }catch(_){return[]}
+  };
+
+  function renderAll(){
+    ['renderPool','renderSchedule','renderHome','updateKpi','renderQuality','renderSpeedCenter'].forEach(name=>{
+      try{typeof window[name]==='function'&&window[name]()}catch(err){console.warn('Build0100.3',name,err)}
+    });
+  }
+
+  function restoreSnapshotFirst(){
+    if(!window.S) return false;
+
+    const poolSnap=rowsOfSnapshot(POOL_KEY);
+    const scheduleSnap=rowsOfSnapshot(SCH_KEY);
+
+    // 快照優先：頁面一開啟先恢復上次正常畫面。
+    if((!Array.isArray(window.S.pool)||window.S.pool.length===0) && poolSnap.length){
+      window.S.pool=poolSnap;
+    }
+    if((!Array.isArray(window.S.schedule)||window.S.schedule.length===0) && scheduleSnap.length){
+      window.S.schedule=scheduleSnap;
+      try{
+        const q=JSON.parse(localStorage.getItem(SCH_KEY)||'null');
+        if(q&&q.machines) window.S.machines=q.machines;
+      }catch(_){}
+    }
+
+    if((window.S.pool||[]).length || (window.S.schedule||[]).length){
+      renderAll();
+      return true;
+    }
+    return false;
+  }
+
+  function saveNonEmptySnapshot(){
+    if(!window.S) return;
+    try{
+      const pool=Array.isArray(window.S.pool)?window.S.pool:[];
+      const schedule=Array.isArray(window.S.schedule)?window.S.schedule:[];
+      if(pool.length){
+        localStorage.setItem(POOL_KEY,JSON.stringify({
+          savedAt:new Date().toISOString(),
+          rows:pool
+        }));
+      }
+      if(schedule.length){
+        localStorage.setItem(SCH_KEY,JSON.stringify({
+          savedAt:new Date().toISOString(),
+          rows:schedule,
+          machines:window.S.machines||{}
+        }));
+      }
+    }catch(err){
+      console.warn('Build0100.3 snapshot save',err);
+    }
+  }
+
+  function dataHubIsReady(){
+    const el=document.getElementById('cloudDataHubState57');
+    return /已同步|已載入/.test(String(el?.textContent||''));
+  }
+
+  async function generateScheduleIfNeeded(){
+    if(!window.S) return false;
+    const pool=Array.isArray(window.S.pool)?window.S.pool:[];
+    const schedule=Array.isArray(window.S.schedule)?window.S.schedule:[];
+
+    if(!pool.length || schedule.length) return false;
+
+    // DataHub 已完成且工單池已有資料時，自動恢復排程。
+    if(!dataHubIsReady()) return false;
+
+    const schedulable=pool.filter(job=>{
+      if(job.closed) return false;
+      if(job.ready===false) return false;
+      return Number(job.minutes||0)>0 || Number(job.remaining||0)>0;
+    });
+
+    if(!schedulable.length) return false;
+
+    try{
+      if(typeof window.schedule==='function'){
+        await Promise.resolve(window.schedule());
+      }else if(typeof window.runSchedule==='function'){
+        await Promise.resolve(window.runSchedule());
+      }
+      await sleep(200);
+      renderAll();
+      saveNonEmptySnapshot();
+      return (window.S.schedule||[]).length>0;
+    }catch(err){
+      console.error('Build0100.3 auto schedule failed',err);
+      return false;
+    }
+  }
+
+  function normalizeVersion(){
+    document.title='SEAL KING Smart APS｜'+VERSION_LABEL;
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{
+      el.textContent=VERSION_LABEL;
+    });
+    document.querySelectorAll('.aps-sec-brand p').forEach(el=>{
+      el.textContent='管理員權限保護｜V95 Build 0100.3';
+    });
+    document.querySelectorAll('body *').forEach(el=>{
+      if(el.children.length) return;
+      const t=String(el.textContent||'');
+      if(/APS Optimizer Build 0097\.3\.1|APS Build 0100(?:\.\d+)?/i.test(t)){
+        el.textContent=t
+          .replace(/APS Optimizer Build 0097\.3\.1/gi,'APS Optimizer Build 0100.3')
+          .replace(/APS Build 0100(?:\.\d+)?/gi,'APS Build 0100.3');
+      }
+    });
+  }
+
+  async function stabilize(){
+    // 等待主狀態建立後，先恢復快照。
+    for(let i=0;i<40;i++){
+      if(window.S){
+        restoreSnapshotFirst();
+        break;
+      }
+      await sleep(150);
+    }
+
+    // DataHub 背景同步期間保留舊畫面；完成後再用新資料重算。
+    for(let i=0;i<180;i++){
+      normalizeVersion();
+
+      if(window.S){
+        const pool=(window.S.pool||[]).length;
+        const schedule=(window.S.schedule||[]).length;
+
+        if(pool && schedule){
+          renderAll();
+          saveNonEmptySnapshot();
+        }else if(pool && !schedule && dataHubIsReady()){
+          await generateScheduleIfNeeded();
+        }else if(!pool){
+          restoreSnapshotFirst();
+        }
+      }
+
+      await sleep(1000);
+    }
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',stabilize,{once:true});
+  }else{
+    stabilize();
+  }
+
+  window.APSV95StableRestore={
+    restore:restoreSnapshotFirst,
+    generate:generateScheduleIfNeeded,
+    save:saveNonEmptySnapshot
+  };
+})();
+</script>
 
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
@@ -7571,7 +7749,7 @@ body::after{
 })();
 </script>
 <!-- =========================================================
-Build 0100.2｜V90.0 AI 多機台決策面板
+Build 0100.3｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
