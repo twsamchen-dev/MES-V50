@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V94 MES 生產 Key In｜Stable Final｜Build 0098</title>
+<title>V94.3 MES 生產 Key In｜急單通知版｜Build 0099</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js"></script>
 <style>
@@ -51,11 +51,26 @@
 @keyframes btnError{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 @keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.62}}
 
+
+.urgentNoticePanel{display:none;border:2px solid #dc2626;background:linear-gradient(135deg,#fff1f2,#fff7ed);border-radius:18px;padding:14px;margin-bottom:14px;box-shadow:0 10px 24px rgba(220,38,38,.12)}
+.urgentNoticePanel.show{display:block}
+.urgentNoticeHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.urgentNoticeTitle{font-size:20px;font-weight:900;color:#b91c1c}
+.urgentNoticeCount{border-radius:999px;background:#dc2626;color:#fff;padding:5px 10px;font-size:12px;font-weight:900}
+.urgentNoticeList{display:grid;gap:10px;margin-top:10px}
+.urgentNoticeItem{border:1px solid #fecaca;background:#fff;border-radius:14px;padding:12px}
+.urgentNoticeItem.read{opacity:.66;border-color:#d1d5db}
+.urgentNoticeTop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.urgentNoticeWo{font-size:18px;font-weight:900;color:#991b1b}
+.urgentNoticeMeta{font-size:13px;color:#475569;line-height:1.7;margin-top:7px}
+.urgentReadBtn{border:0;border-radius:10px;padding:8px 12px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer}
+.urgentReadBtn:disabled{background:#94a3b8}
+
 </style>
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V94 Stable Final｜Build 0098</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V94.3 急單通知版｜Build 0099</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -68,6 +83,17 @@
       <button id="loadReportsBtn" class="btn ghost" onclick="loadKeyin()">讀取回報資料 / โหลดรายงาน</button>
       <span id="loadStatus" class="pill">啟動中...</span>
     </div>
+  </div>
+
+  <div id="urgentNoticePanel" class="urgentNoticePanel col12">
+    <div class="urgentNoticeHead">
+      <div>
+        <div class="urgentNoticeTitle">🔴 急單／插單通知 / แจ้งงานด่วน</div>
+        <div class="miniText">請優先確認最新交期與指定機台，閱讀後按「確認已讀」。</div>
+      </div>
+      <span id="urgentNoticeCount" class="urgentNoticeCount">0 筆未讀</span>
+    </div>
+    <div id="urgentNoticeList" class="urgentNoticeList"></div>
   </div>
 
   <div class="card col6">
@@ -108,7 +134,7 @@
 
   <div class="card col6">
     <h2>人員與產出 / พนักงานและผลผลิต</h2>
-    <label>工號（可輸入多位，用逗號或空白分隔）/ รหัสพนักงาน</label><input id="emp_no" placeholder="例如 41420,41433" oninput="fillName()">
+    <label>工號（可輸入多位，用逗號或空白分隔）/ รหัสพนักงาน</label><input id="emp_no" placeholder="例如 41420,41433" oninput="fillName();clearTimeout(window._urgentEmpTimer);window._urgentEmpTimer=setTimeout(loadUrgentNotices,500)">
     <label>姓名 / ชื่อ</label><input id="emp_name" placeholder="依工號自動帶入，可手動補充">
     <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02" oninput="applyHistoricalSpeed()">
     <div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單 / งานของฉัน</button><button class="btn ghost" onclick="nextOrder()">下一張工單 / งานถัดไป</button></div>
@@ -153,8 +179,8 @@
 </div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
-// V94 Build 0098｜Key In Stable Final
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[]};
+// V94.3 Build 0099｜Key In Stable Final
 const KEYIN_SHARED_LOOKUP={
   enabled:true,
   cache:new Map(),
@@ -562,6 +588,59 @@ function setButtonState(id,state,loadingText,doneText){
 
 async function getApi(action,params){if(window.MES&&typeof MES.get==='function')return MES.get(action,[],params||{});throw new Error('MES API 未載入')}
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
+
+function urgentEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
+async function loadUrgentNotices(){
+  try{
+    const empNo=String(safeGet('emp_no')||'').split(/[\s,，]+/).filter(Boolean)[0]||'';
+    const r=await getApi('urgentorders',{emp_no:empNo,_:Date.now()});
+    App.urgentOrders=rowsOf(r);
+    renderUrgentNotices();
+  }catch(e){
+    console.warn('urgentorders',e);
+  }
+}
+function renderUrgentNotices(){
+  const panel=qs('urgentNoticePanel'),list=qs('urgentNoticeList'),count=qs('urgentNoticeCount');
+  if(!panel||!list||!count)return;
+  const rows=(App.urgentOrders||[]).filter(r=>!String(r.status||'').match(/closed|completed|cancelled/i));
+  if(!rows.length){panel.classList.remove('show');list.innerHTML='';return}
+  panel.classList.add('show');
+  const unread=rows.filter(r=>!r.is_read).length;
+  count.textContent=unread+' 筆未讀';
+  list.innerHTML=rows.map(r=>`
+    <div class="urgentNoticeItem ${r.is_read?'read':''}">
+      <div class="urgentNoticeTop">
+        <div>
+          <div class="urgentNoticeWo">${urgentEsc(r.work_order_no||'—')}｜${urgentEsc(r.process||'')}</div>
+          <div class="smallPill">${r.is_read?'已讀':'未讀'}</div>
+        </div>
+        <button class="urgentReadBtn" ${r.is_read?'disabled':''} onclick="markUrgentRead('${urgentEsc(r.urgent_id)}')">${r.is_read?'已確認':'確認已讀 / รับทราบ'}</button>
+      </div>
+      <div class="urgentNoticeMeta">
+        客戶：${urgentEsc(r.customer||'—')}｜料號：${urgentEsc(r.part_no||'—')}<br>
+        數量：${urgentEsc(r.qty||'0')} ${urgentEsc(r.unit||'')}｜指定機台：${urgentEsc(r.machine||'自動選擇')}<br>
+        原交期：${urgentEsc(r.original_due||'—')}<br>
+        <b style="color:#b91c1c">最新交期：${urgentEsc(r.new_due||'—')}</b><br>
+        發布人：${urgentEsc(r.publisher_name||'')}（${urgentEsc(r.publisher_dept||'')}）｜原因：${urgentEsc(r.reason||'—')}
+        ${r.note?'<br>備註：'+urgentEsc(r.note):''}
+      </div>
+    </div>`).join('');
+}
+async function markUrgentRead(urgentId){
+  const empNos=String(safeGet('emp_no')||'').split(/[\s,，]+/).filter(Boolean);
+  const names=String(safeGet('emp_name')||'').split(/[\s,，、]+/).filter(Boolean);
+  if(!empNos.length||!names.length){
+    alert('請先填寫工號與姓名，再確認急單已讀 / กรุณากรอกรหัสและชื่อก่อน');
+    return;
+  }
+  try{
+    await getApi('urgentread',{urgent_id:urgentId,reader_emp_no:empNos[0],reader_name:names[0],source:'keyin',_:Date.now()});
+    if(window.MES)MES.toast('急單已確認閱讀');
+    await loadUrgentNotices();
+  }catch(e){alert('急單已讀紀錄失敗：'+e.message)}
+}
+
 async function loadStartup(){
   qs('loadStatus').textContent='讀取基本資料...';
   try{
@@ -572,6 +651,7 @@ async function loadStartup(){
     App.idx=-1;
     renderPlansHint();
     await loadKeyin(false);
+    await loadUrgentNotices();
     qs('loadStatus').textContent='基本資料已讀取；可直接輸入工單查詢，「讀取最新工單」僅載入完整清單';
   }catch(err){
     qs('loadStatus').textContent='基本資料讀取失敗';
@@ -888,9 +968,9 @@ function exportCSV(){const headers=['created_at','report_date','week_no','site',
 document.addEventListener('DOMContentLoaded',()=>{
   cacheUI_();
   keyInCacheLoad_();
-  safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();
-  console.log('SEAL KING Smart Key In V94 Build 0098 | Stable Final ready',KeyInSharedLookupStatus());
-  console.log('V94 Stable Final self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
+  safeSet('report_date',isoDate());loadQuickProfile();setupFastInputKeys();loadStartup();setInterval(loadUrgentNotices,60000);
+  console.log('SEAL KING Smart Key In V94.3 Build 0099 | Stable Final ready',KeyInSharedLookupStatus());
+  console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 </script>
 </body>
