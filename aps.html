@@ -6309,7 +6309,7 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   const JSONP_GRACE_MS = 120000;
-  const PAGE_SIZE = 200;
+  const PAGE_SIZE = 500;
   const MAX_PAGES = 120;
   const MAX_ROWS = 50000;
 
@@ -6407,13 +6407,17 @@ document.addEventListener("DOMContentLoaded",function(){
 
       if(added===0)break;
       if(expectedTotal!==null&&all.length>=expectedTotal)break;
-      if(res.hasMore===false||res.has_more===false)break;
-      if(res.nextPage===null||res.next_page===null)break;
-      if(rows.length<PAGE_SIZE&&expectedTotal===null)break;
+      if(res.done===true||res.hasMore===false||res.has_more===false)break;
+
+      const serverPageSize=Number(res.pageSize??res.page_size??PAGE_SIZE);
+      if(rows.length<serverPageSize&&expectedTotal===null)break;
 
       const next=Number(res.nextPage??res.next_page);
       if(Number.isFinite(next)&&next>page)page=next;
       else page+=1;
+
+      // 每頁完成後主動讓出事件迴圈，避免大量 JSONP 回傳連續占用主執行緒。
+      await new Promise(r=>setTimeout(r,0));
     }
 
     if(page>MAX_PAGES)throw new Error("DataHub 分頁超過安全上限（120 頁）");
@@ -6435,40 +6439,46 @@ document.addEventListener("DOMContentLoaded",function(){
     }catch(_){}
   }
 
-  function installRows(rows){
-    // Use the existing Build0051 engine for speed matching by temporarily providing
-    // a direct, cached data source and invoking its normal conversion flow only once.
-    window.__BUILD0057_DATAHUB_ROWS__ = rows;
+  async function installRows(rows, label="DataHub 已載入"){
+    // DataHub 僅交付一次完整資料給既有 Build0051 產速引擎。
+    // 必須等待轉換與畫面提交完成，避免背景同步尚未完成又啟動第二次轉換。
+    window.__BUILD0057_DATAHUB_ROWS__ = rows.slice();
 
     if(window.Build0051APSSpeedEngine?.sync){
-      // Build0072：Build0051 會直接消耗 __BUILD0057_DATAHUB_ROWS__，
-      // 因此這裡只轉換一次，不會再次讀取 DataHub。
-      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).catch(err=>{
-        console.error("Build0072 speed conversion failed",err);
-        window.log?.("快取已載入，但產速轉換失敗："+(err.message||err));
-      });
+      try{
+        await window.Build0051APSSpeedEngine.sync(false);
+      }catch(err){
+        console.error("Build0104 speed conversion failed",err);
+        window.log?.("DataHub 已下載，但產速轉換失敗："+(err.message||err));
+        throw err;
+      }
+    }else{
+      window.S=window.S||{};
+      window.S.rows=window.S.rows||{};
+      window.S.rows.datahub=rows.slice();
     }
-    setDataState(`DataHub 快取 ${rows.length} 筆`,"ok");
+    setDataState(`${label} ${rows.length} 筆`,"ok");
+    return rows;
   }
 
   async function syncDataHub(force=false){
     if(syncPromise)return syncPromise;
     syncPromise=(async()=>{
       const cache=getCached();
-      if(cache.rows.length){
-        installRows(cache.rows);
-        setDataState(cache.fresh?`DataHub 快取 ${cache.rows.length} 筆`:`快取 ${cache.rows.length} 筆，背景更新中`,"ok");
+
+      // 新鮮快取只提交一次；過期快取不先轉換，避免「舊資料轉換一次＋新資料再轉換一次」造成主執行緒卡頓。
+      if(cache.fresh&&!force){
+        await installRows(cache.rows,"DataHub 快取");
+        return cache.rows;
       }
 
-      if(cache.fresh&&!force)return cache.rows;
-
       try{
-        setDataState("DataHub 單一同步中…","warn");
+        setDataState(cache.rows.length?`DataHub 更新中｜備援快取 ${cache.rows.length} 筆`:`DataHub 單一同步中…`,"warn");
         const rows=await fetchAll();
         if(!rows.length){
           if(cache.rows.length){
-            installRows(cache.rows);
-            setDataState(`DataHub 回傳 0 筆｜保留快取 ${cache.rows.length} 筆`,"warn");
+            await installRows(cache.rows,"DataHub 備援快取");
+            setDataState(`DataHub 回傳 0 筆｜使用快取 ${cache.rows.length} 筆`,"warn");
             window.log?.(`DataHub 本次回傳 0 筆，未覆蓋原快取 ${cache.rows.length} 筆`);
             return cache.rows;
           }
@@ -6476,13 +6486,13 @@ document.addEventListener("DOMContentLoaded",function(){
           throw new Error("DataHub 回傳 0 筆");
         }
         saveCache(rows);
-        installRows(rows);
-        setDataState(`DataHub 已同步 ${rows.length} 筆`,"ok");
+        await installRows(rows,"DataHub 已同步");
         return rows;
       }catch(err){
         console.error(err);
         if(cache.rows.length){
-          setDataState("DataHub 連線失敗，使用快取","warn");
+          await installRows(cache.rows,"DataHub 離線備援");
+          setDataState(`DataHub 連線失敗｜使用快取 ${cache.rows.length} 筆`,"warn");
           return cache.rows;
         }
         setDataState("DataHub 無法連線","bad");
@@ -6658,7 +6668,9 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function install(){
-    if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0072 V87.5 Stable DataHub Cache Engine";
+    if(window.__BUILD0104_DATAHUB_INSTALLED__)return;
+    window.__BUILD0104_DATAHUB_INSTALLED__=true;
+    if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0104 DataHub Engine";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
         el.textContent="Enterprise Preview 2｜Build 0072";
@@ -6671,8 +6683,8 @@ document.addEventListener("DOMContentLoaded",function(){
 
     // Single initial DataHub operation: use cache immediately, refresh quietly once.
     const cache=getCached();
-    if(cache.rows.length)setDataState(`DataHub 快取 ${cache.rows.length} 筆`,"ok");
-    syncDataHub(false).catch(err=>console.error("Build0057 initial sync",err));
+    if(cache.rows.length)setDataState(cache.fresh?`DataHub 快取可用 ${cache.rows.length} 筆`:`DataHub 快取待更新 ${cache.rows.length} 筆`,cache.fresh?"ok":"warn");
+    syncDataHub(false).catch(err=>console.error("Build0104 initial sync",err));
 
     // Manual pool button forces one refresh; old duplicate handlers are removed by cloning.
     const old=$("buildPool");
@@ -6690,7 +6702,7 @@ document.addEventListener("DOMContentLoaded",function(){
         }catch(err){
           const cache=getCached();
           if(cache.rows.length){
-            installRows(cache.rows);
+            await installRows(cache.rows,"DataHub 離線備援");
             setDataState(`DataHub 離線｜使用快取 ${cache.rows.length} 筆`,"warn");
             window.log?.("DataHub 同步逾時，已使用本機快取："+err.message);
           }else{
