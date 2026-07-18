@@ -846,7 +846,7 @@ body::after{
 <script id="aps-build0094-direct-recovery">
 (()=>{
 'use strict';
-const BUILD='0110 Enterprise Stable';
+const BUILD='0110.1 Main Thread Stable';
 const API=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec';
 let running=false;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -854,7 +854,7 @@ const txt=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function badge(){let e=document.getElementById('aps0094Status');if(!e){e=document.createElement('button');e.id='aps0094Status';e.type='button';e.style.cssText='position:fixed;right:14px;bottom:12px;z-index:2147483647;padding:8px 11px;border-radius:8px;border:1px solid #f59e0b;background:#07141d;color:#fff;font:12px Microsoft JhengHei,Arial;box-shadow:0 5px 18px #000a;cursor:pointer';e.onclick=()=>run(true);document.documentElement.appendChild(e)}return e}
 function state(message,type='wait'){const e=badge();e.textContent='APS Build '+BUILD+'｜'+message;e.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b'}
-function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e&&/Build\s*00\d+|Enterprise Preview/i.test(e.textContent||''))e.textContent='APS Optimizer Build 0110 Enterprise Stable'});document.querySelectorAll('.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
+function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e&&/Build\s*00\d+|Enterprise Preview/i.test(e.textContent||''))e.textContent='APS Optimizer Build 0110.1 Main Thread Stable'});document.querySelectorAll('.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
 function jsonp(action,params={},timeoutMs=45000){return new Promise((resolve,reject)=>{const cb='APS0096_'+Date.now()+'_'+Math.floor(Math.random()*1e6),s=document.createElement('script');let settled=false,timer=null;const tombstone=()=>{window[cb]=function(){};setTimeout(()=>{try{delete window[cb]}catch(_){window[cb]=undefined}},120000)};const clean=(keepCallback=false)=>{if(timer)clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);if(keepCallback)tombstone();else{try{delete window[cb]}catch(_){window[cb]=undefined}}};timer=setTimeout(()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 逾時 '+Math.round(timeoutMs/1000)+' 秒'))},timeoutMs);window[cb]=res=>{if(settled)return;settled=true;clean(false);if(res&&res.ok===false)reject(new Error(res.message||res.error||action+' 回傳失敗'));else resolve(res||{})};s.onerror=()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 連線失敗'))};s.src=API+'?'+new URLSearchParams({...params,action,callback:cb,_:Date.now()});document.head.appendChild(s)})}
 async function fetchRows(){
   const all=[]; let page=1,total=1; const seenPages=new Set();
@@ -4201,9 +4201,10 @@ function reviveDate(value){
   return Number.isNaN(d.getTime())?null:d;
 }
 
-function revivePool(rows){
-  return (rows||[]).map(row=>{
-    const x={...row};
+async function revivePool(rows){
+  const src=rows||[],out=[];
+  for(let i=0;i<src.length;i++){
+    const x={...src[i]};
     if(x.due) x.due=reviveDate(x.due);
     ["planned","output","remaining","minutes","cycles","perRound","roundMinutes"].forEach(k=>{
       if(x[k]!==undefined&&x[k]!=="") x[k]=Number(x[k])||0;
@@ -4211,19 +4212,24 @@ function revivePool(rows){
     ["urgent","risk","ready","closed"].forEach(k=>{
       if(x[k]!==undefined) x[k]=x[k]===true||String(x[k]).toLowerCase()==="true";
     });
-    return x;
-  });
+    out.push(x);
+    if(i>0 && i%400===0) await apsYield();
+  }
+  return out;
 }
 
-function reviveSchedule(rows){
-  return (rows||[]).map(row=>{
-    const x={...row};
+async function reviveSchedule(rows){
+  const src=rows||[],out=[];
+  for(let i=0;i<src.length;i++){
+    const x={...src[i]};
     if(x.start) x.start=reviveDate(x.start);
     if(x.end) x.end=reviveDate(x.end);
     if(x.due) x.due=reviveDate(x.due);
     if(x.minutes!==undefined) x.minutes=Number(x.minutes)||0;
-    return x;
-  });
+    out.push(x);
+    if(i>0 && i%400===0) await apsYield();
+  }
+  return out;
 }
 
 function machineRows(){
@@ -4346,16 +4352,41 @@ function cloudMetaText(meta){
   }).join("；");
 }
 
-function renderAfterCloudLoad(){
-  try{window.renderPool?.()}catch(e){console.warn(e)}
-  try{window.renderSchedule?.()}catch(e){console.warn(e)}
-  try{window.renderMachineSettings?.()}catch(e){console.warn(e)}
-  try{window.renderSpeedCenter?.()}catch(e){console.warn(e)}
-  try{window.renderPreprocessCenter?.()}catch(e){console.warn(e)}
-  try{window.renderWFSettings?.()}catch(e){console.warn(e)}
-  try{window.updateKpi?.()}catch(e){console.warn(e)}
-  try{window.renderFiles?.()}catch(e){console.warn(e)}
-  try{window.SKAPSSystem?.renderStats?.()}catch(e){console.warn(e)}
+function apsYield(){
+  return new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+}
+
+function apsRunIdle(fn,timeout=1200){
+  return new Promise(resolve=>{
+    const run=()=>{
+      try{fn?.()}catch(e){console.warn(e)}
+      resolve();
+    };
+    if("requestIdleCallback" in window){
+      requestIdleCallback(run,{timeout});
+    }else{
+      setTimeout(run,40);
+    }
+  });
+}
+
+async function renderAfterCloudLoad(){
+  // Build 0110.1：避免雲端 7/7 完成後一次同步重畫所有中心，造成主執行緒無回應。
+  const tasks=[
+    ()=>window.updateKpi?.(),
+    ()=>window.renderSchedule?.(),
+    ()=>window.renderPool?.(),
+    ()=>window.SKAPSSystem?.renderStats?.(),
+    ()=>window.renderFiles?.(),
+    ()=>window.renderSpeedCenter?.(),
+    ()=>window.renderPreprocessCenter?.(),
+    ()=>window.renderMachineSettings?.(),
+    ()=>window.renderWFSettings?.()
+  ];
+  for(const task of tasks){
+    await apsRunIdle(task,900);
+    await apsYield();
+  }
 }
 
 async function saveDataset(name,silent=true){
@@ -4453,13 +4484,13 @@ async function bootstrapCloud(force=false){
     const failures=[];
 
     const datasets=[
-      {key:"workpool",action:"apsloadworkpool",label:"工單池",apply:res=>{
+      {key:"workpool",action:"apsloadworkpool",label:"工單池",apply:async res=>{
         const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
-        if(rows.length){state.pool=revivePool(rows);loadedCount+=rows.length;} return rows.length;
+        if(rows.length){state.pool=await revivePool(rows);loadedCount+=rows.length;} return rows.length;
       }},
-      {key:"schedule",action:"apsloadschedule",label:"排程",apply:res=>{
+      {key:"schedule",action:"apsloadschedule",label:"排程",apply:async res=>{
         const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
-        if(rows.length){state.schedule=reviveSchedule(rows);loadedCount+=rows.length;} return rows.length;
+        if(rows.length){state.schedule=await reviveSchedule(rows);loadedCount+=rows.length;} return rows.length;
       }},
       {key:"machine_master",action:"apsloadmachinemaster",label:"機台",apply:res=>{
         const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
@@ -4494,7 +4525,7 @@ async function bootstrapCloud(force=false){
                 jsonp(d.action),
                 new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${d.label} 讀取超時`)),30000))
               ]);
-          const count=d.apply(res||{});
+          const count=await d.apply(res||{});
           meta[d.key]={count:Number(res?.count||count||0),updated_at:res?.updated_at||res?.time||""};
         }catch(err){
           failures.push(`${d.label}：${err.message||err}`);
@@ -4505,14 +4536,16 @@ async function bootstrapCloud(force=false){
 
       CLOUD.meta=meta;
       CLOUD.loaded=true;
-      renderAfterCloudLoad();
-      try{window.SKAPSSystem?.saveSnapshots?.(true)}catch(e){console.warn("APS snapshot save skipped",e)}
 
       const poolCount=state.pool?.length||0;
       const scheduleCount=state.schedule?.length||0;
       if(poolCount||scheduleCount||loadedCount){
         const suffix=failures.length?`｜${failures.length} 項使用本機資料`:"";
+        // 先解除「正在載入」，再以 idle queue 分批重畫，避免 Edge 判定頁面無回應。
         setCloudStatus(failures.length?"warn":"ok",`已連線｜工單池 ${poolCount}｜排程 ${scheduleCount}${suffix}`,cloudMetaText(meta)+(failures.length?`；略過：${failures.join("；")}`:""));
+        await apsYield();
+        await renderAfterCloudLoad();
+        // 啟動載入時不建立大型 snapshot；序列化 12,000+ 筆會長時間阻塞主執行緒。
         window.log?.(`APS DataCenter 已連線：工單池 ${poolCount} 筆、排程 ${scheduleCount} 段`);
         return {ok:true,partial:failures.length>0,loadedCount,meta,failures};
       }
@@ -4526,7 +4559,7 @@ async function bootstrapCloud(force=false){
       return {ok:true,empty:true,loadedCount:0,meta,failures};
     }catch(err){
       console.error("APS cloud bootstrap failed",err);
-      try{window.SKAPSSystem?.restoreSnapshots?.();renderAfterCloudLoad()}catch(e){console.warn("APS local fallback failed",e)}
+      try{window.SKAPSSystem?.restoreSnapshots?.();await renderAfterCloudLoad()}catch(e){console.warn("APS local fallback failed",e)}
       const localPool=state.pool?.length||0;
       const localSchedule=state.schedule?.length||0;
       setCloudStatus(localPool||localSchedule?"warn":"bad",localPool||localSchedule?`使用本機備援｜工單池 ${localPool}｜排程 ${localSchedule}`:"連線失敗",`${err.message||err}；已嘗試載入本機快照`);
@@ -6744,10 +6777,10 @@ document.addEventListener("DOMContentLoaded",function(){
     if(window.__APS_DATAHUB_0110_INSTALLED__)return;
     window.__APS_DATAHUB_0110_INSTALLED__=true;
     dhTrace("install",{readyState:document.readyState,url:location.href});
-    if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0110 Enterprise Stable";
+    if(!window.APS_BUILD_LOCK) document.title="SEAL KING Smart APS｜Build 0110.1 Main Thread Stable";
     document.querySelectorAll(".header-time small,.version").forEach(el=>{
       if(/Build\s*00\d+|Enterprise Preview/i.test(el.textContent||"")){
-        el.textContent="Build 0110 Enterprise Stable";
+        el.textContent="Build 0110.1 Main Thread Stable";
       }
     });
 
