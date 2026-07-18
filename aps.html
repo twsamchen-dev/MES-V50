@@ -1,154 +1,8 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<!-- Build 0103.2C DataHub Trace｜診斷增量：只追蹤 DataHub，不改既有資料、排程或 API 邏輯 -->
-<style id="build01032-debug-style">
-#apsDebug01032{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:390px;max-width:calc(100vw - 24px);background:#071018f2;border:1px solid #365063;border-radius:10px;box-shadow:0 12px 40px #000b;color:#dceaf2;font:12px/1.5 Consolas,"Microsoft JhengHei",monospace;overflow:hidden}
-#apsDebug01032 .dbg-head{display:flex;align-items:center;gap:7px;padding:8px 10px;background:#101d27;border-bottom:1px solid #304655;cursor:move}
-#apsDebug01032 .dbg-head strong{flex:1;color:#fff;font-size:13px}#apsDebug01032 .dbg-state{padding:2px 7px;border-radius:99px;background:#443711;color:#ffd875}
-#apsDebug01032 .dbg-btn{border:1px solid #405766;background:#172630;color:#dceaf2;border-radius:5px;padding:3px 7px;cursor:pointer;font:inherit}
-#apsDebug01032 .dbg-body{max-height:310px;overflow:auto;padding:7px 9px;background:#050c12}
-#apsDebug01032 .dbg-line{padding:2px 0;border-bottom:1px dotted #1d303b;white-space:pre-wrap;word-break:break-word}.dbg-ok{color:#78e6b5}.dbg-warn{color:#ffd166}.dbg-err{color:#ff8f96}.dbg-info{color:#8ed8ff}
-#apsDebug01032 .dbg-foot{display:flex;gap:8px;justify-content:space-between;padding:6px 9px;background:#0d1820;color:#8fa6b5;border-top:1px solid #263b48}
-#apsDebug01032.collapsed .dbg-body,#apsDebug01032.collapsed .dbg-foot{display:none}
-@media(max-width:620px){#apsDebug01032{width:calc(100vw - 16px);right:8px;bottom:8px}}
-</style>
-<script id="build01032-debug-bootstrap">
-(function(){
-'use strict';
-if(window.__APS_DEBUG_01032__)return;
-const D=window.__APS_DEBUG_01032__={version:'0103.2',started:performance.now(),events:[],fetches:new Map(),lastBeat:performance.now(),panel:null,body:null,state:null,seq:0};
-const safe=v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}};
-function stamp(){return (performance.now()-D.started).toFixed(0).padStart(6,' ')+'ms'}
-function log(level,msg,data){
- const row={at:new Date().toISOString(),ms:Math.round(performance.now()-D.started),level,msg,data:data===undefined?'':safe(data)};D.events.push(row);if(D.events.length>1000)D.events.shift();
- try{console[level==='err'?'error':level==='warn'?'warn':'log']('[APS DEBUG '+stamp()+'] '+msg,data===undefined?'':data)}catch(e){}
- if(D.body){const el=document.createElement('div');el.className='dbg-line dbg-'+level;el.textContent=stamp()+' ['+level.toUpperCase()+'] '+msg+(row.data?' | '+row.data:'');D.body.appendChild(el);while(D.body.children.length>220)D.body.firstChild.remove();D.body.scrollTop=D.body.scrollHeight}
-}
-function setState(s,kind){if(D.state){D.state.textContent=s;D.state.className='dbg-state dbg-'+(kind||'info')}}
-function report(){
- const mem=performance.memory?{usedMB:(performance.memory.usedJSHeapSize/1048576).toFixed(1),limitMB:(performance.memory.jsHeapSizeLimit/1048576).toFixed(0)}:{};
- return {version:D.version,url:location.href,userAgent:navigator.userAgent,started:new Date(Date.now()-performance.now()+D.started).toISOString(),elapsedMs:Math.round(performance.now()-D.started),readyState:document.readyState,visibility:document.visibilityState,domNodes:document.getElementsByTagName('*').length,scheduleBlocks:document.querySelectorAll('.schedule-block,.job').length,cloudStatus:(document.querySelector('#apsCloudStatus span')||document.querySelector('#apsCloudStatus'))?.textContent?.trim()||'',activeFetches:[...D.fetches.values()],memory:mem,events:D.events};
-}
-function copyReport(){const t=JSON.stringify(report(),null,2);if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(()=>log('ok','Debug Report 已複製')).catch(()=>fallback(t));else fallback(t)}
-function fallback(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();log('ok','Debug Report 已複製')}
-function buildPanel(){
- if(D.panel||!document.body)return;
- const p=document.createElement('section');p.id='apsDebug01032';p.innerHTML='<div class="dbg-head"><strong>APS Debug｜Build 0103.2A</strong><span class="dbg-state">BOOT</span><button class="dbg-btn" data-act="copy">複製報告</button><button class="dbg-btn" data-act="toggle">收合</button></div><div class="dbg-body"></div><div class="dbg-foot"><span data-foot="step">啟動追蹤中</span><span data-foot="metric">0 nodes</span></div>';
- document.body.appendChild(p);D.panel=p;D.body=p.querySelector('.dbg-body');D.state=p.querySelector('.dbg-state');
- p.addEventListener('click',e=>{const a=e.target?.dataset?.act;if(a==='toggle'){p.classList.toggle('collapsed');e.target.textContent=p.classList.contains('collapsed')?'展開':'收合'}if(a==='copy')copyReport()});
- D.events.slice(-80).forEach(r=>{const el=document.createElement('div');el.className='dbg-line dbg-'+r.level;el.textContent=String(r.ms).padStart(6,' ')+'ms ['+r.level.toUpperCase()+'] '+r.msg+(r.data?' | '+r.data:'');D.body.appendChild(el)});
- log('ok','Debug 面板已建立');
-}
-log('info','APP START',{href:location.href});
-window.addEventListener('error',e=>log('err','window.error',{message:e.message,file:e.filename,line:e.lineno,column:e.colno,stack:e.error?.stack||''}),true);
-window.addEventListener('unhandledrejection',e=>log('err','unhandledrejection',{reason:safe(e.reason),stack:e.reason?.stack||''}));
-document.addEventListener('DOMContentLoaded',()=>{buildPanel();setState('DOM READY','ok');log('ok','DOMContentLoaded');}, {once:true});
-window.addEventListener('load',()=>{buildPanel();setState('WINDOW LOAD','ok');log('ok','window.load');setTimeout(()=>{setState('MONITOR','info');log('info','啟動後 2 秒快照',report())},2000)}, {once:true});
-if(document.readyState!=='loading')setTimeout(buildPanel,0);
-
-// 只監看 fetch；不取消、不改寫回傳資料。
-if(typeof window.fetch==='function'&&!window.fetch.__debug01032){
- const nativeFetch=window.fetch.bind(window);
- const wrapped=function(input,init){const id=++D.seq,url=typeof input==='string'?input:(input&&input.url)||'[Request]',started=performance.now();const rec={id,url,startedAt:new Date().toISOString(),elapsedMs:0,status:'pending'};D.fetches.set(id,rec);log('info','fetch START #'+id,url);
- const warnTimer=setTimeout(()=>{const x=D.fetches.get(id);if(x&&x.status==='pending'){x.elapsedMs=Math.round(performance.now()-started);log('warn','fetch 超過 15 秒 #'+id,{url,elapsedMs:x.elapsedMs});setState('FETCH WAIT','warn')}},15000);
- let pr;try{pr=nativeFetch(input,init)}catch(err){clearTimeout(warnTimer);D.fetches.delete(id);log('err','fetch THROW #'+id,{url,error:String(err)});throw err}
- return Promise.resolve(pr).then(res=>{clearTimeout(warnTimer);rec.elapsedMs=Math.round(performance.now()-started);rec.status='done';rec.httpStatus=res.status;log(res.ok?'ok':'warn','fetch END #'+id,{url,status:res.status,elapsedMs:rec.elapsedMs});D.fetches.delete(id);return res},err=>{clearTimeout(warnTimer);rec.elapsedMs=Math.round(performance.now()-started);rec.status='error';log('err','fetch ERROR #'+id,{url,elapsedMs:rec.elapsedMs,error:String(err),stack:err?.stack||''});D.fetches.delete(id);throw err});
- };
- wrapped.__debug01032=true;wrapped.__native=nativeFetch;window.fetch=wrapped;
- log('ok','fetch monitor installed');
-}
-
-// Long Task API：偵測主執行緒被單次工作阻塞。
-try{if(window.PerformanceObserver&&PerformanceObserver.supportedEntryTypes?.includes('longtask')){const po=new PerformanceObserver(list=>list.getEntries().forEach(x=>{if(x.duration>=200)log(x.duration>=2000?'err':'warn','LONG TASK',{durationMs:Math.round(x.duration),startMs:Math.round(x.startTime)})}));po.observe({entryTypes:['longtask']});log('ok','Long Task monitor installed')}}catch(e){log('warn','Long Task monitor unavailable',String(e))}
-
-// Heartbeat：頁面恢復回應後，回報曾經阻塞多久。
-setInterval(()=>{const now=performance.now(),lag=now-D.lastBeat-1000;D.lastBeat=now;if(lag>1200){log(lag>5000?'err':'warn','MAIN THREAD STALL',{lagMs:Math.round(lag)});setState('STALL '+Math.round(lag/1000)+'s','err')}},1000);
-
-// APS 雲端狀態與 DOM 指標監看。
-let lastCloud='',waitSince=0;
-setInterval(()=>{
- try{buildPanel();const node=document.querySelector('#apsCloudStatus span')||document.querySelector('#apsCloudStatus');const cloud=(node?.textContent||'').trim();if(cloud!==lastCloud){lastCloud=cloud;log('info','APS CLOUD STATUS',cloud||'(尚未建立)');const foot=D.panel?.querySelector('[data-foot="step"]');if(foot)foot.textContent=cloud||'監控中';if(/完成|成功|已載入|連線成功/.test(cloud))setState('CLOUD OK','ok');else if(/錯誤|失敗/.test(cloud))setState('CLOUD ERROR','err');else if(/等待|載入|連線/.test(cloud))setState('CLOUD WAIT','warn')}
- if(/等待連線/.test(cloud)){if(!waitSince)waitSince=performance.now();if(performance.now()-waitSince>20000&&!D.waitWarned){D.waitWarned=true;log('warn','APS 雲端等待連線超過 20 秒',{activeFetches:[...D.fetches.values()]})}}else waitSince=0;
- const nodes=document.getElementsByTagName('*').length,blocks=document.querySelectorAll('.schedule-block,.job').length,metric=D.panel?.querySelector('[data-foot="metric"]');if(metric)metric.textContent=nodes+' nodes｜'+blocks+' blocks｜'+D.fetches.size+' fetch';
- }catch(e){log('err','monitor interval error',String(e))}
-},1000);
-window.APS_DEBUG_REPORT_01032=report;window.APS_DEBUG_COPY_01032=copyReport;
-})();
-</script>
-
-<script id="build01032a-startup-listener-trace">
-(function(){
-  'use strict';
-  if(window.__APS_STARTUP_TRACE_01032A__) return;
-  const T=window.__APS_STARTUP_TRACE_01032A__={seq:0,domSeq:0,loadSeq:0};
-  const nativeAdd=EventTarget.prototype.addEventListener;
-
-  function emit(level,msg,data){
-    try{
-      const D=window.__APS_DEBUG_01032__;
-      const row={at:new Date().toISOString(),ms:Math.round(performance.now()-(D?.started||performance.now())),level,msg,data:data===undefined?'':JSON.stringify(data)};
-      if(D){
-        D.events.push(row);
-        if(D.events.length>1000)D.events.shift();
-        if(D.body){
-          const el=document.createElement('div');
-          el.className='dbg-line dbg-'+level;
-          el.textContent=String(row.ms).padStart(6,' ')+'ms ['+level.toUpperCase()+'] '+msg+(row.data?' | '+row.data:'');
-          D.body.appendChild(el);
-          D.body.scrollTop=D.body.scrollHeight;
-        }
-      }
-      console[level==='err'?'error':level==='warn'?'warn':'log']('[APS TRACE]',msg,data||'');
-    }catch(_){ }
-  }
-
-  function callbackName(listener){
-    try{
-      if(typeof listener==='function') return listener.name||'(anonymous)';
-      if(listener&&typeof listener.handleEvent==='function') return listener.handleEvent.name||'(handleEvent)';
-    }catch(_){ }
-    return '(unknown)';
-  }
-
-  EventTarget.prototype.addEventListener=function(type,listener,options){
-    const isStartup=(this===document&&type==='DOMContentLoaded')||(this===window&&type==='load');
-    if(!isStartup||!listener) return nativeAdd.call(this,type,listener,options);
-
-    const id=++T.seq;
-    const kind=type==='DOMContentLoaded'?'DOM':'LOAD';
-    const order=type==='DOMContentLoaded'?++T.domSeq:++T.loadSeq;
-    const name=callbackName(listener);
-    emit('info','REGISTER '+kind+' #'+id,{order,name});
-
-    const wrapped=function(ev){
-      const target=this;
-      // 分批執行，讓 Debug 面板先完成繪製，並可看見最後進入哪一個啟動函式。
-      const delay=Math.min(6000,Math.max(0,(order-1)*180));
-      setTimeout(function(){
-        const started=performance.now();
-        emit('warn','ENTER '+kind+' #'+id,{order,name,delayMs:delay});
-        try{
-          let result;
-          if(typeof listener==='function') result=listener.call(target,ev);
-          else if(listener&&typeof listener.handleEvent==='function') result=listener.handleEvent.call(listener,ev);
-          emit('ok','EXIT '+kind+' #'+id,{order,name,elapsedMs:Math.round(performance.now()-started)});
-          return result;
-        }catch(err){
-          emit('err','THROW '+kind+' #'+id,{order,name,error:String(err),stack:err&&err.stack||''});
-          setTimeout(function(){throw err},0);
-        }
-      },delay);
-    };
-    return nativeAdd.call(this,type,wrapped,options);
-  };
-
-  emit('ok','Startup listener tracer installed',{build:'0103.2A'});
-})();
-</script>
-
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.2C DataHub Trace</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -938,17 +792,14 @@ const txt=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function badge(){let e=document.getElementById('aps0094Status');if(!e){e=document.createElement('button');e.id='aps0094Status';e.type='button';e.style.cssText='position:fixed;right:14px;bottom:12px;z-index:2147483647;padding:8px 11px;border-radius:8px;border:1px solid #f59e0b;background:#07141d;color:#fff;font:12px Microsoft JhengHei,Arial;box-shadow:0 5px 18px #000a;cursor:pointer';e.onclick=()=>run(true);document.documentElement.appendChild(e)}return e}
 function state(message,type='wait'){const e=badge();e.textContent='APS Build '+BUILD+'｜'+message;e.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b'}
-function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0103.2F Cycle Breakdown'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
+function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0103.3 Stable'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
 function jsonp(action,params={},timeoutMs=45000){return new Promise((resolve,reject)=>{const cb='APS0096_'+Date.now()+'_'+Math.floor(Math.random()*1e6),s=document.createElement('script');let settled=false,timer=null;const tombstone=()=>{window[cb]=function(){};setTimeout(()=>{try{delete window[cb]}catch(_){window[cb]=undefined}},120000)};const clean=(keepCallback=false)=>{if(timer)clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);if(keepCallback)tombstone();else{try{delete window[cb]}catch(_){window[cb]=undefined}}};timer=setTimeout(()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 逾時 '+Math.round(timeoutMs/1000)+' 秒'))},timeoutMs);window[cb]=res=>{if(settled)return;settled=true;clean(false);if(res&&res.ok===false)reject(new Error(res.message||res.error||action+' 回傳失敗'));else resolve(res||{})};s.onerror=()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 連線失敗'))};s.src=API+'?'+new URLSearchParams({...params,action,callback:cb,_:Date.now()});document.head.appendChild(s)})}
 async function fetchRows(){
-  const all=[];
-  const requestedPageSize=1000;
-  let page=1,total=1,maxPages=100;
-  const seenPages=new Set();
-  while(all.length<total&&page<=maxPages){
-    state('下載 DataHub 第 '+page+'/'+maxPages+' 頁｜目前 '+all.length+' / '+total+' 筆');
+  const all=[]; let page=1,total=1; const seenPages=new Set();
+  while(all.length<total&&page<=40){
+    state('下載 DataHub 第 '+page+' 頁｜目前 '+all.length+' 筆');
     let r;
-    try{r=await jsonp('datahubworkorders',{page,pageSize:requestedPageSize},45000)}
+    try{r=await jsonp('datahubworkorders',{page,pageSize:200},30000)}
     catch(firstErr){
       state('第 '+page+' 頁連線逾時｜改用既有資料','warn');
       if(all.length) break;
@@ -956,18 +807,11 @@ async function fetchRows(){
     }
     const rows=Array.isArray(r.rows)?r.rows:Array.isArray(r.data)?r.data:[];
     total=Math.max(0,Number(r.total||rows.length||0));
-    if(page===1){
-      const effectivePageSize=Math.max(1,rows.length||requestedPageSize);
-      maxPages=Math.min(100,Math.max(1,Math.ceil(total/effectivePageSize)+1));
-    }
     if(!rows.length) break;
     const sig=rows.slice(0,5).map(x=>String(x.work_order_no||x.order_no||x.daily_report_no||x.batch_no||'')).join('|')+'#'+rows.length;
     if(seenPages.has(sig)){console.warn('DataHub duplicate page stopped',page,sig);break}
-    seenPages.add(sig);
-    all.push(...rows);
-    page++;
+    seenPages.add(sig); all.push(...rows); page++;
   }
-  if(all.length<total)console.warn('DataHub incomplete',all.length,total,maxPages);
   const unique=new Map();
   all.forEach((r,i)=>{const k=String(r.id||r.work_order_no||r.order_no||r.daily_report_no||r.batch_no||('ROW_'+i)).trim();if(!unique.has(k))unique.set(k,r)});
   return [...unique.values()]
@@ -977,16 +821,14 @@ function render(){['renderPool','renderSchedule','renderHome','updateKpi','rende
 async function waitEngine(){for(let i=0;i<80;i++){if(window.Build0051APSSpeedEngine?.sync&&window.S)return true;await sleep(250)}return false}
 async function run(force=false){if(running)return;running=true;forceLabel();state(force?'手動重新同步':'開始載入');try{const rows=await fetchRows();if(!rows.length)throw new Error('DataHub 回傳 0 筆');window.__BUILD0057_DATAHUB_ROWS__=rows.slice();await waitEngine();let usedEngine=false;if(window.Build0051APSSpeedEngine?.sync){state('DataHub '+rows.length+' 筆｜產速配對中');await window.Build0051APSSpeedEngine.sync(false);await sleep(500);usedEngine=Array.isArray(window.S?.pool)&&window.S.pool.length>0}if(!window.S)window.S={files:{},rows:{},pool:[],schedule:[],machines:{},logs:[]};if(!usedEngine){window.S.pool=fallbackConvert(rows);window.S.rows=window.S.rows||{};window.S.rows.datahub=rows}if(!Array.isArray(window.S.schedule))window.S.schedule=[];render();try{window.SKAPSSystem?.saveSnapshots?.(true)}catch{};const p=window.S.pool.length,s=window.S.schedule.length;if(!p)throw new Error('已下載 '+rows.length+' 筆，但工單池轉換為 0');state('已載入｜DataHub '+rows.length+'｜工單 '+p+'｜排程 '+s,'ok');}catch(err){console.error('APS 0096',err);state('失敗：'+(err.message||err)+'｜點此重試','bad')}finally{running=false;forceLabel()}}
 function install(){
-  // Build 0103.2E：此模組只保留為手動救援，不再自動下載 DataHub。
-  // 主 DataHub 載入器（Build0057）是唯一自動同步來源，避免兩套分頁流程同時執行。
+  forceLabel();
   const existing=Array.isArray(window.S?.pool)?window.S.pool.length:0;
+  // Build 0103.3：舊救援模組只保留手動入口，不再自動下載 DataHub。
+  // 正式啟動僅允許 CloudDataHub Engine 執行一次同步，避免雙載入器競爭。
   window.APSRecovery0096={run};
-  window.__APS_RECOVERY_0096_MANUAL_ONLY__=true;
-  if(existing){
-    state('既有工單 '+existing+' 筆｜救援模式待命','ok');
-  }else{
-    state('主 DataHub 載入中｜救援模式待命');
-  }
+  window.__APS_RECOVERY_MANUAL_ONLY__=true;
+  if(existing)state('既有工單 '+existing+' 筆｜救援待命','ok');
+  else state('主 DataHub 載入中｜救援待命');
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
@@ -6407,40 +6249,8 @@ document.addEventListener("DOMContentLoaded",function(){
 
   const JSONP_GRACE_MS = 120000;
   const PAGE_SIZE = 1000;
-  const MAX_PAGES = 100;
+  const MAX_PAGES = 120;
   const MAX_ROWS = 50000;
-
-  // Build 0103.2F｜DataHub 每頁循環細分追蹤。只記錄，不改變回傳值與控制流程。
-  const DH_TRACE_BUILD = "0103.2F";
-  function dhNow(){return performance.now()}
-  function dhMem(){
-    try{return performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+" MB":"n/a"}catch(_){return "n/a"}
-  }
-  function dhTrace(level, step, data){
-    const payload=Object.assign({build:DH_TRACE_BUILD,memory:dhMem()},data||{});
-    try{console[level==="err"?"error":level==="warn"?"warn":"log"]("[DATAHUB TRACE] "+step,payload)}catch(_){}
-    try{
-      const D=window.__APS_DEBUG_01032__;
-      if(D){
-        const row={at:new Date().toISOString(),ms:Math.round(performance.now()-D.started),level:level||"info",msg:"DATAHUB｜"+step,data:JSON.stringify(payload)};
-        D.events.push(row);
-        if(D.events.length>1000)D.events.shift();
-        if(D.body){
-          const el=document.createElement("div");
-          el.className="dbg-line dbg-"+(level||"info");
-          el.textContent=String(row.ms).padStart(6," ")+"ms ["+(level||"info").toUpperCase()+"] DATAHUB｜"+step+" | "+row.data;
-          D.body.appendChild(el);
-          while(D.body.children.length>220)D.body.firstChild.remove();
-          D.body.scrollTop=D.body.scrollHeight;
-        }
-      }
-    }catch(_){}
-  }
-  function dhDone(step, started, data){
-    const elapsedMs=Math.round(dhNow()-started);
-    dhTrace(elapsedMs>=2000?"err":elapsedMs>=500?"warn":"ok",step+" END",Object.assign({elapsedMs},data||{}));
-    return elapsedMs;
-  }
 
   function jsonp(action, params={}, timeout=90000){
     return new Promise((resolve,reject)=>{
@@ -6482,18 +6292,9 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   async function fetchPage(page, attempt=1){
-    const started=dhNow();
-    dhTrace("info","PAGE "+page+" DOWNLOAD START",{page,attempt,pageSize:PAGE_SIZE});
     try{
-      const res=await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},90000);
-      const rows=Array.isArray(res?.rows)?res.rows:Array.isArray(res?.data)?res.data:Array.isArray(res?.list)?res.list:[];
-      if(page===1 && rows.length && rows.length<PAGE_SIZE){
-        dhTrace("warn","SERVER PAGE SIZE LIMITED",{requested:PAGE_SIZE,received:rows.length});
-      }
-      dhDone("PAGE "+page+" DOWNLOAD",started,{page,attempt,requestedPageSize:PAGE_SIZE,rows:rows.length,total:res?.total??res?.totalCount??res?.count??null,hasMore:res?.hasMore??res?.has_more??null});
-      return res;
+      return await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},90000);
     }catch(err){
-      dhTrace("err","PAGE "+page+" DOWNLOAD ERROR",{page,attempt,elapsedMs:Math.round(dhNow()-started),error:String(err?.message||err)});
       if(attempt<3){
         setDataState(`DataHub 第 ${page} 頁重試 ${attempt}/2…`,"warn");
         await new Promise(r=>setTimeout(r,1200*attempt));
@@ -6511,83 +6312,50 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   async function fetchAll(){
-    const wholeStarted=dhNow();
     const all=[];
     const seenPages=new Set();
     const seenRows=new Set();
     let page=1;
     let expectedTotal=null;
-    dhTrace("info","FETCH ALL START",{pageSize:PAGE_SIZE,maxPages:MAX_PAGES,maxRows:MAX_ROWS});
 
     while(page<=MAX_PAGES){
-      const pageStarted=dhNow();
       setDataState(`DataHub 同步中｜第 ${page} 頁｜${all.length} 筆`,"warn");
-      dhTrace("info","PAGE "+page+" CYCLE START",{page,currentRows:all.length});
-
-      const downloadWaitStarted=dhNow();
       const res=await fetchPage(page);
-      dhDone("PAGE "+page+" DOWNLOAD WAIT",downloadWaitStarted,{page});
-
-      const parseStarted=dhNow();
       const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:Array.isArray(res.list)?res.list:[];
       const serverTotal=Number(res.total??res.totalCount??res.count);
       if(Number.isFinite(serverTotal)&&serverTotal>=0)expectedTotal=serverTotal;
-      dhDone("PAGE "+page+" RESPONSE PARSE",parseStarted,{page,rows:rows.length,expectedTotal});
 
-      if(!rows.length){
-        dhTrace("warn","PAGE "+page+" STOP EMPTY",{page});
-        break;
-      }
+      if(!rows.length)break;
 
-      const signatureStarted=dhNow();
       const pageSig=rows.slice(0,5).map(rowFingerprint).join("||")+"#"+rows.length;
-      dhDone("PAGE "+page+" SIGNATURE",signatureStarted,{page,signatureLength:pageSig.length});
       if(seenPages.has(pageSig)){
-        dhTrace("warn","PAGE "+page+" STOP DUPLICATE PAGE",{page,rows:rows.length});
         console.warn("DataHub 偵測到重複分頁，停止讀取",{page,rows:rows.length});
         break;
       }
       seenPages.add(pageSig);
 
-      const dedupeStarted=dhNow();
       let added=0;
-      let duplicated=0;
       for(const row of rows){
         const fp=rowFingerprint(row);
-        if(seenRows.has(fp)){duplicated++;continue}
+        if(seenRows.has(fp))continue;
         seenRows.add(fp);
         all.push(row);
         added++;
         if(all.length>MAX_ROWS)throw new Error("DataHub 筆數超過安全上限（50,000 筆）");
       }
-      dhDone("PAGE "+page+" DEDUPE/MERGE",dedupeStarted,{page,inputRows:rows.length,added,duplicated,totalRows:all.length,seenRows:seenRows.size});
 
-      const decisionStarted=dhNow();
-      let stopReason="";
-      if(added===0)stopReason="NO_NEW_ROWS";
-      else if(expectedTotal!==null&&all.length>=expectedTotal)stopReason="EXPECTED_TOTAL_REACHED";
-      else if(res.hasMore===false||res.has_more===false)stopReason="HAS_MORE_FALSE";
-      else if(res.nextPage===null||res.next_page===null)stopReason="NEXT_PAGE_NULL";
-      else if(rows.length<PAGE_SIZE&&expectedTotal===null)stopReason="SHORT_PAGE_NO_TOTAL";
-      dhDone("PAGE "+page+" STOP DECISION",decisionStarted,{page,stopReason:stopReason||"CONTINUE"});
+      if(added===0)break;
+      if(expectedTotal!==null&&all.length>=expectedTotal)break;
+      if(res.hasMore===false||res.has_more===false)break;
+      if(res.nextPage===null||res.next_page===null)break;
+      if(rows.length<PAGE_SIZE&&expectedTotal===null)break;
 
-      const yieldStarted=dhNow();
-      await new Promise(resolve=>setTimeout(resolve,0));
-      dhDone("PAGE "+page+" EVENT LOOP YIELD",yieldStarted,{page});
-
-      dhDone("PAGE "+page+" CYCLE",pageStarted,{page,inputRows:rows.length,added,totalRows:all.length});
-
-      if(stopReason)break;
-
-      const nextPageStarted=dhNow();
       const next=Number(res.nextPage??res.next_page);
       if(Number.isFinite(next)&&next>page)page=next;
       else page+=1;
-      dhDone("PAGE NEXT CALC",nextPageStarted,{nextPage:page});
     }
 
-    if(page>MAX_PAGES)throw new Error("DataHub 分頁超過安全上限（100 頁）");
-    dhDone("FETCH ALL",wholeStarted,{pagesRead:seenPages.size,totalRows:all.length,uniqueRows:seenRows.size,expectedTotal});
+    if(page>MAX_PAGES)throw new Error("DataHub 分頁超過安全上限（120 頁）");
     return all;
   }
 
@@ -6600,88 +6368,56 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function saveCache(rows){
-    const started=dhNow();
-    dhTrace("info","CACHE SAVE START",{rows:rows.length});
     try{
-      const stringifyStarted=dhNow();
-      const json=JSON.stringify(rows);
-      dhDone("CACHE STRINGIFY",stringifyStarted,{rows:rows.length,bytes:json.length});
-      const writeStarted=dhNow();
-      localStorage.setItem(CACHE_KEY,json);
+      localStorage.setItem(CACHE_KEY,JSON.stringify(rows));
       localStorage.setItem(CACHE_TS_KEY,String(Date.now()));
-      dhDone("CACHE WRITE",writeStarted,{rows:rows.length,bytes:json.length});
-      dhDone("CACHE SAVE",started,{rows:rows.length,bytes:json.length});
-    }catch(err){
-      dhTrace("err","CACHE SAVE ERROR",{rows:rows.length,elapsedMs:Math.round(dhNow()-started),error:String(err?.message||err)});
-    }
+    }catch(_){}
   }
 
-  function installRows(rows){
-    const started=dhNow();
-    dhTrace("info","INSTALL ROWS START",{rows:rows.length,hasSpeedEngine:!!window.Build0051APSSpeedEngine?.sync});
-    // Use the existing Build0051 engine for speed matching by temporarily providing
-    // a direct, cached data source and invoking its normal conversion flow only once.
+  async function installRows(rows, sourceLabel="DataHub"){
+    // Build 0103.3 Deferred Commit：全部資料準備完成後才交給產速引擎一次。
+    // Build0051 內部會完成 pool、KPI、品質與缺產速畫面的單次正式提交。
     window.__BUILD0057_DATAHUB_ROWS__ = rows;
 
-    if(window.Build0051APSSpeedEngine?.sync){
-      // Build0072：Build0051 會直接消耗 __BUILD0057_DATAHUB_ROWS__，
-      // 因此這裡只轉換一次，不會再次讀取 DataHub。
-      const engineStarted=dhNow();
-      dhTrace("info","SPEED ENGINE START",{rows:rows.length});
-      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).then(()=>{
-        dhDone("SPEED ENGINE",engineStarted,{rows:rows.length,pool:Array.isArray(window.S?.pool)?window.S.pool.length:null,schedule:Array.isArray(window.S?.schedule)?window.S.schedule.length:null});
-      }).catch(err=>{
-        dhTrace("err","SPEED ENGINE ERROR",{rows:rows.length,elapsedMs:Math.round(dhNow()-engineStarted),error:String(err?.message||err)});
-        console.error("Build0072 speed conversion failed",err);
-        window.log?.("快取已載入，但產速轉換失敗："+(err.message||err));
-      });
+    if(!window.Build0051APSSpeedEngine?.sync){
+      throw new Error("APS 產速引擎尚未就緒");
     }
-    setDataState(`DataHub 快取 ${rows.length} 筆`,"ok");
-    dhDone("INSTALL ROWS DISPATCH",started,{rows:rows.length});
+
+    setDataState(`${sourceLabel} ${rows.length} 筆｜建立工單池中…`,"warn");
+    await window.Build0051APSSpeedEngine.sync(false);
+    setDataState(`${sourceLabel} 已提交 ${rows.length} 筆`,"ok");
+    return rows;
   }
 
   async function syncDataHub(force=false){
-    if(syncPromise){dhTrace("warn","SYNC REUSED EXISTING PROMISE",{force});return syncPromise}
-    const syncStarted=dhNow();
-    dhTrace("info","SYNC START",{force});
+    if(syncPromise)return syncPromise;
     syncPromise=(async()=>{
-      const cacheStarted=dhNow();
       const cache=getCached();
-      dhDone("CACHE READ",cacheStarted,{rows:cache.rows.length,fresh:cache.fresh,ageMs:cache.ts?Date.now()-cache.ts:null});
-      if(cache.rows.length){
-        installRows(cache.rows);
-        setDataState(cache.fresh?`DataHub 快取 ${cache.rows.length} 筆`:`快取 ${cache.rows.length} 筆，背景更新中`,"ok");
+
+      // 新鮮快取：不再啟動背景重抓，直接提交一次。
+      if(cache.rows.length&&cache.fresh&&!force){
+        await installRows(cache.rows,"DataHub 快取");
+        return cache.rows;
       }
 
-      if(cache.fresh&&!force){dhDone("SYNC CACHE HIT",syncStarted,{force,rows:cache.rows.length});return cache.rows}
-
       try{
-        setDataState("DataHub 單一同步中…","warn");
+        // 舊快取只作為失敗備援，不先渲染，避免啟動時重複提交畫面。
+        setDataState(cache.rows.length?`DataHub 更新中｜備援快取 ${cache.rows.length} 筆`:`DataHub 完整下載中…`,"warn");
         const rows=await fetchAll();
-        if(!rows.length){
-          if(cache.rows.length){
-            installRows(cache.rows);
-            setDataState(`DataHub 回傳 0 筆｜保留快取 ${cache.rows.length} 筆`,"warn");
-            window.log?.(`DataHub 本次回傳 0 筆，未覆蓋原快取 ${cache.rows.length} 筆`);
-            return cache.rows;
-          }
-          setDataState("DataHub 回傳 0 筆，且沒有可用快取","bad");
-          throw new Error("DataHub 回傳 0 筆");
-        }
+        if(!rows.length)throw new Error("DataHub 回傳 0 筆");
+
+        // 先完成下載與快取，再一次性建立工單池及更新畫面。
         saveCache(rows);
-        installRows(rows);
-        setDataState(`DataHub 已同步 ${rows.length} 筆`,"ok");
-        dhDone("SYNC",syncStarted,{force,rows:rows.length,source:"network"});
+        await installRows(rows,"DataHub");
         return rows;
       }catch(err){
         console.error(err);
         if(cache.rows.length){
-          setDataState("DataHub 連線失敗，使用快取","warn");
-          dhDone("SYNC FALLBACK CACHE",syncStarted,{force,rows:cache.rows.length,error:String(err?.message||err)});
+          setDataState(`DataHub 連線失敗｜提交備援快取 ${cache.rows.length} 筆`,"warn");
+          await installRows(cache.rows,"備援快取");
           return cache.rows;
         }
         setDataState("DataHub 無法連線","bad");
-        dhTrace("err","SYNC ERROR",{force,elapsedMs:Math.round(dhNow()-syncStarted),error:String(err?.message||err)});
         throw err;
       }
     })().finally(()=>{syncPromise=null});
