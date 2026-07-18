@@ -10079,4 +10079,84 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<script id="speed-health-accurate-patch-v1">
+/* 產速健康統計修正：缺產速以「唯一料號＋機台」計算；工單覆蓋率仍以有效未結案工單計算。 */
+(()=>{
+'use strict';
+const T=v=>String(v??'').trim();
+const N=v=>T(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－_]/g,'-');
+const NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
+function activePool(){
+  const rows=Array.isArray(window.S?.pool)?window.S.pool:[];
+  return rows.filter(x=>T(x.wo)&&!x.closed&&!/取消|作廢|VOID|CANCEL/i.test(T(x.status))&&NUM(x.remaining)>0);
+}
+function usable(x){
+  if(!x)return false;
+  const mode=T(x.mode||'ROUND').toUpperCase();
+  if(mode==='LENGTH')return NUM(x.speed||x.speedMpm)>0;
+  if(mode==='FIXED')return NUM(x.total||x.run||x.fixedRunTime)>0;
+  if(mode==='AREA'||mode==='ROLL'||mode==='ROUND'){
+    const per=NUM(x.qtyPerRound||x.qtyRound)||((NUM(x.outw)/1000)*NUM(x.len));
+    const mins=NUM(x.total||x.minutesRound||x.run);
+    return per>0&&mins>0;
+  }
+  return NUM(x.total||x.minutesRound||x.speed)>0;
+}
+function speedStats(){
+  let speeds=[];
+  try{speeds=typeof window.buildSpeed==='function'?(window.buildSpeed()||[]):[]}catch(e){}
+  const unique=new Map();
+  speeds.filter(usable).forEach(x=>{
+    const part=N(x.part||x.part_no||x['產品料號']||x['料號']);
+    const machine=N(x.machine||x.machine_code||x['機台']);
+    if(!part)return;
+    const key=part+'|'+(machine||'未指定機台');
+    if(!unique.has(key))unique.set(key,x);
+  });
+  return {raw:speeds.length,unique:unique.size};
+}
+function missingStats(){
+  const active=activePool();
+  const ready=active.filter(x=>x.ready&&NUM(x.minutes)>0);
+  const missing=active.filter(x=>T(x.part)&&!(x.ready&&NUM(x.minutes)>0));
+  const groups=new Map();
+  missing.forEach(x=>{
+    const part=N(x.part);
+    const machine=N(x.sourceMachine||x.machine)||'未指定機台';
+    const key=part+'|'+machine;
+    if(!groups.has(key))groups.set(key,{part:T(x.part),machine:T(x.sourceMachine||x.machine),jobs:new Set()});
+    groups.get(key).jobs.add(T(x.wo));
+  });
+  return {active,ready,missing,groups:[...groups.values()]};
+}
+function applyAccurateStats(){
+  const ms=missingStats(),ss=speedStats();
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('speedMasterCount',ss.unique.toLocaleString('zh-TW'));
+  set('speedMissingCount',ms.groups.length.toLocaleString('zh-TW'));
+  set('speedCoverage',ms.active.length?(ms.ready.length/ms.active.length*100).toFixed(1)+'%':'0%');
+  const master=document.getElementById('speedMasterCount')?.parentElement?.querySelector('small');
+  if(master)master.textContent=`有效料號＋機台組合（原始 ${ss.raw.toLocaleString('zh-TW')} 筆）`;
+  const miss=document.getElementById('speedMissingCount')?.parentElement?.querySelector('small');
+  if(miss)miss.textContent=`真正缺 ${ms.groups.length.toLocaleString('zh-TW')} 組，影響 ${ms.missing.length.toLocaleString('zh-TW')} 張工單`;
+  const cov=document.getElementById('speedCoverage')?.parentElement?.querySelector('small');
+  if(cov)cov.textContent=`有效未結案工單：${ms.ready.length.toLocaleString('zh-TW')}／${ms.active.length.toLocaleString('zh-TW')}`;
+  const title=document.querySelector('#missingSpeedCard h2');
+  if(title)title.textContent=`待測／缺少產速清單（${ms.groups.length.toLocaleString('zh-TW')} 組，影響 ${ms.missing.length.toLocaleString('zh-TW')} 張工單）`;
+}
+function install(){
+  const old=window.renderSpeedCenter;
+  if(typeof old==='function'&&!old.__accurateSpeedHealth){
+    const wrapped=function(){const r=old.apply(this,arguments);setTimeout(applyAccurateStats,0);return r};
+    wrapped.__accurateSpeedHealth=true;window.renderSpeedCenter=wrapped;
+  }
+  document.getElementById('refreshSpeedFeedback')?.addEventListener('click',()=>setTimeout(applyAccurateStats,80));
+  document.querySelectorAll('[data-page="speedFeedback"]').forEach(x=>x.addEventListener('click',()=>setTimeout(applyAccurateStats,80)));
+  setTimeout(applyAccurateStats,600);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
+
 </body></html>
