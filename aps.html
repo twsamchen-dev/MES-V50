@@ -1,6 +1,68 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
+<script id="build0103-3a-startup-queue">
+(()=>{
+  "use strict";
+  if(window.__APS_STARTUP_QUEUE_1033A__) return;
+  window.__APS_STARTUP_QUEUE_1033A__=true;
+
+  const nativeAdd=EventTarget.prototype.addEventListener;
+  const nativeRemove=EventTarget.prototype.removeEventListener;
+  const wrapped=new WeakMap();
+  const queue=[];
+  let domReady=false;
+  let draining=false;
+
+  function enqueue(target,type,listener,event,options){
+    queue.push({target,type,listener,event,options});
+    drain();
+  }
+
+  function drain(){
+    if(!domReady||draining) return;
+    draining=true;
+    const step=()=>{
+      const item=queue.shift();
+      if(!item){draining=false;return;}
+      try{
+        if(typeof item.listener==='function') item.listener.call(item.target,item.event);
+        else if(item.listener&&typeof item.listener.handleEvent==='function') item.listener.handleEvent.call(item.listener,item.event);
+      }catch(err){
+        console.error('APS startup callback failed',err);
+      }
+      // 每個啟動工作之間主動讓出主執行緒，避免 Chrome 判定頁面無回應。
+      setTimeout(step,0);
+    };
+    setTimeout(step,0);
+  }
+
+  EventTarget.prototype.addEventListener=function(type,listener,options){
+    const isStartup=(this===document&&type==='DOMContentLoaded')||(this===window&&type==='load');
+    if(!isStartup||!listener) return nativeAdd.call(this,type,listener,options);
+
+    const wrapper=function(event){ enqueue(this,type,listener,event,options); };
+    wrapped.set(listener,wrapper);
+    return nativeAdd.call(this,type,wrapper,options);
+  };
+
+  EventTarget.prototype.removeEventListener=function(type,listener,options){
+    return nativeRemove.call(this,type,wrapped.get(listener)||listener,options);
+  };
+
+  nativeAdd.call(document,'DOMContentLoaded',()=>{
+    domReady=true;
+    drain();
+  },{once:true});
+
+  // 保險：若腳本插入時 DOM 已完成，立即開放佇列。
+  if(document.readyState!=='loading'){
+    domReady=true;
+    drain();
+  }
+})();
+</script>
+
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.1</title>
 <style>
@@ -792,7 +854,7 @@ const txt=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function badge(){let e=document.getElementById('aps0094Status');if(!e){e=document.createElement('button');e.id='aps0094Status';e.type='button';e.style.cssText='position:fixed;right:14px;bottom:12px;z-index:2147483647;padding:8px 11px;border-radius:8px;border:1px solid #f59e0b;background:#07141d;color:#fff;font:12px Microsoft JhengHei,Arial;box-shadow:0 5px 18px #000a;cursor:pointer';e.onclick=()=>run(true);document.documentElement.appendChild(e)}return e}
 function state(message,type='wait'){const e=badge();e.textContent='APS Build '+BUILD+'｜'+message;e.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b'}
-function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0103.3 Stable'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
+function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0103.3A'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
 function jsonp(action,params={},timeoutMs=45000){return new Promise((resolve,reject)=>{const cb='APS0096_'+Date.now()+'_'+Math.floor(Math.random()*1e6),s=document.createElement('script');let settled=false,timer=null;const tombstone=()=>{window[cb]=function(){};setTimeout(()=>{try{delete window[cb]}catch(_){window[cb]=undefined}},120000)};const clean=(keepCallback=false)=>{if(timer)clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);if(keepCallback)tombstone();else{try{delete window[cb]}catch(_){window[cb]=undefined}}};timer=setTimeout(()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 逾時 '+Math.round(timeoutMs/1000)+' 秒'))},timeoutMs);window[cb]=res=>{if(settled)return;settled=true;clean(false);if(res&&res.ok===false)reject(new Error(res.message||res.error||action+' 回傳失敗'));else resolve(res||{})};s.onerror=()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 連線失敗'))};s.src=API+'?'+new URLSearchParams({...params,action,callback:cb,_:Date.now()});document.head.appendChild(s)})}
 async function fetchRows(){
   const all=[]; let page=1,total=1; const seenPages=new Set();
@@ -823,8 +885,7 @@ async function run(force=false){if(running)return;running=true;forceLabel();stat
 function install(){
   forceLabel();
   const existing=Array.isArray(window.S?.pool)?window.S.pool.length:0;
-  // Build 0103.3：舊救援模組只保留手動入口，不再自動下載 DataHub。
-  // 正式啟動僅允許 CloudDataHub Engine 執行一次同步，避免雙載入器競爭。
+  // Build 0103.3A：救援模組保留手動入口，但禁止第二套自動 DataHub 同步。
   window.APSRecovery0096={run};
   window.__APS_RECOVERY_MANUAL_ONLY__=true;
   if(existing)state('既有工單 '+existing+' 筆｜救援待命','ok');
@@ -6248,7 +6309,7 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   const JSONP_GRACE_MS = 120000;
-  const PAGE_SIZE = 1000;
+  const PAGE_SIZE = 200;
   const MAX_PAGES = 120;
   const MAX_ROWS = 50000;
 
@@ -6374,47 +6435,54 @@ document.addEventListener("DOMContentLoaded",function(){
     }catch(_){}
   }
 
-  async function installRows(rows, sourceLabel="DataHub"){
-    // Build 0103.3 Deferred Commit：全部資料準備完成後才交給產速引擎一次。
-    // Build0051 內部會完成 pool、KPI、品質與缺產速畫面的單次正式提交。
+  function installRows(rows){
+    // Use the existing Build0051 engine for speed matching by temporarily providing
+    // a direct, cached data source and invoking its normal conversion flow only once.
     window.__BUILD0057_DATAHUB_ROWS__ = rows;
 
-    if(!window.Build0051APSSpeedEngine?.sync){
-      throw new Error("APS 產速引擎尚未就緒");
+    if(window.Build0051APSSpeedEngine?.sync){
+      // Build0072：Build0051 會直接消耗 __BUILD0057_DATAHUB_ROWS__，
+      // 因此這裡只轉換一次，不會再次讀取 DataHub。
+      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).catch(err=>{
+        console.error("Build0072 speed conversion failed",err);
+        window.log?.("快取已載入，但產速轉換失敗："+(err.message||err));
+      });
     }
-
-    setDataState(`${sourceLabel} ${rows.length} 筆｜建立工單池中…`,"warn");
-    await window.Build0051APSSpeedEngine.sync(false);
-    setDataState(`${sourceLabel} 已提交 ${rows.length} 筆`,"ok");
-    return rows;
+    setDataState(`DataHub 快取 ${rows.length} 筆`,"ok");
   }
 
   async function syncDataHub(force=false){
     if(syncPromise)return syncPromise;
     syncPromise=(async()=>{
       const cache=getCached();
-
-      // 新鮮快取：不再啟動背景重抓，直接提交一次。
-      if(cache.rows.length&&cache.fresh&&!force){
-        await installRows(cache.rows,"DataHub 快取");
-        return cache.rows;
+      if(cache.rows.length){
+        installRows(cache.rows);
+        setDataState(cache.fresh?`DataHub 快取 ${cache.rows.length} 筆`:`快取 ${cache.rows.length} 筆，背景更新中`,"ok");
       }
 
-      try{
-        // 舊快取只作為失敗備援，不先渲染，避免啟動時重複提交畫面。
-        setDataState(cache.rows.length?`DataHub 更新中｜備援快取 ${cache.rows.length} 筆`:`DataHub 完整下載中…`,"warn");
-        const rows=await fetchAll();
-        if(!rows.length)throw new Error("DataHub 回傳 0 筆");
+      if(cache.fresh&&!force)return cache.rows;
 
-        // 先完成下載與快取，再一次性建立工單池及更新畫面。
+      try{
+        setDataState("DataHub 單一同步中…","warn");
+        const rows=await fetchAll();
+        if(!rows.length){
+          if(cache.rows.length){
+            installRows(cache.rows);
+            setDataState(`DataHub 回傳 0 筆｜保留快取 ${cache.rows.length} 筆`,"warn");
+            window.log?.(`DataHub 本次回傳 0 筆，未覆蓋原快取 ${cache.rows.length} 筆`);
+            return cache.rows;
+          }
+          setDataState("DataHub 回傳 0 筆，且沒有可用快取","bad");
+          throw new Error("DataHub 回傳 0 筆");
+        }
         saveCache(rows);
-        await installRows(rows,"DataHub");
+        installRows(rows);
+        setDataState(`DataHub 已同步 ${rows.length} 筆`,"ok");
         return rows;
       }catch(err){
         console.error(err);
         if(cache.rows.length){
-          setDataState(`DataHub 連線失敗｜提交備援快取 ${cache.rows.length} 筆`,"warn");
-          await installRows(cache.rows,"備援快取");
+          setDataState("DataHub 連線失敗，使用快取","warn");
           return cache.rows;
         }
         setDataState("DataHub 無法連線","bad");
@@ -8956,6 +9024,19 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
+<script id="build0103-3a-label">
+(()=>{
+  const apply=()=>{
+    document.title='SEAL KING Smart APS｜Build 0103.3A Startup Queue Recovery';
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{
+      if(el) el.textContent='Enterprise Preview 2｜Build 0103.3A';
+    });
+  };
+  document.addEventListener('DOMContentLoaded',apply,{once:true});
+  setTimeout(apply,2500);
+})();
+</script>
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
