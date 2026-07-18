@@ -6308,7 +6308,7 @@ document.addEventListener("DOMContentLoaded",function(){
     el.textContent=message;
   }
 
-  const JSONP_GRACE_MS = 120000;
+  const JSONP_GRACE_MS = 10000;
   const PAGE_SIZE = 500;
   const MAX_PAGES = 60;
   const MAX_ROWS = 50000;
@@ -6354,7 +6354,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
   function dhTrace(stage, detail={}){
     const payload={stage,time:new Date().toISOString(),...detail};
-    console.info("[DataHub 0104.1]",payload);
+    console.info("[DataHub 0104.2]",payload);
     window.__APS_DATAHUB_TRACE__=window.__APS_DATAHUB_TRACE__||[];
     window.__APS_DATAHUB_TRACE__.push(payload);
     if(window.__APS_DATAHUB_TRACE__.length>300)window.__APS_DATAHUB_TRACE__.shift();
@@ -6364,7 +6364,7 @@ document.addEventListener("DOMContentLoaded",function(){
     const started=performance.now();
     dhTrace("request",{page,attempt,pageSize:PAGE_SIZE});
     try{
-      const res=await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},90000);
+      const res=await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},30000);
       const rows=Array.isArray(res?.rows)?res.rows:[];
       dhTrace("response",{
         page,attempt,rows:rows.length,total:Number(res?.total||0),
@@ -6375,9 +6375,10 @@ document.addEventListener("DOMContentLoaded",function(){
       return res;
     }catch(err){
       dhTrace("request-error",{page,attempt,message:String(err?.message||err),elapsedMs:Math.round(performance.now()-started)});
-      if(attempt<3){
-        setDataState(`DataHub 第 ${page} 頁重試 ${attempt}/2…`,"warn");
-        await new Promise(r=>setTimeout(r,1200*attempt));
+      if(attempt<4){
+        setDataState(`DataHub 第 ${page} 頁逾時｜準備重試 ${attempt}/3…`,"warn");
+        dhTrace("retry-wait",{page,attempt,nextAttempt:attempt+1,waitMs:1500*attempt});
+        await new Promise(r=>setTimeout(r,1500*attempt));
         return fetchPage(page,attempt+1);
       }
       throw err;
@@ -6437,7 +6438,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
       const next=Number(res.nextPage??res.next_page);
       page=(Number.isFinite(next)&&next>page)?next:page+1;
-      await new Promise(r=>setTimeout(r,0));
+      await new Promise(r=>setTimeout(r,250));
     }
 
     if(page>MAX_PAGES)throw new Error(`DataHub 分頁超過安全上限（${MAX_PAGES} 頁）`);
@@ -6500,7 +6501,7 @@ document.addEventListener("DOMContentLoaded",function(){
         return rows;
       }catch(err){
         dhTrace("sync-error",{message:String(err?.message||err),cacheRows:cache.rows.length});
-        console.error("[DataHub 0104.1] sync failed",err);
+        console.error("[DataHub 0104.2] sync failed",err);
         if(cache.rows.length){
           await installRows(cache.rows,"stale-cache-fallback");
           setDataState(`DataHub 連線失敗｜使用快取 ${cache.rows.length} 筆`,"warn");
