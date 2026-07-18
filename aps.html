@@ -10159,4 +10159,84 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+
+<style id="build0103-ai-speed-css">
+#speedFeedback .speed-center-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+#speedFeedback .speed-center-tabs button{border:1px solid #334a59;background:#101b24;color:#b8c5cf;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
+#speedFeedback .speed-center-tabs button.active{background:linear-gradient(135deg,#b81920,#7f1116);border-color:#df3a42;color:#fff}
+#speedAiSuggestionCard .ai-speed-summary{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0}
+#speedAiSuggestionCard .ai-speed-summary>div{background:#0a151c;border:1px solid #30414b;border-radius:9px;padding:13px}
+#speedAiSuggestionCard .ai-speed-summary span{display:block;color:#9caab4;font-size:12px}
+#speedAiSuggestionCard .ai-speed-summary b{display:block;font-size:25px;margin-top:5px}
+#speedAiSuggestionCard .ai-confidence-high{color:#75e6b7}.ai-confidence-mid{color:#ffd166}.ai-confidence-low{color:#ff9c9c}
+#speedHistoryCard .history-note{color:#91a5b3;font-size:12px;margin-bottom:10px}
+.speed-sync-ok{display:inline-flex;align-items:center;gap:6px;color:#75e6b7;font-size:12px;margin-left:8px}
+@media(max-width:850px){#speedAiSuggestionCard .ai-speed-summary{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#speedAiSuggestionCard .ai-speed-summary{grid-template-columns:1fr}}
+</style>
+<script id="build0103-ai-speed-center">
+/* V95.1 Build 0103｜AI 產速中心：安全增量補丁，不改動 ERP、工單池與既有排程核心。 */
+(()=>{
+'use strict';
+const FB_KEY='SK_APS_SPEED_FEEDBACK_V2',MASTER_KEY='SK_APS_SPEED_MASTER_V1',HISTORY_KEY='SK_APS_SPEED_HISTORY_V1';
+const $=id=>document.getElementById(id),txt=v=>String(v??'').trim(),norm=v=>txt(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－_]/g,'-');
+const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
+const esc=v=>txt(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function read(key){try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
+function key(x){return [norm(x.part),norm(x.machine),norm(x.process)].join('|')}
+function validSpeed(x){if(!x||!norm(x.part))return false;const mode=norm(x.mode||'ROUND');if(mode==='LENGTH')return num(x.speed||x.speedMpm)>0;if(mode==='FIXED')return num(x.total||x.run||x.fixedRunTime)>0;const per=num(x.qtyPerRound||x.qtyRound)||num(x.outw)/1000*num(x.len);const mins=num(x.total||x.minutesRound||x.run);return per>0&&mins>0}
+function uniqueValid(rows){const m=new Map();rows.filter(validSpeed).forEach(x=>m.set(key(x),x));return m}
+function activePool(){return (Array.isArray(window.S?.pool)?window.S.pool:[]).filter(x=>txt(x.wo)&&!x.closed&&!/取消|作廢|VOID|CANCEL/i.test(txt(x.status))&&num(x.remaining)>0)}
+function groupsMissing(){const m=new Map();activePool().filter(x=>!(x.ready&&num(x.minutes)>0)&&norm(x.part)).forEach(x=>{const k=[norm(x.part),norm(x.sourceMachine||x.machine)||'未指定機台',norm(x.process)].join('|');if(!m.has(k))m.set(k,{part:txt(x.part),machine:txt(x.sourceMachine||x.machine),process:txt(x.process),name:txt(x.name||x.spec),jobs:[]});m.get(k).jobs.push(txt(x.wo))});return [...m.values()]}
+function stats(){
+ const master=read(MASTER_KEY),fb=read(FB_KEY),um=uniqueValid(master),uf=uniqueValid(fb),merged=new Map(um);uf.forEach((v,k)=>merged.set(k,v));
+ const active=activePool(),ready=active.filter(x=>x.ready&&num(x.minutes)>0),missing=groupsMissing();
+ return{masterRaw:master.length,masterUnique:um.size,fbRaw:fb.length,fbUnique:uf.size,effective:merged.size,active:active.length,ready:ready.length,missing,impact:active.length-ready.length};
+}
+function createCards(){
+ const health=document.querySelector('#speedFeedback .speed-health');if(!health)return;
+ if(!$('speedCenterTabs')){const tabs=document.createElement('div');tabs.id='speedCenterTabs';tabs.className='speed-center-tabs';tabs.innerHTML='<button class="active" data-speed-view="missing">缺產速</button><button data-speed-view="established">已建立</button><button data-speed-view="ai">AI 建議</button><button data-speed-view="history">修改紀錄</button>';health.appendChild(tabs);tabs.addEventListener('click',e=>{const b=e.target.closest('[data-speed-view]');if(!b)return;tabs.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));showView(b.dataset.speedView)})}
+ const form=$('speedFeedbackFormCard');
+ if(form&&!$('speedAiSuggestionCard')){const c=document.createElement('div');c.className='card col12';c.id='speedAiSuggestionCard';c.innerHTML='<div class="page-toolbar"><div><h2>AI 產速建議</h2><div class="sub">依現場回饋與同料號／同製程歷史資料計算建議值；僅提供主管確認，不會自動覆蓋正式產速。</div></div><button class="btn ghost" id="refreshAiSpeed">重新分析</button></div><div id="speedAiSuggestionBody" class="empty">尚未分析</div>';form.parentNode.insertBefore(c,form);$('refreshAiSpeed').onclick=renderAI}
+ const permanent=$('speedFeedbackTable')?.closest('.card');
+ if(permanent&&!$('speedHistoryCard')){const c=document.createElement('div');c.className='card col12';c.id='speedHistoryCard';c.innerHTML='<h2>產速修改紀錄</h2><div class="history-note">新增、修改與確認產速時保留前後值，供課長追溯。</div><div id="speedHistoryBody" class="empty">尚無修改紀錄</div>';permanent.parentNode.insertBefore(c,permanent.nextSibling)}
+}
+function showView(v){
+ const missing=$('missingSpeedCard'),form=$('speedFeedbackFormCard'),ai=$('speedAiSuggestionCard'),perm=$('speedFeedbackTable')?.closest('.card'),hist=$('speedHistoryCard');
+ [missing,form,ai,perm,hist].forEach(x=>{if(x)x.style.display='none'});
+ if(v==='missing'){if(missing)missing.style.display='';if(form)form.style.display=''}
+ if(v==='established'){if(perm)perm.style.display=''}
+ if(v==='ai'){if(ai)ai.style.display='';renderAI()}
+ if(v==='history'){if(hist)hist.style.display='';renderHistory()}
+}
+function comparableRows(g,fb){
+ const exact=fb.filter(x=>norm(x.part)===norm(g.part)&&(!g.process||norm(x.process)===norm(g.process)));
+ if(exact.length)return{rows:exact,level:'同料號',score:90};
+ const process=fb.filter(x=>g.process&&norm(x.process)===norm(g.process));
+ if(process.length)return{rows:process,level:'同製程',score:65};
+ return{rows:[],level:'無歷史',score:0};
+}
+function suggestion(g,fb){const c=comparableRows(g,fb),rows=c.rows.filter(x=>num(x.qtyRound)>0&&num(x.minutesRound)>0);if(!rows.length)return{...c,qty:0,mins:0,uph:0,count:0};const qty=rows.reduce((a,x)=>a+num(x.qtyRound),0)/rows.length,mins=rows.reduce((a,x)=>a+num(x.minutesRound),0)/rows.length;return{...c,qty,mins,uph:mins>0?qty/mins*60:0,count:rows.length}}
+function fillForm(g,s){[['sfPart',g.part],['sfName',g.name],['sfMachine',g.machine],['sfProcess',g.process],['sfQtyRound',s.qty?Number(s.qty.toFixed(2)):''],['sfMinutesRound',s.mins?Number(s.mins.toFixed(2)):'']].forEach(([id,v])=>{const e=$(id);if(e)e.value=v||''});const msg=$('speedFormMsg');if(msg){msg.textContent=s.count?`已帶入 AI 建議：${s.level} ${s.count} 筆平均；請確認後再儲存。`:'已帶入缺產速設定；目前無足夠歷史，請填寫現場實測值。';msg.style.color=s.count?'var(--yellow)':'var(--muted)'}showView('missing');$('speedFeedbackFormCard')?.scrollIntoView({behavior:'smooth',block:'start'})}
+function renderAI(){
+ const body=$('speedAiSuggestionBody');if(!body)return;const gs=groupsMissing(),fb=read(FB_KEY);const rows=gs.map(g=>({g,s:suggestion(g,fb)}));const withData=rows.filter(x=>x.s.count).length,high=rows.filter(x=>x.s.score>=80).length;
+ body.className='';body.innerHTML=`<div class="ai-speed-summary"><div><span>待補設定</span><b>${gs.length}</b></div><div><span>可提供建議</span><b>${withData}</b></div><div><span>高信心建議</span><b>${high}</b></div><div><span>歷史回饋</span><b>${fb.length}</b></div></div>${!rows.length?'<div class="empty">目前沒有缺產速設定。</div>':`<div class="tablewrap"><table><thead><tr><th>料號</th><th>機台</th><th>製程</th><th>AI 建議每回產量</th><th>AI 建議每回時間</th><th>估算產速</th><th>信心</th><th>影響工單</th><th>處理</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td><strong>${esc(x.g.part)}</strong></td><td>${esc(x.g.machine||'—')}</td><td>${esc(x.g.process||'—')}</td><td>${x.s.count?x.s.qty.toFixed(2):'—'}</td><td>${x.s.count?x.s.mins.toFixed(2)+' min':'—'}</td><td>${x.s.count?x.s.uph.toFixed(1)+'/hr':'—'}</td><td><span class="${x.s.score>=80?'ai-confidence-high':x.s.score>=50?'ai-confidence-mid':'ai-confidence-low'}">${esc(x.s.level)} ${x.s.count?'('+x.s.count+'筆)':''}</span></td><td>${x.g.jobs.length}</td><td><button class="btn ghost" data-ai-speed="${i}">${x.s.count?'採用建議':'建立產速'}</button></td></tr>`).join('')}</tbody></table></div>`}`;
+ body.querySelectorAll('[data-ai-speed]').forEach(b=>b.onclick=()=>{const x=rows[Number(b.dataset.aiSpeed)];if(x)fillForm(x.g,x.s)})
+}
+function appendHistory(entry){const a=read(HISTORY_KEY);a.unshift(entry);localStorage.setItem(HISTORY_KEY,JSON.stringify(a.slice(0,500)))}
+function renderHistory(){const el=$('speedHistoryBody');if(!el)return;const a=read(HISTORY_KEY);if(!a.length){el.className='empty';el.textContent='尚無修改紀錄';return}el.className='tablewrap';el.innerHTML=`<table><thead><tr><th>時間</th><th>動作</th><th>料號</th><th>機台</th><th>製程</th><th>每回產量</th><th>每回時間</th><th>操作人</th></tr></thead><tbody>${a.map(x=>`<tr><td>${esc(new Date(x.at).toLocaleString('zh-TW'))}</td><td><span class="tag ${x.action==='修改'?'yellow':'green'}">${esc(x.action)}</span></td><td>${esc(x.part)}</td><td>${esc(x.machine)}</td><td>${esc(x.process)}</td><td>${esc(x.beforeQty||'—')} → ${esc(x.afterQty||'—')}</td><td>${esc(x.beforeMins||'—')} → ${esc(x.afterMins||'—')}</td><td>${esc(x.operator||'系統')}</td></tr>`).join('')}</tbody></table>`}
+function enhanceKpis(){const s=stats(),set=(id,v)=>{const e=$(id);if(e)e.textContent=v};set('speedMasterCount',s.effective.toLocaleString('zh-TW'));set('speedFeedbackCount',s.fbUnique.toLocaleString('zh-TW'));set('speedMissingCount',s.missing.length.toLocaleString('zh-TW'));set('speedCoverage',s.active?(s.ready/s.active*100).toFixed(1)+'%':'0%');
+ const master=$('speedMasterCount')?.parentElement;if(master){master.querySelector('span').textContent='有效產速';master.querySelector('small').textContent=`Master ${s.masterUnique} 組（原始 ${s.masterRaw} 筆）＋ Key In ${s.fbUnique} 組`}
+ const fb=$('speedFeedbackCount')?.parentElement;if(fb){fb.querySelector('span').textContent='Key In 回饋';fb.querySelector('small').textContent=`唯一 ${s.fbUnique} 組／歷史 ${s.fbRaw} 筆`}
+ const miss=$('speedMissingCount')?.parentElement?.querySelector('small');if(miss)miss.textContent=`真正缺 ${s.missing.length} 組，影響 ${s.impact} 張工單`;
+ const cov=$('speedCoverage')?.parentElement?.querySelector('small');if(cov)cov.textContent=`有效未結案工單：${s.ready}／${s.active}`;
+ document.querySelectorAll('#missingSpeedTable [data-feedback-index]').forEach(b=>b.textContent='建立產速');
+}
+function bindHistory(){const btn=$('saveSpeedFeedback');if(!btn||btn.dataset.history0103)return;btn.dataset.history0103='1';btn.addEventListener('click',()=>{const before=read(FB_KEY),part=txt($('sfPart')?.value),machine=txt($('sfMachine')?.value),process=txt($('sfProcess')?.value),k=[norm(part),norm(machine),norm(process)].join('|'),old=before.find(x=>key(x)===k);setTimeout(()=>{const after=read(FB_KEY),now=after.find(x=>key(x)===k);if(!now)return;appendHistory({at:new Date().toISOString(),action:old?'修改':'新增',part,machine,process,beforeQty:old?.qtyRound||'',afterQty:now.qtyRound||'',beforeMins:old?.minutesRound||'',afterMins:now.minutesRound||'',operator:now.operator||now.approved_by||'系統'});renderHistory();enhanceKpis();renderAI();const msg=$('speedFormMsg');if(msg&&/✔/.test(msg.textContent))msg.insertAdjacentHTML('beforeend',' <span class="speed-sync-ok">✔ APS 已同步重新計算</span>')},500)},true)}
+function install(){createCards();bindHistory();const old=window.renderSpeedCenter;if(typeof old==='function'&&!old.__build0103){const w=function(){const r=old.apply(this,arguments);setTimeout(()=>{enhanceKpis();renderAI();renderHistory()},30);return r};w.__build0103=true;window.renderSpeedCenter=w}enhanceKpis();renderAI();renderHistory();showView('missing');const ob=new MutationObserver(()=>enhanceKpis());const target=$('missingSpeedTable');if(target)ob.observe(target,{childList:true,subtree:true});document.querySelectorAll('[data-page="speedFeedback"]').forEach(x=>x.addEventListener('click',()=>setTimeout(()=>{createCards();enhanceKpis()},100)))}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
+
 </body></html>
