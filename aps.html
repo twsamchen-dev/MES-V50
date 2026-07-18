@@ -8629,6 +8629,299 @@ window.addEventListener("error",function(e){
 },true);
 </script>
 
+
+<style id="aps-v1021-scheduler-css">
+#apsV1021Badge{
+ position:fixed;right:18px;bottom:18px;z-index:99999;
+ background:#0b1821;border:1px solid #2e6076;border-radius:10px;
+ padding:8px 11px;color:#dff7ff;font:700 12px/1.4 "Microsoft JhengHei",Arial,sans-serif;
+ box-shadow:0 8px 24px #0008;transition:.3s
+}
+#apsV1021Badge b{color:#54e0a0}
+#apsV1021Badge.warn b{color:#ffd166}
+</style>
+<div id="apsV1021Badge">V102.1 排程核心｜<b>載入中</b></div>
+<script id="aps-v1021-scheduler-js">
+(()=>{
+'use strict';
+
+const VERSION='V102.1 Scheduler Core';
+const DAY_MS=86400000;
+const t=v=>String(v??'').trim();
+const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+const key=v=>t(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－]/g,'-');
+const el=id=>document.getElementById(id);
+const d0=v=>{const d=v instanceof Date?new Date(v):new Date(v);d.setHours(0,0,0,0);return d};
+const addDay=(d,k)=>new Date(d0(d).getTime()+k*DAY_MS);
+const iso=d=>{const x=new Date(d);return Number.isNaN(x.getTime())?'':`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
+
+function state(){
+ return window.S || null;
+}
+function startDate(){
+ if(typeof window.getStart==='function')return d0(window.getStart());
+ const v=el('startDate')?.value||el('dashboardDate')?.value;
+ return v?new Date(v+'T00:00:00'):d0(new Date());
+}
+function startTime(date){
+ const raw=el('dayStart')?.value||'08:30';
+ const [h,m]=raw.split(':').map(Number);
+ const d=d0(date);d.setHours(h||0,m||0,0,0);return d;
+}
+function machineCapacity(machine){
+ const s=state();
+ return Math.max(0,n(s?.machines?.[machine]?.hours)||24)*60;
+}
+function dueEnd(job){
+ if(!job?.due)return Infinity;
+ const d=new Date(job.due);
+ if(Number.isNaN(d.getTime()))return Infinity;
+ d.setHours(23,59,59,999);return d.getTime();
+}
+function blocked(job){
+ const value=t(job.preprocess||job.preprocess_status||job.material_status);
+ return /待確認|未完成|待料|缺料|未到位|HOLD|BLOCK/i.test(value);
+}
+function setupMinutes(prev,job){
+ if(!prev)return 0;
+ const samePart=key(prev.part)===key(job.part);
+ const sameProc=key(prev.process)===key(job.process);
+ const sameSpec=key(prev.spec||prev.name)===key(job.spec||job.name);
+ if(samePart&&sameProc&&sameSpec)return 0;
+ const configured=n(
+   el('changeMinutes')?.value||
+   el('setupMinutes')?.value||
+   window.APS_CHANGEOVER_MINUTES
+ );
+ if(configured>0)return configured;
+ if(sameProc&&sameSpec)return 10;
+ if(sameProc)return 20;
+ return 30;
+}
+function candidateMachines(job,enabled){
+ const preferred=t(job.machine||job.sourceMachine);
+ if(preferred&&enabled.includes(preferred))return [preferred];
+ const speedRows=Array.isArray(state()?.rows?.speed)?state().rows.speed:[];
+ const exact=enabled.filter(m=>speedRows.some(r=>
+   key(r.part)===key(job.part)&&
+   (!job.process||key(r.process)===key(job.process))&&
+   key(r.machine)===key(m)
+ ));
+ if(exact.length)return exact;
+ const byPart=enabled.filter(m=>speedRows.some(r=>key(r.part)===key(job.part)&&key(r.machine)===key(m)));
+ return byPart.length?byPart:enabled.slice();
+}
+function prioritySort(a,b){
+ if(!!a.manual!==!!b.manual)return a.manual?-1:1;
+ if(!!a.urgent!==!!b.urgent)return a.urgent?-1:1;
+ const ad=dueEnd(a),bd=dueEnd(b);
+ if(ad!==bd)return ad-bd;
+ if(!!a.risk!==!!b.risk)return a.risk?-1:1;
+ return n(b.minutes)-n(a.minutes);
+}
+function buildCalendar(enabled,start,days){
+ const result={};
+ enabled.forEach(machine=>{
+   result[machine]=Array.from({length:days},(_,i)=>{
+     const date=addDay(start,i);
+     const begin=startTime(date);
+     const end=new Date(begin.getTime()+machineCapacity(machine)*60000);
+     return {machine,date,begin,end,cursor:new Date(begin),lastJob:null};
+   });
+ });
+ return result;
+}
+function slotScore(slot,job,setup){
+ const begin=slot.cursor.getTime()+setup*60000;
+ const finish=begin+n(job.minutes)*60000;
+ const late=Math.max(0,finish-dueEnd(job))/60000;
+ const dayIndex=Math.round((d0(slot.date)-d0(startDate()))/DAY_MS);
+ return late*100000000 + setup*100000 + dayIndex*1000 + (begin-slot.begin.getTime())/60000;
+}
+function bestSlot(calendar,machines,job){
+ let best=null;
+ machines.forEach(machine=>{
+   (calendar[machine]||[]).forEach(slot=>{
+     const setup=setupMinutes(slot.lastJob,job);
+     const available=(slot.end.getTime()-slot.cursor.getTime())/60000-setup;
+     if(available<=0.01)return;
+     const score=slotScore(slot,job,setup);
+     if(!best||score<best.score)best={machine,slot,setup,available,score};
+   });
+ });
+ return best;
+}
+function reason(job,machine,setup){
+ const items=[];
+ if(job.manual)items.push('手動急單');
+ else if(job.urgent)items.push('急單優先');
+ if(job.risk)items.push('交期風險');
+ items.push(`交期 ${job.due?iso(job.due):'未提供'}`);
+ if(setup>0)items.push(`換線 ${setup} 分`);
+ items.push(job.machine?`指定／建議機台 ${machine}`:`選擇最早可用機台 ${machine}`);
+ if(job.match)items.push(`${job.match}產速`);
+ return items.join('；');
+}
+function currentPool(input){
+ if(Array.isArray(input))return input;
+ if(typeof window.getDueFilteredPool==='function'){
+   const filtered=window.getDueFilteredPool();
+   if(Array.isArray(filtered)&&filtered.length)return filtered;
+ }
+ return state()?.pool||[];
+}
+function optimizedRunScheduler(input){
+ const S=state();
+ if(!S)throw new Error('APS 狀態尚未初始化');
+ document.querySelectorAll('[data-m-hours]').forEach(x=>{
+   if(S.machines?.[x.dataset.mHours])S.machines[x.dataset.mHours].hours=n(x.value);
+ });
+ const start=startDate();
+ const days=Math.max(1,n(el('days')?.value)||14);
+ const operators=n(el('operators')?.value);
+ const machinesPerOperator=Math.max(1,n(el('machinesPerOperator')?.value)||2);
+ const manpowerLimit=Math.max(0,operators*machinesPerOperator);
+ let enabled=Object.keys(S.machines||{}).filter(m=>S.machines[m]?.enabled&&machineCapacity(m)>0);
+ if(manpowerLimit>0)enabled=enabled.slice(0,manpowerLimit);
+ if(!enabled.length)throw new Error('沒有啟用機台');
+
+ const calendar=buildCalendar(enabled,start,days);
+ const source=currentPool(input)
+   .filter(x=>x&&!x.closed&&x.ready&&n(x.minutes)>0)
+   .slice()
+   .sort(prioritySort);
+
+ const schedule=[];
+ const blockedJobs=[];
+ const unscheduled=[];
+ source.forEach(job=>{
+   if(blocked(job)){
+     blockedJobs.push({wo:job.wo,reason:'前製程／材料狀態尚未完成'});
+     return;
+   }
+   let remaining=n(job.minutes);
+   const candidates=candidateMachines(job,enabled);
+   while(remaining>0.01){
+     const best=bestSlot(calendar,candidates,{...job,minutes:remaining});
+     if(!best){
+       unscheduled.push({wo:job.wo,remaining:Math.round(remaining),reason:'排程期間內無可用產能'});
+       break;
+     }
+     const slot=best.slot;
+     if(best.setup>0){
+       const begin=new Date(slot.cursor);
+       const end=new Date(begin.getTime()+best.setup*60000);
+       schedule.push({
+         machine:best.machine,date:new Date(slot.date),start:begin,end,
+         minutes:best.setup,wo:`換線-${job.wo}`,part:job.part,customer:job.customer,
+         process:'換線／調機',due:job.due,urgent:false,manual:false,
+         isChangeover:true,type:'change',
+         reason:`${slot.lastJob?.wo||'開始'} → ${job.wo}`
+       });
+       slot.cursor=end;
+     }
+     const free=Math.max(0,(slot.end-slot.cursor)/60000);
+     const take=Math.min(remaining,free);
+     if(take<=0.01){slot.cursor=new Date(slot.end);continue}
+     const begin=new Date(slot.cursor);
+     const end=new Date(begin.getTime()+take*60000);
+     schedule.push({
+       machine:best.machine,date:new Date(slot.date),start:begin,end,
+       minutes:take,wo:job.wo,part:job.part,customer:job.customer,
+       process:job.process,due:job.due,urgent:!!job.urgent,manual:!!job.manual,
+       spec:job.spec||job.name||'',type:'production',
+       reason:reason(job,best.machine,best.setup)
+     });
+     slot.cursor=end;
+     slot.lastJob=job;
+     remaining-=take;
+   }
+ });
+
+ schedule.sort((a,b)=>
+   String(a.machine).localeCompare(String(b.machine),'zh-Hant')||
+   new Date(a.start)-new Date(b.start)
+ );
+ const overlaps=[];
+ const machineMap={};
+ schedule.forEach(seg=>(machineMap[seg.machine]||(machineMap[seg.machine]=[])).push(seg));
+ Object.entries(machineMap).forEach(([machine,rows])=>{
+   rows.sort((a,b)=>new Date(a.start)-new Date(b.start));
+   for(let i=1;i<rows.length;i++){
+     if(new Date(rows[i].start)<new Date(rows[i-1].end)){
+       overlaps.push({machine,previous:rows[i-1].wo,current:rows[i].wo});
+     }
+   }
+ });
+
+ window.APS_V1021_RESULT={
+   version:VERSION,
+   sourceJobs:source.length,
+   segments:schedule.length,
+   productionSegments:schedule.filter(x=>!x.isChangeover).length,
+   changeovers:schedule.filter(x=>x.isChangeover).length,
+   blockedJobs,
+   unscheduled,
+   overlaps,
+   generatedAt:new Date().toISOString()
+ };
+ return schedule;
+}
+async function saveCloud(){
+ try{
+   if(typeof window.persistScheduleCloud==='function'){
+     await window.persistScheduleCloud(VERSION);
+   }else if(typeof window.saveAllCloud==='function'){
+     await window.saveAllCloud(true);
+   }
+ }catch(err){console.warn('V102.1 cloud save skipped',err)}
+}
+async function execute(){
+ const S=state();
+ if(!S?.pool?.length){alert('請先建立工單池');return}
+ try{
+   S.schedule=optimizedRunScheduler();
+   window.renderSchedule?.();
+   window.updateKpi?.();
+   window.updateDueKpi?.();
+   const r=window.APS_V1021_RESULT;
+   window.log?.(`${VERSION} 完成：生產 ${r.productionSegments} 段、換線 ${r.changeovers} 段、未排 ${r.unscheduled.length}、前製程阻擋 ${r.blockedJobs.length}、重疊 ${r.overlaps.length}`);
+   await saveCloud();
+   window.showPage?.('schedule');
+ }catch(err){
+   console.error(err);
+   alert(err?.message||String(err));
+ }
+}
+function install(){
+ window.runScheduler=optimizedRunScheduler;
+ try{runScheduler=optimizedRunScheduler}catch(_){}
+ window.schedule=execute;
+ try{schedule=execute}catch(_){}
+ ['runSchedule','rerunSchedule','homeRunSchedule'].forEach(id=>{
+   const btn=el(id);
+   if(btn)btn.onclick=execute;
+ });
+ window.APSSchedulerV1021={
+   run:optimizedRunScheduler,
+   execute,
+   status:()=>window.APS_V1021_RESULT||{version:VERSION,status:'NOT_RUN'}
+ };
+ const badge=el('apsV1021Badge');
+ if(badge){
+   badge.querySelector('b').textContent='READY';
+   setTimeout(()=>badge.style.opacity='.4',6000);
+ }
+ console.info(`${VERSION} installed on Build 0102.2`);
+}
+if(document.readyState==='loading'){
+ document.addEventListener('DOMContentLoaded',()=>setTimeout(install,2800),{once:true});
+}else{
+ setTimeout(install,2800);
+}
+})();
+</script>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
