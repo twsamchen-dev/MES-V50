@@ -1,8 +1,85 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
+<!-- Build 0103.2 Debug Stable｜診斷增量：不改既有資料、排程或 API 邏輯 -->
+<style id="build01032-debug-style">
+#apsDebug01032{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:390px;max-width:calc(100vw - 24px);background:#071018f2;border:1px solid #365063;border-radius:10px;box-shadow:0 12px 40px #000b;color:#dceaf2;font:12px/1.5 Consolas,"Microsoft JhengHei",monospace;overflow:hidden}
+#apsDebug01032 .dbg-head{display:flex;align-items:center;gap:7px;padding:8px 10px;background:#101d27;border-bottom:1px solid #304655;cursor:move}
+#apsDebug01032 .dbg-head strong{flex:1;color:#fff;font-size:13px}#apsDebug01032 .dbg-state{padding:2px 7px;border-radius:99px;background:#443711;color:#ffd875}
+#apsDebug01032 .dbg-btn{border:1px solid #405766;background:#172630;color:#dceaf2;border-radius:5px;padding:3px 7px;cursor:pointer;font:inherit}
+#apsDebug01032 .dbg-body{max-height:310px;overflow:auto;padding:7px 9px;background:#050c12}
+#apsDebug01032 .dbg-line{padding:2px 0;border-bottom:1px dotted #1d303b;white-space:pre-wrap;word-break:break-word}.dbg-ok{color:#78e6b5}.dbg-warn{color:#ffd166}.dbg-err{color:#ff8f96}.dbg-info{color:#8ed8ff}
+#apsDebug01032 .dbg-foot{display:flex;gap:8px;justify-content:space-between;padding:6px 9px;background:#0d1820;color:#8fa6b5;border-top:1px solid #263b48}
+#apsDebug01032.collapsed .dbg-body,#apsDebug01032.collapsed .dbg-foot{display:none}
+@media(max-width:620px){#apsDebug01032{width:calc(100vw - 16px);right:8px;bottom:8px}}
+</style>
+<script id="build01032-debug-bootstrap">
+(function(){
+'use strict';
+if(window.__APS_DEBUG_01032__)return;
+const D=window.__APS_DEBUG_01032__={version:'0103.2',started:performance.now(),events:[],fetches:new Map(),lastBeat:performance.now(),panel:null,body:null,state:null,seq:0};
+const safe=v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}};
+function stamp(){return (performance.now()-D.started).toFixed(0).padStart(6,' ')+'ms'}
+function log(level,msg,data){
+ const row={at:new Date().toISOString(),ms:Math.round(performance.now()-D.started),level,msg,data:data===undefined?'':safe(data)};D.events.push(row);if(D.events.length>1000)D.events.shift();
+ try{console[level==='err'?'error':level==='warn'?'warn':'log']('[APS DEBUG '+stamp()+'] '+msg,data===undefined?'':data)}catch(e){}
+ if(D.body){const el=document.createElement('div');el.className='dbg-line dbg-'+level;el.textContent=stamp()+' ['+level.toUpperCase()+'] '+msg+(row.data?' | '+row.data:'');D.body.appendChild(el);while(D.body.children.length>220)D.body.firstChild.remove();D.body.scrollTop=D.body.scrollHeight}
+}
+function setState(s,kind){if(D.state){D.state.textContent=s;D.state.className='dbg-state dbg-'+(kind||'info')}}
+function report(){
+ const mem=performance.memory?{usedMB:(performance.memory.usedJSHeapSize/1048576).toFixed(1),limitMB:(performance.memory.jsHeapSizeLimit/1048576).toFixed(0)}:{};
+ return {version:D.version,url:location.href,userAgent:navigator.userAgent,started:new Date(Date.now()-performance.now()+D.started).toISOString(),elapsedMs:Math.round(performance.now()-D.started),readyState:document.readyState,visibility:document.visibilityState,domNodes:document.getElementsByTagName('*').length,scheduleBlocks:document.querySelectorAll('.schedule-block,.job').length,cloudStatus:(document.querySelector('#apsCloudStatus span')||document.querySelector('#apsCloudStatus'))?.textContent?.trim()||'',activeFetches:[...D.fetches.values()],memory:mem,events:D.events};
+}
+function copyReport(){const t=JSON.stringify(report(),null,2);if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(()=>log('ok','Debug Report 已複製')).catch(()=>fallback(t));else fallback(t)}
+function fallback(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();log('ok','Debug Report 已複製')}
+function buildPanel(){
+ if(D.panel||!document.body)return;
+ const p=document.createElement('section');p.id='apsDebug01032';p.innerHTML='<div class="dbg-head"><strong>APS Debug｜Build 0103.2</strong><span class="dbg-state">BOOT</span><button class="dbg-btn" data-act="copy">複製報告</button><button class="dbg-btn" data-act="toggle">收合</button></div><div class="dbg-body"></div><div class="dbg-foot"><span data-foot="step">啟動追蹤中</span><span data-foot="metric">0 nodes</span></div>';
+ document.body.appendChild(p);D.panel=p;D.body=p.querySelector('.dbg-body');D.state=p.querySelector('.dbg-state');
+ p.addEventListener('click',e=>{const a=e.target?.dataset?.act;if(a==='toggle'){p.classList.toggle('collapsed');e.target.textContent=p.classList.contains('collapsed')?'展開':'收合'}if(a==='copy')copyReport()});
+ D.events.slice(-80).forEach(r=>{const el=document.createElement('div');el.className='dbg-line dbg-'+r.level;el.textContent=String(r.ms).padStart(6,' ')+'ms ['+r.level.toUpperCase()+'] '+r.msg+(r.data?' | '+r.data:'');D.body.appendChild(el)});
+ log('ok','Debug 面板已建立');
+}
+log('info','APP START',{href:location.href});
+window.addEventListener('error',e=>log('err','window.error',{message:e.message,file:e.filename,line:e.lineno,column:e.colno,stack:e.error?.stack||''}),true);
+window.addEventListener('unhandledrejection',e=>log('err','unhandledrejection',{reason:safe(e.reason),stack:e.reason?.stack||''}));
+document.addEventListener('DOMContentLoaded',()=>{buildPanel();setState('DOM READY','ok');log('ok','DOMContentLoaded');}, {once:true});
+window.addEventListener('load',()=>{buildPanel();setState('WINDOW LOAD','ok');log('ok','window.load');setTimeout(()=>{setState('MONITOR','info');log('info','啟動後 2 秒快照',report())},2000)}, {once:true});
+if(document.readyState!=='loading')setTimeout(buildPanel,0);
+
+// 只監看 fetch；不取消、不改寫回傳資料。
+if(typeof window.fetch==='function'&&!window.fetch.__debug01032){
+ const nativeFetch=window.fetch.bind(window);
+ const wrapped=function(input,init){const id=++D.seq,url=typeof input==='string'?input:(input&&input.url)||'[Request]',started=performance.now();const rec={id,url,startedAt:new Date().toISOString(),elapsedMs:0,status:'pending'};D.fetches.set(id,rec);log('info','fetch START #'+id,url);
+ const warnTimer=setTimeout(()=>{const x=D.fetches.get(id);if(x&&x.status==='pending'){x.elapsedMs=Math.round(performance.now()-started);log('warn','fetch 超過 15 秒 #'+id,{url,elapsedMs:x.elapsedMs});setState('FETCH WAIT','warn')}},15000);
+ let pr;try{pr=nativeFetch(input,init)}catch(err){clearTimeout(warnTimer);D.fetches.delete(id);log('err','fetch THROW #'+id,{url,error:String(err)});throw err}
+ return Promise.resolve(pr).then(res=>{clearTimeout(warnTimer);rec.elapsedMs=Math.round(performance.now()-started);rec.status='done';rec.httpStatus=res.status;log(res.ok?'ok':'warn','fetch END #'+id,{url,status:res.status,elapsedMs:rec.elapsedMs});D.fetches.delete(id);return res},err=>{clearTimeout(warnTimer);rec.elapsedMs=Math.round(performance.now()-started);rec.status='error';log('err','fetch ERROR #'+id,{url,elapsedMs:rec.elapsedMs,error:String(err),stack:err?.stack||''});D.fetches.delete(id);throw err});
+ };
+ wrapped.__debug01032=true;wrapped.__native=nativeFetch;window.fetch=wrapped;
+ log('ok','fetch monitor installed');
+}
+
+// Long Task API：偵測主執行緒被單次工作阻塞。
+try{if(window.PerformanceObserver&&PerformanceObserver.supportedEntryTypes?.includes('longtask')){const po=new PerformanceObserver(list=>list.getEntries().forEach(x=>{if(x.duration>=200)log(x.duration>=2000?'err':'warn','LONG TASK',{durationMs:Math.round(x.duration),startMs:Math.round(x.startTime)})}));po.observe({entryTypes:['longtask']});log('ok','Long Task monitor installed')}}catch(e){log('warn','Long Task monitor unavailable',String(e))}
+
+// Heartbeat：頁面恢復回應後，回報曾經阻塞多久。
+setInterval(()=>{const now=performance.now(),lag=now-D.lastBeat-1000;D.lastBeat=now;if(lag>1200){log(lag>5000?'err':'warn','MAIN THREAD STALL',{lagMs:Math.round(lag)});setState('STALL '+Math.round(lag/1000)+'s','err')}},1000);
+
+// APS 雲端狀態與 DOM 指標監看。
+let lastCloud='',waitSince=0;
+setInterval(()=>{
+ try{buildPanel();const node=document.querySelector('#apsCloudStatus span')||document.querySelector('#apsCloudStatus');const cloud=(node?.textContent||'').trim();if(cloud!==lastCloud){lastCloud=cloud;log('info','APS CLOUD STATUS',cloud||'(尚未建立)');const foot=D.panel?.querySelector('[data-foot="step"]');if(foot)foot.textContent=cloud||'監控中';if(/完成|成功|已載入|連線成功/.test(cloud))setState('CLOUD OK','ok');else if(/錯誤|失敗/.test(cloud))setState('CLOUD ERROR','err');else if(/等待|載入|連線/.test(cloud))setState('CLOUD WAIT','warn')}
+ if(/等待連線/.test(cloud)){if(!waitSince)waitSince=performance.now();if(performance.now()-waitSince>20000&&!D.waitWarned){D.waitWarned=true;log('warn','APS 雲端等待連線超過 20 秒',{activeFetches:[...D.fetches.values()]})}}else waitSince=0;
+ const nodes=document.getElementsByTagName('*').length,blocks=document.querySelectorAll('.schedule-block,.job').length,metric=D.panel?.querySelector('[data-foot="metric"]');if(metric)metric.textContent=nodes+' nodes｜'+blocks+' blocks｜'+D.fetches.size+' fetch';
+ }catch(e){log('err','monitor interval error',String(e))}
+},1000);
+window.APS_DEBUG_REPORT_01032=report;window.APS_DEBUG_COPY_01032=copyReport;
+})();
+</script>
+
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.1</title><style>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.2 Debug Stable</title>
+<style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
 header{position:sticky;top:0;z-index:10;background:#07111fe8;border-bottom:1px solid var(--line);backdrop-filter:blur(12px);padding:15px 22px;display:flex;justify-content:space-between;align-items:center}.brand h1{font-size:22px;margin:0}.brand p{margin:4px 0 0;color:var(--muted);font-size:12px}.version{background:#183b63;border:1px solid #2e5b87;border-radius:999px;padding:7px 12px;font-size:12px}
@@ -252,9 +329,11 @@ body{background:#050b0f;color:#f7f9fa}
   #urgent .urgent-auth-grid{grid-template-columns:1fr}
 }
 
-</style><style>
+</style>
+<style>
 .production-midnight{position:absolute;top:0;bottom:0;transform:translateX(-50%);pointer-events:none;z-index:3}.production-midnight i{position:absolute;top:0;bottom:-430px;border-left:1px dashed rgba(255,115,115,.85)}.production-midnight b{position:absolute;top:-24px;left:6px;white-space:nowrap;font-size:10px;color:#ff8f8f;font-weight:700}.schedule-day-title b{font-size:14px}.time-scale{position:relative}
 </style>
+
 
 <style>
 /* Build 0023｜08:30～隔日08:30 單排 24 小時時間軸 */
@@ -270,6 +349,7 @@ body{background:#050b0f;color:#f7f9fa}
 .production-midnight i{bottom:-520px!important;border-left:1px dashed rgba(255,92,100,.9)!important}
 @media(max-width:820px){.schedule-scroll{min-width:1480px!important}}
 </style>
+
 <style>
 /* Build 0009｜依指定示意圖改為單排機台排程卡片 */
 .schedule-scroll{min-width:1380px!important;background:#061018}
@@ -294,6 +374,7 @@ body{background:#050b0f;color:#f7f9fa}
 .production-midnight b{top:4px!important}
 @media(max-width:820px){.schedule-scroll{min-width:1380px!important}}
 </style>
+
 <style>
 /* Build 0011｜24 小時完整縮放於畫面內，不需橫向拖曳 */
 .schedule-scroll{width:100%!important;min-width:0!important;overflow-x:hidden!important;overflow-y:visible!important}
@@ -314,6 +395,7 @@ body{background:#050b0f;color:#f7f9fa}
  .time-tick{font-size:10px!important;padding-left:2px!important}
 }
 </style>
+
 <style>
 /* Build 0012｜Enterprise APS Timeline Engine */
 .schedule-scroll{overflow:hidden!important;min-width:0!important}
@@ -334,10 +416,12 @@ body{background:#050b0f;color:#f7f9fa}
 .machine-label small{font-size:13px!important;color:#20d4ff!important}
 @media(max-width:1200px){.schedule-axis,.schedule-row{grid-template-columns:135px minmax(0,1fr)!important}.time-tick{font-size:10px!important}.machine-label b{font-size:20px!important}}
 </style>
+
 <style>
 /* Build 0013｜早班／夜班各一排，依核准構圖導入 */
 .schedule-axis,.schedule-row{grid-template-columns:166px minmax(0,1fr)!important}.schedule-axis{min-height:72px!important}.schedule-axis-label{font-size:15px!important;line-height:1.45!important}.time-scale{height:72px!important;background:#08151e!important}.shift-axis{position:absolute;left:0;right:0;height:50%;display:block;background:repeating-linear-gradient(90deg,#0a1a24 0,#0a1a24 calc(8.333333% - 1px),#24404e calc(8.333333% - 1px),#24404e 8.333333%)}.shift-axis.day{top:0;border-bottom:1px solid #29404d}.shift-axis.night{bottom:0}.shift-axis-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:3;font-size:11px;font-weight:800;color:#dce8ee;background:#0b2230cc;border:1px solid #21475b;border-radius:5px;padding:3px 7px}.shift-tick{position:absolute;top:0;bottom:0;border-left:1px solid #314a58;padding:10px 0 0 5px;color:#d9e2e7;font-size:11px;white-space:nowrap}.shift-tick:last-child{transform:translateX(-100%);border-left:0;border-right:1px solid #314a58;padding-left:0;padding-right:4px}.shift-axis.night .shift-tick{padding-top:10px}.shift-midnight{position:absolute;top:50%;bottom:0;border-left:1px dashed #ff5e66;z-index:5;pointer-events:none}.shift-midnight b{position:absolute;top:3px;left:5px;background:#bd2029;color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;line-height:1.15;white-space:nowrap}.schedule-row{min-height:132px!important;background:#061018!important}.machine-label{min-height:132px!important;display:flex;flex-direction:column;justify-content:center;padding:12px 38px 12px 14px!important}.machine-label b{font-size:25px!important}.machine-label small{font-size:13px!important}.machine-menu{top:18px!important;right:10px!important}.dual-track{position:relative;height:132px;background:#061018;overflow:hidden}.shift-track{position:absolute;left:0;right:0;height:64px;overflow:hidden;background:repeating-linear-gradient(90deg,#07141c 0,#07141c calc(8.333333% - 1px),#193440 calc(8.333333% - 1px),#193440 8.333333%)}.shift-track.day{top:2px;border-bottom:1px solid #28404c}.shift-track.night{bottom:2px}.shift-label{position:absolute;left:7px;top:7px;z-index:8;width:66px;height:50px;border-radius:5px;background:linear-gradient(180deg,#153247,#0d2433);border:1px solid #26536a;color:#fff;display:flex;flex-direction:column;justify-content:center;padding-left:10px;pointer-events:none;box-shadow:0 2px 5px #0006}.shift-label b{font-size:13px;line-height:1.1}.shift-label small{font-size:8px;color:#b9d3df;margin-top:5px}.shift-track .schedule-block{top:5px!important;height:54px!important;padding:8px 8px!important;border-radius:5px!important}.shift-track .schedule-block b{font-size:12px!important}.shift-track .schedule-block small{font-size:9px!important;margin-top:6px!important}.shift-track .schedule-block.compact{padding:0!important}.shift-track .schedule-block.compact b,.shift-track .schedule-block.compact small{display:none!important}.shift-track .schedule-block.mini{padding:6px 2px!important;text-align:center}.shift-track .schedule-block.mini b{font-size:9px!important}.shift-track .schedule-block.mini small{font-size:7px!important}.shift-track .schedule-block.cluster{padding:7px 4px!important}.shift-track .schedule-block.cluster b{font-size:9px!important}.shift-track .schedule-block.cluster small{font-size:7px!important}@media(max-width:1200px){.schedule-axis,.schedule-row{grid-template-columns:135px minmax(0,1fr)!important}.machine-label b{font-size:20px!important}.shift-label{width:58px;padding-left:7px}.shift-tick{font-size:9px!important}}
 </style>
+
 <style>
 /* Build 0014｜早夜班雙排寬版：班別欄與甘特區完全分離 */
 .schedule-scroll{overflow-x:hidden!important;min-width:0!important}
@@ -393,6 +477,7 @@ body{background:#050b0f;color:#f7f9fa}
 .shift-lane .schedule-block.cluster b{font-size:9px!important}.shift-lane .schedule-block.cluster small{display:none!important}
 @media(max-width:1200px){.schedule-axis,.schedule-row{grid-template-columns:100px minmax(0,1fr)!important}.shift-axis,.shift-track{grid-template-columns:50px minmax(0,1fr)!important}.machine-label b{font-size:18px!important}}
 </style>
+
 <style>
 /* Build 0023｜戰情中心工具列格式修正 */
 #home .panel-toolbar{align-items:flex-start;flex-wrap:wrap}
@@ -433,6 +518,7 @@ body{background:#050b0f;color:#f7f9fa}
 }
 </style>
 
+
 <style>
 /* Build 0024｜缺少產速全寬、回饋表單下移 */
 #speedFeedback #missingSpeedCard,#speedFeedback #speedFeedbackFormCard{grid-column:span 12!important;width:100%;min-width:0}
@@ -448,6 +534,7 @@ body{background:#050b0f;color:#f7f9fa}
 @media(max-width:1200px){#speedFeedback #speedFeedbackFormCard .speed-form{grid-template-columns:repeat(2,minmax(0,1fr))}#speedFeedback #missingSpeedCard .filterbar{grid-template-columns:1fr 180px 180px}}
 @media(max-width:760px){#speedFeedback #speedFeedbackFormCard .speed-form{grid-template-columns:1fr}#speedFeedback #speedFeedbackFormCard .speed-form .span2{grid-column:span 1}#speedFeedback #missingSpeedCard .filterbar{grid-template-columns:1fr}}
 </style>
+
 <style>
 /* Build 0042｜可自訂早班／夜班時段 */
 .time-scale:after{display:none!important}
@@ -458,6 +545,7 @@ body{background:#050b0f;color:#f7f9fa}
 @media(max-width:900px){.shift-setting-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.shift-setting-grid{grid-template-columns:1fr}}
 </style>
+
 <style>
 /* Build 0042｜時間軸日期與班別列重新分層，避免日期、刻度、00:00 與工單重疊 */
 .schedule-axis{min-height:118px!important;align-items:stretch!important}
@@ -488,21 +576,25 @@ body{background:#050b0f;color:#f7f9fa}
 }
 </style>
 
+
 <style>
 /* Build 0042｜AI 插單方案比較 */
 .ai-option-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}.ai-option{border:1px solid #344653;background:#0b151c;border-radius:9px;padding:12px;cursor:pointer;transition:.15s}.ai-option:hover{border-color:#5c7f93;transform:translateY(-1px)}.ai-option.selected{border-color:#32c7ff;box-shadow:0 0 0 2px #32c7ff2b}.ai-option.best{border-color:#37b86a}.ai-option h4{margin:0 0 8px;font-size:15px}.ai-option .score{font-size:12px;color:#9fb1bd;line-height:1.65}.ai-option .score b{color:#fff}.ai-badge{display:inline-block;padding:3px 7px;border-radius:99px;font-size:10px;margin-left:6px;background:#174a34;color:#8bf0b5}.ai-option-table{margin-top:12px}.ai-option-table input{accent-color:#22c55e}.urgent-ai-note{margin-top:10px;padding:10px 12px;border-left:4px solid #32c7ff;background:#10212b;color:#ccefff;border-radius:6px;font-size:12px;line-height:1.6}
 </style>
+
 <style>
 /* Build 0042｜AI 自動排程核心 */
 .auto-schedule-hero{border-top:3px solid #7c5cff}.auto-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.auto-config{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-top:14px;padding:12px;background:#09141b;border:1px solid #2c414c;border-radius:9px}.auto-config input,.auto-config select{width:100%;height:38px;background:#101d25;color:#edf4f7;border:1px solid #344a55;border-radius:7px;padding:0 9px}.auto-note{margin-top:10px;color:#9fb0b8;font-size:12px}.auto-summary{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:9px}.auto-stat{background:#09151c;border:1px solid #2a414c;border-radius:9px;padding:12px}.auto-stat.improve{border-color:#27654d;box-shadow:inset 0 3px #2fb779}.auto-stat span,.auto-stat small{display:block;color:#91a4ad}.auto-stat b{display:block;font-size:25px;margin:5px 0;color:#fff}.auto-empty{padding:24px;text-align:center;color:#8ea1ab;border:1px dashed #334a55;border-radius:9px}.auto-insight{border:1px solid #304650;background:#0a161d;border-radius:9px;padding:11px;margin-bottom:9px}.auto-insight b{display:block;margin-bottom:5px}.auto-insight.good{border-left:4px solid #32b97b}.auto-insight.warn{border-left:4px solid #e3a42b}.auto-insight.bad{border-left:4px solid #df4d57}.auto-machine-card{border:1px solid #2c424d;background:#0a161d;border-radius:9px;padding:12px;margin-top:9px}.auto-machine-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.auto-machine-flow{display:flex;gap:6px;overflow-x:auto;padding-top:9px}.auto-job-chip{flex:0 0 auto;max-width:190px;background:#11252e;border:1px solid #375260;border-radius:7px;padding:7px 9px}.auto-job-chip b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.auto-job-chip small{display:block;color:#9eb0b8;margin-top:3px}.auto-arrow{align-self:center;color:#668c9d}.auto-load{color:#79e4b4;font-weight:800}.auto-preview-wrap{overflow:auto;max-height:540px}.auto-preview-table{min-width:850px}.auto-score-bar{height:8px;background:#182a33;border-radius:99px;overflow:hidden;margin-top:7px}.auto-score-bar i{display:block;height:100%;background:linear-gradient(90deg,#5d77ff,#30c5a0)}
 @media(max-width:1250px){.auto-config{grid-template-columns:repeat(3,1fr)}.auto-summary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.auto-config,.auto-summary{grid-template-columns:1fr 1fr}}
 </style>
+
 <style id="build0037-preprocess-css">
 .pre-smart-grid{position:relative}.pre-hero-card,.pre-board-card,.pre-detail-card,.pre-ai-card{position:relative;overflow:hidden}.pre-hero-card{background:linear-gradient(135deg,#101b24,#0b141b 58%,#171015);animation:preFade .45s ease both}.pre-glow{position:absolute;width:360px;height:360px;border-radius:50%;right:-120px;top:-190px;background:radial-gradient(circle,#d7192030,transparent 68%);animation:prePulse 4s ease-in-out infinite}.pre-kpis{position:relative;z-index:1}.pre-kpi{transition:.25s transform,.25s border-color,.25s box-shadow}.pre-kpi:hover{transform:translateY(-3px);box-shadow:0 10px 24px #0008}.pre-kpi.ready{border-color:#246c4d}.pre-kpi.blocked{border-color:#713039}.pre-kpi.urgent{border-color:#755c22}.pre-kpi small{display:block;color:#8fa0ad;font-size:11px;margin-top:5px}.pre-gate-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin:14px 0 4px}.flow-node{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid #2b3e49;background:#0b151b;border-radius:9px;transition:.22s}.flow-node:hover{border-color:#4d7184;transform:translateY(-2px)}.flow-node i{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#183446;color:#7dd8ff;font-style:normal}.flow-node.final i{background:#164b36;color:#76efbd}.pre-gate-flow>b{color:#556a76}.pre-toolbar{position:relative;z-index:1}.pre-toolbar select{min-width:165px}.pre-board-card{animation:preSlide .45s .06s ease both}.pre-board-legend{display:flex;gap:13px;font-size:12px;color:#b9c5cd}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.dot.green{background:#22c55e}.dot.yellow{background:#eab308}.dot.red{background:#ef4444}.pre-table-wrap{overflow:auto;max-height:590px;border:1px solid #2b3c46;border-radius:10px}.pre-table{min-width:1500px}.pre-table th{top:0}.pre-row{transition:.18s background,.18s transform}.pre-row:hover td{background:#122631}.pre-readiness{display:inline-flex;align-items:center;gap:6px;font-weight:800}.pre-readiness:before{content:"";width:9px;height:9px;border-radius:50%;box-shadow:0 0 10px currentColor}.pre-readiness.ready{color:#58e6a6}.pre-readiness.warning{color:#ffd45b}.pre-readiness.blocked{color:#ff7179}.pre-select{min-width:105px;background:#0a151d;color:#eef5f8;border:1px solid #35505e;border-radius:7px;padding:7px}.pre-mini{font-size:11px;color:#9fb0bb}.pre-view-btn{padding:7px 10px}.pre-detail-card,.pre-ai-card{animation:preSlide .45s .12s ease both}.pre-detail-form{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.pre-detail-form .span2{grid-column:span 4}.pre-detail-form textarea{width:100%;resize:vertical;background:#071526;color:#e8f4ff;border:1px solid #294661;border-radius:9px;padding:10px}.pre-ai-card{background:linear-gradient(145deg,#111c23,#10141b)}.pre-ai-insight{min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#aebbc5;line-height:1.65}.ai-orb{width:78px;height:78px;border-radius:50%;margin-bottom:18px;background:radial-gradient(circle at 35% 30%,#7bd7ff,#2b6ba5 35%,#15283b 62%,#0a1016 70%);box-shadow:0 0 0 10px #2e7fb013,0 0 36px #3fb8ff52;animation:orbFloat 2.8s ease-in-out infinite}.pre-ai-list{width:100%;text-align:left}.pre-ai-item{padding:11px 12px;margin:8px 0;border-radius:8px;background:#0b151b;border-left:4px solid #ef4444;animation:preSlide .35s ease both}.pre-ai-item.warn{border-left-color:#eab308}.pre-ai-item.ok{border-left-color:#22c55e}.pre-ai-item b{display:block;color:#fff;margin-bottom:4px}.pre-flash{animation:preFlash .8s ease}.pre-saving:after{content:"AI 判定與儲存中…";position:absolute;inset:0;background:#07111fca;display:grid;place-items:center;font-size:20px;font-weight:800;z-index:8;backdrop-filter:blur(2px)}
 @keyframes preFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes preSlide{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}@keyframes prePulse{50%{transform:scale(1.15);opacity:.7}}@keyframes orbFloat{50%{transform:translateY(-8px) scale(1.03)}}@keyframes preFlash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 3px #35d4d4,0 0 28px #35d4d466}}
 @media(max-width:1200px){.pre-gate-flow{grid-template-columns:1fr 1fr 1fr}.pre-gate-flow>b{display:none}.pre-detail-card,.pre-ai-card{grid-column:span 12}.pre-detail-form{grid-template-columns:1fr 1fr}.pre-detail-form .span2{grid-column:span 2}}@media(max-width:700px){.pre-gate-flow{grid-template-columns:1fr}.pre-detail-form{grid-template-columns:1fr}.pre-detail-form .span2{grid-column:span 1}}
 </style>
+
 <style>
 /* Build 0042｜系統設定中心正式開通 */
 .sys-grid{align-items:start}.sys-hero{background:radial-gradient(circle at 85% 0,#3a1116 0,transparent 35%),linear-gradient(145deg,#101c24,#091218)}
@@ -512,6 +604,7 @@ body{background:#050b0f;color:#f7f9fa}
 @keyframes sysToastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @media(max-width:900px){.sys-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.sys-kpis{grid-template-columns:1fr}}
 </style>
+
 <style id="build0041-security-css">
 html.aps-locked body{overflow:hidden!important}
 #apsSecurityGate{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(circle at 75% 10%,rgba(111,17,23,.45),transparent 33%),linear-gradient(145deg,#050b0f,#0a1218 58%,#16080b);display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Microsoft JhengHei",Arial,sans-serif;color:#f7f9fa}
@@ -526,14 +619,17 @@ html.aps-locked body{overflow:hidden!important}
 @media(max-width:600px){.aps-sec-card{padding:22px}.aps-sec-actions{flex-direction:column}.aps-sec-btn{width:100%}#apsSecurityBar{left:10px;right:10px;justify-content:center}}
 </style>
 
+
 <style id="build0042-auth-disabled-css">
 /* Build 0042｜開發階段停用登入鎖定 */
 #apsSecurityGate,#apsSecurityBar,#apsChangePassword{display:none!important}
 html.aps-locked body{overflow:auto!important}
 </style>
+
 <style id="build0046-1-missing-speed-css">
 .missing-speed-kpis{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0}.missing-speed-kpi{border:1px solid #30414b;background:#0b151c;border-radius:9px;padding:14px}.missing-speed-kpi span{display:block;color:#9caab4;font-size:12px}.missing-speed-kpi b{display:block;font-size:28px;margin-top:6px}.missing-speed-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.missing-speed-toolbar input,.missing-speed-toolbar select{background:#0a151d;color:#f5f7fa;border:1px solid #344954;border-radius:7px;padding:9px 10px}.missing-speed-toolbar input[type=search]{min-width:280px;flex:1}.missing-speed-summary{border-left:4px solid #f59e0b;background:#2d210c66;border-radius:8px;padding:11px 13px;color:#f5d98f;line-height:1.55;margin-bottom:12px}.missing-speed-table td{vertical-align:top}.missing-speed-table .spec{max-width:260px;white-space:normal;line-height:1.45}.missing-speed-reason{font-size:11px;color:#f6c76b;line-height:1.45;max-width:220px;white-space:normal}.missing-speed-actions{display:flex;gap:6px;flex-wrap:wrap}.missing-speed-actions .btn{padding:7px 10px;font-size:11px}.missing-speed-empty{padding:36px;text-align:center;color:#9aa8b2}@media(max-width:900px){.missing-speed-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.missing-speed-kpis{grid-template-columns:1fr}.missing-speed-toolbar input[type=search]{min-width:100%}}
 </style>
+
 <script>
 /* Build 0046-4｜雲端 anomalies 資料格式相容修正 */
 function anomalyList(value){
@@ -562,6 +658,7 @@ function anomalyList(value){
 }
 </script>
 
+
 <style id="apsBuild00471StableStyle">
 body::after{
   content:"APS Build 0091｜APS 載入復原穩定版";
@@ -572,6 +669,7 @@ body::after{
 }
 </style>
 
+
 <style>
 /* Build 0071｜V88 Drag & Drop interaction */
 .manual-drop-enabled{transition:background .15s,box-shadow .15s}
@@ -581,6 +679,7 @@ body::after{
 .manual-drag-ghost{position:fixed;z-index:20000;pointer-events:none;background:#d71920;color:#fff;border:1px solid #ff7b81;border-radius:7px;padding:8px 12px;font-weight:800;box-shadow:0 10px 28px #000b;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .manual-adjust-active .schedule-block[data-schedule-wo]{cursor:grab!important;touch-action:none}
 </style>
+
 <script id="aps-v95-build01004-publisher-autofill-early">
 (function(){
   "use strict";
@@ -645,6 +744,7 @@ body::after{
   }
 })();
 </script>
+
 
 <script id="aps-build01021-global-jsonp">
 (function(){
@@ -724,6 +824,7 @@ body::after{
 })();
 </script>
 
+
 <script id="aps-build01022-jsonp-compatibility">
 (function(){
   "use strict";
@@ -755,7 +856,8 @@ body::after{
 </script>
 
 </head>
-<body><script id="aps-build0094-direct-recovery">
+<body>
+<script id="aps-build0094-direct-recovery">
 (()=>{
 'use strict';
 const BUILD='0100';
@@ -766,7 +868,7 @@ const txt=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function badge(){let e=document.getElementById('aps0094Status');if(!e){e=document.createElement('button');e.id='aps0094Status';e.type='button';e.style.cssText='position:fixed;right:14px;bottom:12px;z-index:2147483647;padding:8px 11px;border-radius:8px;border:1px solid #f59e0b;background:#07141d;color:#fff;font:12px Microsoft JhengHei,Arial;box-shadow:0 5px 18px #000a;cursor:pointer';e.onclick=()=>run(true);document.documentElement.appendChild(e)}return e}
 function state(message,type='wait'){const e=badge();e.textContent='APS Build '+BUILD+'｜'+message;e.style.borderColor=type==='ok'?'#22c55e':type==='bad'?'#ef4444':'#f59e0b'}
-function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0103.1'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
+function forceLabel(){document.querySelectorAll('.header-time small,.version').forEach(e=>{if(e)e.textContent='APS Optimizer Build 0103.2 Debug'});document.querySelectorAll('#apsCloudStatus,.aps-load-recovery,#apsRecoveryStatus0092,#apsRecoveryStatus0093').forEach(e=>e.remove())}
 function jsonp(action,params={},timeoutMs=45000){return new Promise((resolve,reject)=>{const cb='APS0096_'+Date.now()+'_'+Math.floor(Math.random()*1e6),s=document.createElement('script');let settled=false,timer=null;const tombstone=()=>{window[cb]=function(){};setTimeout(()=>{try{delete window[cb]}catch(_){window[cb]=undefined}},120000)};const clean=(keepCallback=false)=>{if(timer)clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);if(keepCallback)tombstone();else{try{delete window[cb]}catch(_){window[cb]=undefined}}};timer=setTimeout(()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 逾時 '+Math.round(timeoutMs/1000)+' 秒'))},timeoutMs);window[cb]=res=>{if(settled)return;settled=true;clean(false);if(res&&res.ok===false)reject(new Error(res.message||res.error||action+' 回傳失敗'));else resolve(res||{})};s.onerror=()=>{if(settled)return;settled=true;clean(true);reject(new Error(action+' 連線失敗'))};s.src=API+'?'+new URLSearchParams({...params,action,callback:cb,_:Date.now()});document.head.appendChild(s)})}
 async function fetchRows(){
   const all=[]; let page=1,total=1; const seenPages=new Set();
@@ -804,6 +906,7 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
+
 
 <div id="apsSecurityGate" role="dialog" aria-modal="true" aria-labelledby="apsSecurityTitle">
   <div class="aps-sec-card">
@@ -1009,6 +1112,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <div class="card col12"><h2>插單後排程預覽</h2><div id="urgentTimeline"><div class="empty">尚未執行模擬</div></div></div>
 </div></section>
 
+
+
 <section id="machineRules" class="page"><div class="grid">
   <div class="card col12">
     <div class="page-toolbar">
@@ -1134,6 +1239,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div id="mrTable" class="empty">尚未建立機台共用規則</div>
   </div>
 
+
   <div class="card col12" id="machineLearningCard">
     <div class="page-toolbar">
       <div>
@@ -1220,6 +1326,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   <div class="card col12"><h2>交期風險明細</h2><div id="autoRiskTable" class="auto-empty">尚未執行模擬。</div></div>
 </div></section>
 
+
 <section id="workforce" class="page"><div class="grid">
 <div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">WORKFORCE CAPACITY</div><h2>人力中心</h2><div class="sub">管理早班／夜班操作員與幹部人數，設定各機台需求人數，並依目前排程自動計算人力缺口。</div></div><div class="actions"><button class="btn" id="wfAnalyze">重新分析</button><button class="btn ghost" id="wfExport">匯出人力分析 CSV</button></div></div>
 <div class="center-kpis"><div class="center-kpi"><span>早班可用人力</span><b id="wfDayTotal">0</b></div><div class="center-kpi"><span>夜班可用人力</span><b id="wfNightTotal">0</b></div><div class="center-kpi"><span>人力不足時段</span><b id="wfShortage">0</b></div><div class="center-kpi"><span>目前排程需求</span><b id="wfDemand">0</b></div></div></div>
@@ -1245,6 +1352,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <div class="center-kpis"><div class="center-kpi"><span>機台總數</span><b id="mcTotal">0</b></div><div class="center-kpi"><span>啟用機台</span><b id="mcEnabled">0</b></div><div class="center-kpi"><span>停機／保養</span><b id="mcDown">0</b></div><div class="center-kpi"><span>平均負荷</span><b id="mcUtil">0%</b></div></div>
 <div class="center-toolbar"><input id="mcSearch" type="search" placeholder="搜尋機台…"><select id="mcStatus"><option value="all">全部狀態</option><option value="enabled">啟用</option><option value="disabled">停用</option><option value="maintenance">保養</option></select><button class="btn ghost" id="mcClear">清除篩選</button></div><div id="mcTable" class="empty">尚無機台資料。</div></div>
 </div></section>
+
 
 <section id="aiLoadOptimizer" class="page">
   <div class="grid">
@@ -1406,7 +1514,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </div></section>
 
 <section id="missingSpeed" class="page"><div class="grid"><div class="card col12"><div class="page-toolbar"><div><div class="section-kicker">BUILD 0046-1</div><h2>AI 缺產速中心</h2><div class="sub">建立工單池後，自動比對 APS_WorkPool 與固定產速主檔。此頁只顯示與整理，不會自動修改 Master_產速。</div></div><div class="actions"><button class="btn ghost" id="missingSpeedRefresh">重新掃描</button><button class="btn" id="missingSpeedGoFeedback">前往產速回饋中心</button></div></div><div class="missing-speed-kpis"><div class="missing-speed-kpi"><span>工單池筆數</span><b id="msPoolCount">0</b></div><div class="missing-speed-kpi"><span>有標準產速</span><b id="msMatchedCount">0</b></div><div class="missing-speed-kpi"><span>缺產速</span><b id="msMissingCount" class="danger-text">0</b></div><div class="missing-speed-kpi"><span>產速完整率</span><b id="msCoverage">0%</b></div></div><div id="missingSpeedSummary" class="missing-speed-summary">尚未掃描。請先建立工單池。</div><div class="missing-speed-toolbar"><input id="missingSpeedSearch" type="search" placeholder="搜尋工單、料號、規格、機台"><select id="missingSpeedMachine"><option value="">全部機台</option></select><select id="missingSpeedReason"><option value="">全部原因</option><option value="part">缺料號對應</option><option value="machine">缺機台產速</option><option value="process">缺製程產速</option><option value="speed">產速為 0</option></select><span id="missingSpeedResultCount" class="result-count">0 筆</span></div><div class="tablewrap"><table class="missing-speed-table"><thead><tr><th>狀態</th><th>工單</th><th>料號</th><th>規格</th><th>機台</th><th>製程</th><th>缺漏原因</th><th>建議動作</th></tr></thead><tbody id="missingSpeedBody"><tr><td colspan="8" class="missing-speed-empty">尚未掃描資料</td></tr></tbody></table></div></div></div></section>
-</main></div><script>
+</main></div>
+<script>
 'use strict';
 const S={files:{},rows:{},pool:[],schedule:[],machines:{},logs:[]};
 window.S=S; // Build 0042: expose shared APS state to all module centers
@@ -1609,6 +1718,7 @@ function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.
 document.querySelectorAll('.tab').forEach(x=>x.onclick=()=>showPage(x.dataset.page));$('drop').onclick=()=>$('files').click();$('files').onchange=e=>handleFiles(e.target.files);['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('drag')}));['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('drag')}));$('drop').addEventListener('drop',e=>handleFiles(e.dataTransfer.files));$('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSchedule').onclick=schedule;$('clearData').onclick=clearAll;$('exportPool').onclick=exportPool;$('exportSchedule').onclick=exportSchedule;
 $('startDate').value=fmtDate(new Date());applyShiftSettingsToForm();$('saveShiftSettings').onclick=saveShiftSettings;$('resetShiftSettings').onclick=resetShiftSettings;['earlyShiftStart','earlyShiftEnd','nightShiftStart','nightShiftEnd'].forEach(id=>$(id).addEventListener('change',()=>{const x={earlyStart:$('earlyShiftStart').value,earlyEnd:$('earlyShiftEnd').value,nightStart:$('nightShiftStart').value,nightEnd:$('nightShiftEnd').value},v=validateShiftSettings(x);updateShiftStatus(x,v.ok,v.msg)}));renderFiles();updateKpi();
 </script>
+
 <script>
 /* Enterprise Preview 2 enhancements */
 const EP={poolSort:{key:'due',dir:1},poolSearch:'',poolStatus:'all',poolMachine:'all',simulation:null};
@@ -1810,6 +1920,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 // Default urgent due: today 17:00
 (()=>{const d=new Date();d.setHours(17,0,0,0);if(d<new Date())d.setDate(d.getDate()+1);const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString();const od=$('urgentOriginalDueDate'),nd=$('urgentDueDate'),ot=$('urgentOriginalDueTime'),nt=$('urgentDueTime');if(od)od.value=iso.slice(0,10);if(nd)nd.value=iso.slice(0,10);if(ot)ot.value='17:00';if(nt)nt.value='17:00'})();
 </script>
+
 <script>
 /* Build 0005 dashboard adapters */
 (function(){
@@ -1834,6 +1945,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
   setTimeout(()=>window.updateKpi?.(),0);
 })();
 </script>
+
 <script>
 /* Build 0006｜回數制產速、缺料提醒、現場回饋 */
 (function(){
@@ -2048,6 +2160,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
  $('sfDate').value=new Date().toISOString().slice(0,10);renderSpeedCenter();if(loadStoredMaster().length)log('已載入永久產速主檔：'+loadStoredMaster().length+' 筆');
 })();
 </script>
+
 <script>
 /* Build 0023｜預交日篩選與優先排程
  * 原則：回數為核心；排程工時 = 準備 + 首件 + 純生產 + 收尾，並執行最低占用與異常檢核。
@@ -2217,6 +2330,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 })();
 </script>
 
+
 <style>
 /* Build 0023｜預交日篩選 */
 .due-filter-panel{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 9px;background:#0a141a;border:1px solid #30434d;border-radius:7px}
@@ -2225,7 +2339,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 .due-filter-panel select{min-width:126px}.due-custom{display:none;align-items:center;gap:5px}.due-custom.active{display:flex}.due-custom input{width:132px}
 .due-filter-summary{font-size:11px;color:#6ee7ff;white-space:nowrap}.due-overdue{color:#ff626a!important}.due-soon{color:#ffd166!important}.due-ok{color:#76e6ad!important}
 @media(max-width:1150px){.panel-toolbar{align-items:flex-start}.toolbar-actions{flex-wrap:wrap}.due-filter-panel{width:100%}}
-</style><script>
+</style>
+<script>
 /* Build 0023｜預交日篩選、優先權與交期狀態 */
 (()=>{
  const day0=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
@@ -2335,6 +2450,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 })();
 </script>
 
+
 <style>
 /* Build 0020｜缺少產速明細中心 */
 #speedMissingCount{cursor:pointer;text-decoration:underline;text-underline-offset:5px}
@@ -2346,7 +2462,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 .speed-reason{color:#ffbf69}.speed-due-overdue{color:#ff6670;font-weight:700}.speed-due-soon{color:#ffd166;font-weight:700}
 #qualityList .missing-speed-link{color:#ffd166;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-weight:800}
 @media(max-width:900px){.speed-detail-tools{grid-template-columns:1fr 1fr}.speed-detail-count{justify-content:flex-start}}
-</style><script>
+</style>
+<script>
 /* Build 0020｜缺少產速可點擊明細、搜尋與直接回饋 */
 (()=>{
   const day0=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
@@ -2387,9 +2504,11 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 })();
 </script>
 
+
 <style>
 #speedFeedback .card.col5.speed-form-focus{outline:2px solid #f59e0b;box-shadow:0 0 0 5px rgba(245,158,11,.16),var(--shadow);transition:.2s}
-</style><script>
+</style>
+<script>
 /* Build 0021｜補產速按鈕帶入修正 */
 (()=>{
   function getMissingJobByWorkOrder(wo){
@@ -2447,6 +2566,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 })();
 </script>
 
+
 <style>
 /* Build 0022｜缺少產速欄位篩選、排序與設定下載 */
 #missingSpeedTable table{min-width:1180px}
@@ -2459,7 +2579,8 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 #missingSpeedTable .missing-action{padding:7px 10px}
 .speed-config-note{font-size:11px;color:#8ea0ad;margin-left:6px}
 @media(max-width:1100px){#missingSpeedTable table{min-width:1050px}}
-</style><script>
+</style>
+<script>
 /* Build 0022｜缺少產速明細：各欄篩選、排序、補產速帶入、設定下載 */
 (()=>{
   const state={sortKey:'due',sortDir:1,filters:{wo:'',customer:'',part:'',name:'',process:'all',machine:'all',dueFrom:'',dueTo:'',reason:'all'}};
@@ -2525,6 +2646,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 })();
 </script>
 
+
 <style>
 /* Build 0023｜左右介面遮蔽與寬度自適應修正 */
 html,body{width:100%;max-width:100%;overflow-x:hidden!important}
@@ -2581,6 +2703,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   .speed-detail-tools{grid-template-columns:1fr!important}
 }
 </style>
+
 <style>
 /* Build 0042｜缺少產速篩選控制可操作修正 */
 #missingSpeedTable .filter-row input,
@@ -2595,6 +2718,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   outline:2px solid #35b8ff;outline-offset:1px;border-color:#35b8ff;
 }
 </style>
+
 <script>
 /* Build 0042｜AI 排程建議中心（透明規則引擎） */
 (function(){
@@ -2625,6 +2749,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   const oldShow=window.showPage;window.showPage=function(id){oldShow&&oldShow(id);if(id==='ai')setTimeout(analyze,0)};
 })();
 </script>
+
 <style>
 /* Build 0042｜右上通知與管理員選單可操作 */
 .header-menu-wrap{position:relative;display:flex;align-items:center}
@@ -2641,7 +2766,8 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 .header-dropdown button span{display:block;font-size:11px;color:#91a4af;line-height:1.45}
 .notification-dropdown{width:330px}
 @media(max-width:1050px){.header-dropdown{right:0}}
-</style><script>
+</style>
+<script>
 /* Build 0042｜啟用右上角通知與系統管理員選單 */
 (()=>{
   const pairs=[['notificationBtn','notificationMenu'],['userMenuBtn','userMenu']];
@@ -2660,6 +2786,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
 })();
 </script>
+
 <style>
 /* Build 0042｜手動排程調整中心 */
 .manual-adjust-active .schedule-block[data-schedule-wo]{cursor:pointer!important;outline:1px dashed rgba(90,210,255,.7);outline-offset:-2px}
@@ -2698,6 +2825,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
     <div class="manual-history">提示：在「手動調整模式」下，點擊甘特圖工單即可開啟此視窗。調整前會自動建立復原點。</div>
   </div>
 </div>
+
 <script>
 /* Build 0071｜V88 APS Drag & Drop Engine */
 (()=>{
@@ -2749,6 +2877,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   installToolbar();setTimeout(annotateLanes,0);
 })();
 </script>
+
 
 <script>
 /* Build 0042｜AI 插單多方案比較引擎 */
@@ -2850,6 +2979,7 @@ simulateUrgent=function(){try{
 const oldResetUrgent0033=resetUrgent;resetUrgent=function(){oldResetUrgent0033();EP.simulationOptions=null;EP.selectedSimulationIndex=0};
 $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;$('discardUrgent').onclick=resetUrgent;
 </script>
+
 <style>
 /* Build 0042｜AI 換線最佳化 */
 .sequence-opt-card{border-color:#315466!important;box-shadow:inset 0 3px #2cb7d8}
@@ -2859,7 +2989,8 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
 .sequence-opt-stat{background:#09151c;border:1px solid #2a404b;border-radius:9px;padding:12px}.sequence-opt-stat span{display:block;color:#91a6b0;font-size:12px}.sequence-opt-stat b{display:block;font-size:26px;margin-top:5px}
 .sequence-machine{border:1px solid #2c414b;background:#0a151c;border-radius:10px;padding:13px;margin-top:10px}.sequence-machine-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.sequence-machine h3{margin:0;font-size:17px}.sequence-saving{color:#75e5b3;font-weight:800}.sequence-flow{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:10px 0 3px}.sequence-job{flex:0 0 auto;max-width:210px;padding:8px 10px;border-radius:7px;border:1px solid #36505c;background:#11232c}.sequence-job b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sequence-job small{display:block;color:#a7b7bf;margin-top:4px}.sequence-arrow{color:#5e8495;font-size:18px}.sequence-before{opacity:.68}.sequence-opt-empty{padding:25px;text-align:center;color:#8da0aa;border:1px dashed #334852;border-radius:9px}
 @media(max-width:900px){.sequence-opt-summary{grid-template-columns:repeat(2,1fr)}}
-</style><script>
+</style>
+<script>
 /* Build 0042｜透明啟發式換線最佳化引擎 */
 (()=>{
   let proposal=null, backup=null;
@@ -2924,6 +3055,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
 </script>
+
 
 <script>
 /* AI 排程穩定修復｜僅替換 AI 自動排程核心，不改 DataHub／雲端載入 */
@@ -3574,6 +3706,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
 })();
 </script>
 
+
 <script>
 /* Build 0042｜人力、前製程、機台、報表中心 */
 (function(){
@@ -3685,6 +3818,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  setTimeout(()=>{renderWFSettings();renderPre();renderMC();renderReports()},300);
 })();
 </script>
+
 
 <script id="build0039-preprocess-js">
 (()=>{
@@ -3814,6 +3948,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  },700);
 })();
 </script>
+
 <script>
 /* Build 0042｜系統設定、快照、完整備份與還原 */
 (function(){
@@ -3844,6 +3979,8 @@ document.addEventListener('click',e=>{const d=e.target.closest('[data-sys-downlo
 window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats};
 })();
 </script>
+
+
 
 <script id="build0082-indexeddb-cache-engine">
 (()=>{
@@ -3893,6 +4030,7 @@ Promise.all([
 console.debug('[APS module] IndexedDB cache engine loaded');
 })();
 </script>
+
 <script id="build0043-cloud-datacenter-js">
 (()=>{
 'use strict';
@@ -4501,9 +4639,12 @@ window.APSCloudDataCenter={
 })();
 </script>
 
+
+
 <script id="build0046-1-missing-speed-js">
 (()=>{'use strict';const ST={rows:[],filtered:[]};const N=v=>String(v??'').trim().replace(/\s+/g,'').toUpperCase(),NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0},E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function P(o,ks){o=o||{};for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k];return ''}function speedRows(){let a=[],b=[];try{a=(window.APSLargeStore?.getSync('SK_APS_SPEED_MASTER_V1',[])||[])}catch{}try{b=(window.APSLargeStore?.getSync('SK_APS_SPEED_FEEDBACK_V2',[])||[])}catch{}return[...a,...b]}function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}function scan(){const p=pool(),sp=speedRows(),exact=new Map(),byPart=new Map();sp.forEach(x=>{const part=N(P(x,['part','part_no','料號'])),m=N(P(x,['machine','machine_code','機台'])),pr=N(P(x,['process','process_site','製程'])),k=[part,m,pr].join('|');if(k.replace(/\|/g,''))exact.set(k,x);if(part){if(!byPart.has(part))byPart.set(part,[]);byPart.get(part).push(x)}});let matched=0;ST.rows=[];p.forEach((x,i)=>{const wo=P(x,['wo','work_order_no','order_no','工單']),part=P(x,['part','part_no','料號']),spec=P(x,['name','product_spec','spec','規格']),machine=P(x,['machine','machine_code','機台']),process=P(x,['process','process_site','製程']),k=[N(part),N(machine),N(process)].join('|'),hit=exact.get(k),same=byPart.get(N(part))||[];if(hit&&((inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='FIXED'&&NUM(P(hit,['total','run','固定運轉時間','加總min']))>0)||(inferAPSMode(P(hit,['process','process_site','製程']),P(hit,['mode','Mode','計算模式']))==='LENGTH'&&NUM(P(hit,['speed','speedMpm','標準速度','運轉速度']))>0)||(NUM(P(hit,['speed','標準速度']))>0))){matched++;return}let reason='',code='',suggest='';if(!part){reason='工單沒有可比對的料號';code='part';suggest='先補齊料號'}else if(hit){reason='已有主檔，但標準產速為 0';code='speed';suggest='補登回數／產速'}else if(same.length){const mm=same.some(y=>N(P(y,['machine','machine_code','機台']))===N(machine));if(!mm){reason='此料號已有產速，但缺少目前機台';code='machine';suggest='參考同料號其他機台'}else{reason='此料號與機台已有資料，但缺少目前製程';code='process';suggest='確認製程後建立'}}else{reason='固定產速主檔找不到此料號';code='part';suggest='建立新產品產速'}ST.rows.push({i,wo,part,spec,machine,process,reason,code,suggest})});render(p.length,matched)}function render(total,matched){const q=N(document.getElementById('missingSpeedSearch')?.value),mf=N(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';const rows=ST.rows.filter(r=>{const h=N([r.wo,r.part,r.spec,r.machine,r.process,r.reason].join(' '));return(!q||h.includes(q))&&(!mf||N(r.machine)===mf)&&(!rf||r.code===rf)});ST.filtered=rows;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};const cov=total?Math.round(matched/total*1000)/10:0;set('msPoolCount',total.toLocaleString('zh-TW'));set('msMatchedCount',matched.toLocaleString('zh-TW'));set('msMissingCount',ST.rows.length.toLocaleString('zh-TW'));set('msCoverage',cov.toFixed(1)+'%');set('missingSpeedResultCount',rows.length+' 筆');const sm=document.getElementById('missingSpeedSummary');if(sm)sm.textContent=!total?'尚未建立工單池。請先到 ERP 資料更新頁建立工單池。':!ST.rows?`產速完整率 ${cov.toFixed(1)}%。目前工單池全部都有可用標準產速。`:`發現 ${ST.rows.length} 筆工單缺少完整產速設定；AI 僅整理與提醒，不會自動修改固定主檔。`;const sel=document.getElementById('missingSpeedMachine');if(sel){const cur=sel.value,ms=[...new Set(ST.rows.map(r=>String(r.machine||'').trim()).filter(Boolean))].sort();sel.innerHTML='<option value="">全部機台</option>'+ms.map(m=>`<option value="${E(m)}">${E(m)}</option>`).join('');sel.value=cur}const body=document.getElementById('missingSpeedBody');if(!body)return;if(!rows.length){body.innerHTML=`<tr><td colspan="8" class="missing-speed-empty">${total&&!ST.rows.length?'目前沒有缺產速工單':'沒有符合篩選條件的資料'}</td></tr>`;return}body.innerHTML=rows.map(r=>`<tr><td><span class="tag yellow">待確認</span></td><td>${E(r.wo||'-')}</td><td>${E(r.part||'-')}</td><td class="spec">${E(r.spec||'-')}</td><td>${E(r.machine||'-')}</td><td>${E(r.process||'-')}</td><td><div class="missing-speed-reason">${E(r.reason)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms="feedback" data-i="${r.i}">${E(r.suggest)}</button><button class="btn ghost" data-ms="copy" data-i="${r.i}">複製資料</button></div></td></tr>`).join('')}function go(r){[...document.querySelectorAll('[data-page]')].find(x=>String(x.dataset.page||'').toLowerCase().includes('speed')||String(x.textContent||'').includes('產速回饋'))?.click();[['speedFbPart',r.part],['speedFeedbackPart',r.part],['speedFbMachine',r.machine],['speedFeedbackMachine',r.machine],['speedFbProcess',r.process],['speedFeedbackProcess',r.process],['speedFbName',r.spec],['speedFeedbackName',r.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});window.log?.(`AI 缺產速：已帶入 ${r.part||r.wo||'待確認工單'} 到產速回饋中心`)}function install(){const ref=document.getElementById('missingSpeedRefresh');if(ref&&!ref.dataset.h){ref.dataset.h='1';ref.addEventListener('click',scan)}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.dataset.h){e.dataset.h='1';e.addEventListener(id==='missingSpeedSearch'?'input':'change',()=>render(pool().length,Math.max(0,pool().length-ST.rows.length)))}});const goBtn=document.getElementById('missingSpeedGoFeedback');if(goBtn&&!goBtn.dataset.h){goBtn.dataset.h='1';goBtn.addEventListener('click',()=>{const r=ST.filtered[0]||ST.rows[0];if(r)go(r)})}const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.h){body.dataset.h='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms]');if(!b)return;const r=ST.rows.find(x=>String(x.i)===String(b.dataset.i));if(!r)return;if(b.dataset.ms==='feedback')go(r);else{const v=`工單：${r.wo}\n料號：${r.part}\n規格：${r.spec}\n機台：${r.machine}\n製程：${r.process}\n缺漏：${r.reason}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製資料',1200)}catch{window.prompt('請複製以下資料',v)}}})}const bb=document.getElementById('buildPool');if(bb&&!bb.dataset.ms){bb.dataset.ms='1';bb.addEventListener('click',()=>setTimeout(scan,500))}document.querySelectorAll('[data-page="missingSpeed"]').forEach(t=>{if(!t.dataset.ms){t.dataset.ms='1';t.addEventListener('click',()=>setTimeout(scan,100))}});setTimeout(scan,1300)}document.addEventListener('DOMContentLoaded',install);setTimeout(install,1800);window.APSMissingSpeed={scan,rows:()=>ST.rows.slice(),state:ST};})();
 </script>
+
 <script id="build0042-security-js">
 (()=>{
 'use strict';
@@ -4523,6 +4664,7 @@ window.SEAL_KING_SECURITY={
 };
 })();
 </script>
+
 <script id="build0048-v825-marker">
 (()=>{
   window.APS_V825={version:"V82.5",build:"0048",modes:["FIXED","LENGTH","AREA","ROLL","ROUND"],inferMode:inferAPSMode};
@@ -4530,6 +4672,8 @@ window.SEAL_KING_SECURITY={
 })();
 </script>
 
+
+<!-- Build 0050｜APS 工單池直接改讀 DataHub_WorkOrder -->
 <script id="build0050-aps-datahub-workorder">
 (function(){
   "use strict";
@@ -4792,6 +4936,8 @@ window.SEAL_KING_SECURITY={
 })();
 </script>
 
+
+<!-- Build 0051｜APS Speed Engine：DataHub 工單自動推導製程、機台與產速 -->
 <script id="build0051-aps-speed-engine">
 (function(){
   "use strict";
@@ -5248,6 +5394,7 @@ window.SEAL_KING_SECURITY={
 })();
 </script>
 
+
 <script id="build0052-label">
 document.addEventListener("DOMContentLoaded",function(){
   document.title="SEAL KING Smart APS｜Build 0052 DataHub Fast";
@@ -5259,6 +5406,8 @@ document.addEventListener("DOMContentLoaded",function(){
 });
 </script>
 
+
+<!-- Build 0053｜缺產速導引與一鍵帶入回饋 -->
 <script id="build0053-missing-speed-action">
 (function(){
   "use strict";
@@ -5491,11 +5640,14 @@ document.addEventListener("DOMContentLoaded",function(){
   };
 })();
 </script>
+
 <style id="build0053-style">
 #poolTable .btn.red{white-space:nowrap}
 #poolTable .hint{font-size:11px;color:#fca5a5}
 </style>
 
+
+<!-- Build 0071｜核心缺產速判斷修正 -->
 <script id="build0054-core-missing-speed">
 (function(){
   "use strict";
@@ -5538,6 +5690,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <style id="build0055-machine-rules-style">
 #machineRules .center-form .span2{grid-column:span 2}
 #machineRules textarea{width:100%;background:#0a151d;color:#f5f7fa;border:1px solid #344954;border-radius:8px;padding:10px;font-family:inherit}
@@ -5548,6 +5701,7 @@ document.addEventListener("DOMContentLoaded",function(){
 @media(max-width:1100px){#machineRules .col5,#machineRules .col7{grid-column:span 12}}
 @media(max-width:650px){#machineRules .center-form{grid-template-columns:1fr!important}#machineRules .center-form .span2{grid-column:span 1}}
 </style>
+
 <script id="build0055-machine-sharing-rules">
 (function(){
   "use strict";
@@ -5909,12 +6063,14 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <style id="build0056-cloud-style">
 .cloud-state{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid #31527d;font-size:12px}
 .cloud-state.ok{color:#86efac;background:#0b2a21}
 .cloud-state.warn{color:#fde68a;background:#30250b}
 .cloud-state.bad{color:#fecaca;background:#3b1115}
 </style>
+
 <script id="build0056-machine-rules-cloud">
 (function(){
   "use strict";
@@ -6118,6 +6274,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <style id="build0057-style">
 .cloud-datahub-state{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid #31527d;font-size:12px;margin-left:8px}
 .cloud-datahub-state.ok{background:#0b2a21;color:#86efac}
@@ -6127,6 +6284,7 @@ document.addEventListener("DOMContentLoaded",function(){
 #aiLoadOptimizer .opt-fill{height:100%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444)}
 #aiLoadOptimizer .opt-reason{font-size:12px;color:#9fc1d8;line-height:1.5}
 </style>
+
 <script id="build0057-enterprise-ai-aps">
 (function(){
   "use strict";
@@ -6564,6 +6722,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <script>
 /* V83.1 產速狀態、課長確認與異常篩選 */
 (()=>{
@@ -6596,6 +6755,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <script>
 (function(){
   const oldJsonp=window.jsonp;
@@ -6621,6 +6781,7 @@ document.addEventListener("DOMContentLoaded",function(){
   function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 })();
 </script>
+
 <style id="v84-machine-learning-style">
 #machineLearningCard .ml-filter.active{background:linear-gradient(135deg,#d71920,#8b0f15);color:#fff;border-color:#d71920}
 .ml-confidence{display:inline-flex;align-items:center;gap:6px}.ml-confidence b{min-width:44px}
@@ -6632,7 +6793,8 @@ document.addEventListener("DOMContentLoaded",function(){
 
 .ml-decision{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.ml-decision.accepted{background:#123a2b;color:#79e2af}.ml-decision.ignored{background:#3b2327;color:#ff9ba3}.ml-decision.auto{background:#17324e;color:#9bceff}
 .ml-auto-box{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#0b141d;border:1px solid #303d4b;border-radius:10px;padding:11px 13px;margin:12px 0}.ml-auto-box input[type=number]{width:90px;background:#071526;color:#fff;border:1px solid #354555;border-radius:8px;padding:8px}.ml-auto-box label{margin:0;color:#dbe5ec}
-</style><script id="v84-machine-learning-script">
+</style>
+<script id="v84-machine-learning-script">
 (function(){
   const ML={rows:[],decisions:{},filter:"all",loading:false,settings:{enabled:false,threshold:90}};
   const API=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
@@ -6694,10 +6856,12 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <style>
 .v845-status{position:fixed;right:16px;bottom:48px;z-index:9996;background:#0b1820ee;border:1px solid #34515e;border-radius:10px;padding:10px 12px;color:#dce9ee;font-size:12px;box-shadow:0 8px 24px #0008;display:none}.v845-status.show{display:block}.v845-status b{color:#75e5b3}
 </style>
-<div id="v845Status" class="v845-status"></div><script>
+<div id="v845Status" class="v845-status"></div>
+<script>
 /* V84.5｜正式排程、換線最佳化與 APS_Schedule 雲端同步 */
 (()=>{
   const status=(html,ms=3200)=>{const el=document.getElementById('v845Status');if(!el)return;el.innerHTML=html;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),ms)};
@@ -6717,6 +6881,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <style id="apsV846ProgressStyle">
 #apsV846Progress{position:fixed;inset:0;z-index:99999;background:rgba(2,8,13,.76);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
 #apsV846Progress.show{display:flex}
@@ -6734,6 +6899,7 @@ document.addEventListener("DOMContentLoaded",function(){
     <div class="aps-v846-foot"><span id="apsV846Count">0%</span><span>請勿關閉頁面</span></div>
   </div>
 </div>
+
 
 <script id="v872-canonical-schedule-sync">
 /* Build 0069｜V87.2 Canonical Scheduler Sync */
@@ -6760,6 +6926,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
 <script id="build0072-stable-datahub-guard">
 (()=>{
   "use strict";
@@ -6775,6 +6942,7 @@ document.addEventListener("DOMContentLoaded",function(){
   console.debug("[APS module] DataHub single-request cache ready");
 })();
 </script>
+
 
 <script id="build0073-safe-ai-init">
 (()=>{
@@ -6793,6 +6961,8 @@ document.addEventListener("DOMContentLoaded",function(){
   console.debug("[APS module] Machine Learning safe initializer ready");
 })();
 </script>
+
+
 
 <script id="v15-4-urgent-fast-lookup-fix">
 /* V15.4｜急單快速帶入：禁止按「帶入」時重新下載整個 DataHub */
@@ -6886,6 +7056,7 @@ document.addEventListener("DOMContentLoaded",function(){
   setTimeout(install,2200);
 })();
 </script>
+
 <script>
 /* Build 0077｜急單帶入改用 findworkorder 即時 API */
 (function(){
@@ -7000,6 +7171,7 @@ document.addEventListener("DOMContentLoaded",function(){
   setTimeout(install,3000);
 })();
 </script>
+
 
 <script>
 /* Build 0079｜V88.2 AI 機台信心／前三順位推薦整合
@@ -7161,6 +7333,7 @@ document.addEventListener("DOMContentLoaded",function(){
 <!-- =========================================================
 Build 0102.1｜V90.0 AI 多機台決策面板
 用途：直接貼在 aps.html 最底下、
+
 <script id="build0096-1-date-sync-stable">
 (()=>{
   'use strict';
@@ -7308,6 +7481,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
 })();
 </script>
 
+
 <style id="aps-v95-build0100-canonical-style">
 body::after{
   content:"APS V95 Enterprise｜Build 0102.1.1.2.1"!important;
@@ -7317,7 +7491,8 @@ body::after{
   border:1px solid #8c5d20;background:#33270f;color:#ffe4a3;
   border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;
 }
-</style><script id="aps-v95-build0100-canonical">
+</style>
+<script id="aps-v95-build0100-canonical">
 (()=>{
   'use strict';
 
@@ -7386,6 +7561,7 @@ body::after{
 })();
 </script>
 
+
 <style id="aps-v95-build01001-publisher-fix">
 #urgent .urgent-auth-grid{
   grid-template-columns:minmax(210px,.9fr) minmax(220px,1fr) minmax(210px,1fr) minmax(180px,.9fr)!important;
@@ -7430,6 +7606,7 @@ body::after{
   #urgent #urgentPublisherEmp{min-width:0!important}
 }
 </style>
+
 
 <script id="aps-v95-build01001-publisher-fix-js">
 (()=>{
@@ -7483,6 +7660,7 @@ body::after{
   }
 })();
 </script>
+
 
 <style id="aps-v95-build01002-urgent-layout-fix">
 /* Build 0102.1 — 急單表單版面修正 */
@@ -7557,6 +7735,7 @@ body::after{
   #urgent .mode-options{grid-template-columns:1fr!important}
 }
 </style>
+
 
 <script id="aps-v95-build01003-data-restore">
 (()=>{
@@ -7735,6 +7914,7 @@ body::after{
 })();
 </script>
 
+
 <style id="aps-v95-build01004-publisher-visible">
 #urgent #urgentPublisherName:not(:placeholder-shown),
 #urgent #urgentPublisherDept:not(:placeholder-shown),
@@ -7746,6 +7926,7 @@ body::after{
   border-color:#4f7aa3!important;
 }
 </style>
+
 
 <style id="aps-v95-build0101-urgent-module-style">
 #urgent .grid{align-items:start}
@@ -7782,6 +7963,7 @@ body::after{
  #urgent .urgent-pre-grid{grid-template-columns:1fr}
 }
 </style>
+
 
 <script id="aps-v95-build0101-urgent-module">
 (()=>{
@@ -8155,6 +8337,7 @@ body::after{
 })();
 </script>
 
+
 <style id="aps-v95-build01012-date-machine-fix">
 #urgent .urgent-date-input{
   position:relative;
@@ -8188,11 +8371,13 @@ body::after{
 }
 </style>
 
+
 <style id="aps-v95-build01013-validation-fix">
 #urgent #urgentFormMsg{font-weight:800;line-height:1.6}
 #urgent .urgent-field select:invalid,
 #urgent .urgent-field input:invalid{border-color:#ef4444}
 </style>
+
 
 <script id="aps-v95-build01015-required-state-fix">
 (()=>{
@@ -8269,6 +8454,7 @@ body::after{
 })();
 </script>
 
+
 <style id="aps-v95-build01016-final-ui-fix">
 #urgent{
   width:100%!important;
@@ -8325,6 +8511,7 @@ body::after{
   #urgent .urgent-pre-grid{grid-template-columns:1fr!important}
 }
 </style>
+
 
 <script id="aps-v95-build01016-final-controller">
 (()=>{
@@ -8409,6 +8596,7 @@ body::after{
 })();
 </script>
 
+
 <style id="aps-v95-build01017-responsive-fix">
 #urgent .grid{grid-template-columns:repeat(12,minmax(0,1fr))!important}
 #urgent .card{min-width:0!important}
@@ -8427,6 +8615,7 @@ body::after{
   #urgent .date-time-row{grid-template-columns:1fr!important}
 }
 </style>
+
 
 <script id="aps-v95-build01017-final-urgent-fix">
 (()=>{
@@ -8455,6 +8644,7 @@ body::after{
   else bind();
 })();
 </script>
+
 
 <script id="aps-v95-build01018-definitive-controller">
 (()=>{
@@ -8525,6 +8715,7 @@ body::after{
 })();
 </script>
 
+
 <script id="aps-v95-build01019-jsonp-guard">
 window.addEventListener('error',function(e){
   const msg=String(e?.message||'');
@@ -8534,12 +8725,14 @@ window.addEventListener('error',function(e){
 },true);
 </script>
 
+
 <style id="aps-build0102-due-result-style">
 #urgent .impact-card small{display:block;margin-top:6px;color:#a8bbc7;font-size:12px}
 #urgent .impact-cards{grid-template-columns:repeat(5,minmax(130px,1fr))!important}
 @media(max-width:1200px){#urgent .impact-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:650px){#urgent .impact-cards{grid-template-columns:1fr!important}}
 </style>
+
 
 <script id="aps-build01022-late-callback-guard">
 window.addEventListener("error",function(e){
@@ -8549,6 +8742,7 @@ window.addEventListener("error",function(e){
   }
 },true);
 </script>
+
 
 <style id="aps-v1021-scheduler-css">
 #apsV1021Badge{
@@ -8560,7 +8754,8 @@ window.addEventListener("error",function(e){
 #apsV1021Badge b{color:#54e0a0}
 #apsV1021Badge.warn b{color:#ffd166}
 </style>
-<div id="apsV1021Badge">V102.1 排程核心｜<b>載入中</b></div><script id="aps-v1021-scheduler-js">
+<div id="apsV1021Badge">V102.1 排程核心｜<b>載入中</b></div>
+<script id="aps-v1021-scheduler-js">
 (()=>{
 'use strict';
 
@@ -8843,189 +9038,7 @@ if(document.readyState==='loading'){
 
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
-========================================================= --><style id="build0080-v90-style">
-#v90DecisionPanel{
-  margin-top:10px;border:1px solid #334656;border-radius:10px;
-  background:linear-gradient(145deg,#0d171f,#101d25);padding:12px;
-  color:#eaf3f8;font-size:12px;line-height:1.55
-}
-#v90DecisionPanel .v90-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}
-#v90DecisionPanel .v90-title{font-size:14px;font-weight:800;color:#fff}
-#v90DecisionPanel .v90-badge{border:1px solid #3a5566;border-radius:999px;padding:3px 8px;color:#93d9ff}
-#v90DecisionPanel .v90-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#v90DecisionPanel .v90-card{border:1px solid #2c3d49;border-radius:9px;background:#0a131a;padding:9px;cursor:pointer}
-#v90DecisionPanel .v90-card:hover{border-color:#39a7d7;background:#0c1c25}
-#v90DecisionPanel .v90-card.active{border-color:#33d17a;box-shadow:inset 3px 0 #33d17a}
-#v90DecisionPanel .v90-rank{font-size:10px;color:#93a6b2}
-#v90DecisionPanel .v90-machine{font-size:18px;font-weight:900;color:#fff}
-#v90DecisionPanel .v90-score{font-size:12px;color:#55d98b}
-#v90DecisionPanel .v90-reason{margin-top:4px;color:#aebdc7}
-#v90DecisionPanel .v90-foot{margin-top:9px;color:#8fa3af}
-#v90DecisionPanel .v90-warn{color:#f7bd55}
-@media(max-width:900px){#v90DecisionPanel .v90-grid{grid-template-columns:1fr}}
-</style>
-<script id="build0080-v90-ai-decision">
-(function(){
-  "use strict";
-  const BUILD="0080";
-  const API_URL=window.MES_API_URL||
-    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
-  const $=id=>document.getElementById(id);
-  const txt=v=>String(v==null?"":v).trim();
-  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
-
-  function machineCode(v){
-    const s=txt(v).toUpperCase().replace(/[\s\u3000]+/g,"");
-    const p=s.search(/[A-Z]/);
-    if(p<0)return "";
-    const m=s.slice(p+1).match(/\d{2}/);
-    return m?s.charAt(p)+m[0]:"";
-  }
-
-  function jsonp(action,params,timeout){
-    return new Promise((resolve,reject)=>{
-      const cb="v90cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-      const q=new URLSearchParams(Object.assign({},params||{},{action,callback:cb,_:Date.now()}));
-      const s=document.createElement("script");
-      const timer=setTimeout(()=>done(new Error("V90 查詢逾時")),timeout||15000);
-      function done(err,data){
-        clearTimeout(timer);
-        try{delete window[cb]}catch(_){}
-        try{s.remove()}catch(_){}
-        err?reject(err):resolve(data);
-      }
-      window[cb]=data=>done(null,data);
-      s.onerror=()=>done(new Error("V90 API 連線失敗"));
-      s.src=API_URL+"?"+q.toString();
-      document.head.appendChild(s);
-    });
-  }
-
-  function currentMachineLoads(){
-    const loads={};
-    const rows=(window.S&&Array.isArray(window.S.schedule))?window.S.schedule:[];
-    rows.forEach(r=>{
-      const code=machineCode(r.machine||r.machine_code);
-      if(!code)return;
-      loads[code]=(loads[code]||0)+num(r.minutes||((new Date(r.end)-new Date(r.start))/60000));
-    });
-    return loads;
-  }
-
-  function decisionScore(r,loads){
-    const code=machineCode(r.machine_code||r.machine_raw);
-    const confidence=num(r.confidence);
-    const keyin=num(r.keyin_count), target=num(r.target_count), erp=num(r.erp_count), uses=num(r.use_count);
-    const loadMinutes=num(loads[code]);
-    const history=Math.min(20,keyin*2.5+target*1.2+erp*.5+Math.log10(uses+1)*4);
-    const loadPenalty=Math.min(25,loadMinutes/240);
-    const score=Math.max(0,Math.min(100,confidence*.72+history-loadPenalty));
-    return Object.assign({},r,{machine_code:code,decision_score:Math.round(score),load_minutes:Math.round(loadMinutes)});
-  }
-
-  function reasons(r){
-    const a=[];
-    if(num(r.keyin_count)>0)a.push("Key In "+num(r.keyin_count)+" 次");
-    if(num(r.target_count)>0)a.push("Target "+num(r.target_count)+" 次");
-    if(num(r.erp_count)>0)a.push("ERP "+num(r.erp_count)+" 次");
-    if(num(r.load_minutes)>0)a.push("目前負載 "+num(r.load_minutes)+" 分");
-    else a.push("目前排程負載低");
-    return a.join("｜");
-  }
-
-  function ensurePanel(){
-    let p=$("v90DecisionPanel");
-    if(p)return p;
-    p=document.createElement("div");
-    p.id="v90DecisionPanel";
-    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
-    const msg=$("urgentMsg")||$("urgentLookupMsg");
-    const host=msg&&msg.parentElement?msg.parentElement:($("urgentLookup")?.closest(".card")||document.body);
-    if(msg&&msg.nextSibling)host.insertBefore(p,msg.nextSibling);else host.appendChild(p);
-    return p;
-  }
-
-  function setMachineSelect(code){
-    const sel=$("urgentMachine");
-    if(!sel||!code)return;
-    let opt=[...sel.options].find(o=>machineCode(o.value||o.textContent)===code);
-    if(!opt){
-      opt=document.createElement("option");
-      opt.value=code;opt.textContent=code;
-      sel.appendChild(opt);
-    }
-    sel.value=opt.value;
-    sel.dispatchEvent(new Event("change",{bubbles:true}));
-  }
-
-  function render(rows,meta){
-    const p=ensurePanel();
-    if(!rows.length){
-      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
-      return;
-    }
-    p.innerHTML=
-      '<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">'+
-      (meta.match_type==="work_order"?"工單歷史":"相似料號／製程")+'</div></div>'+
-      '<div class="v90-grid">'+rows.slice(0,3).map((r,i)=>
-        '<div class="v90-card '+(i===0?'active':'')+'" data-machine="'+r.machine_code+'">'+
-        '<div class="v90-rank">第 '+(i+1)+' 順位</div>'+
-        '<div class="v90-machine">'+r.machine_code+'</div>'+
-        '<div class="v90-score">決策分數 '+r.decision_score+'｜資料信心 '+num(r.confidence)+'%</div>'+
-        '<div class="v90-reason">'+reasons(r)+'</div></div>'
-      ).join("")+'</div>'+
-      '<div class="v90-foot">點選卡片可改為指定機台。決策分數已納入歷史來源與目前 APS 排程負載；不會自動拆單或直接改動正式排程。</div>';
-    p.querySelectorAll(".v90-card").forEach(c=>c.onclick=()=>{
-      p.querySelectorAll(".v90-card").forEach(x=>x.classList.remove("active"));
-      c.classList.add("active");
-      setMachineSelect(c.dataset.machine);
-    });
-  }
-
-  async function analyze(){
-    const wo=txt($("urgentWo")?.value||$("urgentLookup")?.value);
-    if(!wo)return;
-    const part=txt($("urgentPart")?.value);
-    const process=txt($("urgentProcess")?.value);
-    const spec=txt($("urgentSpec")?.value);
-    const p=ensurePanel();
-    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
-    try{
-      let res=await jsonp("machineknowledgelookup",{
-        work_order_no:wo,part_no:part,process:process,product_spec:spec,
-        allow_part:"1",allow_spec:"1"
-      },16000);
-      const base=Array.isArray(res?.recommendations)?res.recommendations:[];
-      const loads=currentMachineLoads();
-      const ranked=base.map(r=>decisionScore(r,loads))
-        .filter(r=>r.machine_code)
-        .sort((a,b)=>b.decision_score-a.decision_score||num(b.confidence)-num(a.confidence));
-      render(ranked,res||{});
-      window.V90MachineDecision={work_order_no:wo,recommendations:ranked,raw:res};
-    }catch(e){
-      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
-    }
-  }
-
-  function install(){
-    ensurePanel();
-    const btn=$("loadUrgentWo");
-    if(btn&&!btn.dataset.v90){
-      btn.dataset.v90="1";
-      btn.addEventListener("click",()=>setTimeout(analyze,500));
-    }
-    const input=$("urgentLookup");
-    if(input&&!input.dataset.v90){
-      input.dataset.v90="1";
-      input.addEventListener("keydown",e=>{if(e.key==="Enter")setTimeout(analyze,500)});
-    }
-    window.runV90MachineDecision=analyze;
-  }
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,300));
-  setTimeout(install,1500);
-  setTimeout(install,3500);
-})();
-</script>
+========================================================= -->
 <style id="build0080-v90-style">
 #v90DecisionPanel{
   margin-top:10px;border:1px solid #334656;border-radius:10px;
@@ -9047,6 +9060,196 @@ if(document.readyState==='loading'){
 #v90DecisionPanel .v90-warn{color:#f7bd55}
 @media(max-width:900px){#v90DecisionPanel .v90-grid{grid-template-columns:1fr}}
 </style>
+
+<script id="build0080-v90-ai-decision">
+(function(){
+  "use strict";
+  const BUILD="0080";
+  const API_URL=window.MES_API_URL||
+    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  const $=id=>document.getElementById(id);
+  const txt=v=>String(v==null?"":v).trim();
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+
+  function machineCode(v){
+    const s=txt(v).toUpperCase().replace(/[\s\u3000]+/g,"");
+    const p=s.search(/[A-Z]/);
+    if(p<0)return "";
+    const m=s.slice(p+1).match(/\d{2}/);
+    return m?s.charAt(p)+m[0]:"";
+  }
+
+  function jsonp(action,params,timeout){
+    return new Promise((resolve,reject)=>{
+      const cb="v90cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const q=new URLSearchParams(Object.assign({},params||{},{action,callback:cb,_:Date.now()}));
+      const s=document.createElement("script");
+      const timer=setTimeout(()=>done(new Error("V90 查詢逾時")),timeout||15000);
+      function done(err,data){
+        clearTimeout(timer);
+        try{delete window[cb]}catch(_){}
+        try{s.remove()}catch(_){}
+        err?reject(err):resolve(data);
+      }
+      window[cb]=data=>done(null,data);
+      s.onerror=()=>done(new Error("V90 API 連線失敗"));
+      s.src=API_URL+"?"+q.toString();
+      document.head.appendChild(s);
+    });
+  }
+
+  function currentMachineLoads(){
+    const loads={};
+    const rows=(window.S&&Array.isArray(window.S.schedule))?window.S.schedule:[];
+    rows.forEach(r=>{
+      const code=machineCode(r.machine||r.machine_code);
+      if(!code)return;
+      loads[code]=(loads[code]||0)+num(r.minutes||((new Date(r.end)-new Date(r.start))/60000));
+    });
+    return loads;
+  }
+
+  function decisionScore(r,loads){
+    const code=machineCode(r.machine_code||r.machine_raw);
+    const confidence=num(r.confidence);
+    const keyin=num(r.keyin_count), target=num(r.target_count), erp=num(r.erp_count), uses=num(r.use_count);
+    const loadMinutes=num(loads[code]);
+    const history=Math.min(20,keyin*2.5+target*1.2+erp*.5+Math.log10(uses+1)*4);
+    const loadPenalty=Math.min(25,loadMinutes/240);
+    const score=Math.max(0,Math.min(100,confidence*.72+history-loadPenalty));
+    return Object.assign({},r,{machine_code:code,decision_score:Math.round(score),load_minutes:Math.round(loadMinutes)});
+  }
+
+  function reasons(r){
+    const a=[];
+    if(num(r.keyin_count)>0)a.push("Key In "+num(r.keyin_count)+" 次");
+    if(num(r.target_count)>0)a.push("Target "+num(r.target_count)+" 次");
+    if(num(r.erp_count)>0)a.push("ERP "+num(r.erp_count)+" 次");
+    if(num(r.load_minutes)>0)a.push("目前負載 "+num(r.load_minutes)+" 分");
+    else a.push("目前排程負載低");
+    return a.join("｜");
+  }
+
+  function ensurePanel(){
+    let p=$("v90DecisionPanel");
+    if(p)return p;
+    p=document.createElement("div");
+    p.id="v90DecisionPanel";
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-foot">輸入工單並按「帶入」後，系統會列出前三順位與推薦理由。</div>';
+    const msg=$("urgentMsg")||$("urgentLookupMsg");
+    const host=msg&&msg.parentElement?msg.parentElement:($("urgentLookup")?.closest(".card")||document.body);
+    if(msg&&msg.nextSibling)host.insertBefore(p,msg.nextSibling);else host.appendChild(p);
+    return p;
+  }
+
+  function setMachineSelect(code){
+    const sel=$("urgentMachine");
+    if(!sel||!code)return;
+    let opt=[...sel.options].find(o=>machineCode(o.value||o.textContent)===code);
+    if(!opt){
+      opt=document.createElement("option");
+      opt.value=code;opt.textContent=code;
+      sel.appendChild(opt);
+    }
+    sel.value=opt.value;
+    sel.dispatchEvent(new Event("change",{bubbles:true}));
+  }
+
+  function render(rows,meta){
+    const p=ensurePanel();
+    if(!rows.length){
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">Build '+BUILD+'</div></div><div class="v90-warn">目前只有固定機台資料，尚無第二、第三順位歷史紀錄。</div>';
+      return;
+    }
+    p.innerHTML=
+      '<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">'+
+      (meta.match_type==="work_order"?"工單歷史":"相似料號／製程")+'</div></div>'+
+      '<div class="v90-grid">'+rows.slice(0,3).map((r,i)=>
+        '<div class="v90-card '+(i===0?'active':'')+'" data-machine="'+r.machine_code+'">'+
+        '<div class="v90-rank">第 '+(i+1)+' 順位</div>'+
+        '<div class="v90-machine">'+r.machine_code+'</div>'+
+        '<div class="v90-score">決策分數 '+r.decision_score+'｜資料信心 '+num(r.confidence)+'%</div>'+
+        '<div class="v90-reason">'+reasons(r)+'</div></div>'
+      ).join("")+'</div>'+
+      '<div class="v90-foot">點選卡片可改為指定機台。決策分數已納入歷史來源與目前 APS 排程負載；不會自動拆單或直接改動正式排程。</div>';
+    p.querySelectorAll(".v90-card").forEach(c=>c.onclick=()=>{
+      p.querySelectorAll(".v90-card").forEach(x=>x.classList.remove("active"));
+      c.classList.add("active");
+      setMachineSelect(c.dataset.machine);
+    });
+  }
+
+  async function analyze(){
+    const wo=txt($("urgentWo")?.value||$("urgentLookup")?.value);
+    if(!wo)return;
+    const part=txt($("urgentPart")?.value);
+    const process=txt($("urgentProcess")?.value);
+    const spec=txt($("urgentSpec")?.value);
+    const p=ensurePanel();
+    p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">分析中</div></div><div class="v90-foot">正在比較 Machine Knowledge 與目前排程負載…</div>';
+    try{
+      let res=await jsonp("machineknowledgelookup",{
+        work_order_no:wo,part_no:part,process:process,product_spec:spec,
+        allow_part:"1",allow_spec:"1"
+      },16000);
+      const base=Array.isArray(res?.recommendations)?res.recommendations:[];
+      const loads=currentMachineLoads();
+      const ranked=base.map(r=>decisionScore(r,loads))
+        .filter(r=>r.machine_code)
+        .sort((a,b)=>b.decision_score-a.decision_score||num(b.confidence)-num(a.confidence));
+      render(ranked,res||{});
+      window.V90MachineDecision={work_order_no:wo,recommendations:ranked,raw:res};
+    }catch(e){
+      p.innerHTML='<div class="v90-head"><div class="v90-title">V95 AI 急單決策</div><div class="v90-badge">查詢失敗</div></div><div class="v90-warn">'+txt(e.message||e)+'</div>';
+    }
+  }
+
+  function install(){
+    ensurePanel();
+    const btn=$("loadUrgentWo");
+    if(btn&&!btn.dataset.v90){
+      btn.dataset.v90="1";
+      btn.addEventListener("click",()=>setTimeout(analyze,500));
+    }
+    const input=$("urgentLookup");
+    if(input&&!input.dataset.v90){
+      input.dataset.v90="1";
+      input.addEventListener("keydown",e=>{if(e.key==="Enter")setTimeout(analyze,500)});
+    }
+    window.runV90MachineDecision=analyze;
+  }
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(install,300));
+  setTimeout(install,1500);
+  setTimeout(install,3500);
+})();
+</script>
+<!-- =========================================================
+Build 0102.1｜V90.0 AI 多機台決策面板
+用途：直接貼在 aps.html 最底下、</body> 前或 </html> 前。
+不覆蓋既有 Build 0079；以附加模組方式運作。
+========================================================= -->
+<style id="build0080-v90-style">
+#v90DecisionPanel{
+  margin-top:10px;border:1px solid #334656;border-radius:10px;
+  background:linear-gradient(145deg,#0d171f,#101d25);padding:12px;
+  color:#eaf3f8;font-size:12px;line-height:1.55
+}
+#v90DecisionPanel .v90-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}
+#v90DecisionPanel .v90-title{font-size:14px;font-weight:800;color:#fff}
+#v90DecisionPanel .v90-badge{border:1px solid #3a5566;border-radius:999px;padding:3px 8px;color:#93d9ff}
+#v90DecisionPanel .v90-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#v90DecisionPanel .v90-card{border:1px solid #2c3d49;border-radius:9px;background:#0a131a;padding:9px;cursor:pointer}
+#v90DecisionPanel .v90-card:hover{border-color:#39a7d7;background:#0c1c25}
+#v90DecisionPanel .v90-card.active{border-color:#33d17a;box-shadow:inset 3px 0 #33d17a}
+#v90DecisionPanel .v90-rank{font-size:10px;color:#93a6b2}
+#v90DecisionPanel .v90-machine{font-size:18px;font-weight:900;color:#fff}
+#v90DecisionPanel .v90-score{font-size:12px;color:#55d98b}
+#v90DecisionPanel .v90-reason{margin-top:4px;color:#aebdc7}
+#v90DecisionPanel .v90-foot{margin-top:9px;color:#8fa3af}
+#v90DecisionPanel .v90-warn{color:#f7bd55}
+@media(max-width:900px){#v90DecisionPanel .v90-grid{grid-template-columns:1fr}}
+</style>
+
 <script id="build0080-v90-ai-decision">
 (function(){
   "use strict";
@@ -9210,10 +9413,13 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
+<!-- Build 0081｜資料串接索引＋載入／搜尋效能穩定化 -->
 <style id="build0081-performance-style">
 #poolCount[data-limited="1"]{color:#f7bd55}
 .aps-perf-note{font-size:11px;color:#8fa3af;margin-left:8px}
-</style><script id="build0081-data-performance-core">
+</style>
+<script id="build0081-data-performance-core">
 (function(){
   "use strict";
   const BUILD="0081";
@@ -9334,6 +9540,7 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
 <script id="build0082-storage-diagnostics">
 (()=>{
   let ran=false;
@@ -9345,6 +9552,7 @@ if(document.readyState==='loading'){
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',run,{once:true}):run();
 })();
 </script>
+
 
 <script id="build0085-v92-core-phase1">
 (()=>{
@@ -9468,7 +9676,8 @@ if(document.readyState==='loading'){
   }
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
 })();
-</script><script id="build0086-v92-shared-lookup-phase2">
+</script>
+<script id="build0086-v92-shared-lookup-phase2">
 (()=>{
   'use strict';
   if(window.__APS_BUILD_0086_INSTALLED__) return;
@@ -9641,6 +9850,7 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
 <script id="build0087-speed-auto-approve-hotfix">
 (()=>{
   'use strict';
@@ -9664,6 +9874,7 @@ if(document.readyState==='loading'){
   console.info('APS Build '+BUILD+'｜產速修改後自動確認與篩選移除 ready');
 })();
 </script>
+
 
 <script id="build0096-kpi-optimizer">
 (()=>{
@@ -9806,6 +10017,8 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
+
 <style id="build00962-validation-style">
 #apsValidationPage .validation-hero{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:stretch}
 #apsValidationPage .health-ring{min-height:190px;display:grid;place-items:center;text-align:center;background:radial-gradient(circle,#183027 0,#0b161b 68%);border:1px solid #315044;border-radius:12px}
@@ -9822,7 +10035,8 @@ if(document.readyState==='loading'){
 #apsValidationPage pre{white-space:pre-wrap;background:#060d11;border:1px solid #263740;border-radius:9px;padding:12px;color:#bcd2dc;max-height:330px;overflow:auto}
 @media(max-width:1100px){#apsValidationPage .validation-grid{grid-template-columns:repeat(2,1fr)}#apsValidationPage .validation-sections{grid-template-columns:1fr}}
 @media(max-width:700px){#apsValidationPage .validation-hero{grid-template-columns:1fr}#apsValidationPage .validation-grid{grid-template-columns:1fr}}
-</style><script id="build00962-validation-ai-sandbox">
+</style>
+<script id="build00962-validation-ai-sandbox">
 (()=>{
 'use strict';
 if(window.__APS_BUILD_00962_INSTALLED__)return;window.__APS_BUILD_00962_INSTALLED__=true;
@@ -9901,6 +10115,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=
 })();
 </script>
 
+
 <style id="aps-build0096-3-missing-speed-accurate-css">
 #missingSpeed .missing-speed-kpis{grid-template-columns:repeat(4,minmax(170px,1fr))}
 #missingSpeed .missing-speed-kpi small{display:block;color:#738792;font-size:11px;margin-top:5px;line-height:1.45}
@@ -9910,7 +10125,8 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=
 #missingSpeed .ms-invalid-note{color:#8c9aa3}
 @media(max-width:900px){#missingSpeed .missing-speed-kpis{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){#missingSpeed .missing-speed-kpis{grid-template-columns:1fr}}
-</style><script id="aps-build0096-3-missing-speed-accurate-js">
+</style>
+<script id="aps-build0096-3-missing-speed-accurate-js">
 (()=>{
 'use strict';
 const state={groups:[],filtered:[],stats:{}};
@@ -9965,6 +10181,7 @@ function install(){updateLabels();const refresh=document.getElementById('missing
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
+
 
 <script id="speed-health-accurate-patch-v1">
 /* 產速健康統計修正：缺產速以「唯一料號＋機台」計算；工單覆蓋率仍以有效未結案工單計算。 */
@@ -10045,6 +10262,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+
 <style id="build0103-ai-speed-css">
 #speedFeedback .speed-center-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
 #speedFeedback .speed-center-tabs button{border:1px solid #334a59;background:#101b24;color:#b8c5cf;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
@@ -10058,7 +10277,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .speed-sync-ok{display:inline-flex;align-items:center;gap:6px;color:#75e6b7;font-size:12px;margin-left:8px}
 @media(max-width:850px){#speedAiSuggestionCard .ai-speed-summary{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){#speedAiSuggestionCard .ai-speed-summary{grid-template-columns:1fr}}
-</style><script id="build0103-ai-speed-center">
+</style>
+<script id="build0103-ai-speed-center">
 /* V95.1 Build 0103｜AI 產速中心：安全增量補丁，不改動 ERP、工單池與既有排程核心。 */
 (()=>{
 'use strict';
