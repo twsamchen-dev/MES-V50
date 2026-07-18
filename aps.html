@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<!-- Build 0103.2A Startup Trace｜診斷增量：不改既有資料、排程或 API 邏輯 -->
+<!-- Build 0103.2B DataHub Trace｜診斷增量：只追蹤 DataHub，不改既有資料、排程或 API 邏輯 -->
 <style id="build01032-debug-style">
 #apsDebug01032{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:390px;max-width:calc(100vw - 24px);background:#071018f2;border:1px solid #365063;border-radius:10px;box-shadow:0 12px 40px #000b;color:#dceaf2;font:12px/1.5 Consolas,"Microsoft JhengHei",monospace;overflow:hidden}
 #apsDebug01032 .dbg-head{display:flex;align-items:center;gap:7px;padding:8px 10px;background:#101d27;border-bottom:1px solid #304655;cursor:move}
@@ -148,7 +148,7 @@ window.APS_DEBUG_REPORT_01032=report;window.APS_DEBUG_COPY_01032=copyReport;
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.2A Startup Trace</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.2B DataHub Trace</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -6395,6 +6395,38 @@ document.addEventListener("DOMContentLoaded",function(){
   const MAX_PAGES = 120;
   const MAX_ROWS = 50000;
 
+  // Build 0103.2B｜DataHub 專用耗時追蹤。只記錄，不改變回傳值與控制流程。
+  const DH_TRACE_BUILD = "0103.2B";
+  function dhNow(){return performance.now()}
+  function dhMem(){
+    try{return performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+" MB":"n/a"}catch(_){return "n/a"}
+  }
+  function dhTrace(level, step, data){
+    const payload=Object.assign({build:DH_TRACE_BUILD,memory:dhMem()},data||{});
+    try{console[level==="err"?"error":level==="warn"?"warn":"log"]("[DATAHUB TRACE] "+step,payload)}catch(_){}
+    try{
+      const D=window.__APS_DEBUG_01032__;
+      if(D){
+        const row={at:new Date().toISOString(),ms:Math.round(performance.now()-D.started),level:level||"info",msg:"DATAHUB｜"+step,data:JSON.stringify(payload)};
+        D.events.push(row);
+        if(D.events.length>1000)D.events.shift();
+        if(D.body){
+          const el=document.createElement("div");
+          el.className="dbg-line dbg-"+(level||"info");
+          el.textContent=String(row.ms).padStart(6," ")+"ms ["+(level||"info").toUpperCase()+"] DATAHUB｜"+step+" | "+row.data;
+          D.body.appendChild(el);
+          while(D.body.children.length>220)D.body.firstChild.remove();
+          D.body.scrollTop=D.body.scrollHeight;
+        }
+      }
+    }catch(_){}
+  }
+  function dhDone(step, started, data){
+    const elapsedMs=Math.round(dhNow()-started);
+    dhTrace(elapsedMs>=2000?"err":elapsedMs>=500?"warn":"ok",step+" END",Object.assign({elapsedMs},data||{}));
+    return elapsedMs;
+  }
+
   function jsonp(action, params={}, timeout=90000){
     return new Promise((resolve,reject)=>{
       const cb="DH57_"+Date.now()+"_"+Math.floor(Math.random()*999999);
@@ -6435,9 +6467,15 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   async function fetchPage(page, attempt=1){
+    const started=dhNow();
+    dhTrace("info","PAGE "+page+" DOWNLOAD START",{page,attempt,pageSize:PAGE_SIZE});
     try{
-      return await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},90000);
+      const res=await jsonp("datahubworkorders",{page,pageSize:PAGE_SIZE},90000);
+      const rows=Array.isArray(res?.rows)?res.rows:Array.isArray(res?.data)?res.data:Array.isArray(res?.list)?res.list:[];
+      dhDone("PAGE "+page+" DOWNLOAD",started,{page,attempt,rows:rows.length,total:res?.total??res?.totalCount??res?.count??null,hasMore:res?.hasMore??res?.has_more??null});
+      return res;
     }catch(err){
+      dhTrace("err","PAGE "+page+" DOWNLOAD ERROR",{page,attempt,elapsedMs:Math.round(dhNow()-started),error:String(err?.message||err)});
       if(attempt<3){
         setDataState(`DataHub 第 ${page} 頁重試 ${attempt}/2…`,"warn");
         await new Promise(r=>setTimeout(r,1200*attempt));
@@ -6455,14 +6493,18 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   async function fetchAll(){
+    const wholeStarted=dhNow();
     const all=[];
     const seenPages=new Set();
     const seenRows=new Set();
     let page=1;
     let expectedTotal=null;
+    dhTrace("info","FETCH ALL START",{pageSize:PAGE_SIZE,maxPages:MAX_PAGES,maxRows:MAX_ROWS});
 
     while(page<=MAX_PAGES){
+      const pageStarted=dhNow();
       setDataState(`DataHub 同步中｜第 ${page} 頁｜${all.length} 筆`,"warn");
+      dhTrace("info","PAGE "+page+" CYCLE START",{page,currentRows:all.length});
       const res=await fetchPage(page);
       const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:Array.isArray(res.list)?res.list:[];
       const serverTotal=Number(res.total??res.totalCount??res.count);
@@ -6477,15 +6519,19 @@ document.addEventListener("DOMContentLoaded",function(){
       }
       seenPages.add(pageSig);
 
+      const dedupeStarted=dhNow();
       let added=0;
+      let duplicated=0;
       for(const row of rows){
         const fp=rowFingerprint(row);
-        if(seenRows.has(fp))continue;
+        if(seenRows.has(fp)){duplicated++;continue}
         seenRows.add(fp);
         all.push(row);
         added++;
         if(all.length>MAX_ROWS)throw new Error("DataHub 筆數超過安全上限（50,000 筆）");
       }
+      dhDone("PAGE "+page+" DEDUPE/MERGE",dedupeStarted,{page,inputRows:rows.length,added,duplicated,totalRows:all.length,seenRows:seenRows.size});
+      dhDone("PAGE "+page+" CYCLE",pageStarted,{page,inputRows:rows.length,added,totalRows:all.length});
 
       if(added===0)break;
       if(expectedTotal!==null&&all.length>=expectedTotal)break;
@@ -6499,6 +6545,7 @@ document.addEventListener("DOMContentLoaded",function(){
     }
 
     if(page>MAX_PAGES)throw new Error("DataHub 分頁超過安全上限（120 頁）");
+    dhDone("FETCH ALL",wholeStarted,{pagesRead:seenPages.size,totalRows:all.length,uniqueRows:seenRows.size,expectedTotal});
     return all;
   }
 
@@ -6511,13 +6558,25 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function saveCache(rows){
+    const started=dhNow();
+    dhTrace("info","CACHE SAVE START",{rows:rows.length});
     try{
-      localStorage.setItem(CACHE_KEY,JSON.stringify(rows));
+      const stringifyStarted=dhNow();
+      const json=JSON.stringify(rows);
+      dhDone("CACHE STRINGIFY",stringifyStarted,{rows:rows.length,bytes:json.length});
+      const writeStarted=dhNow();
+      localStorage.setItem(CACHE_KEY,json);
       localStorage.setItem(CACHE_TS_KEY,String(Date.now()));
-    }catch(_){}
+      dhDone("CACHE WRITE",writeStarted,{rows:rows.length,bytes:json.length});
+      dhDone("CACHE SAVE",started,{rows:rows.length,bytes:json.length});
+    }catch(err){
+      dhTrace("err","CACHE SAVE ERROR",{rows:rows.length,elapsedMs:Math.round(dhNow()-started),error:String(err?.message||err)});
+    }
   }
 
   function installRows(rows){
+    const started=dhNow();
+    dhTrace("info","INSTALL ROWS START",{rows:rows.length,hasSpeedEngine:!!window.Build0051APSSpeedEngine?.sync});
     // Use the existing Build0051 engine for speed matching by temporarily providing
     // a direct, cached data source and invoking its normal conversion flow only once.
     window.__BUILD0057_DATAHUB_ROWS__ = rows;
@@ -6525,24 +6584,34 @@ document.addEventListener("DOMContentLoaded",function(){
     if(window.Build0051APSSpeedEngine?.sync){
       // Build0072：Build0051 會直接消耗 __BUILD0057_DATAHUB_ROWS__，
       // 因此這裡只轉換一次，不會再次讀取 DataHub。
-      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).catch(err=>{
+      const engineStarted=dhNow();
+      dhTrace("info","SPEED ENGINE START",{rows:rows.length});
+      Promise.resolve(window.Build0051APSSpeedEngine.sync(false)).then(()=>{
+        dhDone("SPEED ENGINE",engineStarted,{rows:rows.length,pool:Array.isArray(window.S?.pool)?window.S.pool.length:null,schedule:Array.isArray(window.S?.schedule)?window.S.schedule.length:null});
+      }).catch(err=>{
+        dhTrace("err","SPEED ENGINE ERROR",{rows:rows.length,elapsedMs:Math.round(dhNow()-engineStarted),error:String(err?.message||err)});
         console.error("Build0072 speed conversion failed",err);
         window.log?.("快取已載入，但產速轉換失敗："+(err.message||err));
       });
     }
     setDataState(`DataHub 快取 ${rows.length} 筆`,"ok");
+    dhDone("INSTALL ROWS DISPATCH",started,{rows:rows.length});
   }
 
   async function syncDataHub(force=false){
-    if(syncPromise)return syncPromise;
+    if(syncPromise){dhTrace("warn","SYNC REUSED EXISTING PROMISE",{force});return syncPromise}
+    const syncStarted=dhNow();
+    dhTrace("info","SYNC START",{force});
     syncPromise=(async()=>{
+      const cacheStarted=dhNow();
       const cache=getCached();
+      dhDone("CACHE READ",cacheStarted,{rows:cache.rows.length,fresh:cache.fresh,ageMs:cache.ts?Date.now()-cache.ts:null});
       if(cache.rows.length){
         installRows(cache.rows);
         setDataState(cache.fresh?`DataHub 快取 ${cache.rows.length} 筆`:`快取 ${cache.rows.length} 筆，背景更新中`,"ok");
       }
 
-      if(cache.fresh&&!force)return cache.rows;
+      if(cache.fresh&&!force){dhDone("SYNC CACHE HIT",syncStarted,{force,rows:cache.rows.length});return cache.rows}
 
       try{
         setDataState("DataHub 單一同步中…","warn");
@@ -6560,14 +6629,17 @@ document.addEventListener("DOMContentLoaded",function(){
         saveCache(rows);
         installRows(rows);
         setDataState(`DataHub 已同步 ${rows.length} 筆`,"ok");
+        dhDone("SYNC",syncStarted,{force,rows:rows.length,source:"network"});
         return rows;
       }catch(err){
         console.error(err);
         if(cache.rows.length){
           setDataState("DataHub 連線失敗，使用快取","warn");
+          dhDone("SYNC FALLBACK CACHE",syncStarted,{force,rows:cache.rows.length,error:String(err?.message||err)});
           return cache.rows;
         }
         setDataState("DataHub 無法連線","bad");
+        dhTrace("err","SYNC ERROR",{force,elapsedMs:Math.round(dhNow()-syncStarted),error:String(err?.message||err)});
         throw err;
       }
     })().finally(()=>{syncPromise=null});
