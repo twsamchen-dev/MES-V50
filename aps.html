@@ -1145,9 +1145,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         <div class="sub">彙整 Target 與 Key In 實際輸入，依同料號35%、同規格30%、同寬度20%、同製程15%計算推薦；每筆可展開查看原因，不會覆蓋課長確認的正式規則。</div>
       </div>
       <div class="actions">
-        <button class="btn ghost ml-filter active" data-ml-filter="all">全部</button>
+        <button class="btn ghost ml-filter active" data-ml-filter="all">待處理全部</button>
         <button class="btn ghost ml-filter" data-ml-filter="high">高信心</button>
         <button class="btn ghost ml-filter" data-ml-filter="pending">待累積</button>
+        <button class="btn ghost ml-filter" data-ml-filter="accepted">已建立規則</button>
+        <button class="btn ghost ml-filter" data-ml-filter="ignored">已忽略</button>
         <button class="btn green" id="mlRefreshCloud">更新雲端學習表</button><button class="btn" id="mlReload">重新讀取學習資料</button>
       </div>
     </div>
@@ -6701,9 +6703,14 @@ document.addEventListener("DOMContentLoaded",function(){
   function ensureAutoBox(){const card=$("machineLearningCard");if(!card||$("mlAutoBox"))return;const box=document.createElement("div");box.id="mlAutoBox";box.className="ml-auto-box";box.innerHTML='<label><input id="mlAutoEnabled" type="checkbox"> 高信心建議自動建立正式規則</label><label>門檻 <input id="mlAutoThreshold" type="number" min="50" max="100" value="90"> %</label><button class="btn ghost" id="mlSaveAuto">儲存設定</button><button class="btn yellow" id="mlAutoApplyNow">立即套用符合條件項目</button><span id="mlAutoMsg" class="hint"></span>';const k=card.querySelector('.center-kpis');card.insertBefore(box,k||card.firstChild);$("mlSaveAuto").onclick=saveAutoSettings;$("mlAutoApplyNow").onclick=autoApplyNow;}
   function render(){
     const box=$("mlTable");if(!box)return;let rows=ML.rows.slice();
-    if(ML.filter==="high")rows=rows.filter(r=>r.status==="高信心建議");
-    if(ML.filter==="pending")rows=rows.filter(r=>r.status==="待累積");
-    if(!rows.length){box.className="empty";box.textContent="目前沒有符合條件的機台學習資料";return;}
+    const decisionOf=r=>String(ML.decisions[r.learning_key]?.decision||"");
+    // V102.2：已建立與已忽略項目不再混在待處理清單；可由專屬分頁查閱。
+    if(ML.filter==="all")rows=rows.filter(r=>!["accepted","auto_applied","ignored"].includes(decisionOf(r)));
+    if(ML.filter==="high")rows=rows.filter(r=>r.status==="高信心建議"&&!["accepted","auto_applied","ignored"].includes(decisionOf(r)));
+    if(ML.filter==="pending")rows=rows.filter(r=>r.status==="待累積"&&!["accepted","auto_applied","ignored"].includes(decisionOf(r)));
+    if(ML.filter==="accepted")rows=rows.filter(r=>["accepted","auto_applied"].includes(decisionOf(r)));
+    if(ML.filter==="ignored")rows=rows.filter(r=>decisionOf(r)==="ignored");
+    if(!rows.length){box.className="empty";box.textContent=ML.filter==="accepted"?"目前尚無已建立規則":ML.filter==="ignored"?"目前沒有已忽略項目":"目前沒有待處理的機台學習資料";return;}
     box.className="tablewrap";
     box.innerHTML='<table><thead><tr><th>料號／規格</th><th>製程</th><th>主機台</th><th>可共用機台</th><th>樣本</th><th>實測產速</th><th>信心值</th><th>AI 推薦原因</th><th>學習狀態</th><th>確認狀態</th><th>最近使用</th><th>操作</th></tr></thead><tbody>'+rows.map((r,i)=>{const detail=(r.machine_detail||[]).map(m=>esc(m.machine)+" "+m.count+"次").join("、");const speed=Number(r.cycle_output||0)>0&&Number(r.cycle_minutes||0)>0?(Number(r.cycle_output).toLocaleString()+" "+esc(r.cycle_unit||"R")+" / "+Number(r.cycle_minutes).toFixed(2)+" 分<br><span class=\"ml-machine-detail\">約 "+Number(r.output_per_hour||0).toFixed(1)+" /小時</span>"):"—";const d=ML.decisions[r.learning_key];let ops='';if(d&&d.decision==="ignored")ops='<button class="btn ghost" data-ml-restore="'+i+'">恢復建議</button>';else if(d&&(d.decision==="accepted"||d.decision==="auto_applied"))ops='<button class="btn ghost" data-ml-restore="'+i+'">重新評估</button>';else ops='<button class="btn green" data-ml-accept="'+i+'">接受並建立規則</button><button class="btn ghost" data-ml-use="'+i+'">先帶入表單</button><button class="btn red" data-ml-ignore="'+i+'">忽略</button>';return '<tr><td><b>'+esc(r.part_no||"-")+'</b><div class="ml-machine-detail">'+esc(r.product_spec||"")+'</div></td><td>'+esc(r.process||"-")+'</td><td><b>'+esc(r.primary_machine||"-")+'</b><div class="ml-machine-detail">主機 '+Number(r.primary_count||0)+' 次</div></td><td>'+esc(r.shared_machines||"-")+'<div class="ml-machine-detail">'+detail+'</div></td><td>'+Number(r.total_samples||0)+' 筆<div class="ml-machine-detail">Target '+Number(r.target_samples||0)+'／Key In '+Number(r.keyin_samples||0)+'</div></td><td>'+speed+'</td><td><div class="ml-confidence"><b>'+Number(r.confidence||0)+'%</b><span class="ml-bar"><i style="width:'+Math.max(0,Math.min(100,Number(r.confidence||0)))+'%"></i></span></div></td><td><div class="ml-reason"><details><summary>查看推薦依據</summary><div><b>同料號：</b>'+Number(r.same_part_samples||0)+' 筆<br><b>同規格：</b>'+Number(r.same_spec_samples||0)+' 筆<br><b>同寬度：</b>'+Number(r.same_width_samples||0)+' 筆'+(Number(r.width_mm||0)?'（'+Number(r.width_mm)+'mm）':'')+'<br><b>同製程：</b>'+Number(r.same_process_samples||0)+' 筆<div class="basis">'+esc(r.recommendation_basis||r.evidence_reason||"尚無說明")+'</div></div></details></div></td><td><span class="ml-status '+statusClass(r.status)+'">'+esc(r.status||"-")+'</span></td><td>'+decisionBadge(r.learning_key)+'</td><td>'+esc(r.last_used_date||"-")+'</td><td><div class="actions" style="margin:0">'+ops+'</div></td></tr>';}).join("")+'</tbody></table>';
     box.querySelectorAll('[data-ml-use]').forEach(b=>b.onclick=()=>useAsRule(rows[Number(b.dataset.mlUse)]));box.querySelectorAll('[data-ml-accept]').forEach(b=>b.onclick=()=>accept(rows[Number(b.dataset.mlAccept)],b));box.querySelectorAll('[data-ml-ignore]').forEach(b=>b.onclick=()=>ignore(rows[Number(b.dataset.mlIgnore)],b));box.querySelectorAll('[data-ml-restore]').forEach(b=>b.onclick=()=>restore(rows[Number(b.dataset.mlRestore)],b));
@@ -6716,6 +6723,10 @@ document.addEventListener("DOMContentLoaded",function(){
     b.textContent="建立中…";
     try{
       await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});
+      // 成功後立即從待處理列表移除，避免重新讀取前仍停留在畫面。
+      ML.decisions[r.learning_key]={learning_key:r.learning_key,decision:"accepted",by:"11035",decided_at:new Date().toISOString()};
+      render();
+      const progress=$("mlProgress");if(progress)progress.textContent="規則已建立，該項目已移至『已建立規則』。";
       window.log?.("AI 建議已接受，正式機台規則已建立");
       await load();
       if(window.loadMachineRules)window.loadMachineRules();
