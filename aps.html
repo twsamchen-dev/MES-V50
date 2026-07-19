@@ -4391,11 +4391,8 @@ function sameCloudMeta(localMeta,remoteMeta){
   return !!localMeta&&!!remoteMeta&&keys.every(k=>{
     const a=localMeta[k]||{},b=remoteMeta[k]||{};
     const ac=Number(a.count||0),bc=Number(b.count||0);
-    if(ac!==bc)return false;
-    // 空白資料集沒有版本內容；查詢時間不同不代表資料更新。
-    if(ac===0)return true;
-    const clean=v=>String(v||"").trim().replace("T"," ").replace(/\.\d{3}Z?$/,"");
-    return clean(a.updated_at)===clean(b.updated_at);
+    // V110.9：正常啟動只比較筆數，避免試算表日期顯示格式造成永久誤判。
+    return ac===bc;
   });
 }
 
@@ -4578,6 +4575,11 @@ async function bootstrapCloud(force=false){
           new Promise((_,reject)=>setTimeout(()=>reject(new Error("版本確認逾時")),12000))
         ]);
         const remoteMeta=statusRes?.datasets||null;
+        if(!remoteMeta){
+          CLOUD.meta=fastCache.meta||{};CLOUD.loaded=true;
+          setCloudStatus("ok",`使用快取｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,"目前後端未提供版本摘要；點右上狀態可強制完整同步");
+          return {ok:true,fastCache:true,noRemoteMeta:true};
+        }
         if(sameCloudMeta(fastCache.meta,remoteMeta)){
           CLOUD.meta=remoteMeta;CLOUD.loaded=true;
           setCloudStatus("ok",`快取最新｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,"雲端版本相同，本次不下載大型資料");
@@ -4825,10 +4827,10 @@ function installHooks(){
       if(event.altKey){
         saveAllCloud(false);
       }else{
-        bootstrapCloud();
+        bootstrapCloud(true);
       }
     });
-    status.title="點一下重新載入 APS 雲端資料；按住 Alt 再點可立即保存全部資料";
+    status.title="點一下強制重新載入 APS 雲端資料；按住 Alt 再點可立即保存全部資料";
   }
 }
 
