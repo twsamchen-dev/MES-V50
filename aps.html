@@ -10404,7 +10404,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=
 <script id="aps-build0096-3-missing-speed-accurate-js">
 (()=>{
 'use strict';
-const state={groups:[],filtered:[],stats:{}};
+const state={groups:[],filtered:[],stats:{},scanning:false};
 const text=v=>String(v??'').trim();
 const norm=v=>text(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－]/g,'-');
 const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -10431,15 +10431,31 @@ function updateLabels(){
  const kicker=document.querySelector('#missingSpeed .section-kicker');if(kicker)kicker.textContent='BUILD 0096.3｜MISSING SPEED ACCURATE';
  const head=document.querySelector('#missingSpeed .missing-speed-table thead tr');if(head)head.innerHTML='<th>狀態</th><th>缺漏設定</th><th>影響工單</th><th>料號</th><th>規格範例</th><th>機台</th><th>製程</th><th>缺漏原因／建議</th><th>處理</th>';
 }
-function scan(){
- updateLabels();
- const all=pool(),active=all.filter(isActionable),valid=active.filter(validRequirement),invalid=active.filter(x=>!validRequirement(x));
- const matched=valid.filter(x=>x.ready&&num(x.minutes)>0),missing=valid.filter(x=>!(x.ready&&num(x.minutes)>0));
- const map=new Map();
- missing.forEach((x,i)=>{const k=groupKey(x),r=reasonFor(x);if(!map.has(k))map.set(k,{key:k,part:text(x.part),process:text(x.process),machine:text(x.sourceMachine||x.machine),spec:text(x.spec||x.name),reason:r.label,code:r.code,suggest:r.suggest,jobs:[],sample:x});const g=map.get(k);g.jobs.push(text(x.wo));if(!g.spec)g.spec=text(x.spec||x.name)});
- state.groups=[...map.values()].sort((a,b)=>b.jobs.length-a.jobs.length||a.part.localeCompare(b.part,'zh-Hant'));
- state.stats={all:all.length,active:active.length,valid:valid.length,matched:matched.length,missingOrders:missing.length,missingConfigs:state.groups.length,invalid:invalid.length,excluded:all.length-active.length};
- render();
+async function scan(){
+ if(state.scanning)return;
+ state.scanning=true;updateLabels();
+ const btn=document.getElementById('missingSpeedRefresh'),oldText=btn?.textContent||'重新檢查';
+ if(btn){btn.disabled=true;btn.textContent='檢查中 0%'}
+ try{
+  const all=pool(),map=new Map();let active=0,valid=0,matched=0,missingOrders=0,invalid=0;
+  const batch=120;
+  for(let start=0;start<all.length;start+=batch){
+   const end=Math.min(start+batch,all.length);
+   for(let i=start;i<end;i++){
+    const x=all[i];if(!isActionable(x))continue;active++;
+    if(!validRequirement(x)){invalid++;continue}valid++;
+    if(x.ready&&num(x.minutes)>0){matched++;continue}missingOrders++;
+    const k=groupKey(x),r=reasonFor(x);
+    if(!map.has(k))map.set(k,{key:k,part:text(x.part),process:text(x.process),machine:text(x.sourceMachine||x.machine),spec:text(x.spec||x.name),reason:r.label,code:r.code,suggest:r.suggest,jobs:[],sample:x});
+    const g=map.get(k);g.jobs.push(text(x.wo));if(!g.spec)g.spec=text(x.spec||x.name);
+   }
+   if(btn)btn.textContent=`檢查中 ${Math.round(end/Math.max(1,all.length)*100)}%`;
+   await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+  }
+  state.groups=[...map.values()].sort((a,b)=>b.jobs.length-a.jobs.length||a.part.localeCompare(b.part,'zh-Hant'));
+  state.stats={all:all.length,active,valid,matched,missingOrders,missingConfigs:state.groups.length,invalid,excluded:all.length-active};
+  render();
+ }finally{state.scanning=false;if(btn){btn.disabled=false;btn.textContent=oldText}}
 }
 function render(){
  updateLabels();const st=state.stats,q=norm(document.getElementById('missingSpeedSearch')?.value),mf=norm(document.getElementById('missingSpeedMachine')?.value),rf=document.getElementById('missingSpeedReason')?.value||'';
@@ -10452,7 +10468,7 @@ function render(){
  body.innerHTML=rows.slice(0,200).map((g,i)=>{const jobs=g.jobs.slice(0,3).join('、')+(g.jobs.length>3?`…另 ${g.jobs.length-3} 筆`:'');return `<tr><td><span class="tag yellow">待確認</span></td><td><strong>${esc(g.part)}</strong><div class="ms-order-count">${esc(g.process||'未指定製程')}｜${esc(g.machine||'未指定機台')}</div></td><td><strong>${g.jobs.length.toLocaleString('zh-TW')} 筆</strong><div class="ms-order-count">${esc(jobs)}</div></td><td>${esc(g.part||'—')}</td><td class="spec">${esc(g.spec||'—')}</td><td>${esc(g.machine||'—')}</td><td>${esc(g.process||'—')}</td><td><div class="missing-speed-reason">${esc(g.reason)}</div><div class="ms-recommend">建議：${esc(g.suggest)}</div></td><td><div class="missing-speed-actions"><button class="btn ghost" data-ms93="feedback" data-i="${i}">補產速</button><button class="btn ghost" data-ms93="copy" data-i="${i}">複製設定</button></div></td></tr>`}).join('');
 }
 function gotoFeedback(g){if(typeof window.showPage==='function')window.showPage('speedFeedback');[['speedFbPart',g.part],['speedFeedbackPart',g.part],['speedFbMachine',g.machine],['speedFeedbackMachine',g.machine],['speedFbProcess',g.process],['speedFeedbackProcess',g.process],['speedFbName',g.spec],['speedFeedbackName',g.spec]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v||''});document.querySelector('#speedFeedbackFormCard')?.scrollIntoView({behavior:'smooth',block:'start'});window.log?.(`Build 0097.3：已帶入缺產速設定 ${g.part}｜${g.process||'未指定製程'}｜${g.machine||'未指定機台'}`)}
-function install(){updateLabels();const refresh=document.getElementById('missingSpeedRefresh');if(refresh){refresh.onclick=scan}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e){e.oninput=id==='missingSpeedSearch'?render:e.oninput;e.onchange=id==='missingSpeedSearch'?e.onchange:render}});const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.ms00963){body.dataset.ms00963='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms93]');if(!b)return;const g=state.filtered[Number(b.dataset.i)];if(!g)return;if(b.dataset.ms93==='feedback')gotoFeedback(g);else{const v=`缺產速設定\n料號：${g.part}\n製程：${g.process}\n機台：${g.machine}\n影響工單：${g.jobs.length}\n工單：${g.jobs.join('、')}\n原因：${g.reason}\n建議：${g.suggest}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製設定',1200)}catch{window.prompt('請複製以下資料',v)}}})}document.querySelectorAll('[data-page="missingSpeed"]').forEach(e=>e.addEventListener('click',()=>setTimeout(scan,80)));const oldScan=window.APSMissingSpeed?.scan;window.APSMissingSpeed={...(window.APSMissingSpeed||{}),scan,rows:()=>state.groups.slice(),state,legacyScan:oldScan};setTimeout(scan,1800);setInterval(()=>{if(document.getElementById('missingSpeed')?.classList.contains('active'))scan()},10000)}
+function install(){updateLabels();const refresh=document.getElementById('missingSpeedRefresh');if(refresh){refresh.onclick=scan}['missingSpeedSearch','missingSpeedMachine','missingSpeedReason'].forEach(id=>{const e=document.getElementById(id);if(e){e.oninput=id==='missingSpeedSearch'?render:e.oninput;e.onchange=id==='missingSpeedSearch'?e.onchange:render}});const body=document.getElementById('missingSpeedBody');if(body&&!body.dataset.ms00963){body.dataset.ms00963='1';body.addEventListener('click',async e=>{const b=e.target.closest('[data-ms93]');if(!b)return;const g=state.filtered[Number(b.dataset.i)];if(!g)return;if(b.dataset.ms93==='feedback')gotoFeedback(g);else{const v=`缺產速設定\n料號：${g.part}\n製程：${g.process}\n機台：${g.machine}\n影響工單：${g.jobs.length}\n工單：${g.jobs.join('、')}\n原因：${g.reason}\n建議：${g.suggest}`;try{await navigator.clipboard.writeText(v);b.textContent='已複製';setTimeout(()=>b.textContent='複製設定',1200)}catch{window.prompt('請複製以下資料',v)}}})}const oldScan=window.APSMissingSpeed?.scan;window.APSMissingSpeed={...(window.APSMissingSpeed||{}),scan,rows:()=>state.groups.slice(),state,legacyScan:oldScan};setTimeout(scan,1800)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
@@ -10612,7 +10628,7 @@ function enhanceKpis(){const s=stats(),set=(id,v)=>{const e=$(id);if(e)e.textCon
  document.querySelectorAll('#missingSpeedTable [data-feedback-index]').forEach(b=>b.textContent='建立產速');
 }
 function bindHistory(){const btn=$('saveSpeedFeedback');if(!btn||btn.dataset.history0103)return;btn.dataset.history0103='1';btn.addEventListener('click',()=>{const before=read(FB_KEY),part=txt($('sfPart')?.value),machine=txt($('sfMachine')?.value),process=txt($('sfProcess')?.value),k=[norm(part),norm(machine),norm(process)].join('|'),old=before.find(x=>key(x)===k);setTimeout(()=>{const after=read(FB_KEY),now=after.find(x=>key(x)===k);if(!now)return;appendHistory({at:new Date().toISOString(),action:old?'修改':'新增',part,machine,process,beforeQty:old?.qtyRound||'',afterQty:now.qtyRound||'',beforeMins:old?.minutesRound||'',afterMins:now.minutesRound||'',operator:now.operator||now.approved_by||'系統'});renderHistory();enhanceKpis();renderAI();const msg=$('speedFormMsg');if(msg&&/✔/.test(msg.textContent))msg.insertAdjacentHTML('beforeend',' <span class="speed-sync-ok">✔ APS 已同步重新計算</span>')},500)},true)}
-function install(){createCards();bindHistory();const old=window.renderSpeedCenter;if(typeof old==='function'&&!old.__build0103){const w=function(){const r=old.apply(this,arguments);setTimeout(()=>{enhanceKpis();renderAI();renderHistory()},30);return r};w.__build0103=true;window.renderSpeedCenter=w}enhanceKpis();renderAI();renderHistory();showView('missing');const ob=new MutationObserver(()=>enhanceKpis());const target=$('missingSpeedTable');if(target)ob.observe(target,{childList:true,subtree:true});document.querySelectorAll('[data-page="speedFeedback"]').forEach(x=>x.addEventListener('click',()=>setTimeout(()=>{createCards();enhanceKpis()},100)))}
+function install(){createCards();bindHistory();const old=window.renderSpeedCenter;if(typeof old==='function'&&!old.__build0103){const w=function(){const r=old.apply(this,arguments);setTimeout(()=>{enhanceKpis();renderHistory()},30);return r};w.__build0103=true;window.renderSpeedCenter=w}enhanceKpis();renderHistory();showView('missing');document.querySelectorAll('[data-page="speedFeedback"]').forEach(x=>x.addEventListener('click',()=>setTimeout(()=>{createCards();enhanceKpis()},100)))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
