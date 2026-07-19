@@ -3803,8 +3803,8 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  function exportWF(){const x=loadWF();csv('人力分析.csv',['班別','操作員','幹部'],[['早班',x.dayOps,x.dayLead],['夜班',x.nightOps,x.nightLead]])}
  // preprocess
  function preMap(){return read(PRE_KEY,{})}
- function renderPre(){if(!$e('preTable'))return;const mp=preMap(),q=norm($e('preSearch')?.value),sf=$e('preStatusFilter')?.value||'all';let rows=(window.S?.pool||[]).filter(x=>!q||norm([x.wo,x.customer,x.part,x.batch,x.name].join(' ')).includes(q)).map(x=>({...x,preprocess:mp[x.wo]?.status||x.preprocess||'待確認',preNote:mp[x.wo]?.note||''})).filter(x=>sf==='all'||x.preprocess===sf);const all=(window.S?.pool||[]).map(x=>mp[x.wo]?.status||x.preprocess||'待確認');$e('prePending').textContent=all.filter(x=>x==='待確認').length;$e('preReady').textContent=all.filter(x=>x==='已到位').length;$e('preBlocked').textContent=all.filter(x=>['缺料','前製程未完成','品質待確認','暫停'].includes(x)).length;$e('preUrgent').textContent=(window.S?.pool||[]).filter(x=>x.urgent||x.risk).length;if(!rows.length){$e('preTable').className='empty';$e('preTable').textContent='沒有符合條件的工單';return}$e('preTable').className='tablewrap';$e('preTable').innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>料號</th><th>批號</th><th>製程</th><th>建議機台</th><th>預交日</th><th>前製程狀態</th><th>備註</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.wo)}</td><td>${esc(x.customer)}</td><td>${esc(x.part)}</td><td>${esc(x.batch)}</td><td>${esc(x.process)}</td><td>${esc(x.machine)}</td><td>${esc(dstr(x.due))}</td><td><select class="status-select" data-pre-status="${esc(x.wo)}">${['待確認','已到位','缺料','前製程未完成','品質待確認','暫停'].map(v=>`<option ${x.preprocess===v?'selected':''}>${v}</option>`).join('')}</select></td><td><input data-pre-note="${esc(x.wo)}" value="${esc(x.preNote)}" placeholder="備註"></td></tr>`).join('')}</tbody></table>`}
- function savePre(){const mp=preMap();document.querySelectorAll('[data-pre-status]').forEach(s=>{const wo=s.dataset.preStatus;mp[wo]={status:s.value,note:document.querySelector(`[data-pre-note="${CSS.escape(wo)}"]`)?.value||'',updatedAt:new Date().toISOString()};const p=(window.S?.pool||[]).find(x=>String(x.wo)===wo);if(p)p.preprocess=s.value});save(PRE_KEY,mp);renderPre();window.renderPool?.();alert('前製程狀態已儲存')}
+ function renderPre(){if(!$e('preTable'))return;const mp=preMap(),q=norm($e('preSearch')?.value),sf=$e('preStatusFilter')?.value||'all';let rows=(window.S?.pool||[]).filter(x=>!q||norm([x.wo,x.customer,x.part,x.batch,x.name].join(' ')).includes(q)).map(x=>({...x,preprocess:mp[x.wo]?.status||x.preprocess||'待確認',preNote:mp[x.wo]?.note||''})).filter(x=>sf==='all'||x.preprocess===sf).slice(0,200);const all=(window.S?.pool||[]).map(x=>mp[x.wo]?.status||x.preprocess||'待確認');$e('prePending').textContent=all.filter(x=>x==='待確認').length;$e('preReady').textContent=all.filter(x=>x==='已到位').length;$e('preBlocked').textContent=all.filter(x=>['缺料','前製程未完成','品質待確認','暫停'].includes(x)).length;$e('preUrgent').textContent=(window.S?.pool||[]).filter(x=>x.urgent||x.risk).length;if(!rows.length){$e('preTable').className='empty';$e('preTable').textContent='沒有符合條件的工單';return}$e('preTable').className='tablewrap';$e('preTable').innerHTML=`<table><thead><tr><th>工單</th><th>客戶</th><th>料號</th><th>批號</th><th>製程</th><th>建議機台</th><th>預交日</th><th>前製程狀態</th><th>備註</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.wo)}</td><td>${esc(x.customer)}</td><td>${esc(x.part)}</td><td>${esc(x.batch)}</td><td>${esc(x.process)}</td><td>${esc(x.machine)}</td><td>${esc(dstr(x.due))}</td><td><select class="status-select" data-pre-status="${esc(x.wo)}">${['待確認','已到位','缺料','前製程未完成','品質待確認','暫停'].map(v=>`<option ${x.preprocess===v?'selected':''}>${v}</option>`).join('')}</select></td><td><input data-pre-note="${esc(x.wo)}" value="${esc(x.preNote)}" placeholder="備註"></td></tr>`).join('')}</tbody></table>`}
+ function savePre(){const mp=preMap();document.querySelectorAll('[data-pre-status]').forEach(s=>{const wo=s.dataset.preStatus;mp[wo]={status:s.value,note:document.querySelector(`[data-pre-note="${CSS.escape(wo)}"]`)?.value||'',updatedAt:new Date().toISOString()};const p=(window.S?.pool||[]).find(x=>String(x.wo)===wo);if(p)p.preprocess=s.value});save(PRE_KEY,mp);renderPre();alert('前製程狀態已儲存')}
  function exportPre(){const mp=preMap();csv('前製程狀態.csv',['工單','客戶','料號','批號','狀態','備註'],(window.S?.pool||[]).map(x=>[x.wo,x.customer,x.part,x.batch,mp[x.wo]?.status||x.preprocess||'待確認',mp[x.wo]?.note||'']))}
  // machine center
  function mcMap(){return read(MC_KEY,{})}
@@ -3831,17 +3831,18 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
 (()=>{
  const KEY='APS_PREPROCESS_SMART_V0039', LEGACY='APS_PREPROCESS_SMART_V0037'; let selectedWo='';
  const $=id=>document.getElementById(id), parse=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch{return {}}};
- const read=()=>{const v=parse(KEY);if(Object.keys(v).length)return v;const old=parse(LEGACY);if(Object.keys(old).length){localStorage.setItem(KEY,JSON.stringify(old));return old}return {}};
- const write=v=>localStorage.setItem(KEY,JSON.stringify(v));
+ let stateCache=null; const read=()=>{if(stateCache)return stateCache;const large=window.APSLargeStore?.getSync?.(KEY,{});if(large&&Object.keys(large).length)return(stateCache=large);const v=parse(KEY);if(Object.keys(v).length)return(stateCache=v);const old=parse(LEGACY);if(Object.keys(old).length){window.APSLargeStore?.set?.(KEY,old,{mirrorSmall:false});return(stateCache=old)}return(stateCache={})};
+ const write=v=>{stateCache=v;window.APSLargeStore?.set?.(KEY,v,{mirrorSmall:false});try{if(Object.keys(v).length<=300)localStorage.setItem(KEY,JSON.stringify(v));else localStorage.removeItem(KEY)}catch(e){try{localStorage.removeItem(KEY)}catch{}}return v};
  const esc2=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const val=(r,k,d='待確認')=>r?.[k]||d;
  const wf=()=>{try{return JSON.parse(localStorage.getItem('SK_APS_WORKFORCE_V1')||'{}')}catch{return {}}};
  const mc=()=>{try{return JSON.parse(localStorage.getItem('SK_APS_MACHINE_CENTER_V1')||'{}')}catch{return {}}};
+ let wfCache=null,mcCache=null;
  function infer(x,old={}){
-   const mcode=String(x.machine||x.sourceMachine||'').trim(), mcfg=mc()[mcode], sm=window.S?.machines?.[mcode];
+   const mcode=String(x.machine||x.sourceMachine||'').trim(), mcfg=(mcCache||mc())[mcode], sm=window.S?.machines?.[mcode];
    let machineReady='待確認', machineReason='未指定機台';
    if(mcode){const disabled=mcfg?.enabled===false||sm?.enabled===false, st=mcfg?.status||'';machineReady=(disabled||['保養','停機','待修'].includes(st))?'停機':'可用';machineReason=machineReady==='可用'?`機台 ${mcode} 已啟用`:`機台 ${mcode}：${st||'停用'}`}
-   const w=wf(), req=Number(w.machineReq?.[mcode]?.people??1), day=Number(w.dayOps||0), night=Number(w.nightOps||0);
+   const w=wfCache||wf(), req=Number(w.machineReq?.[mcode]?.people??1), day=Number(w.dayOps||0), night=Number(w.nightOps||0);
    let manpower='待確認', manpowerReason='尚未建立人力設定';
    if(day||night){const available=Math.min(...[day,night].filter(v=>v>0));manpower=req<=available?'足夠':'不足';manpowerReason=`需求 ${req} 人；早班 ${day}／夜班 ${night}`}
    const text=[x.process,x.name,x.spec].join(' ');
@@ -3867,7 +3868,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  function rows(){const q=String($('preSearch')?.value||'').toLowerCase(),sf=$('preStatusFilter')?.value||'all',rf=$('preReadinessFilter')?.value||'all';return (window.S?.pool||[]).map(merged).filter(x=>!q||[x.wo,x.customer,x.part,x.batch,x.name,x.process].join(' ').toLowerCase().includes(q)).filter(x=>sf==='all'||deriveStatus(x)===sf).filter(x=>rf==='all'||readiness(x)===rf)}
  function selected(){return [...document.querySelectorAll('[data-pre-check]:checked')].map(x=>x.dataset.preCheck)}
  function batch(field,value){const ids=selected();if(!ids.length)return alert('請先勾選工單');const mp=collectVisible();ids.forEach(wo=>{const x=(window.S?.pool||[]).find(p=>String(p.wo)===wo),old=mp[wo]||{},rec={...old,[field]:value,updatedAt:new Date().toISOString()};const inf=infer(x||{},rec);Object.assign(rec,inf);rec.status=deriveStatus(rec);mp[wo]=rec});write(mp);render()}
- function render(){if(!$('preTable'))return;const all=(window.S?.pool||[]).map(merged),rs=rows();$('prePending').textContent=all.filter(x=>readiness(x)==='warning').length;$('preReady').textContent=all.filter(x=>readiness(x)==='ready').length;$('preBlocked').textContent=all.filter(x=>readiness(x)==='blocked').length;$('preUrgent').textContent=(window.S?.pool||[]).filter(x=>x.urgent||x.risk).length;
+ function render(){if(!$('preTable'))return;mcCache=mc();wfCache=wf();const all=(window.S?.pool||[]).map(merged),allRows=rows(),rs=allRows.slice(0,200);$('prePending').textContent=all.filter(x=>readiness(x)==='warning').length;$('preReady').textContent=all.filter(x=>readiness(x)==='ready').length;$('preBlocked').textContent=all.filter(x=>readiness(x)==='blocked').length;$('preUrgent').textContent=(window.S?.pool||[]).filter(x=>x.urgent||x.risk).length;
  if(!rs.length){$('preTable').className='empty';$('preTable').textContent='沒有符合條件的工單';renderInsight(all);return}
  const autoMachine=all.filter(x=>x.machineReady==='可用').length,autoPeople=all.filter(x=>x.manpower==='足夠').length,naTool=all.filter(x=>x.tooling==='不適用').length;
  $('preTable').className='pre-table-wrap';$('preTable').innerHTML=`<div class="pre-auto-summary"><span>機台自動判定 ${autoMachine} 張</span><span>人力自動判定 ${autoPeople} 張</span><span>刀模不適用 ${naTool} 張</span></div><div class="pre-batchbar"><button class="btn ghost" id="preSelectAll">全選本頁</button><button class="btn ghost" data-batch="motherRoll|已完成">母卷完成</button><button class="btn ghost" data-batch="material|齊料">材料齊料</button><button class="btn ghost" data-batch="tooling|不適用">刀模不適用</button><button class="btn ghost" data-batch="quality|已確認">品質已確認</button><button class="btn" id="preBatchAuto">重新自動判定</button><span class="count" id="preSelectedCount">已選 0 張</span></div><table class="pre-table"><thead><tr><th>選取</th><th>放行</th><th>工單</th><th>客戶</th><th>料號／品名</th><th>預交日</th><th>母卷／前製程</th><th>材料</th><th>刀模／治具</th><th>品質</th><th>人力</th><th>機台</th><th>總狀態</th><th>處理</th></tr></thead><tbody>${rs.map(x=>{const k=readiness(x);return `<tr class="pre-row" data-pre-row="${esc2(x.wo)}"><td><input type="checkbox" data-pre-check="${esc2(x.wo)}"></td><td><span class="pre-readiness ${k}">${statusText(k)}</span></td><td><b>${esc2(x.wo)}</b><div class="pre-mini">${esc2(x.batch||'')}</div></td><td>${esc2(x.customer||'—')}</td><td><b>${esc2(x.part||'—')}</b><div class="pre-mini">${esc2(x.name||x.spec||'')}</div></td><td>${x.due?new Date(x.due).toLocaleDateString('zh-TW'):'—'}</td><td><select class="pre-select" data-k="motherRoll">${options(['待確認','已完成','未完成','暫停'],val(x,'motherRoll'))}</select></td><td><select class="pre-select" data-k="material">${options(['待確認','齊料','缺料'],val(x,'material'))}</select></td><td><select class="pre-select ${x.tooling==='不適用'?'auto-value':''}" data-k="tooling">${options(['待確認','不適用','可用','不可用'],val(x,'tooling'))}</select><div class="pre-rule-note">${esc2(x.toolingReason||'')}</div></td><td><select class="pre-select" data-k="quality">${options(['待確認','已確認','異常'],val(x,'quality'))}</select></td><td><select class="pre-select ${x.manpower!=='待確認'?'auto-value':''}" data-k="manpower">${options(['待確認','足夠','不足'],val(x,'manpower'))}</select><div class="pre-rule-note">${esc2(x.manpowerReason||'')}</div></td><td><select class="pre-select ${x.machineReady!=='待確認'?'auto-value':''}" data-k="machineReady">${options(['待確認','可用','停機'],val(x,'machineReady'))}</select><div class="pre-mini">${esc2(x.machine||'—')}</div><div class="pre-rule-note">${esc2(x.machineReason||'')}</div></td><td><span class="tag ${k==='ready'?'green':k==='blocked'?'red':'yellow'}">${deriveStatus(x)}</span></td><td><button class="btn ghost pre-view-btn" data-pre-view="${esc2(x.wo)}">查看</button></td></tr>`}).join('')}</tbody></table>`;
@@ -3879,7 +3880,9 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
    const card=document.querySelector('.pre-board-card');
    if(card?.dataset.preChecking==='1')return;
    if(card)card.dataset.preChecking='1';
-   card?.classList.add('pre-saving');
+   const actionBtn=$('preAutoCheck');
+   const oldBtnText=actionBtn?.textContent||'AI 重新判斷';
+   if(actionBtn){actionBtn.disabled=true;actionBtn.textContent='準備判定…'}
 
    try{
      const mp=collectVisible();
@@ -3899,7 +3902,8 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
          mp[x.wo]=rec;
          x.preprocess=rec.status;
        });
-       await new Promise(resolve=>setTimeout(resolve,0));
+       if(actionBtn)actionBtn.textContent=`判定中 ${Math.min(start+chunk.length,targets.length)} / ${targets.length}`;
+       await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
      }
 
      try{
@@ -3915,6 +3919,7 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
      alert('前製程自動判定發生錯誤：'+(err?.message||err));
    }finally{
      card?.classList.remove('pre-saving');
+     if(actionBtn){actionBtn.disabled=false;actionBtn.textContent=oldBtnText}
      if(card)delete card.dataset.preChecking;
    }
  }
@@ -3932,26 +3937,12 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
  const old=window.showPage;
  window.showPage=function(id){
    old?.(id);
-   if(id==='preprocess'){
-     setTimeout(()=>{
-       const sig=poolSignature();
-       if(sig!==lastAutoPoolSignature){
-         lastAutoPoolSignature=sig;
-         autoCheck(false);
-       }else{
-         render();
-       }
-     },50);
-   }
+   if(id==='preprocess')setTimeout(render,50);
  };
  setTimeout(()=>{
    const sig=poolSignature();
-   if(sig){
-     lastAutoPoolSignature=sig;
-     autoCheck(false);
-   }else{
-     render();
-   }
+   if(sig)lastAutoPoolSignature=sig;
+   render();
  },700);
 })();
 </script>
@@ -3973,7 +3964,17 @@ function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localSto
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
 function renderStats(){if($s('sysPoolCount'))$s('sysPoolCount').textContent=(window.S?.pool||[]).length;if($s('sysScheduleCount'))$s('sysScheduleCount').textContent=(window.S?.schedule||[]).length;if($s('sysStorageCount'))$s('sysStorageCount').textContent=apsKeys().length;if($s('sysStorageSize'))$s('sysStorageSize').textContent=(bytes()/1024).toFixed(1)+' KB';const keys=apsKeys();if(!$s('sysStorageTable'))return;if(!keys.length){$s('sysStorageTable').className='empty';$s('sysStorageTable').textContent='目前沒有 APS 永久資料';return}$s('sysStorageTable').className='tablewrap';$s('sysStorageTable').innerHTML=`<table><thead><tr><th>資料鍵</th><th>容量</th><th>更新資訊</th><th>處理</th></tr></thead><tbody>${keys.map(k=>{const v=localStorage.getItem(k)||'';let info='—';try{const j=JSON.parse(v);info=Array.isArray(j)?`${j.length} 筆`:typeof j==='object'?`${Object.keys(j||{}).length} 個欄位`:'值'}catch{info='文字'}return `<tr><td class="sys-storage-key">${k}</td><td>${((k.length+v.length)*2/1024).toFixed(1)} KB</td><td>${info}</td><td class="sys-storage-actions"><button class="btn ghost" data-sys-download="${k}">下載</button> <button class="btn red" data-sys-delete="${k}">刪除</button></td></tr>`}).join('')}</tbody></table>`}
 function download(name,obj){const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-function saveSnapshots(silent=false){const c=readCfg();if(c.persistPool)localStorage.setItem(POOL_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:window.S?.pool||[]}));if(c.persistSchedule)localStorage.setItem(SCH_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:window.S?.schedule||[],machines:window.S?.machines||{}}));updateSnapshotStatus();renderStats();if(!silent)toast('目前工單池與排程已保存')}
+function saveSnapshots(silent=false){
+ const c=readCfg(),pool=window.S?.pool||[],schedule=window.S?.schedule||[];
+ try{
+  if(c.persistPool){
+   if(pool.length<=500)localStorage.setItem(POOL_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:pool}));
+   else{localStorage.removeItem(POOL_KEY);window.APSLargeStore?.set?.('SK_APS_POOL_SNAPSHOT_LARGE_V1',{savedAt:new Date().toISOString(),rows:pool},{mirrorSmall:false});}
+  }
+  if(c.persistSchedule)localStorage.setItem(SCH_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:schedule,machines:window.S?.machines||{}}));
+ }catch(e){console.warn('APS snapshot skipped',e?.message||e)}
+ updateSnapshotStatus();renderStats();if(!silent)toast('目前工單池與排程已保存')
+}
 function restoreSnapshots(){const c=readCfg();try{if(c.autoLoadPool&&!(window.S?.pool||[]).length){const p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');if(p?.rows?.length)window.S.pool=p.rows}if(c.autoLoadSchedule&&!(window.S?.schedule||[]).length){const q=JSON.parse(localStorage.getItem(SCH_KEY)||'null');if(q?.rows?.length){window.S.schedule=q.rows;window.S.machines=q.machines||window.S.machines||{}}}}catch(e){console.warn('snapshot restore failed',e)}try{window.renderPool?.();window.renderSchedule?.();window.updateKpi?.()}catch{}}
 function updateSnapshotStatus(){const e=$s('sysSnapshotStatus');if(!e)return;let p=null,q=null;try{p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');q=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch{};e.textContent=`工單池快照：${p?.rows?.length||0} 筆${p?.savedAt?'（'+new Date(p.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}；排程快照：${q?.rows?.length||0} 段${q?.savedAt?'（'+new Date(q.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}。`}
 function exportAll(){const storage={};apsKeys().forEach(k=>storage[k]=localStorage.getItem(k));download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,{format:'SEAL_KING_APS_BACKUP',build:'0047.1',exportedAt:new Date().toISOString(),storage,state:{pool:window.S?.pool||[],schedule:window.S?.schedule||[],machines:window.S?.machines||{}}})}
