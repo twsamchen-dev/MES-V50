@@ -4060,6 +4060,9 @@ const SHIFT_KEY = "SK_APS_SHIFT_SETTINGS_V1";
 const SYSTEM_KEY = "SK_APS_SYSTEM_SETTINGS_V1";
 const WORKFORCE_KEY = "SK_APS_WORKFORCE_V1";
 const MACHINE_CENTER_KEY = "SK_APS_MACHINE_CENTER_V1";
+const FAST_POOL_KEY = "SK_APS_FAST_POOL_V1107";
+const FAST_SCHEDULE_KEY = "SK_APS_FAST_SCHEDULE_V1107";
+const FAST_META_KEY = "SK_APS_FAST_META_V1107";
 
 const CLOUD = {
   loading: false,
@@ -4176,6 +4179,7 @@ function jsonp(action,params={}){
 async function loadPagedCloudDataset(action,label,{pageSize=500,maxRetries=2}={}){
   const all=[];
   let offset=0,total=null,page=0;
+  let updatedAt="";
   while(total===null || offset<total){
     page+=1;
     let res=null,lastErr=null;
@@ -4190,6 +4194,7 @@ async function loadPagedCloudDataset(action,label,{pageSize=500,maxRetries=2}={}
       }
     }
     if(!res) throw lastErr||new Error(`${label} 載入失敗`);
+    if(String(res.updated_at||"")>updatedAt)updatedAt=String(res.updated_at||"");
     const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
     total=Number.isFinite(Number(res.total))?Number(res.total):(total===null?rows.length:total);
     all.push(...rows);
@@ -4198,7 +4203,7 @@ async function loadPagedCloudDataset(action,label,{pageSize=500,maxRetries=2}={}
     offset=Number.isFinite(next)?next:(offset+rows.length);
     await new Promise(r=>setTimeout(r,60));
   }
-  return {ok:true,rows:all,data:all,count:all.length,total:total===null?all.length:total,done:true};
+  return {ok:true,rows:all,data:all,count:all.length,total:total===null?all.length:total,done:true,updated_at:updatedAt};
 }
 
 async function post(action,payload){
@@ -4381,6 +4386,32 @@ function apsYield(){
   return new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
 }
 
+function sameCloudMeta(localMeta,remoteMeta){
+  const keys=["workpool","schedule","speed_master","preprocess","machine_master","manpower","settings"];
+  return !!localMeta&&!!remoteMeta&&keys.every(k=>{
+    const a=localMeta[k]||{},b=remoteMeta[k]||{};
+    return Number(a.count||0)===Number(b.count||0)&&String(a.updated_at||"")===String(b.updated_at||"");
+  });
+}
+
+async function loadFastStartupCache(state){
+  try{
+    const [poolRaw,scheduleRaw,meta,master,feedback]=await Promise.all([
+      window.APSLargeStore?.hydrate?.(FAST_POOL_KEY,[]),
+      window.APSLargeStore?.hydrate?.(FAST_SCHEDULE_KEY,[]),
+      window.APSLargeStore?.hydrate?.(FAST_META_KEY,null),
+      window.APSLargeStore?.hydrate?.(SPEED_MASTER_KEY,[]),
+      window.APSLargeStore?.hydrate?.(SPEED_FEEDBACK_KEY,[])
+    ]);
+    if(!Array.isArray(poolRaw)||!poolRaw.length)return null;
+    state.pool=await revivePool(poolRaw);
+    state.schedule=await reviveSchedule(Array.isArray(scheduleRaw)?scheduleRaw:[]);
+    setCloudStatus("ok",`快取已開啟｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,"正在背景確認雲端版本");
+    await renderAfterCloudLoad();
+    return {meta,masterCount:Array.isArray(master)?master.length:0,feedbackCount:Array.isArray(feedback)?feedback.length:0};
+  }catch(err){console.warn("APS fast cache skipped",err);return null}
+}
+
 function apsRunIdle(fn,timeout=1200){
   return new Promise(resolve=>{
     const run=()=>{
@@ -4523,6 +4554,27 @@ async function bootstrapCloud(force=false){
     const meta={};
     let loadedCount=0;
     const failures=[];
+    const fastCache=force?null:await loadFastStartupCache(state);
+    if(fastCache){
+      setCloudStatus("loading","快取已開啟","正在確認雲端是否有更新");
+      try{
+        const statusRes=await Promise.race([
+          jsonp("apsstatus"),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error("版本確認逾時")),12000))
+        ]);
+        const remoteMeta=statusRes?.datasets||null;
+        if(sameCloudMeta(fastCache.meta,remoteMeta)){
+          CLOUD.meta=remoteMeta;CLOUD.loaded=true;
+          setCloudStatus("ok",`快取最新｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,"雲端版本相同，本次不下載大型資料");
+          return {ok:true,fastCache:true,meta:remoteMeta};
+        }
+        setCloudStatus("loading","發現雲端更新","畫面可繼續操作，資料於背景更新");
+      }catch(statusErr){
+        CLOUD.meta=fastCache.meta||{};CLOUD.loaded=true;
+        setCloudStatus("warn",`使用快取｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,`版本確認失敗：${statusErr.message||statusErr}`);
+        return {ok:true,fastCache:true,statusError:String(statusErr.message||statusErr)};
+      }
+    }
 
     const datasets=[
       {key:"workpool",action:"apsloadworkpool",label:"工單池",apply:async res=>{
@@ -4585,7 +4637,7 @@ async function bootstrapCloud(force=false){
             }
           }
           const count=await d.apply(res||{});
-          meta[d.key]={count:Number(res?.count||count||0),updated_at:res?.updated_at||res?.time||""};
+          meta[d.key]={count:Number(res?.total??res?.count??count??0),updated_at:res?.updated_at||res?.time||""};
         }catch(err){
           failures.push(`${d.label}：${err.message||err}`);
           console.warn("APS Cloud dataset skipped",d.action,err);
@@ -4604,6 +4656,12 @@ async function bootstrapCloud(force=false){
         setCloudStatus(failures.length?"warn":"ok",`已連線｜工單池 ${poolCount}｜排程 ${scheduleCount}${suffix}`,cloudMetaText(meta)+(failures.length?`；略過：${failures.join("；")}`:""));
         await apsYield();
         await renderAfterCloudLoad();
+        await Promise.all([
+          window.APSLargeStore?.set?.(FAST_POOL_KEY,state.pool||[],{mirrorSmall:false}),
+          window.APSLargeStore?.set?.(FAST_SCHEDULE_KEY,state.schedule||[],{mirrorSmall:false}),
+          window.APSLargeStore?.set?.(FAST_META_KEY,meta,{mirrorSmall:false})
+        ]);
+        setCloudStatus(failures.length?"warn":"ok",`已同步｜工單池 ${poolCount}｜排程 ${scheduleCount}`,failures.length?failures.join("；"):"快取已更新，下次將快速開啟");
         // 啟動載入時不建立大型 snapshot；序列化 12,000+ 筆會長時間阻塞主執行緒。
         window.log?.(`APS DataCenter 已連線：工單池 ${poolCount} 筆、排程 ${scheduleCount} 段`);
         return {ok:true,partial:failures.length>0,loadedCount,meta,failures};
