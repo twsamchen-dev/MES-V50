@@ -2244,6 +2244,28 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
     const minutes=Math.max(0.1,Math.ceil(raw*10)/10);
     return{ready:true,minutes,cycles,perRound:pr,roundMinutes:rpm,productionMinutes,setupMinutes,firstArticleMinutes,cleanupMinutes,match:match.level,apsMode:mode,efficiencyFactor:eff,speedVersion:speed.version||'V2',anomalies};
   }
+  window.APSRecalculatePoolSpeedsFast=async function(){
+    const pool=Array.isArray(window.S?.pool)?window.S.pool:[];
+    const speeds=typeof window.buildSpeed==='function'?(window.buildSpeed()||[]):[];
+    if(!pool.length||!speeds.length)return{pool:pool.length,speeds:speeds.length,ready:0};
+    const byPart=new Map();
+    speeds.forEach(s=>{const k=norm(s.part);if(!k)return;if(!byPart.has(k))byPart.set(k,[]);byPart.get(k).push(s)});
+    let ready=0;
+    for(let i=0;i<pool.length;i++){
+      const job=pool[i];
+      if(!job.closed){
+        const candidates=byPart.get(norm(job.part))||[];
+        const match=candidates.length?smartMatch(job,candidates):null;
+        const calc=calcJob(job,match);
+        Object.assign(job,calc);
+        if(match?.row?.machine&&!job.machine)job.machine=String(match.row.machine).trim();
+        if(calc.ready)ready++;
+      }
+      if(i>0&&i%200===0)await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
+    }
+    window.S.rows=window.S.rows||{};window.S.rows.speed=speeds;
+    return{pool:pool.length,speeds:speeds.length,ready};
+  };
   window.buildPool=function(){
     const sh=pickSheet('workorder',['4-3']);if(!sh){alert('請先上傳 4-3 生產命令單');return}
     const speeds=window.buildSpeed(),orders=buildOrders(),h=sh.rows[0],idx={wo:findCol(h,['單號','命令單號']),part:findCol(h,['料品編號','產品料號']),dept:findCol(h,['站別']),cust:findCol(h,['客戶']),order:findCol(h,['訂單單號']),batch:findCol(h,['生產批號']),plan:findCol(h,['預計產量']),out:findCol(h,['產出量']),unit:findCol(h,['單位']),due:findCol(h,['預交日']),machineCode:findCol(h,['機台編號']),name:findCol(h,['品名']),spec:findCol(h,['規格']),process:findCol(h,['製程']),machine:findCol(h,['機台']),status:findCol(h,['狀態']),closed:findCol(h,['結','結案否','結案'])};
@@ -4267,7 +4289,7 @@ function speedRows(){
   ];
 }
 
-function applySpeedRows(rows){
+async function applySpeedRows(rows){
   if(!rows?.length) return false;
   const master=[],feedback=[];
   rows.forEach(r=>{
@@ -4280,8 +4302,10 @@ function applySpeedRows(rows){
     else master.push(x);
   });
   // Build 0082: large datasets live in memory + IndexedDB. localStorage only keeps a small mirror.
-  window.APSLargeStore?.set(SPEED_MASTER_KEY,master,{mirrorSmall:false});
-  window.APSLargeStore?.set(SPEED_FEEDBACK_KEY,feedback,{mirrorSmall:true});
+  await Promise.all([
+    window.APSLargeStore?.set(SPEED_MASTER_KEY,master,{mirrorSmall:false}),
+    window.APSLargeStore?.set(SPEED_FEEDBACK_KEY,feedback,{mirrorSmall:true})
+  ]);
   try{localStorage.removeItem(SPEED_MASTER_KEY)}catch{}
   return true;
 }
@@ -4373,6 +4397,12 @@ function apsRunIdle(fn,timeout=1200){
 async function renderAfterCloudLoad(){
   // Build 0110.2：雲端資料載入後，先重建所有衍生索引與下拉資料，再分批重畫。
   // 若直接 render，工單池雖已下載，KPI／甘特圖／缺產速中心仍可能讀到舊索引。
+  // V110.4：產速落地後以料號索引分批重算，不再對 12k 工單逐筆掃描 12k 產速。
+  if(typeof window.APSRecalculatePoolSpeedsFast==="function"){
+    setCloudStatus("loading","正在建立產速索引","分批重新計算工單產速，不鎖住畫面");
+    await window.APSRecalculatePoolSpeedsFast();
+    await apsYield();
+  }
   const rebuildTasks=[
     ()=>window.APSDataIndex?.rebuild?.(),
     ()=>window.populatePoolMachines?.(),
@@ -4512,9 +4542,9 @@ async function bootstrapCloud(force=false){
         const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
         if(applyMachineRows(rows))loadedCount+=rows.length; return rows.length;
       }},
-      {key:"speed_master",action:"apsloadspeedmaster",label:"產速",paged:true,apply:res=>{
+      {key:"speed_master",action:"apsloadspeedmaster",label:"產速",paged:true,apply:async res=>{
         const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
-        if(applySpeedRows(rows))loadedCount+=rows.length; return rows.length;
+        if(await applySpeedRows(rows))loadedCount+=rows.length; return rows.length;
       }},
       {key:"settings",action:"apsloadsettings",label:"設定",apply:res=>{
         const rows=Array.isArray(res.rows)?res.rows:Array.isArray(res.data)?res.data:[];
@@ -4536,7 +4566,7 @@ async function bootstrapCloud(force=false){
         setCloudStatus("loading",`正在載入 ${d.label}`,`${i+1}/${datasets.length}｜APS DataCenter 背景下載`);
         try{
           let res=(d.key==="workpool" || d.key==="schedule" || d.paged)
-            ? await loadPagedCloudDataset(d.action,d.label,{pageSize:500,maxRetries:2})
+            ? await loadPagedCloudDataset(d.action,d.label,{pageSize:d.key==="speed_master"?1000:500,maxRetries:2})
             : await Promise.race([
                 jsonp(d.action),
                 new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${d.label} 讀取超時`)),30000))
