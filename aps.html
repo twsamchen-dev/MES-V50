@@ -4390,7 +4390,22 @@ function sameCloudMeta(localMeta,remoteMeta){
   const keys=["workpool","schedule","speed_master","preprocess","machine_master","manpower","settings"];
   return !!localMeta&&!!remoteMeta&&keys.every(k=>{
     const a=localMeta[k]||{},b=remoteMeta[k]||{};
-    return Number(a.count||0)===Number(b.count||0)&&String(a.updated_at||"")===String(b.updated_at||"");
+    const ac=Number(a.count||0),bc=Number(b.count||0);
+    if(ac!==bc)return false;
+    // 空白資料集沒有版本內容；查詢時間不同不代表資料更新。
+    if(ac===0)return true;
+    const clean=v=>String(v||"").trim().replace("T"," ").replace(/\.\d{3}Z?$/,"");
+    return clean(a.updated_at)===clean(b.updated_at);
+  });
+}
+
+function cloudMetaDiff(localMeta,remoteMeta){
+  const keys=["workpool","schedule","speed_master","preprocess","machine_master","manpower","settings"];
+  return keys.filter(k=>{
+    const a=localMeta?.[k]||{},b=remoteMeta?.[k]||{},ac=Number(a.count||0),bc=Number(b.count||0);
+    if(ac!==bc)return true;if(ac===0)return false;
+    const clean=v=>String(v||"").trim().replace("T"," ").replace(/\.\d{3}Z?$/,"");
+    return clean(a.updated_at)!==clean(b.updated_at);
   });
 }
 
@@ -4568,7 +4583,8 @@ async function bootstrapCloud(force=false){
           setCloudStatus("ok",`快取最新｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,"雲端版本相同，本次不下載大型資料");
           return {ok:true,fastCache:true,meta:remoteMeta};
         }
-        setCloudStatus("loading","發現雲端更新","畫面可繼續操作，資料於背景更新");
+        const changed=cloudMetaDiff(fastCache.meta,remoteMeta);
+        setCloudStatus("loading","發現雲端更新",`畫面可繼續操作；更新資料：${changed.join("、")||"版本摘要"}`);
       }catch(statusErr){
         CLOUD.meta=fastCache.meta||{};CLOUD.loaded=true;
         setCloudStatus("warn",`使用快取｜工單池 ${state.pool.length}｜排程 ${state.schedule.length}`,`版本確認失敗：${statusErr.message||statusErr}`);
@@ -4637,7 +4653,8 @@ async function bootstrapCloud(force=false){
             }
           }
           const count=await d.apply(res||{});
-          meta[d.key]={count:Number(res?.total??res?.count??count??0),updated_at:res?.updated_at||res?.time||""};
+          // V110.8：只保存資料本身的更新時間，禁止使用每次都會改變的 API 查詢時間。
+          meta[d.key]={count:Number(res?.total??res?.count??count??0),updated_at:String(res?.updated_at||"")};
         }catch(err){
           failures.push(`${d.label}：${err.message||err}`);
           console.warn("APS Cloud dataset skipped",d.action,err);
