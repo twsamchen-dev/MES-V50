@@ -4343,16 +4343,27 @@ function speedRows(){
 
 async function applySpeedRows(rows){
   if(!rows?.length) return false;
-  const master=[],feedback=[];
+  const master=[],feedback=[],seenMaster=new Map(),seenFeedback=new Map();
   rows.forEach(r=>{
     const x={...r};
     delete x._aps_record_id;
     delete x._aps_updated_at;
     const kind=x._aps_speed_kind;
     delete x._aps_speed_kind;
-    if(kind==="feedback") feedback.push(x);
-    else master.push(x);
+    if(kind==="feedback"){
+      const id=String(x.feedback_id||'').trim().toUpperCase();
+      const sig=[x.part,x.machine,x.process,x.qtyRound,x.unit,x.minutesRound,x.date,x.operator,x.source,x.work_order_no]
+        .map(v=>String(v??'').trim().toUpperCase()).join('|');
+      const k=id?('ID|'+id):('SIG|'+sig);
+      // 雲端舊資料若完全相同只顯示一次；不同產量／時間仍保留為不同實測。
+      seenFeedback.set(k,x);
+    }else{
+      const k=[x.part,x.machine,x.process].map(v=>String(v??'').trim().toUpperCase()).join('|');
+      seenMaster.set(k,x);
+    }
   });
+  master.push(...seenMaster.values());
+  feedback.push(...seenFeedback.values());
   // Build 0082: large datasets live in memory + IndexedDB. localStorage only keeps a small mirror.
   await Promise.all([
     window.APSLargeStore?.set(SPEED_MASTER_KEY,master,{mirrorSmall:false}),
@@ -7048,7 +7059,18 @@ document.addEventListener("DOMContentLoaded",function(){
     const groups=new Map();
     rows.forEach((x,i)=>{const k=[x.part,x.machine,x.process].map(v=>String(v||'').trim().toUpperCase()).join('|');if(!groups.has(k))groups.set(k,[]);groups.get(k).push({x,i});});
     const bad=new Set();
-    groups.forEach(g=>{const vals=g.map(o=>Number(o.x.minutesRound)).filter(v=>v>0);if(vals.length<2){g.forEach(o=>bad.add(o.i));return;}const avg=vals.reduce((a,b)=>a+b,0)/vals.length;g.forEach(o=>{const v=Number(o.x.minutesRound);if(v>0&&Math.abs(v-avg)/avg>.30)bad.add(o.i);});});
+    groups.forEach(g=>{
+      // 樣本不足只是「現場學習」，不是異常；至少 3 筆才進行離群判定。
+      const samples=g.map(o=>({o,qty:Number(o.x.qtyRound),mins:Number(o.x.minutesRound)}))
+        .filter(s=>s.qty>0&&s.mins>0)
+        .map(s=>({...s,rate:s.qty/s.mins}));
+      if(samples.length<3)return;
+      const sorted=samples.map(s=>s.rate).sort((a,b)=>a-b);
+      const mid=Math.floor(sorted.length/2);
+      const median=sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;
+      if(!(median>0))return;
+      samples.forEach(s=>{if(Math.abs(s.rate-median)/median>.30)bad.add(s.o.i);});
+    });
     return bad;
   }
   function render(){
