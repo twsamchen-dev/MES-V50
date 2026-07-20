@@ -841,6 +841,37 @@ body::after{
 })();
 </script>
 
+<!-- Build 0070｜桌機左側導覽固定保護：避免後段響應式規則互相覆蓋 -->
+<style id="desktop-sidebar-guard-v0070">
+@media (min-width:761px){
+  .app-shell{
+    display:grid!important;
+    grid-template-columns:232px minmax(0,1fr)!important;
+    width:100%!important;
+  }
+  .app-shell>.sidebar{
+    display:flex!important;
+    position:sticky!important;
+    top:96px!important;
+    width:232px!important;
+    min-width:232px!important;
+    height:calc(100vh - 96px)!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    visibility:visible!important;
+    transform:none!important;
+  }
+  .app-shell>.workspace{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+  }
+  .app-shell>.sidebar .side-nav{
+    display:flex!important;
+    flex-direction:column!important;
+  }
+}
+</style>
 </head>
 <body>
 <script id="aps-build0094-direct-recovery">
