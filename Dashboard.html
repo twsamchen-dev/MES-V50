@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V82.6 SEAL KING MES Enterprise｜Unified Order Index</title>
+<title>V112 SEAL KING MES Enterprise｜人員統計版｜Build 0102</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -4040,7 +4040,7 @@ table tbody tr:hover td{background:#fff2f3!important}
  function row(r){var online=r.online_30m,st=online?'目前在線':'今日曾登入',wo=(r.work_orders||[]).join('、')||'-',mc=(r.machines||[]).join('、')||'-',last=r.last_report||'尚未回報',warn=r.unread_count?'<span class="ps112-warn">未讀 '+r.unread_count+'</span>':'已全部閱讀';return '<tr><td><b>'+H(r.emp_no)+' '+H(r.emp_name)+'</b><br><small>'+H(r.role||'')+'</small></td><td><span class="ps112-online '+(online?'':'ps112-offline')+'">'+st+'</span><br><small>'+H(r.last_login||'')+'</small></td><td>'+r.task_count+'</td><td>'+H(wo)+'</td><td>'+H(mc)+'</td><td>'+r.keyin_count+'</td><td>'+Number(r.actual_qty||0).toLocaleString()+'</td><td>'+Number(r.completion_rate||0)+'%</td><td>'+H(last)+'</td><td>'+warn+'</td></tr>'}
  function render(d){var c=ensure();if(!c)return;var rows=Array.isArray(d.rows)?d.rows:[];c.innerHTML='<div class="ps112-head"><div><h2>👥 今日人員登入 × 任務 × Key In</h2><div class="meta">目前在線＝最近 30 分鐘內成功登入；僅供現場狀態參考，不作為出勤紀錄。｜'+H(d.date||'')+'</div></div><button class="ps112-refresh" onclick="ps112Load()">重新整理</button></div><div class="ps112-kpis"><div class="ps112-kpi"><span>目前在線</span><b>'+Number(d.online_count||0)+'</b></div><div class="ps112-kpi"><span>今日登入</span><b>'+Number(d.login_count||0)+'</b></div><div class="ps112-kpi"><span>已分派人員</span><b>'+Number(d.assigned_count||0)+'</b></div><div class="ps112-kpi"><span>已有 Key In</span><b>'+Number(d.reported_count||0)+'</b></div></div><div class="ps112-table"><table><thead><tr><th>人員</th><th>登入狀態</th><th>任務</th><th>工單</th><th>機台</th><th>回報筆數</th><th>實際量</th><th>目標完成率</th><th>最後回報</th><th>急件通知</th></tr></thead><tbody>'+(rows.length?rows.map(row).join(''):'<tr><td colspan="10">今天尚無人員登入、任務或回報資料。</td></tr>')+'</tbody></table></div>'}
  window.ps112Load=async function(){var c=ensure();if(c)c.style.opacity='.65';try{render(await api())}catch(e){if(c)c.innerHTML='<h2>👥 今日人員統計</h2><div style="color:#b91c1c">'+H(e.message||e)+'</div>'}finally{c=ensure();if(c)c.style.opacity='1'}};
- function start(){ensure();ps112Load();setInterval(ps112Load,30000)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+ function start(){ensure();ps112Load();setInterval(ps112Load,30000);setInterval(function(){if(!E('ps112Card'))ps112Load()},3000)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
 </body>
