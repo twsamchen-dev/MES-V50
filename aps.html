@@ -4423,13 +4423,25 @@ function cloudMetaDiff(localMeta,remoteMeta){
 
 async function loadFastStartupCache(state){
   try{
-    const [poolRaw,scheduleRaw,meta,master,feedback]=await Promise.all([
+    let [poolRaw,scheduleRaw,meta,master,feedback]=await Promise.all([
       window.APSLargeStore?.hydrate?.(FAST_POOL_KEY,[]),
       window.APSLargeStore?.hydrate?.(FAST_SCHEDULE_KEY,[]),
       window.APSLargeStore?.hydrate?.(FAST_META_KEY,null),
       window.APSLargeStore?.hydrate?.(SPEED_MASTER_KEY,[]),
       window.APSLargeStore?.hydrate?.(SPEED_FEEDBACK_KEY,[])
     ]);
+    // Build 0103.1：新版快速快取尚未建立時，沿用既有的大型／localStorage 快照。
+    // 避免使用者明明已完整載入過，重新整理卻因 FAST key 為空再次整批下載。
+    if(!Array.isArray(poolRaw)||!poolRaw.length){
+      const large=await window.APSLargeStore?.hydrate?.('SK_APS_POOL_SNAPSHOT_LARGE_V1',null);
+      const local=parseJSON(localStorage.getItem('SK_APS_POOL_SNAPSHOT_V1'),null);
+      poolRaw=Array.isArray(large?.rows)&&large.rows.length?large.rows:(Array.isArray(local?.rows)?local.rows:[]);
+    }
+    if(!Array.isArray(scheduleRaw)||!scheduleRaw.length){
+      const local=parseJSON(localStorage.getItem('SK_APS_SCHEDULE_SNAPSHOT_V1'),null);
+      scheduleRaw=Array.isArray(local?.rows)?local.rows:[];
+      if(local?.machines&&Object.keys(local.machines).length)state.machines=local.machines;
+    }
     if(!Array.isArray(poolRaw)||!poolRaw.length)return null;
     state.pool=await revivePool(poolRaw);
     state.schedule=await reviveSchedule(Array.isArray(scheduleRaw)?scheduleRaw:[]);
@@ -4672,6 +4684,13 @@ async function bootstrapCloud(force=false){
           const count=await d.apply(res||{});
           // V110.8：只保存資料本身的更新時間，禁止使用每次都會改變的 API 查詢時間。
           meta[d.key]={count:Number(res?.total??res?.count??count??0),updated_at:String(res?.updated_at||"")};
+          // Build 0103.1：工單池／排程下載完成就立刻落地，不等待產速重算與所有畫面重畫。
+          // 即使後續資料集逾時或使用者關閉頁面，下次重新整理仍可先由快取開啟。
+          if(d.key==="workpool"&&state.pool?.length){
+            await window.APSLargeStore?.set?.(FAST_POOL_KEY,state.pool,{mirrorSmall:false});
+          }else if(d.key==="schedule"){
+            await window.APSLargeStore?.set?.(FAST_SCHEDULE_KEY,state.schedule||[],{mirrorSmall:false});
+          }
         }catch(err){
           failures.push(`${d.label}：${err.message||err}`);
           console.warn("APS Cloud dataset skipped",d.action,err);
