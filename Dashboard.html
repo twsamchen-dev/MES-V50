@@ -3216,7 +3216,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
     return new Promise(function(resolve,reject){
       var cb="V805_"+Date.now()+"_"+Math.floor(Math.random()*999999),s=document.createElement("script"),done=false;
       var timer=setTimeout(function(){finish();reject(new Error("DataHub API 逾時："+action))},60000);
-      function finish(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      function finish(){if(done)return;done=true;clearTimeout(timer);window[cb]=function(){};if(s.parentNode)s.parentNode.removeChild(s)}
       window[cb]=function(data){finish();if(data&&data.ok===false)reject(new Error(data.message||data.error||"DataHub API 錯誤"));else resolve(data||{})};
       var q=["action="+encodeURIComponent(action),"callback="+encodeURIComponent(cb),"_="+Date.now()];
       Object.keys(params).forEach(function(k){if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(params[k]))});
@@ -3793,7 +3793,7 @@ table tbody tr:hover td{background:#fff2f3!important}
 
       function cleanup() {
         clearTimeout(timer);
-        try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+        window[cb] = function() {};
         if (script.parentNode) script.parentNode.removeChild(script);
       }
 
