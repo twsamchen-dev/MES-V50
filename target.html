@@ -95,7 +95,7 @@
       <div class="col4"><label><span class="requiredMark">＊</span>指定作業人員 / ผู้ปฏิบัติงาน</label><select id="operator_emp_no" onchange="fillOperatorName_()"><option value="">請選擇作業人員 / กรุณาเลือกผู้ปฏิบัติงาน</option></select><div id="operatorStatus" class="empStatus">由 Employee 人員資料建立下拉選單。</div></div>
       <input id="operator_name" type="hidden">
       <div class="col4"><label>工單／訂單／命令單／日報／批號／Key In 工單</label><div class="lookupLine"><input id="work_order_no" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="manualLookupInput_()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupOrder(true)}" placeholder="例如 MM2605060026 或 202607010036"><button id="lookupBtn" class="lookupBtn" type="button" onclick="lookupOrder(true)">🔍 搜尋</button></div><div class="muted">請完整輸入後按「搜尋」或 Enter。已關閉自動補字與輸入中自動搜尋，避免只打幾個字就被替換。</div></div>
-      <div class="col4"><label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02"></div>
+      <div class="col4"><label><span class="requiredMark">＊</span>機台 / เครื่องจักร</label><select id="machine_code"><option value="">請選擇機台 / กรุณาเลือกเครื่องจักร</option><optgroup label="工業"><option>1B02</option><option>1B08</option><option>1B10</option><option>1B19</option><option>1S02</option><option>1S18</option></optgroup><optgroup label="保密"><option>1S03</option><option>1S07</option><option>1S12</option><option>1S16</option><option>1S19</option></optgroup><optgroup label="文具"><option>1B22</option><option>1C18</option><option>1V01</option><option>1V02</option><option>1V09</option></optgroup></select><div class="muted">工單搜尋帶回其他機台時，會自動加入選項。</div></div>
       <div class="col4"><label>訂單單號 / เลขออเดอร์</label><input id="order_no" placeholder="可空白"></div>
       <input id="command_no" type="hidden"><input id="report_no" type="hidden"><input id="daily_report_no" type="hidden"><input id="input_part_no" type="hidden"><input id="output_part_no" type="hidden"><input id="input_lot_no" type="hidden"><input id="output_lot_no" type="hidden">
       <div class="col4"><label>料號 / รหัสสินค้า</label><input id="part_no" placeholder="由工單或 SL31A 帶入"></div>
@@ -328,6 +328,7 @@ async function rebuildOrderCache(){
   }
 }
 function syncPlannedDate(){if(!$('planned_finish').value)$('planned_finish').value=$('report_date').value}
+function setMachineSelectValue_(value){const sel=$('machine_code'),v=String(value||'').trim().toUpperCase();if(!sel)return;if(!v){sel.value='';return}if(!Array.from(sel.options).some(o=>String(o.value).toUpperCase()===v)){const opt=document.createElement('option');opt.value=v;opt.textContent=v+'（ERP 帶入）';sel.appendChild(opt)}sel.value=Array.from(sel.options).find(o=>String(o.value).toUpperCase()===v).value}
 
 // V90：Target_Plan 已使用標準欄位，前端只依欄位名稱正規化，不再搬移整列資料。
 function normalizeTargetRow(r){
@@ -602,7 +603,7 @@ function fillFromOrder(r){
   $('customer').value=r.customer||'';
   $('product_spec').value=r.product_spec||'';
   if(r.process)$('process_site').value=matchProcess(r.process);
-  if(r.machine||r.machine_code)$('machine_code').value=r.machine||r.machine_code;
+  if(r.machine||r.machine_code)setMachineSelectValue_(r.machine||r.machine_code);
   applyTargetQtyByUnit_(r);
   if(r.pivot_len)$('pivot_len').value=r.pivot_len;
   if(r.pivot_width)$('pivot_width').value=r.pivot_width;
@@ -1008,7 +1009,7 @@ async function consumeTargetPrefill_(){
   if(!wo)return;if(date){$('report_date').value=date;$('planned_finish').value=date;syncMultiStart()}
   $('work_order_no').value=wo;toast('正在帶入待補目標工單…');
   try{await lookupOrder(true)}catch(_e){}
-  if(machine)$('machine_code').value=machine;setTargetUnit(unit==='M2'?'M2':'R',true);
+  if(machine)setMachineSelectValue_(machine);setTargetUnit(unit==='M2'?'M2':'R',true);
   $('targetUnitHint').textContent='已由 Dashboard 帶入 '+(unit==='M2'?'M²':'R')+'，請輸入目標數量後儲存。';
   const input=unit==='M2'?$('target_m2'):$('target_roll');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.focus(),300)}
 }
