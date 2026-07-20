@@ -7181,12 +7181,11 @@ document.addEventListener("DOMContentLoaded",function(){
       const accepted=await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});
       // 成功後立即從待處理列表移除，避免重新讀取前仍停留在畫面。
       ML.decisions[r.learning_key]={learning_key:r.learning_key,decision:"accepted",rule_id:accepted?.rule?.id||accepted?.rule_id||"",decided_by:"11035",decided_at:new Date().toISOString(),fingerprint:rowFingerprint(r),source:"accept_success"};saveDecisionCache();
-      render();
-      const progress=$("mlProgress");if(progress)progress.textContent="規則已建立，該項目已移至『已建立規則』。";
+      ML.filter="accepted";document.querySelectorAll(".ml-filter").forEach(x=>x.classList.toggle("active",x.dataset.mlFilter==="accepted"));render();
+      const progress=$("mlProgress");if(progress)progress.textContent="✓ 規則建立成功，已切換至『已建立規則』；重新整理後仍會保留。";
       window.log?.("AI 建議已接受，正式機台規則已建立");
-      await load();
-      if(!ML.decisions[r.learning_key]){const c=readDecisionCache();if(c[r.learning_key]){ML.decisions[r.learning_key]=c[r.learning_key];render();}}
-      if(window.loadMachineRules)window.loadMachineRules();
+      if(window.V845_STATUS)window.V845_STATUS("✓ <b>正式規則已建立並保存</b><br>"+esc(r.part_no||r.product_spec||""),6000);
+      setTimeout(()=>{if(window.loadMachineRules)window.loadMachineRules()},300);
     }catch(e){
       console.error("Machine learning accept failed",e);
       window.log?.("AI 規則建立失敗："+(e.message||e));
