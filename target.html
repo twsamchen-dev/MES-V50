@@ -19,6 +19,7 @@
 .lookupLine{display:flex;gap:8px;align-items:stretch}.lookupLine input{flex:1}.lookupBtn{width:112px;min-width:112px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer}.lookupBtn:hover{filter:brightness(.96)}.lookupBtn:disabled{opacity:.65;cursor:wait}.lookupBtn.ok{background:#16a34a}.lookupBtn.bad{background:#dc2626}.variance-over{color:#15803d;font-weight:900}.variance-gap{color:#b45309;font-weight:900}.variance-wait{color:#64748b;font-weight:800}@media(max-width:560px){.lookupLine{flex-direction:column}.lookupBtn{width:100%}}
 
 .datahubCard{grid-column:span 12;border:1px solid #bfdbfe;background:linear-gradient(135deg,#f8fbff,#eef6ff);border-radius:16px;padding:14px}.datahubHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.datahubTitle{font-size:19px;font-weight:900}.datahubBadge{display:inline-block;border-radius:999px;padding:5px 10px;background:#dbeafe;color:#1e3a8a;font-weight:900;font-size:12px}.datahubGrid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px;margin-top:12px}.dhStat{background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:10px}.dhStat b{display:block;font-size:22px;margin-top:4px}.dhOk{color:#15803d}.dhWarn{color:#b45309}.dhBad{color:#b91c1c}.dhNote{margin-top:10px;color:#475569;font-size:13px;line-height:1.6}@media(max-width:900px){.datahubGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.datahubGrid{grid-template-columns:repeat(2,1fr)}}
+.targetFilters{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:8px;margin:12px 0 9px;padding:11px;background:#f8fafc;border:1px solid var(--line);border-radius:12px}.targetFilters input,.targetFilters select{min-height:38px;padding:7px 9px;font-size:13px}.filterActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}.filterCheck{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#991b1b}.filterCheck input{width:auto;min-height:0}.filterCount{font-weight:900;color:#1d4ed8}.clearFilterBtn{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 11px;font-weight:900;cursor:pointer}@media(max-width:1200px){.targetFilters{grid-template-columns:repeat(4,1fr)}}@media(max-width:700px){.targetFilters{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.targetFilters{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -112,7 +113,19 @@
     </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。</div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span></div>
 
     <div class="card col4"><h2><span id="quickTitle">五份資料工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋工單／訂單／命令單／日報／批號／投入產出料號製號／客戶／規格／機台" oninput="debouncedOrderList()"><div id="quickList" class="found" style="max-height:620px;overflow:auto">讀取後顯示</div></div>
-    <div class="card col12"><div class="targetListHead"><h2><span id="targetTitle">今日目標清單 / 配對狀況</span> / รายการเป้าหมาย</h2><div class="targetRangeBtns" aria-label="目標清單顯示區間"><button type="button" class="targetRangeBtn active" id="listBtnToday" onclick="setRangeMode('today')">今天 / วันนี้</button><button type="button" class="targetRangeBtn" id="listBtnWeek" onclick="setRangeMode('week')">周別 / สัปดาห์</button><button type="button" class="targetRangeBtn" id="listBtnMonth" onclick="setRangeMode('month')">月份 / เดือน</button></div></div><div class="muted">依工單／命令單／日報號／批號跨日累積 Key In；優先依同機台、同製程精準配對。R 為完成率基準，切換日期不重新呼叫配對 API。</div><div id="targetTable"></div></div>
+    <div class="card col12"><div class="targetListHead"><h2><span id="targetTitle">今日目標清單 / 配對狀況</span> / รายการเป้าหมาย</h2><div class="targetRangeBtns" aria-label="目標清單顯示區間"><button type="button" class="targetRangeBtn active" id="listBtnToday" onclick="setRangeMode('today')">今天 / วันนี้</button><button type="button" class="targetRangeBtn" id="listBtnWeek" onclick="setRangeMode('week')">周別 / สัปดาห์</button><button type="button" class="targetRangeBtn" id="listBtnMonth" onclick="setRangeMode('month')">月份 / เดือน</button></div></div><div class="muted">依工單／命令單／日報號／批號跨日累積 Key In；優先依同機台、同製程精準配對。R 為完成率基準，切換日期不重新呼叫配對 API。</div>
+      <div class="targetFilters" aria-label="目標清單欄位篩選">
+        <input id="filterEmp" placeholder="工號／姓名／角色" oninput="renderTargets()">
+        <input id="filterWorkOrder" placeholder="工單關鍵字" oninput="renderTargets()">
+        <input id="filterCustomer" placeholder="客戶關鍵字" oninput="renderTargets()">
+        <select id="filterProcess" onchange="renderTargets()"><option value="">全部站點</option></select>
+        <select id="filterMachine" onchange="renderTargets()"><option value="">全部機台</option></select>
+        <select id="filterMatch" onchange="renderTargets()"><option value="">全部配對狀態</option><option value="paired">已配對</option><option value="unmatched">未配對／等待</option><option value="duplicate">重複配對阻擋</option></select>
+        <select id="filterWorkStatus" onchange="renderTargets()"><option value="">全部作業狀態</option><option value="not_started">未作業</option><option value="running">作業中</option><option value="completed">已完成</option></select>
+        <select id="filterCompletion" onchange="renderTargets()"><option value="">全部完成率</option><option value="0">0%</option><option value="1-99">1%～99%</option><option value="100">100%</option><option value="over">超過100%</option></select>
+      </div>
+      <div class="filterActions"><label class="filterCheck"><input id="filterAbnormal" type="checkbox" onchange="renderTargets()">只看異常（未配對／重複／未達標）</label><button type="button" class="clearFilterBtn" onclick="clearTargetFilters()">清除篩選</button><span id="targetFilterCount" class="filterCount"></span></div>
+      <div id="targetTable"></div></div>
   </div>
 </div>
 <div id="toast" class="toast"></div>
@@ -823,9 +836,45 @@ async function recalculateMatches(force=true){
 }
 function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已更新'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('資料待確認')||v.includes('等待 ERP 更新'))return 'status-run';return 'status-wait'}
 function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待載入跨日 Key In 實績',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
+function targetFilterValue_(id){const el=$(id);return el?String(el.value||'').trim():''}
+function syncTargetFilterOptions_(rows){
+  [['filterProcess','process_site','全部站點'],['filterMachine','machine_code','全部機台']].forEach(([id,key,label])=>{
+    const el=$(id);if(!el)return;const keep=el.value;
+    const values=[...new Set(rows.map(r=>String(r[key]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+    const signature=values.join('\u0001');if(el.dataset.signature===signature)return;
+    el.innerHTML='<option value="">'+label+'</option>'+values.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');
+    el.dataset.signature=signature;if(values.includes(keep))el.value=keep;
+  });
+}
+function filteredTargetRows_(rows){
+  const emp=norm(targetFilterValue_('filterEmp')),wo=norm(targetFilterValue_('filterWorkOrder')),customer=norm(targetFilterValue_('filterCustomer'));
+  const process=targetFilterValue_('filterProcess'),machine=targetFilterValue_('filterMachine'),match=targetFilterValue_('filterMatch'),work=targetFilterValue_('filterWorkStatus'),completion=targetFilterValue_('filterCompletion');
+  const abnormal=$('filterAbnormal')&&$('filterAbnormal').checked;
+  return rows.filter(r=>{
+    if(emp&&!norm([r.emp_no,r.leader_name,r.leader_role].join(' ')).includes(emp))return false;
+    if(wo&&!norm([r.work_order_no,r.command_no,r.order_no,r.report_no,r.batch_no].join(' ')).includes(wo))return false;
+    if(customer&&!norm(r.customer).includes(customer))return false;
+    if(process&&String(r.process_site||'')!==process)return false;
+    if(machine&&String(r.machine_code||'')!==machine)return false;
+    const ms=String(r.file_match_status||''),src=String(r.actual_source||r.data_source||'').toUpperCase();
+    const paired=src==='ERP'||src==='KEY IN'||ms.includes('ERP 已更新')||ms.includes('已配對');
+    const duplicate=ms.includes('不重複計算')||ms.includes('另一筆目標採用');
+    if(match==='paired'&&!paired)return false;if(match==='unmatched'&&(paired||duplicate))return false;if(match==='duplicate'&&!duplicate)return false;
+    const ws=String(r.work_status||r.status||''),pct=num(r.completion_rate);
+    if(work==='not_started'&&!ws.includes('未作業'))return false;if(work==='running'&&!ws.includes('作業中'))return false;if(work==='completed'&&!ws.includes('完成'))return false;
+    if(completion==='0'&&pct!==0)return false;if(completion==='1-99'&&!(pct>0&&pct<100))return false;if(completion==='100'&&pct!==100)return false;if(completion==='over'&&pct<=100)return false;
+    if(abnormal&&(paired&&!duplicate&&pct>=100))return false;
+    return true;
+  });
+}
+function clearTargetFilters(){['filterEmp','filterWorkOrder','filterCustomer','filterProcess','filterMachine','filterMatch','filterWorkStatus','filterCompletion'].forEach(id=>{if($(id))$(id).value=''});if($('filterAbnormal'))$('filterAbnormal').checked=false;renderTargets()}
 function renderTargets(){
-  const rows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
-  if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
+  const baseRows=(MATCH_ROWS&&MATCH_ROWS.length)?MATCH_ROWS:TARGETS;
+  syncTargetFilterOptions_(baseRows);
+  const rows=filteredTargetRows_(baseRows);
+  if($('targetFilterCount'))$('targetFilterCount').textContent='顯示 '+rows.length+' / '+baseRows.length+' 筆';
+  if(!baseRows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
+  if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前篩選條件查無資料，請清除或調整篩選。</div>';updateDataHubHealth_();return}
   const heads=[
     ['report_date','日期<br>วันที่'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
