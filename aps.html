@@ -7224,6 +7224,42 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="v1107-learning-filter-style">
+.ml-column-filter{display:grid;grid-template-columns:minmax(220px,2fr) repeat(5,minmax(130px,1fr)) auto;gap:8px;align-items:center;margin:12px 0;padding:11px;background:#0b141d;border:1px solid #303d4b;border-radius:10px}.ml-column-filter input,.ml-column-filter select{width:100%;background:#071526;color:#fff;border:1px solid #354555;border-radius:8px;padding:9px}.ml-filter-count{color:#9fb0ba;font-size:12px;white-space:nowrap}@media(max-width:1100px){.ml-column-filter{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.ml-column-filter{grid-template-columns:1fr}}
+</style>
+<script id="v1107-learning-filter-and-admin-guard">
+(()=>{
+  const AUTH_KEY='SK_APS_PAGE_ADMIN_OK_UNTIL_V1',AUTH_MS=10*60*1000,$=id=>document.getElementById(id),norm=v=>String(v??'').trim().toUpperCase();
+  function pageGuard(action){
+    if(Number(sessionStorage.getItem(AUTH_KEY)||0)>Date.now())return true;
+    const original=window.SKAPSAdminGuard;if(typeof original!=='function'){alert('管理密碼防呆尚未載入，已阻止此次操作。');return false}
+    const ok=original(action);if(ok)sessionStorage.setItem(AUTH_KEY,String(Date.now()+AUTH_MS));return ok;
+  }
+  function installGuard(){
+    if(window.__APS_PAGE_GUARD_1107__)return;window.__APS_PAGE_GUARD_1107__=true;
+    const protectedSelector=['#runSchedule','#rerunSchedule','#clearData','#saveShiftSettings','#resetShiftSettings','#saveSpeedFeedback','#importSpeedJSON','#mrSave','#mrImport','#mrApply','#mlRefreshCloud','#mlSaveAuto','#mlAutoApplyNow','#applyUrgent','[data-ml-accept]','[data-ml-ignore]','[data-ml-restore]','[data-mr-del]'].join(',');
+    document.addEventListener('click',e=>{const b=e.target.closest(protectedSelector);if(!b)return;const action=(b.textContent||b.id||'APS 資料異動').trim();if(pageGuard(action))return;e.preventDefault();e.stopImmediatePropagation()},true);
+    const base=window.SKAPSAdminGuard;if(typeof base==='function'&&!base.__session1107){const wrapped=action=>Number(sessionStorage.getItem(AUTH_KEY)||0)>Date.now()?true:(base(action)?(sessionStorage.setItem(AUTH_KEY,String(Date.now()+AUTH_MS)),true):false);wrapped.__session1107=true;window.SKAPSAdminGuard=wrapped}
+  }
+  const filterState={q:'',process:'all',machine:'all',learning:'all',decision:'all',confidence:0};
+  function createFilters(){
+    const card=$('machineLearningCard'),table=$('mlTable');if(!card||!table||$('mlColumnFilter'))return;
+    const bar=document.createElement('div');bar.id='mlColumnFilter';bar.className='ml-column-filter';bar.innerHTML='<input id="mlFilterQ" placeholder="搜尋料號／規格"><select id="mlFilterProcess"><option value="all">全部製程</option></select><select id="mlFilterMachine"><option value="all">全部主機台</option></select><select id="mlFilterLearning"><option value="all">全部學習狀態</option><option value="高信心建議">高信心建議</option><option value="AI 建議">AI 建議</option><option value="待累積">待累積</option><option value="已建立規則">已建立規則</option></select><select id="mlFilterDecision"><option value="all">全部確認狀態</option><option value="confirmed">課長已確認</option><option value="unconfirmed">尚未確認</option><option value="ignored">已忽略</option></select><select id="mlFilterConfidence"><option value="0">全部信心值</option><option value="50">50%以上</option><option value="70">70%以上</option><option value="90">90%以上</option></select><button class="btn ghost" id="mlClearColumnFilters">清除篩選</button><span id="mlFilterCount" class="ml-filter-count"></span>';table.parentNode.insertBefore(bar,table);
+    [['mlFilterQ','q','input'],['mlFilterProcess','process','change'],['mlFilterMachine','machine','change'],['mlFilterLearning','learning','change'],['mlFilterDecision','decision','change'],['mlFilterConfidence','confidence','change']].forEach(([id,k,ev])=>$(id).addEventListener(ev,e=>{filterState[k]=k==='confidence'?Number(e.target.value):e.target.value;applyFilters()}));$('mlClearColumnFilters').onclick=()=>{filterState.q='';filterState.process=filterState.machine=filterState.learning=filterState.decision='all';filterState.confidence=0;$('mlFilterQ').value='';['mlFilterProcess','mlFilterMachine','mlFilterLearning','mlFilterDecision'].forEach(id=>$(id).value='all');$('mlFilterConfidence').value='0';applyFilters()};
+  }
+  function refreshOptions(rows){
+    const fill=(id,vals,label)=>{const el=$(id);if(!el)return;const old=el.value,unique=[...new Set(vals.filter(Boolean))].sort();el.innerHTML='<option value="all">'+label+'</option>'+unique.map(v=>'<option value="'+String(v).replace(/"/g,'&quot;')+'">'+v+'</option>').join('');el.value=unique.includes(old)?old:'all';filterState[id==='mlFilterProcess'?'process':'machine']=el.value};
+    fill('mlFilterProcess',rows.map(tr=>tr.cells[1]?.textContent.trim()),'全部製程');fill('mlFilterMachine',rows.map(tr=>(tr.cells[2]?.querySelector('b')?.textContent||tr.cells[2]?.textContent||'').trim()),'全部主機台');
+  }
+  function applyFilters(){
+    const tbody=$('mlTable')?.querySelector('tbody');if(!tbody)return;const rows=[...tbody.rows];refreshOptions(rows);let shown=0;
+    rows.forEach(tr=>{const part=norm(tr.cells[0]?.textContent),process=(tr.cells[1]?.textContent||'').trim(),machine=(tr.cells[2]?.querySelector('b')?.textContent||tr.cells[2]?.textContent||'').trim(),learning=(tr.cells[8]?.textContent||'').trim(),decision=(tr.cells[9]?.textContent||'').trim(),confidence=Number((tr.cells[6]?.textContent||'').match(/[\d.]+/)?.[0]||0);const decisionOk=filterState.decision==='all'||(filterState.decision==='confirmed'&&/確認|套用/.test(decision))||(filterState.decision==='unconfirmed'&&/尚未/.test(decision))||(filterState.decision==='ignored'&&/忽略/.test(decision));const ok=(!filterState.q||part.includes(norm(filterState.q)))&&(filterState.process==='all'||process===filterState.process)&&(filterState.machine==='all'||machine===filterState.machine)&&(filterState.learning==='all'||learning.includes(filterState.learning))&&decisionOk&&confidence>=filterState.confidence;tr.style.display=ok?'':'none';if(ok)shown++});if($('mlFilterCount'))$('mlFilterCount').textContent='顯示 '+shown+' / '+rows.length+' 筆';
+  }
+  function installFilters(){createFilters();const host=$('mlTable');if(!host||host.dataset.filterObserver1107)return;host.dataset.filterObserver1107='1';new MutationObserver(()=>setTimeout(applyFilters,30)).observe(host,{childList:true,subtree:true});setTimeout(applyFilters,100)}
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{installGuard();installFilters()},2100));setTimeout(()=>{installGuard();installFilters()},3500);
+})();
+</script>
+
 <style>
 .v845-status{position:fixed;right:16px;bottom:48px;z-index:9996;background:#0b1820ee;border:1px solid #34515e;border-radius:10px;padding:10px 12px;color:#dce9ee;font-size:12px;box-shadow:0 8px 24px #0008;display:none}.v845-status.show{display:block}.v845-status b{color:#75e5b3}
 </style>
