@@ -989,6 +989,15 @@ async function saveTarget(){
   const btn=$('saveTargetBtn');btn.disabled=true;btn.textContent='儲存中… / กำลังบันทึก';$('saveMsg').textContent='正在同步雲端…';
   try{data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();await apiPost('savetargetplan',data);$('saveMsg').textContent='✓ 已儲存並同步雲端';toast('目標已儲存');setTimeout(loadBootstrap,700)}catch(e){alert('儲存失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย'}
 }
+async function consumeTargetPrefill_(){
+  const q=new URLSearchParams(location.search),wo=q.get('prefill_wo')||'',date=dateKey(q.get('prefill_date')||''),machine=q.get('prefill_machine')||'',unit=normalizeTargetUnit_(q.get('prefill_unit')||'R');
+  if(!wo)return;if(date){$('report_date').value=date;$('planned_finish').value=date;syncMultiStart()}
+  $('work_order_no').value=wo;toast('正在帶入待補目標工單…');
+  try{await lookupOrder(true)}catch(_e){}
+  if(machine)$('machine_code').value=machine;setTargetUnit(unit==='M2'?'M2':'R',true);
+  $('targetUnitHint').textContent='已由 Dashboard 帶入 '+(unit==='M2'?'M²':'R')+'，請輸入目標數量後儲存。';
+  const input=unit==='M2'?$('target_m2'):$('target_roll');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.focus(),300)}
+}
 
 document.addEventListener('DOMContentLoaded',()=>{
   $('report_date').value=today();
@@ -1004,7 +1013,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   setTargetUnit('',false);
   setScheduleMode('single');
   updateMultiSummary();
-  loadBootstrap();
+  loadBootstrap().finally(consumeTargetPrefill_);
 });
 
 </script>
