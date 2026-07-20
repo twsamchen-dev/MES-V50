@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V112 SEAL KING MES Enterprise｜人員統計版｜Build 0104</title>
+<title>V112 SEAL KING MES Enterprise｜人員統計版｜Build 0105</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -4031,6 +4031,7 @@ table tbody tr:hover td{background:#fff2f3!important}
 <!-- V112｜人員登入、任務與回報即時統計 -->
 <style id="personnel_stats_112">
 #v805Card{display:none!important}.ps112-card{grid-column:span 12;border:1px solid #bfdbfe;border-left:7px solid #2563eb;background:#fff;border-radius:20px;padding:17px 18px;box-shadow:0 12px 30px rgba(30,64,175,.10)}.ps112-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.ps112-head h2{margin:0}.ps112-headActions{display:flex;gap:8px;flex-wrap:wrap}.ps112-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:12px}.ps112-kpi{border:1px solid #dbeafe;background:#eff6ff;border-radius:13px;padding:11px}.ps112-kpi span{display:block;color:#64748b;font-size:12px;font-weight:900}.ps112-kpi b{font-size:28px;color:#1e3a8a}.ps112-filters{display:grid;grid-template-columns:minmax(180px,1.5fr) repeat(3,minmax(130px,1fr));gap:8px;margin-top:11px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}.ps112-filters input,.ps112-filters select{min-height:38px;padding:7px 9px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}.ps112-table{margin-top:10px;overflow:auto;max-height:320px;border:1px solid #e2e8f0;border-radius:12px}.ps112-table.collapsed{display:none}.ps112-table table{min-width:1050px}.ps112-table th{position:sticky;top:0;z-index:2}.ps112-online{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;background:#dcfce7;color:#166534}.ps112-offline{background:#f1f5f9;color:#64748b}.ps112-warn{color:#b91c1c;font-weight:900}.ps112-refresh{border:0;border-radius:11px;background:#dbeafe;color:#1e40af;padding:9px 12px;font-weight:900;cursor:pointer}@media(max-width:850px){.ps112-filters{grid-template-columns:1fr 1fr}}@media(max-width:700px){.ps112-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.ps112-filters{grid-template-columns:1fr}}
+.ps112-table{overflow-x:auto!important;overflow-y:scroll!important;height:250px!important;max-height:250px!important;scrollbar-gutter:stable}
 </style>
 <script id="personnel_stats_112_script">
 (function(){
