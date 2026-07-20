@@ -7139,12 +7139,19 @@ document.addEventListener("DOMContentLoaded",function(){
 <script id="v84-machine-learning-script">
 (function(){
   const ML={rows:[],decisions:{},filter:"all",loading:false,settings:{enabled:false,threshold:90}};
+  const ML_DECISION_CACHE="SK_APS_MACHINE_LEARNING_DECISIONS_V1106";
   const API=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const norm=v=>String(v??"").trim().toUpperCase().replace(/\s+/g,"");
+  function rowFingerprint(r){return [r.part_no||r.product_spec,r.process,r.primary_machine].map(norm).join("|")}
+  function readDecisionCache(){try{const x=JSON.parse(localStorage.getItem(ML_DECISION_CACHE)||"{}");return x&&typeof x==="object"?x:{}}catch(_){return {}}}
+  function saveDecisionCache(){try{localStorage.setItem(ML_DECISION_CACHE,JSON.stringify(ML.decisions))}catch(_){}}
+  function formalRuleFor(r){const rules=window.APSMachineRules?.getRules?.()||[];return rules.find(x=>norm(x.partPattern)===norm(r.part_no||r.product_spec)&&(!x.process||norm(x.process)===norm(r.process))&&(!x.primaryMachine||norm(x.primaryMachine)===norm(r.primary_machine)))}
+  function inferEstablishedDecisions(){ML.rows.forEach(r=>{if(ML.decisions[r.learning_key])return;const rule=formalRuleFor(r);if(rule)ML.decisions[r.learning_key]={learning_key:r.learning_key,decision:"accepted",rule_id:rule.id||"",decided_by:"11035",decided_at:rule.updatedAt||rule.createdAt||"",source:"formal_rule_match",fingerprint:rowFingerprint(r)}})}
   function jsonp(action,params={}){return new Promise((resolve,reject)=>{const cb="ML843_"+Date.now()+"_"+Math.floor(Math.random()*999999);const s=document.createElement("script");const timer=setTimeout(()=>{cleanup();reject(new Error("讀取逾時"));},45000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=r=>{cleanup();r&&r.ok===false?reject(new Error(r.message||"API error")):resolve(r||{})};s.onerror=()=>{cleanup();reject(new Error("雲端連線失敗"))};s.src=API+"?"+new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params));document.head.appendChild(s);});}
   function statusClass(s){return s==="高信心建議"?"high":s==="AI 建議"?"ai":"pending"}
-  function decisionBadge(key){const d=ML.decisions[key];if(!d)return "";if(d.decision==="accepted")return '<span class="ml-decision accepted">課長已接受</span>';if(d.decision==="auto_applied")return '<span class="ml-decision auto">系統已套用</span>';if(d.decision==="ignored")return '<span class="ml-decision ignored">已忽略</span>';return "";}
+  function decisionBadge(key){const d=ML.decisions[key];if(!d)return '<span class="ml-decision">尚未確認</span>';const date=d.decided_at?String(d.decided_at).slice(0,10):"";if(d.decision==="accepted")return '<span class="ml-decision accepted">✓ 課長已確認</span>'+(date?'<div class="ml-machine-detail">建立 '+esc(date)+'</div>':'');if(d.decision==="auto_applied")return '<span class="ml-decision auto">✓ 系統已套用</span>'+(date?'<div class="ml-machine-detail">建立 '+esc(date)+'</div>':'');if(d.decision==="ignored")return '<span class="ml-decision ignored">已忽略</span>';return "";}
   function ensureAutoBox(){const card=$("machineLearningCard");if(!card||$("mlAutoBox"))return;const box=document.createElement("div");box.id="mlAutoBox";box.className="ml-auto-box";box.innerHTML='<label><input id="mlAutoEnabled" type="checkbox"> 高信心建議自動建立正式規則</label><label>門檻 <input id="mlAutoThreshold" type="number" min="50" max="100" value="90"> %</label><button class="btn ghost" id="mlSaveAuto">儲存設定</button><button class="btn yellow" id="mlAutoApplyNow">立即套用符合條件項目</button><span id="mlAutoMsg" class="hint"></span>';const k=card.querySelector('.center-kpis');card.insertBefore(box,k||card.firstChild);$("mlSaveAuto").onclick=saveAutoSettings;$("mlAutoApplyNow").onclick=autoApplyNow;}
   function render(){
     const box=$("mlTable");if(!box)return;let rows=ML.rows.slice();
@@ -7158,8 +7165,12 @@ document.addEventListener("DOMContentLoaded",function(){
     if(!rows.length){box.className="empty";box.textContent=ML.filter==="accepted"?"目前尚無已建立規則":ML.filter==="ignored"?"目前沒有已忽略項目":"目前沒有待處理的機台學習資料";return;}
     box.className="tablewrap";
     box.innerHTML='<table><thead><tr><th>料號／規格</th><th>製程</th><th>主機台</th><th>可共用機台</th><th>樣本</th><th>實測產速</th><th>信心值</th><th>AI 推薦原因</th><th>學習狀態</th><th>確認狀態</th><th>最近使用</th><th>操作</th></tr></thead><tbody>'+rows.map((r,i)=>{const detail=(r.machine_detail||[]).map(m=>esc(m.machine)+" "+m.count+"次").join("、");const speed=Number(r.cycle_output||0)>0&&Number(r.cycle_minutes||0)>0?(Number(r.cycle_output).toLocaleString()+" "+esc(r.cycle_unit||"R")+" / "+Number(r.cycle_minutes).toFixed(2)+" 分<br><span class=\"ml-machine-detail\">約 "+Number(r.output_per_hour||0).toFixed(1)+" /小時</span>"):"—";const d=ML.decisions[r.learning_key];let ops='';if(d&&d.decision==="ignored")ops='<button class="btn ghost" data-ml-restore="'+i+'">恢復建議</button>';else if(d&&(d.decision==="accepted"||d.decision==="auto_applied"))ops='<button class="btn ghost" data-ml-restore="'+i+'">重新評估</button>';else ops='<button class="btn green" data-ml-accept="'+i+'">接受並建立規則</button><button class="btn ghost" data-ml-use="'+i+'">先帶入表單</button><button class="btn red" data-ml-ignore="'+i+'">忽略</button>';return '<tr><td><b>'+esc(r.part_no||"-")+'</b><div class="ml-machine-detail">'+esc(r.product_spec||"")+'</div></td><td>'+esc(r.process||"-")+'</td><td><b>'+esc(r.primary_machine||"-")+'</b><div class="ml-machine-detail">主機 '+Number(r.primary_count||0)+' 次</div></td><td>'+esc(r.shared_machines||"-")+'<div class="ml-machine-detail">'+detail+'</div></td><td>'+Number(r.total_samples||0)+' 筆<div class="ml-machine-detail">Target '+Number(r.target_samples||0)+'／Key In '+Number(r.keyin_samples||0)+'</div></td><td>'+speed+'</td><td><div class="ml-confidence"><b>'+Number(r.confidence||0)+'%</b><span class="ml-bar"><i style="width:'+Math.max(0,Math.min(100,Number(r.confidence||0)))+'%"></i></span></div></td><td><div class="ml-reason"><details><summary>查看推薦依據</summary><div><b>同料號：</b>'+Number(r.same_part_samples||0)+' 筆<br><b>同規格：</b>'+Number(r.same_spec_samples||0)+' 筆<br><b>同寬度：</b>'+Number(r.same_width_samples||0)+' 筆'+(Number(r.width_mm||0)?'（'+Number(r.width_mm)+'mm）':'')+'<br><b>同製程：</b>'+Number(r.same_process_samples||0)+' 筆<div class="basis">'+esc(r.recommendation_basis||r.evidence_reason||"尚無說明")+'</div></div></details></div></td><td><span class="ml-status '+statusClass(r.status)+'">'+esc(r.status||"-")+'</span></td><td>'+decisionBadge(r.learning_key)+'</td><td>'+esc(r.last_used_date||"-")+'</td><td><div class="actions" style="margin:0">'+ops+'</div></td></tr>';}).join("")+'</tbody></table>';
-    box.querySelectorAll('[data-ml-use]').forEach(b=>b.onclick=()=>useAsRule(rows[Number(b.dataset.mlUse)]));box.querySelectorAll('[data-ml-accept]').forEach(b=>b.onclick=()=>accept(rows[Number(b.dataset.mlAccept)],b));box.querySelectorAll('[data-ml-ignore]').forEach(b=>b.onclick=()=>ignore(rows[Number(b.dataset.mlIgnore)],b));box.querySelectorAll('[data-ml-restore]').forEach(b=>b.onclick=()=>restore(rows[Number(b.dataset.mlRestore)],b));
+    box.querySelectorAll('[data-ml-use]').forEach(b=>b.onclick=()=>useAsRule(rows[Number(b.dataset.mlUse)]));box.querySelectorAll('[data-ml-accept]').forEach(b=>b.onclick=()=>accept(rows[Number(b.dataset.mlAccept)],b));box.querySelectorAll('[data-ml-ignore]').forEach(b=>b.onclick=()=>ignore(rows[Number(b.dataset.mlIgnore)],b));box.querySelectorAll('[data-ml-restore]').forEach(b=>b.onclick=()=>restore(rows[Number(b.dataset.mlRestore)],b));decorateEstablished(rows,box);
   }
+  function decorateEstablished(rows,box){
+    [...box.querySelectorAll('tbody tr')].forEach((tr,i)=>{const r=rows[i],d=r&&ML.decisions[r.learning_key];if(!d||!["accepted","auto_applied"].includes(d.decision))return;const cells=tr.cells;if(cells[8])cells[8].innerHTML='<span class="ml-status high">已建立規則</span>';if(cells[9])cells[9].innerHTML=decisionBadge(r.learning_key);if(cells[11]){cells[11].innerHTML='<div class="actions" style="margin:0"><button class="btn green" data-view-rule>查看規則</button></div>';cells[11].querySelector('[data-view-rule]').onclick=()=>viewRule(r)}});
+  }
+  function viewRule(r){if(!r)return;const tab=document.querySelector('[data-page="machineRules"]');if(tab)tab.click();const search=$("mrSearch");if(search){search.value=r.part_no||r.product_spec||"";search.dispatchEvent(new Event("input"))}const table=$("mrTable");if(table)table.scrollIntoView({behavior:"smooth",block:"start"});}
   function useAsRule(r){if(!r)return;const set=(id,v)=>{const e=$(id);if(e)e.value=v??""};set("mrName",(r.part_no||r.product_spec||"現場學習")+" "+(r.process||"")+" 共用規則");set("mrMatchType",r.part_no?"exact":"contains");set("mrPartPattern",r.part_no||r.product_spec||"");set("mrProcess",r.process||"其他");set("mrPrimaryMachine",r.primary_machine||"");const shared=[r.primary_machine].concat(String(r.shared_machines||"").split(",")).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);set("mrSharedMachines",shared.join(","));set("mrNote","由 V84.3 現場學習建議帶入；樣本 "+Number(r.total_samples||0)+" 筆，信心值 "+Number(r.confidence||0)+"%。請課長確認後儲存。");const card=$("mrFormCard");if(card)card.scrollIntoView({behavior:"smooth",block:"start"});const msg=$("mrFormMsg");if(msg)msg.textContent="已帶入現場學習建議，請檢查限制後再儲存正式規則。";}
   async function accept(r,b){
     if(!r||!confirm("接受此 AI 建議並建立正式共用規則？"))return;
@@ -7167,13 +7178,14 @@ document.addEventListener("DOMContentLoaded",function(){
     b.disabled=true;
     b.textContent="建立中…";
     try{
-      await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});
+      const accepted=await jsonp("machinelearningaccept",{learning_key:r.learning_key,by:"11035"});
       // 成功後立即從待處理列表移除，避免重新讀取前仍停留在畫面。
-      ML.decisions[r.learning_key]={learning_key:r.learning_key,decision:"accepted",by:"11035",decided_at:new Date().toISOString()};
+      ML.decisions[r.learning_key]={learning_key:r.learning_key,decision:"accepted",rule_id:accepted?.rule?.id||accepted?.rule_id||"",decided_by:"11035",decided_at:new Date().toISOString(),fingerprint:rowFingerprint(r),source:"accept_success"};saveDecisionCache();
       render();
       const progress=$("mlProgress");if(progress)progress.textContent="規則已建立，該項目已移至『已建立規則』。";
       window.log?.("AI 建議已接受，正式機台規則已建立");
       await load();
+      if(!ML.decisions[r.learning_key]){const c=readDecisionCache();if(c[r.learning_key]){ML.decisions[r.learning_key]=c[r.learning_key];render();}}
       if(window.loadMachineRules)window.loadMachineRules();
     }catch(e){
       console.error("Machine learning accept failed",e);
@@ -7198,6 +7210,20 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
+<script id="v1106-machine-learning-persistent-state">
+(()=>{
+  const KEY='SK_APS_MACHINE_LEARNING_DECISIONS_V1106',norm=v=>String(v??'').trim().toUpperCase().replace(/\s+/g,''),fp=r=>[r.part_no||r.product_spec,r.process,r.primary_machine].map(norm).join('|');
+  function cached(){try{const x=JSON.parse(localStorage.getItem(KEY)||'{}');return x&&typeof x==='object'?x:{}}catch(_){return {}}}
+  function reconcile(){
+    const api=window.APSMachineLearningV843,state=api?.state;if(!state||!Array.isArray(state.rows)||!state.rows.length)return;
+    const c=cached(),byFp={};Object.values(c).forEach(d=>{if(d?.fingerprint)byFp[d.fingerprint]=d});const rules=window.APSMachineRules?.getRules?.()||[];let changed=false;
+    state.rows.forEach(r=>{if(state.decisions[r.learning_key])return;let d=c[r.learning_key]||byFp[fp(r)];if(!d){const rule=rules.find(x=>norm(x.partPattern)===norm(r.part_no||r.product_spec)&&(!x.process||norm(x.process)===norm(r.process))&&(!x.primaryMachine||norm(x.primaryMachine)===norm(r.primary_machine)));if(rule)d={decision:'accepted',rule_id:rule.id||'',decided_by:'11035',decided_at:rule.updatedAt||rule.createdAt||'',fingerprint:fp(r),source:'formal_rule_match'}}if(d){state.decisions[r.learning_key]={...d,learning_key:r.learning_key};c[r.learning_key]=state.decisions[r.learning_key];changed=true}});
+    if(changed){try{localStorage.setItem(KEY,JSON.stringify(c))}catch(_){}api.render()}
+  }
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(reconcile,2600);setInterval(reconcile,3500)});
+})();
+</script>
 
 <style>
 .v845-status{position:fixed;right:16px;bottom:48px;z-index:9996;background:#0b1820ee;border:1px solid #34515e;border-radius:10px;padding:10px 12px;color:#dce9ee;font-size:12px;box-shadow:0 8px 24px #0008;display:none}.v845-status.show{display:block}.v845-status b{color:#75e5b3}
