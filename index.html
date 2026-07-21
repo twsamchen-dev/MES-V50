@@ -74,16 +74,16 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V112.1 登入保持與快速啟動｜Build 0105</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V112.2 高速查詢與登入保持｜Build 0106</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
 <div class="wrap"><div class="grid">
   <div class="card hero col12">
     <h2>手機 / 電腦 Key In</h2>
-    <div class="sub">啟動先讀人員/回報/幹部目標；工單資料量大，請需要查工單時再按「讀取最新工單」。</div>
+    <div class="sub">啟動後可立即 Key In；工單改用高速索引逐筆查詢，不再下載整份工單資料。</div>
     <div class="row" style="margin-top:12px">
-      <button id="loadOrdersBtn" class="btn" onclick="loadAll()">讀取最新工單 / โหลดงานล่าสุด</button>
+      <button id="loadOrdersBtn" class="btn" onclick="loadAll()">啟用高速查詢 / เปิดค้นหาความเร็วสูง</button>
       <button id="loadReportsBtn" class="btn ghost" onclick="loadKeyin()">讀取回報資料 / โหลดรายงาน</button>
       <span id="loadStatus" class="pill">啟動中...</span>
     </div>
@@ -714,25 +714,22 @@ async function loadStartup(){
   loadKeyin(false).catch(()=>{});
 
   // 工單完整清單維持按需載入，不在啟動時下載。
-  setTimeout(()=>setLoadStatus('可直接 Key In；需要完整工單時再按「讀取最新工單」','success'),600);
+  setTimeout(()=>setLoadStatus('可直接 Key In；輸入工單後由高速索引即時查詢','success'),600);
 }
 async function loadAll(){
-  setButtonState('loadOrdersBtn','loading','讀取工單中... / กำลังโหลดใบงาน...');
-  setLoadStatus('讀取工單中…資料量大請稍候 / กำลังโหลดใบงาน กรุณารอสักครู่','loading');
+  // Build 0106：不再下載整份 keyinsource。直接使用 Ultra Cache＋Shared Index 按工單查詢。
+  setButtonState('loadOrdersBtn','loading','啟用高速查詢... / กำลังเปิดค้นหาความเร็วสูง...');
+  setLoadStatus('正在啟用高速查詢，不下載整份工單… / กำลังเปิดค้นหาโดยไม่ดาวน์โหลดทั้งหมด','loading');
   try{
-    const s=await getApi('keyinsource');
-    App.source=rowsOf(s).map(sourceObj).filter(r=>{
-      return [r.work_order_no,r.command_no,r.order_no,r.daily_report_no,r.report_no,r.part_no,r.batch_no,r.customer,r.product_spec,r.raw_text].some(v=>String(v||'').trim()!=='')
-    });
-    App.idx=-1;
-    setLoadStatus('已讀取 '+App.source.length+' 筆工單 / โหลดแล้ว '+App.source.length+' รายการ','success');
-    setButtonState('loadOrdersBtn','success','', '✓ 讀取完成 / โหลดสำเร็จ');
-    renderPlansHint();
-    if(window.MES)MES.toast('工單資料已讀取');
+    keyInCacheLoad_();
+    await new Promise(resolve=>setTimeout(resolve,80));
+    setLoadStatus('高速查詢已啟用：直接輸入工單、訂單、日報或批號即可 / เปิดค้นหาความเร็วสูงแล้ว','success');
+    setButtonState('loadOrdersBtn','success','', '✓ 高速查詢已啟用 / เปิดแล้ว');
+    const input=qs('work_order_no');if(input)input.focus();
+    if(window.MES)MES.toast('高速查詢已啟用，不需等待整份工單下載');
   }catch(err){
-    setLoadStatus('工單讀取失敗 / โหลดใบงานไม่สำเร็จ','error');
+    setLoadStatus('高速查詢啟用失敗 / เปิดค้นหาไม่สำเร็จ','error');
     setButtonState('loadOrdersBtn','error');
-    alert('讀取雲端工單失敗：'+err.message);
   }
 }
 async function loadKeyin(show=true){
@@ -1154,7 +1151,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   syncPlanCollapseUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();onSiteChange();setupFastInputKeys();loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V112.1 Build 0105 | Mobile Target List ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V112.2 Build 0106 | Fast Shared Index ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 </script>
