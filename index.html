@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V112.1 MES 生產 Key In｜登入保持與快速啟動｜Build 0105</title>
+<title>V113 MES 生產 Key In｜連續工單防漏版｜Build 0107</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -70,6 +70,9 @@
 .personalTaskPanel{display:block;grid-column:span 12;border:1px solid #bfdbfe;border-left:7px solid #2563eb;background:linear-gradient(135deg,#fff,#eff6ff);border-radius:18px;padding:15px}.personalTaskPanel.show{display:block}.personalTaskHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}.personalTaskKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:11px}.personalTaskKpi{background:#fff;border:1px solid #dbeafe;border-radius:12px;padding:9px}.personalTaskKpi span{display:block;font-size:11px;color:#64748b;font-weight:900}.personalTaskKpi b{font-size:24px;color:#1e3a8a}.personalTaskList{display:grid;gap:7px;margin-top:10px}.personalTaskRow{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px}.personalTaskRow small{color:#64748b}@media(max-width:700px){.personalTaskKpis{grid-template-columns:repeat(2,1fr)}.personalTaskRow{grid-template-columns:1fr 1fr}}
 .otherProcessBox{display:none;margin-top:10px;padding:11px 12px;border:2px solid #f59e0b;background:#fffbeb;border-radius:13px}.otherProcessBox.show{display:block}.otherProcessBox label{margin-top:0;color:#92400e;font-weight:950}.otherProcessBox input{background:#fff}.otherProcessHint{margin-top:5px;font-size:12px;color:#92400e;font-weight:800}
 
+
+/* V113 Build 0107：連續工單、防漏儲存、其他工單與本機草稿 */
+.taskActionBar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.taskActionBar button{border:0;border-radius:12px;padding:9px 12px;font-weight:900;cursor:pointer}.taskSearchBtn{background:#e0e7ff;color:#1e40af}.taskAddBtn{background:#fef3c7;color:#92400e}.saveNextBtn{background:#16a34a!important;color:#fff!important}.saveNextBtn:disabled{background:#94a3b8!important}.draftState{margin-top:8px;padding:8px 10px;border-radius:10px;background:#f8fafc;border:1px dashed #cbd5e1;color:#64748b;font-size:12px;font-weight:800}.draftState.saved{background:#ecfdf5;color:#166534;border-color:#86efac}.draftState.pending{background:#fff7ed;color:#c2410c;border-color:#fdba74}.personalTaskRow{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}.personalTaskRow:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(15,23,42,.08)}.personalTaskRow.current{outline:3px solid #2563eb;background:#eff6ff}.personalTaskRow.done{opacity:.78}.manualTaskTag{display:inline-block;margin-left:6px;border-radius:999px;padding:2px 7px;background:#fef3c7;color:#92400e;font-size:10px;font-weight:900}.saveNextHint{margin:8px 0 0;color:#166534;font-size:12px;font-weight:900}@media(max-width:720px){.taskActionBar button{flex:1 1 150px}.saveNextBtn{min-height:52px;font-size:16px}}
 </style>
 </head>
 <body>
@@ -109,7 +112,7 @@
   </div>
   <div id="personalTaskPanel" class="personalTaskPanel">
     <div class="personalTaskHead"><div><h2 style="margin:0">🎯 我的今日任務 / งานของฉันวันนี้</h2><div id="personalTaskSub" class="miniText"></div></div><button class="noticeDetailBtn" onclick="renderPersonalWorkPanel()">重新整理 / รีเฟรช</button></div>
-    <div id="personalTaskBody"><div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div></div>
+    <div class="taskActionBar"><button class="taskSearchBtn" type="button" onclick="focusOtherOrder()">🔍 搜尋其他工單 / ค้นหาใบงานอื่น</button><button class="taskAddBtn" type="button" onclick="addCurrentToManualTasks()">＋ 加入今日任務（本機）</button></div><div id="personalTaskBody"><div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div></div>
   </div>
 
   <div class="card col6">
@@ -161,32 +164,38 @@
   <div class="card col6">
     <h2>人員與產出 / พนักงานและผลผลิต</h2>
     <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02" oninput="applyHistoricalSpeed()">
-    <div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單 / งานของฉัน</button><button class="btn ghost" onclick="nextOrder()">下一張工單 / งานถัดไป</button></div>
-    <div class="fastPanel">
-      <div class="fastTitle">快速連續輸入 / ป้อนข้อมูลเร็ว</div>
-      <label><input id="fastMode" type="checkbox" checked style="width:auto"> 連續輸入模式：保留日期、站點、機台、單位 / โหมดป้อนต่อเนื่อง: เก็บวันที่ จุดงาน เครื่องจักร และหน่วย</label>
-      <label><input id="autoNext" type="checkbox" checked style="width:auto"> 送出後自動跳下一張 / ส่งแล้วไปงานถัดไปอัตโนมัติ</label>
-      <div class="quickBtns">
-        <button class="quickBtn green" onclick="nextOrder()">🟢 下一張工單 / งานถัดไป</button>
-        <button class="quickBtn" onclick="copyLastSubmit()">🔵 沿用上一筆 / ใช้ข้อมูลรายการก่อน</button>
-        <button class="quickBtn orange" onclick="clearCurrentInput()">🟠 清除本筆 / ล้างรายการนี้</button>
-        <button class="quickBtn gray" onclick="saveQuickProfile()">💾 記住機台 / จำเครื่อง</button>
-      </div>
-      <div class="miniText">提示：工單欄按 Enter 會跳到產量；產量欄按 Enter 會直接送出。 / กด Enter ที่ช่องใบงานเพื่อไปช่องผลผลิต และกด Enter ที่ช่องผลผลิตเพื่อส่งทันที</div>
-      <div id="recentBox" class="recentBox"></div>
-    </div>
+    <div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單 / งานของฉัน</button></div>
     <label>實際產量 / ผลผลิตจริง</label><input id="actual_output" type="number" step="0.01">
     <label>單位 / หน่วย</label><select id="unit"><option value="R">R / ม้วน</option><option value="M2">㎡</option><option value="KG">KG</option><option value="M">M</option></select>
     <div class="fastPanel" id="speedMeasurePanel" style="margin-top:14px;background:#fff7ed;border-color:#fed7aa">
-      <div class="fastTitle" style="color:#9a3412">現場實測產速（選填） / บันทึกความเร็วจริงหน้างาน (ไม่บังคับ)</div>
-      <div class="miniText">有歷史資料時會依「料號＋製程＋機台」自動帶出；本次有重新量測再修改後送出。 / หากมีข้อมูลเดิม ระบบจะกรอกให้อัตโนมัติตาม รหัสสินค้า＋กระบวนการ＋เครื่องจักร</div>
+      <div class="planTitle" style="align-items:center">
+        <div id="speedMeasureTitle" class="fastTitle" style="color:#9a3412">現場實測產速（必填） / บันทึกความเร็วจริงหน้างาน (จำเป็น)</div>
+        <span id="speedRequirementBadge" class="smallPill">必填</span>
+      </div>
+      <div id="speedRuleHint" class="miniText">加工製程必須完成一回產出數量與一回花費時間，才可儲存下一張。 / ต้องกรอกจำนวนต่อรอบและเวลาต่อรอบก่อนบันทึก</div>
       <label>一回產出數量 / จำนวนที่ได้ต่อ 1 รอบ</label><input id="speed_qty_round" type="number" min="0" step="0.01" placeholder="例如 20 卷或 20 片 / เช่น 20 ม้วน หรือ 20 ชิ้น">
       <label>產出單位 / หน่วยต่อรอบ</label><select id="speed_unit"><option value="R">卷 / ม้วน</option><option value="PCS">片 / ชิ้น</option></select>
       <label>一回花費時間（分鐘） / เวลาที่ใช้ต่อ 1 รอบ (นาที)</label><input id="speed_minutes_round" type="number" min="0" step="0.01" placeholder="例如 3.5 分鐘 / เช่น 3.5 นาที">
+      <div id="speedCalculated" class="saveNextHint" style="margin-top:8px">請輸入一回產量與時間 / กรุณากรอกจำนวนและเวลา</div>
       <div id="speedHint" class="miniText" style="margin-top:8px">尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม</div>
     </div>
     <label>備註 / หมายเหตุ</label><textarea id="process_note"></textarea>
     <button class="btn ok" id="submitBtn" onclick="submitKeyin()">送出回報 / ส่งรายงาน</button>
+    <div class="fastPanel" style="margin-top:16px">
+      <div class="fastTitle">快速連續輸入 / ป้อนข้อมูลเร็ว</div>
+      <label><input id="fastMode" type="checkbox" checked style="width:auto"> 連續輸入模式：保留日期、站點、機台、單位 / โหมดป้อนต่อเนื่อง: เก็บวันที่ จุดงาน เครื่องจักร และหน่วย</label>
+      <label><input id="autoNext" type="checkbox" checked style="width:auto"> 一般「送出回報」後自動跳下一張 / ส่งแล้วไปงานถัดไปอัตโนมัติ</label>
+      <div class="quickBtns">
+        <button class="quickBtn green saveNextBtn" onclick="saveAndNextOrder(this)">💾 儲存並下一張 / บันทึกและงานถัดไป</button>
+        <button class="quickBtn" onclick="copyLastSubmit()">🔵 沿用上一筆 / ใช้ข้อมูลรายการก่อน</button>
+        <button class="quickBtn orange" onclick="clearCurrentInput()">🟠 清除本筆 / ล้างรายการนี้</button>
+        <button class="quickBtn gray" onclick="saveQuickProfile()">💾 記住機台 / จำเครื่อง</button>
+      </div>
+      <div class="miniText">提示：工單 Enter → 實際產量；實際產量 Enter → 實測產速；時間 Enter → 儲存並下一張。 / Enter: ใบงาน → ผลผลิต → ความเร็ว → บันทึกงานถัดไป</div>
+      <div class="saveNextHint">成功儲存後才會切換下一張；失敗會保留目前資料。包裝、入庫的實測產速可填可不填。</div>
+      <div id="draftState" class="draftState">草稿保護已啟用 / เปิดการป้องกันฉบับร่างแล้ว</div>
+      <div id="recentBox" class="recentBox"></div>
+    </div>
   </div>
 
   <div class="card col12">
@@ -203,7 +212,7 @@
 </div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false};
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,currentTaskWo:'',savingNext:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
 const KEYIN_SHARED_LOOKUP={
@@ -672,9 +681,13 @@ function renderNoticeIdentity(){const e=qs('noticeIdentity');if(!e)return;e.inne
 function switchNoticeEmployee(){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;clearAuthSession_();App.urgentOrders=[];renderNoticeIdentity();const body=qs('personalTaskBody');if(body)body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';const list=qs('urgentNoticeList');if(list)list.innerHTML='<div class="noticeEmpty">請先登入以讀取個人通知 / กรุณาเข้าสู่ระบบเพื่อดูการแจ้งเตือน</div>';const count=qs('urgentNoticeCount');if(count)count.textContent='請先登入 / กรุณาเข้าสู่ระบบ';const m=qs('pinLoginModal');if(m)m.classList.remove('hide');const p=qs('pinLoginPin');if(p)p.value=''}
 async function loginEmployeePin(){const no=String(safeGet('pinLoginEmpNo')||'').trim(),pin=String(safeGet('pinLoginPin')||'').trim(),msg=qs('pinLoginMsg'),btn=document.querySelector('.pinPrimary');if(!no||!/^\d{4,6}$/.test(pin)){if(msg)msg.textContent='請輸入工號及 4～6 位數 PIN。 / กรุณากรอกรหัสพนักงานและ PIN 4–6 หลัก';return}if(btn)btn.disabled=true;try{if(msg){msg.className='urgentReaderName';msg.textContent='驗證中… / กำลังตรวจสอบ…'}let r=await pinApi('employeepinlogin',{emp_no:no,pin:pin,source:'keyin-login'});if(!r.token||!r.employee)throw new Error('登入回傳資料不完整，請重新部署 Code.gs');NOTICE_AUTH.token=r.token;NOTICE_AUTH.employee=r.employee;saveAuthSession_();if(r.must_change){const n1=prompt('第一次登入，請設定新的 4～6 位數 PIN（不可使用 0000）\nเข้าสู่ระบบครั้งแรก กรุณาตั้ง PIN ใหม่ 4–6 หลัก (ห้ามใช้ 0000)');if(!n1)return switchNoticeEmployee();const n2=prompt('請再次輸入新 PIN\nกรุณากรอก PIN ใหม่อีกครั้ง');if(n1!==n2)throw new Error('兩次新 PIN 不一致 / PIN ใหม่ทั้งสองครั้งไม่ตรงกัน');await pinApi('employeepinchange',{auth_token:r.token,old_pin:pin,new_pin:n1});alert('PIN 已更新，請妥善保管。\nอัปเดต PIN แล้ว กรุณาเก็บรักษาให้ดี')}saveAuthSession_();const m=qs('pinLoginModal');if(m)m.classList.add('hide');renderNoticeIdentity();await loadUrgentNotices();renderPersonalWorkPanel()}catch(e){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;if(msg){msg.className='urgentReaderName bad';msg.textContent=String(e.message||e)}}finally{if(btn)btn.disabled=false}}
 function personalTaskWo_(r){return wo(r.work_order_no||r.command_no||r.order_no||'')}
-function renderPersonalWorkPanel(){const panel=qs('personalTaskPanel'),body=qs('personalTaskBody'),sub=qs('personalTaskSub');if(!panel||!body)return;if(!NOTICE_AUTH.employee){body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';return}const no=String(NOTICE_AUTH.employee.emp_no),today=isoDate(),plans=(App.plans||[]).filter(p=>dk(p.report_date||p.plan_date)===today&&String(p.operator_emp_no||p.assigned_emp_no||p.worker_emp_no||'').trim()===no),keyins=(App.keyin||[]).filter(k=>dk(k.report_date||k.created_at)===today&&String(k.emp_no||'').split(/[\s,，]+/).includes(no));let total=0,done=0;const rows=plans.map(p=>{const unit=String(p.target_unit||p.unit||(Number(p.target_m2)>0?'M2':'R')).toUpperCase(),target=unit==='M2'?Number(p.target_m2||0):Number(p.target_roll||p.target_qty||0),w=personalTaskWo_(p),actual=keyins.filter(k=>personalTaskWo_(k)===w).reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0),pct=target>0?Math.min(999,Math.round(actual/target*1000)/10):0;total+=target;if(pct>=100)done++;return `<div class="personalTaskRow"><div><b>${urgentEsc(w||'未指定工單')}</b><br><small>${urgentEsc(p.customer||'')}｜${urgentEsc(p.process_site||p.process||'')}</small></div><div><b>${urgentEsc(p.machine_code||p.machine||'-')}</b><br><small>機台 / เครื่อง</small></div><div><b>${target.toLocaleString()} ${unit==='M2'?'M²':'R'}</b><br><small>目標 / เป้าหมาย</small></div><div><b>${actual.toLocaleString()}｜${pct}%</b><br><small>${pct>=100?'已完成 / เสร็จแล้ว':'作業中 / กำลังทำ'}</small></div></div>`});panel.classList.add('show');if(sub)sub.textContent=`${no} ${NOTICE_AUTH.employee.emp_name}｜${today}`;body.innerHTML=`<div class="personalTaskKpis"><div class="personalTaskKpi"><span>今日任務 / งานวันนี้</span><b>${plans.length}</b></div><div class="personalTaskKpi"><span>已完成 / เสร็จแล้ว</span><b>${done}</b></div><div class="personalTaskKpi"><span>Key In 筆數 / จำนวนบันทึก</span><b>${keyins.length}</b></div><div class="personalTaskKpi"><span>未完成 / ยังไม่เสร็จ</span><b>${Math.max(0,plans.length-done)}</b></div></div><div class="personalTaskList">${rows.join('')||'<div class="noticeEmpty">今天尚未分派任務 / วันนี้ยังไม่มีงานที่ได้รับมอบหมาย</div>'}</div>`}
-async function adminResetEmployeePin(){const no=prompt('請輸入要重設的員工工號');if(!no)return;const admin=prompt('請輸入課長密碼');if(!admin)return;try{await pinApi('employeepinreset',{emp_no:no.trim(),admin_pin:admin});alert('已重設為 0000；該員工下次登入必須更改 PIN。')}catch(e){alert('重設失敗：'+e.message)}}
-const NOTICE_TH_DICT={'客戶提前出貨':'ลูกค้าขอให้จัดส่งเร็วขึ้น','客戶要求提前交貨':'ลูกค้าขอให้ส่งมอบเร็วขึ้น','交期變更':'เปลี่ยนกำหนดส่ง','機台故障':'เครื่องจักรขัดข้อง','等待前製程':'รอกระบวนการก่อนหน้า','半成品已到位':'ชิ้นงานกึ่งสำเร็จพร้อมแล้ว','主管允許先排':'หัวหน้าอนุมัติให้จัดก่อน','急單':'งานด่วน','插單':'แทรกงาน','客戶改期':'ลูกค้าเปลี่ยนกำหนดส่ง'};
+function manualTaskKey_(){return 'MES_KEYIN_MANUAL_TASKS_'+isoDate()+'_'+currentLoginEmpNo_()}
+function getManualTasks_(){try{return JSON.parse(localStorage.getItem(manualTaskKey_())||'[]')}catch(e){return[]}}
+function setManualTasks_(list){try{localStorage.setItem(manualTaskKey_(),JSON.stringify([...new Set((list||[]).map(wo).filter(Boolean))]))}catch(e){}}
+function addCurrentToManualTasks(){const w=wo(safeGet('work_order_no'));if(!w){focusOtherOrder();if(window.MES)MES.toast('請先搜尋或輸入工單');return}const list=getManualTasks_();if(!list.includes(w)){list.push(w);setManualTasks_(list)}App.currentTaskWo=w;renderPersonalWorkPanel();if(window.MES)MES.toast('已加入今日任務（僅此裝置）')}
+function focusOtherOrder(){saveDraftNow_();clearCurrentInput();App.currentTaskWo='';const el=qs('work_order_no');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),250)}if(window.MES)MES.toast('請輸入工單、命令單、日報、批號或料號搜尋')}
+function pickPersonalTask_(w){w=wo(w);if(!w)return;saveDraftNow_();App.currentTaskWo=w;safeSet('work_order_no',w);lookupWO();setTimeout(()=>{const a=qs('actual_output');if(a){a.scrollIntoView({behavior:'smooth',block:'center'});a.focus()}},180);renderPersonalWorkPanel()}
+function renderPersonalWorkPanel(){const panel=qs('personalTaskPanel'),body=qs('personalTaskBody'),sub=qs('personalTaskSub');if(!panel||!body)return;if(!NOTICE_AUTH.employee){body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';return}const no=String(NOTICE_AUTH.employee.emp_no),today=isoDate(),plans=(App.plans||[]).filter(p=>dk(p.report_date||p.plan_date)===today&&String(p.operator_emp_no||p.assigned_emp_no||p.worker_emp_no||'').trim()===no),keyins=(App.keyin||[]).filter(k=>dk(k.report_date||k.created_at)===today&&String(k.emp_no||'').split(/[\s,，]+/).includes(no));const planWos=new Set(plans.map(personalTaskWo_).filter(Boolean)),manual=getManualTasks_().filter(w=>!planWos.has(w));let done=0;const rows=plans.map(p=>{const unit=String(p.target_unit||p.unit||(Number(p.target_m2)>0?'M2':'R')).toUpperCase(),target=unit==='M2'?Number(p.target_m2||0):Number(p.target_roll||p.target_qty||0),w=personalTaskWo_(p),actual=keyins.filter(k=>personalTaskWo_(k)===w).reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0),pct=target>0?Math.min(999,Math.round(actual/target*1000)/10):0,isDone=pct>=100;if(isDone)done++;return `<div class="personalTaskRow ${isDone?'done':''} ${App.currentTaskWo===w?'current':''}" onclick="pickPersonalTask_('${urgentEsc(w)}')"><div><b>${urgentEsc(w||'未指定工單')}</b><br><small>${urgentEsc(p.customer||'')}｜${urgentEsc(p.process_site||p.process||'')}</small></div><div><b>${urgentEsc(p.machine_code||p.machine||'-')}</b><br><small>機台 / เครื่อง</small></div><div><b>${target.toLocaleString()} ${unit==='M2'?'M²':'R'}</b><br><small>目標 / เป้าหมาย</small></div><div><b>${actual.toLocaleString()}｜${pct}%</b><br><small>${isDone?'已完成 / เสร็จแล้ว':'作業中 / กำลังทำ'}</small></div></div>`});manual.forEach(w=>{const actual=keyins.filter(k=>personalTaskWo_(k)===w).reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0);rows.push(`<div class="personalTaskRow ${App.currentTaskWo===w?'current':''}" onclick="pickPersonalTask_('${urgentEsc(w)}')"><div><b>${urgentEsc(w)}</b><span class="manualTaskTag">臨時／本機</span><br><small>未建立 Target 目標</small></div><div><b>-</b><br><small>機台自動帶入</small></div><div><b>-</b><br><small>無目標量</small></div><div><b>${actual.toLocaleString()}</b><br><small>${actual>0?'已回報':'尚未回報'}</small></div></div>`)});panel.classList.add('show');if(sub)sub.textContent=`${no} ${NOTICE_AUTH.employee.emp_name}｜${today}`;body.innerHTML=`<div class="personalTaskKpis"><div class="personalTaskKpi"><span>今日任務 / งานวันนี้</span><b>${plans.length+manual.length}</b></div><div class="personalTaskKpi"><span>已完成 / เสร็จแล้ว</span><b>${done}</b></div><div class="personalTaskKpi"><span>Key In 筆數 / จำนวนบันทึก</span><b>${keyins.length}</b></div><div class="personalTaskKpi"><span>臨時工單 / งานด่วน</span><b>${manual.length}</b></div></div><div class="personalTaskList">${rows.join('')||'<div class="noticeEmpty">今天尚未分派任務；可使用「搜尋其他工單」。</div>'}</div>`}
 function noticeNormalizeBool(v){return v===true||v===1||String(v).toLowerCase()==='true'||String(v)==='1'}
 function noticeTypeInfo(r){const raw=String(r.notification_type||r.type||'urgent').toLowerCase();if(/due|交期/.test(raw))return {key:'due',icon:'🟠',zh:'交期變更',th:'เปลี่ยนกำหนดส่ง'};if(/aps|schedule|排程/.test(raw))return {key:'aps',icon:'🟡',zh:'APS 排程',th:'ตาราง APS'};if(/quality|品質/.test(raw))return {key:'quality',icon:'🟣',zh:'品質通知',th:'แจ้งคุณภาพ'};if(/machine|equipment|機台|設備/.test(raw))return {key:'machine',icon:'⚫',zh:'設備通知',th:'แจ้งเครื่องจักร'};if(/info|notice|公告|一般/.test(raw))return {key:'info',icon:'🔵',zh:'一般通知',th:'ประกาศทั่วไป'};return {key:'urgent',icon:'🔴',zh:'急單',th:'งานด่วน'}}
 function noticePriority(r){let n=Number(r.priority_level||r.priority||5);if(!Number.isFinite(n)||n<1)n=5;if(n>5)n=5;return {n,stars:'★'.repeat(n)+'☆'.repeat(5-n)}}
@@ -885,7 +898,7 @@ function applyHistoricalSpeed(){
   let hit=null,level=null;
   for(const lv of levels){const rows=all.filter(lv.fn).sort((a,b)=>b._date.localeCompare(a._date));if(rows.length){hit=rows.slice(0,10);level=lv;break}}
   const hint=qs('speedHint');
-  if(!hit||!hit.length){safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(hint)hint.textContent='尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม';return}
+  if(!hit||!hit.length){safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(hint)hint.textContent='尚未找到歷史產速 / ยังไม่พบข้อมูลความเร็วเดิม';updateSpeedCalculated_();updateSubmitAvailability_();return}
   const approved=hit.filter(x=>String(x.is_standard||x.approved||'').toLowerCase()==='true'||String(x.is_standard||'')==='1');
   const sample=(approved.length?approved:hit).slice(0,10);
   const q=median(sample.map(x=>Number(x.qtyRound||x.qty_per_cycle||0)));
@@ -894,7 +907,7 @@ function applyHistoricalSpeed(){
   safeSet('speed_qty_round',q||'');safeSet('speed_unit',unit);safeSet('speed_minutes_round',min||'');
   const uph=min>0?q*60/min:0;
   const confidence=Math.min(99,55+level.score*8+Math.min(sample.length,10)*2+(approved.length?8:0));
-  if(hint)hint.textContent='✓ 已自動帶出（'+level.name+'，'+sample.length+' 筆'+(approved.length?'，課長已確認':'')+'）：一回 '+Number(q.toFixed(2))+' '+(unit.toUpperCase()==='PCS'?'片':'卷')+'，中位數 '+Number(min.toFixed(2))+' 分鐘；約 '+uph.toFixed(1)+'/小時，可信度 '+confidence+'% / ระบบกรอกข้อมูลเดิมให้อัตโนมัติ';
+  if(hint)hint.textContent='✓ 已自動帶出（'+level.name+'，'+sample.length+' 筆'+(approved.length?'，課長已確認':'')+'）：一回 '+Number(q.toFixed(2))+' '+(unit.toUpperCase()==='PCS'?'片':'卷')+'，中位數 '+Number(min.toFixed(2))+' 分鐘；約 '+uph.toFixed(1)+'/小時，可信度 '+confidence+'% / ระบบกรอกข้อมูลเดิมให้อัตโนมัติ';updateSpeedCalculated_();updateSubmitAvailability_();
 }
 function lookupWO(){clearTimeout(__lookupTimer);__lookupTimer=setTimeout(()=>lookupWOAsync(),350)}
 let __lookupSeq=0;
@@ -1110,13 +1123,34 @@ function renderPlansHint(){
 }
 function pickPlan(i){const p=App.planView[i];if(!p)return;const o=sourceObj(p);safeSet('work_order_no',wo(o.work_order_no||o.order_no));safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);if(o.process_site||o.process)safeSet('site',String(o.process_site||o.process).split('/')[0].trim());onSiteChange();lookupWO();setTimeout(applyHistoricalSpeed,120);const input=qs('work_order_no');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.focus(),280)}if(window.matchMedia&&window.matchMedia('(max-width:720px)').matches){App.planCollapsed=true;syncPlanCollapseUI_()}}
 function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+rangeObj().label+'幹部目標工單')}
-function nextOrder(){const list=currentPlans();if(!list.length){if(window.MES)MES.toast('沒有可跳轉工單');return}App.idx=(App.idx+1)%list.length;pickPlan(App.idx)}
+function nextOrder(){const list=currentPlans();if(!list.length){focusOtherOrder();return}let now=wo(safeGet('work_order_no')),idx=list.findIndex(p=>personalTaskWo_(p)===now);App.idx=idx>=0?(idx+1)%list.length:(App.idx+1)%list.length;pickPlan(App.idx);App.currentTaskWo=personalTaskWo_(list[App.idx]);renderPersonalWorkPanel()}
+async function saveAndNextOrder(btn){if(App.savingNext)return;App.savingNext=true;const old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='儲存中... / กำลังบันทึก...'}try{const ok=await submitKeyin({forceNext:true});if(!ok&&btn){btn.classList.add('is-error');setTimeout(()=>btn.classList.remove('is-error'),500)}}finally{App.savingNext=false;if(btn){btn.disabled=false;btn.textContent=old}}}
 
+function isOptionalSpeedSite_(){return ['包裝','入庫'].includes(safeGet('site'))}
+function speedFieldsComplete_(){return Number(safeGet('speed_qty_round'))>0&&Number(safeGet('speed_minutes_round'))>0}
+function updateSpeedCalculated_(){
+  const q=Number(safeGet('speed_qty_round')),m=Number(safeGet('speed_minutes_round')),box=qs('speedCalculated');
+  if(!box)return;
+  if(q>0&&m>0){box.textContent='本次實測：約 '+(q/m).toFixed(2)+' '+(safeGet('speed_unit')==='PCS'?'片':'卷')+'/分鐘｜'+(q*60/m).toFixed(1)+'/小時';box.style.color='#166534'}
+  else{box.textContent=isOptionalSpeedSite_()?'可留空直接儲存；填寫後才納入產速資料。 / เว้นว่างได้':'請完成一回產量與一回時間後才能儲存。 / กรุณากรอกข้อมูลให้ครบ';box.style.color=isOptionalSpeedSite_()?'#166534':'#b91c1c'}
+}
+function updateSpeedMeasureMode_(){
+  const optional=isOptionalSpeedSite_(),panel=qs('speedMeasurePanel'),title=qs('speedMeasureTitle'),badge=qs('speedRequirementBadge'),hint=qs('speedRuleHint');
+  if(panel){panel.style.background=optional?'#f0fdf4':'#fff7ed';panel.style.borderColor=optional?'#86efac':'#fed7aa'}
+  if(title){title.style.color=optional?'#166534':'#9a3412';title.textContent=optional?'現場實測產速（選填） / บันทึกความเร็วจริงหน้างาน (ไม่บังคับ)':'現場實測產速（必填） / บันทึกความเร็วจริงหน้างาน (จำเป็น)'}
+  if(badge){badge.textContent=optional?'選填':'必填';badge.style.background=optional?'#dcfce7':'#ffedd5';badge.style.color=optional?'#166534':'#9a3412'}
+  if(hint)hint.textContent=optional?'包裝、入庫可填可不填；未填也可直接儲存。 / บรรจุและเข้าคลังไม่บังคับ':'加工製程必須完成一回產出數量與一回花費時間，才可儲存下一張。 / ต้องกรอกข้อมูลให้ครบก่อนบันทึก';
+  updateSpeedCalculated_();updateSubmitAvailability_();
+}
+function updateSubmitAvailability_(){
+  const blocked=!isOptionalSpeedSite_()&&!speedFieldsComplete_();
+  document.querySelectorAll('#submitBtn,.saveNextBtn').forEach(b=>{b.disabled=blocked;b.title=blocked?'請先完成現場實測產速 / กรุณากรอกข้อมูลความเร็ว':' '});
+}
 function onSiteChange(){
   const isOther=safeGet('site')==='其他',box=qs('otherProcessBox'),input=qs('other_process');
   if(box)box.classList.toggle('show',isOther);
   if(input){input.required=isOther;input.setAttribute('aria-required',isOther?'true':'false');if(!isOther)input.value=''}
-  applyHistoricalSpeed();
+  updateSpeedMeasureMode_();applyHistoricalSpeed();setTimeout(()=>{updateSpeedCalculated_();updateSubmitAvailability_()},30);
   if(isOther)setTimeout(()=>input&&input.focus(),60);
 }
 function otherProcessNote_(){
@@ -1126,6 +1160,14 @@ function otherProcessNote_(){
   return ['其他製程：'+actual,original].filter(Boolean).join('｜');
 }
 
+const DRAFT_KEY='MES_KEYIN_DRAFT_V113';let draftTimer=null;
+function draftData_(){return{...quickDataFromForm(),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),saved_at:Date.now(),emp_no:currentLoginEmpNo_()}}
+function updateDraftState_(kind,text){const e=qs('draftState');if(!e)return;e.className='draftState '+(kind||'');e.textContent=text}
+function saveDraftNow_(){if(!safeGet('work_order_no')&&!safeGet('actual_output')&&!safeGet('process_note'))return;try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draftData_()));updateDraftState_('saved','草稿已自動保存於本機 / บันทึกฉบับร่างอัตโนมัติแล้ว')}catch(e){}}
+function scheduleDraft_(){updateDraftState_('pending','輸入中，稍後自動保存 / กำลังบันทึกฉบับร่าง...');clearTimeout(draftTimer);draftTimer=setTimeout(saveDraftNow_,500)}
+function clearDraft_(){try{localStorage.removeItem(DRAFT_KEY)}catch(e){}updateDraftState_('','目前無未送出草稿 / ไม่มีฉบับร่างที่ยังไม่ได้ส่ง')}
+function restoreDraft_(){let d=null;try{d=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null')}catch(e){}if(!d||!d.work_order_no||Date.now()-Number(d.saved_at||0)>24*60*60*1000)return;applyQuickData(d,true);safeSet('speed_qty_round',d.speed_qty_round||'');safeSet('speed_unit',d.speed_unit||'R');safeSet('speed_minutes_round',d.speed_minutes_round||'');App.currentTaskWo=wo(d.work_order_no);updateDraftState_('saved','已恢復上次未送出草稿 / กู้คืนฉบับร่างล่าสุดแล้ว');if(window.MES)MES.toast('已恢復未送出草稿')}
+function setupDraftProtection_(){['site','other_process','report_date','work_order_no','machine_code','actual_output','unit','process_note','speed_qty_round','speed_unit','speed_minutes_round'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',scheduleDraft_);e.addEventListener('change',scheduleDraft_)}});window.addEventListener('beforeunload',saveDraftNow_);setTimeout(restoreDraft_,600)}
 function quickDataFromForm(){return{site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:wo(safeGet('work_order_no')),batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),process_note:safeGet('process_note')}}
 function applyQuickData(d,keepOutput=false){if(!d)return;safeSet('site',d.site||safeGet('site'));safeSet('other_process',d.other_process||'');onSiteChange();safeSet('report_date',dk(d.report_date)||safeGet('report_date')||isoDate());safeSet('work_order_no',wo(d.work_order_no||''));safeSet('batch_no',d.batch_no||'');safeSet('machine_code',d.machine_code||'');safeSet('unit',d.unit||safeGet('unit'));if(keepOutput){safeSet('actual_output',d.actual_output||'');safeSet('process_note',d.process_note||'')}lookupWO();setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},80)}
 function getRecentList(){try{return JSON.parse(localStorage.getItem(LS_RECENT)||'[]')}catch(e){return[]}}
@@ -1137,11 +1179,11 @@ function copyLastSubmit(){const r=App.lastSubmit||getRecentList()[0];if(!r){if(w
 function clearCurrentInput(){safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');const w=qs('work_order_no');if(w)w.focus()}
 function saveQuickProfile(){const d={machine_code:safeGet('machine_code'),site:safeGet('site'),unit:safeGet('unit')};localStorage.setItem(LS_PROFILE,JSON.stringify(d));if(window.MES)MES.toast('已記住常用機台')}
 function loadQuickProfile(){try{const d=JSON.parse(localStorage.getItem(LS_PROFILE)||'{}');if(d.machine_code)safeSet('machine_code',d.machine_code);if(d.site)safeSet('site',d.site);if(d.unit)safeSet('unit',d.unit)}catch(e){}renderRecentBox()}
-function afterSubmitClear(){if(qs('fastMode')&&qs('fastMode').checked){safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(qs('autoNext')&&qs('autoNext').checked)nextOrder();else safeSet('work_order_no',''),safeSet('batch_no','');setTimeout(()=>{const target=safeGet('work_order_no')?qs('actual_output'):qs('work_order_no');if(target)target.focus()},80)}else{safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','')}}
-function setupFastInputKeys(){['work_order_no','actual_output'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();setTimeout(()=>qs('actual_output')&&qs('actual_output').focus(),80)}else if(id==='actual_output'){submitKeyin()}})})}
-async function submitKeyin(){const btn=qs('submitBtn');if(!NOTICE_AUTH.employee||!NOTICE_AUTH.token){if(window.MES)MES.toast('請先登入 / กรุณาเข้าสู่ระบบ');const m=qs('pinLoginModal');if(m)m.classList.remove('hide');return}const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}if(safeGet('site')==='其他'&&!safeGet('other_process').trim()){const input=qs('other_process');if(window.MES)MES.toast('請填寫其他製程名稱 / กรุณาระบุกระบวนการอื่น');if(input){input.focus();input.reportValidity()}return}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
+function afterSubmitClear(forceNext=false){clearDraft_();if(qs('fastMode')&&qs('fastMode').checked){safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(forceNext||(qs('autoNext')&&qs('autoNext').checked))nextOrder();else safeSet('work_order_no',''),safeSet('batch_no','');setTimeout(()=>{const target=safeGet('work_order_no')?qs('actual_output'):qs('work_order_no');if(target)target.focus()},80)}else{safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(forceNext)nextOrder()}}
+function setupFastInputKeys(){['work_order_no','actual_output','speed_qty_round','speed_minutes_round'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();setTimeout(()=>qs('actual_output')&&qs('actual_output').focus(),80)}else if(id==='actual_output'){const target=isOptionalSpeedSite_()?qs('speed_qty_round'):qs('speed_qty_round');if(target)target.focus()}else if(id==='speed_qty_round'){const target=qs('speed_minutes_round');if(target)target.focus()}else if(id==='speed_minutes_round'){const b=document.querySelector('.saveNextBtn');if(b&&!b.disabled)saveAndNextOrder(b)}})})}
+async function submitKeyin(opts={}){const btn=qs('submitBtn');if(!NOTICE_AUTH.employee||!NOTICE_AUTH.token){if(window.MES)MES.toast('請先登入 / กรุณาเข้าสู่ระบบ');const m=qs('pinLoginModal');if(m)m.classList.remove('hide');return false}const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return false}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return false}if(safeGet('site')==='其他'&&!safeGet('other_process').trim()){const input=qs('other_process');if(window.MES)MES.toast('請填寫其他製程名稱 / กรุณาระบุกระบวนการอื่น');if(input){input.focus();input.reportValidity()}return false}if(!isOptionalSpeedSite_()&&!speedFieldsComplete_()){if(window.MES)MES.toast('請完成現場實測產速後再儲存 / กรุณากรอกข้อมูลความเร็วให้ครบ');const target=Number(safeGet('speed_qty_round'))>0?qs('speed_minutes_round'):qs('speed_qty_round');if(target){target.focus();target.reportValidity()}return false}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
 const submitWO=wo(matched.command_no||matched.work_order_no||w);
-const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:currentLoginEmpNo_(),emp_name:currentLoginEmpName_(),process_note:otherProcessNote_(),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v83_keyin_speed_learning'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:currentLoginEmpNo_(),emp_name:currentLoginEmpName_(),process_note:otherProcessNote_(),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v83_keyin_speed_learning'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear(!!opts.forceNext);renderPersonalWorkPanel();setTimeout(()=>loadKeyin(false),1200);return true}catch(e){alert('回報失敗：'+e.message);updateDraftState_('pending','儲存失敗，資料仍保留在畫面與草稿中');return false}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=(r0.fallback?'最新資料｜':'')+r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
 function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
@@ -1150,10 +1192,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   App.planCollapsed=!!(window.matchMedia&&window.matchMedia('(max-width:720px)').matches);
   syncPlanCollapseUI_();
   keyInCacheLoad_();
-  safeSet('report_date',isoDate());loadQuickProfile();onSiteChange();setupFastInputKeys();loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V112.2 Build 0106 | Fast Shared Index ready',KeyInSharedLookupStatus());
+  safeSet('report_date',isoDate());loadQuickProfile();onSiteChange();setupFastInputKeys();['speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});e.addEventListener('change',()=>{updateSpeedCalculated_();updateSubmitAvailability_()})}});loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
+  console.log('SEAL KING Smart Key In V113.1 Build 0108 | Fast Shared Index ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
+
+document.addEventListener('DOMContentLoaded',()=>setupDraftProtection_());
 </script>
 </body>
 </html>
