@@ -100,8 +100,8 @@
   .keyinCollapseBtn{width:100%}
 }
 
-/* V118：多人共同作業只建立一筆生產回報 */
-.teamWorkBox{margin:12px 0;padding:12px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:15px}.teamWorkHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.teamWorkToggle{display:flex;align-items:center;gap:8px;font-weight:950;color:#1e3a8a}.teamWorkToggle input{width:auto;transform:scale(1.2)}.teamWorkBody{display:none;margin-top:10px}.teamWorkBox.active .teamWorkBody{display:block}.teamWorkerSearch{margin-bottom:8px}.teamWorkerChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:190px;overflow:auto;padding:2px}.teamWorkerChoice{display:flex;align-items:center;gap:8px;border:1px solid #dbe4f0;background:#fff;border-radius:11px;padding:9px;cursor:pointer;font-size:13px;font-weight:850}.teamWorkerChoice input{width:auto}.teamWorkerChoice.main{background:#e0e7ff;color:#1e40af}.teamWorkerChoice.selected{border-color:#2563eb;background:#eff6ff}.teamWorkerSummary{margin-top:9px;padding:8px 10px;border-radius:10px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:900}.teamWorkerAdd{border:0;border-radius:10px;padding:8px 10px;background:#e0e7ff;color:#1e40af;font-weight:900;cursor:pointer;margin-top:8px}@media(max-width:720px){.teamWorkerChoices{grid-template-columns:1fr;max-height:220px}.teamWorkBox{padding:11px}.teamWorkerChoice{min-height:46px;font-size:14px}}
+/* V119.1：第一階段 Cloud Employee Safe，只改 Key In 前端 */
+.teamWorkBox{margin:12px 0;padding:12px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:15px}.teamWorkHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.teamWorkToggle{display:flex;align-items:center;gap:8px;font-weight:950;color:#1e3a8a}.teamWorkToggle input{width:auto;transform:scale(1.2)}.teamWorkBody{display:none;margin-top:10px}.teamWorkBox.active .teamWorkBody{display:block}.teamWorkerSearch{margin-bottom:8px}.teamWorkerChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:190px;overflow:auto;padding:2px}.teamWorkerChoice{display:flex;align-items:center;gap:8px;border:1px solid #dbe4f0;background:#fff;border-radius:11px;padding:9px;cursor:pointer;font-size:13px;font-weight:850}.teamWorkerChoice input{width:auto}.teamWorkerChoice.main{background:#e0e7ff;color:#1e40af}.teamWorkerChoice.selected{border-color:#2563eb;background:#eff6ff}.teamWorkerSummary{margin-top:9px;padding:8px 10px;border-radius:10px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:900}.teamWorkerAdd{border:0;border-radius:10px;padding:8px 10px;background:#e0e7ff;color:#1e40af;font-weight:900;cursor:pointer;margin-top:8px}.cloudEmployeeState{margin-top:8px;padding:8px 10px;border-radius:10px;background:#eef2ff;color:#1e40af;font-size:12px;font-weight:900}.cloudEmployeeState.ok{background:#dcfce7;color:#166534}.cloudEmployeeState.bad{background:#fee2e2;color:#b91c1c}@media(max-width:720px){.teamWorkerChoices{grid-template-columns:1fr;max-height:220px}.teamWorkBox{padding:11px}.teamWorkerChoice{min-height:46px;font-size:14px}}
 </style>
 </head>
 <body>
@@ -200,7 +200,7 @@
         <div class="miniText">勾選一起作業的人員。系統只建立一筆產量回報，報表人員欄會保留所有參與者。<br>เลือกผู้ร่วมงาน ระบบจะนับผลผลิตเพียงหนึ่งรายการ</div>
         <input id="teamWorkerSearch" class="teamWorkerSearch" placeholder="搜尋工號或姓名 / ค้นหารหัสหรือชื่อ" oninput="renderCollaboratorChoices_()">
         <div id="teamWorkerChoices" class="teamWorkerChoices"></div>
-        <button type="button" class="teamWorkerAdd" onclick="addManualCollaborator_()">＋ 新增未列出人員 / เพิ่มพนักงาน</button>
+        <div id="cloudEmployeeState" class="cloudEmployeeState">登入後自動讀取 Employee 雲端名單 / โหลดรายชื่อ Employee จากคลาวด์หลังเข้าสู่ระบบ</div>
         <div id="teamWorkerSummary" class="teamWorkerSummary">主操作員 1 人 / ผู้ควบคุมหลัก 1 คน</div>
       </div>
     </div>
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[]};
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
 const KEYIN_SHARED_LOOKUP={
@@ -714,6 +714,7 @@ async function restoreAuthSession_(){
   try{
     await pinApi('employeeheartbeat',{auth_token:NOTICE_AUTH.token});
     saved.saved_at=Date.now();localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify(saved));
+    await loadCloudEmployees_(true);
     return true;
   }catch(e){
     NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;clearAuthSession_();renderNoticeIdentity();
@@ -722,8 +723,8 @@ async function restoreAuthSession_(){
   }
 }
 function renderNoticeIdentity(){const e=qs('noticeIdentity');if(!e)return;e.innerHTML=NOTICE_AUTH.employee?`目前人員 / ผู้ใช้งานปัจจุบัน：${urgentEsc(NOTICE_AUTH.employee.emp_no)} ${urgentEsc(NOTICE_AUTH.employee.emp_name)} <button onclick="switchNoticeEmployee()">切換人員 / เปลี่ยนผู้ใช้</button>`:''}
-function switchNoticeEmployee(){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;clearAuthSession_();App.urgentOrders=[];renderNoticeIdentity();const body=qs('personalTaskBody');if(body)body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';const list=qs('urgentNoticeList');if(list)list.innerHTML='<div class="noticeEmpty">請先登入以讀取個人通知 / กรุณาเข้าสู่ระบบเพื่อดูการแจ้งเตือน</div>';const count=qs('urgentNoticeCount');if(count)count.textContent='請先登入 / กรุณาเข้าสู่ระบบ';const m=qs('pinLoginModal');if(m)m.classList.remove('hide');const p=qs('pinLoginPin');if(p)p.value=''}
-async function loginEmployeePin(){const no=String(safeGet('pinLoginEmpNo')||'').trim(),pin=String(safeGet('pinLoginPin')||'').trim(),msg=qs('pinLoginMsg'),btn=document.querySelector('.pinPrimary');if(!no||!/^\d{4,6}$/.test(pin)){if(msg)msg.textContent='請輸入工號及 4～6 位數 PIN。 / กรุณากรอกรหัสพนักงานและ PIN 4–6 หลัก';return}if(btn)btn.disabled=true;try{if(msg){msg.className='urgentReaderName';msg.textContent='驗證中… / กำลังตรวจสอบ…'}let r=await pinApi('employeepinlogin',{emp_no:no,pin:pin,source:'keyin-login'});if(!r.token||!r.employee)throw new Error('登入回傳資料不完整，請重新部署 Code.gs');NOTICE_AUTH.token=r.token;NOTICE_AUTH.employee=r.employee;saveAuthSession_();if(r.must_change){const n1=prompt('第一次登入，請設定新的 4～6 位數 PIN（不可使用 0000）\nเข้าสู่ระบบครั้งแรก กรุณาตั้ง PIN ใหม่ 4–6 หลัก (ห้ามใช้ 0000)');if(!n1)return switchNoticeEmployee();const n2=prompt('請再次輸入新 PIN\nกรุณากรอก PIN ใหม่อีกครั้ง');if(n1!==n2)throw new Error('兩次新 PIN 不一致 / PIN ใหม่ทั้งสองครั้งไม่ตรงกัน');await pinApi('employeepinchange',{auth_token:r.token,old_pin:pin,new_pin:n1});alert('PIN 已更新，請妥善保管。\nอัปเดต PIN แล้ว กรุณาเก็บรักษาให้ดี')}saveAuthSession_();const m=qs('pinLoginModal');if(m)m.classList.add('hide');renderNoticeIdentity();await loadUrgentNotices();renderPersonalWorkPanel();renderCollaboratorChoices_()}catch(e){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;if(msg){msg.className='urgentReaderName bad';msg.textContent=String(e.message||e)}}finally{if(btn)btn.disabled=false}}
+function switchNoticeEmployee(){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;App.employees=[];App.employeesLoaded=false;clearAuthSession_();App.urgentOrders=[];renderNoticeIdentity();const body=qs('personalTaskBody');if(body)body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';const list=qs('urgentNoticeList');if(list)list.innerHTML='<div class="noticeEmpty">請先登入以讀取個人通知 / กรุณาเข้าสู่ระบบเพื่อดูการแจ้งเตือน</div>';const count=qs('urgentNoticeCount');if(count)count.textContent='請先登入 / กรุณาเข้าสู่ระบบ';const m=qs('pinLoginModal');if(m)m.classList.remove('hide');const p=qs('pinLoginPin');if(p)p.value=''}
+async function loginEmployeePin(){const no=String(safeGet('pinLoginEmpNo')||'').trim(),pin=String(safeGet('pinLoginPin')||'').trim(),msg=qs('pinLoginMsg'),btn=document.querySelector('.pinPrimary');if(!no||!/^\d{4,6}$/.test(pin)){if(msg)msg.textContent='請輸入工號及 4～6 位數 PIN。 / กรุณากรอกรหัสพนักงานและ PIN 4–6 หลัก';return}if(btn)btn.disabled=true;try{if(msg){msg.className='urgentReaderName';msg.textContent='驗證中… / กำลังตรวจสอบ…'}let r=await pinApi('employeepinlogin',{emp_no:no,pin:pin,source:'keyin-login'});if(!r.token||!r.employee)throw new Error('登入回傳資料不完整，請重新部署 Code.gs');NOTICE_AUTH.token=r.token;NOTICE_AUTH.employee=r.employee;saveAuthSession_();if(r.must_change){const n1=prompt('第一次登入，請設定新的 4～6 位數 PIN（不可使用 0000）\nเข้าสู่ระบบครั้งแรก กรุณาตั้ง PIN ใหม่ 4–6 หลัก (ห้ามใช้ 0000)');if(!n1)return switchNoticeEmployee();const n2=prompt('請再次輸入新 PIN\nกรุณากรอก PIN ใหม่อีกครั้ง');if(n1!==n2)throw new Error('兩次新 PIN 不一致 / PIN ใหม่ทั้งสองครั้งไม่ตรงกัน');await pinApi('employeepinchange',{auth_token:r.token,old_pin:pin,new_pin:n1});alert('PIN 已更新，請妥善保管。\nอัปเดต PIN แล้ว กรุณาเก็บรักษาให้ดี')}saveAuthSession_();const m=qs('pinLoginModal');if(m)m.classList.add('hide');renderNoticeIdentity();await loadCloudEmployees_(true);await loadUrgentNotices();renderPersonalWorkPanel();renderCollaboratorChoices_()}catch(e){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;if(msg){msg.className='urgentReaderName bad';msg.textContent=String(e.message||e)}}finally{if(btn)btn.disabled=false}}
 function personalTaskWo_(r){return wo(r.work_order_no||r.command_no||r.order_no||'')}
 function manualTaskKey_(){return 'MES_KEYIN_MANUAL_TASKS_'+isoDate()+'_'+currentLoginEmpNo_()}
 function getManualTasks_(){try{return JSON.parse(localStorage.getItem(manualTaskKey_())||'[]')}catch(e){return[]}}
@@ -1132,18 +1133,62 @@ async function lookupWOAsync(){
   UI_PERF.search_ms=Math.round(perfNow_()-searchStarted);
   await applyResolvedOrderDOM_(r,matches,seq,searchStarted);
 }
+function normalizeCloudEmployee_(e){
+  e=e||{};
+  const emp_no=String(e.emp_no||e.employee_no||e.staff_no||e['工號']||'').trim();
+  const emp_name=String(e.emp_name||e.employee_name||e.name||e['姓名']||'').trim();
+  const department=String(e.department||e.dept||e['部門']||e['單位']||'').trim();
+  const status=String(e.status||e.active||e.enabled||e['狀態']||e['在職']||'').trim();
+  return{...e,emp_no,emp_name,department,status};
+}
+function cloudEmployeeActive_(e){
+  const s=String(e.status||'').trim().toUpperCase();
+  return !['N','NO','FALSE','0','停用','離職','離職停用','DISABLED','INACTIVE'].includes(s);
+}
+function setCloudEmployeeState_(text,kind=''){
+  const el=qs('cloudEmployeeState');if(!el)return;
+  el.className='cloudEmployeeState '+(kind||'');el.textContent=text;
+}
+async function loadCloudEmployees_(force=false){
+  if(App.employeesLoading)return App.employees;
+  if(App.employeesLoaded&&!force)return App.employees;
+  if(!NOTICE_AUTH.token){setCloudEmployeeState_('請先登入以讀取 Employee 雲端名單 / กรุณาเข้าสู่ระบบ','');return[]}
+  App.employeesLoading=true;setCloudEmployeeState_('正在讀取 Employee 雲端名單… / กำลังโหลดรายชื่อจากคลาวด์','');
+  const attempts=[
+    ()=>getApi('listEmployees',{auth_token:NOTICE_AUTH.token}),
+    ()=>getApi('listEmployee',{auth_token:NOTICE_AUTH.token}),
+    ()=>getApi('employees',{auth_token:NOTICE_AUTH.token}),
+    ()=>getApi('employeeList',{auth_token:NOTICE_AUTH.token}),
+    ()=>pinApi('employeelist',{auth_token:NOTICE_AUTH.token}),
+    ()=>pinApi('listemployees',{auth_token:NOTICE_AUTH.token})
+  ];
+  let lastErr=null;
+  try{
+    for(const run of attempts){
+      try{
+        const res=await run();
+        const rows=rowsOf(res).map(normalizeCloudEmployee_).filter(e=>e.emp_no&&cloudEmployeeActive_(e));
+        if(rows.length){
+          const map=new Map();rows.forEach(e=>{if(!map.has(e.emp_no))map.set(e.emp_no,e)});
+          App.employees=Array.from(map.values()).sort((a,b)=>a.emp_no.localeCompare(b.emp_no));
+          App.employeesLoaded=true;
+          setCloudEmployeeState_('✓ Employee 雲端名單 '+App.employees.length+' 人 / โหลดจากคลาวด์แล้ว '+App.employees.length+' คน','ok');
+          renderCollaboratorChoices_();return App.employees;
+        }
+      }catch(err){lastErr=err}
+    }
+    App.employees=[];App.employeesLoaded=false;
+    setCloudEmployeeState_('Employee 雲端名單讀取失敗，未使用本機替代名單 / โหลดรายชื่อคลาวด์ไม่สำเร็จ','bad');
+    console.warn('Cloud Employee load failed',lastErr);
+    renderCollaboratorChoices_();return[];
+  }finally{App.employeesLoading=false}
+}
 function employeePool_(){
-  const map=new Map();
-  const put=(no,name)=>{no=String(no||'').trim();name=String(name||'').trim();if(!no)return;if(!map.has(no)||(!map.get(no)&&name))map.set(no,name)};
-  (App.employees||[]).forEach(e=>put(e.emp_no||e.employee_no||e['工號'],e.emp_name||e.name||e['姓名']));
-  (App.plans||[]).forEach(p=>put(p.operator_emp_no||p.assigned_emp_no||p.worker_emp_no,p.operator_name||p.assigned_name||p.worker_name||p.emp_name));
-  (App.keyin||[]).forEach(k=>{const nos=String(k.emp_no||'').split(/[\s,，+＋、]+/).filter(Boolean),names=String(k.emp_name||'').replace(/（主）/g,'').split(/[,+＋、]+/).map(x=>x.trim());nos.forEach((no,i)=>put(no,names[i]||''))});
-  (App.manualCollaborators||[]).forEach(e=>put(e.emp_no,e.emp_name));
-  put(currentLoginEmpNo_(),currentLoginEmpName_());
-  return Array.from(map,(x)=>({emp_no:x[0],emp_name:x[1]})).sort((a,b)=>a.emp_no.localeCompare(b.emp_no));
+  const main=currentLoginEmpNo_();
+  return (App.employees||[]).map(normalizeCloudEmployee_).filter(e=>e.emp_no&&e.emp_no!==main&&cloudEmployeeActive_(e)).sort((a,b)=>a.emp_no.localeCompare(b.emp_no));
 }
 function toggleTeamWork_(){const on=!!(qs('teamWorkEnabled')&&qs('teamWorkEnabled').checked),box=qs('teamWorkBox');if(box)box.classList.toggle('active',on);if(!on)App.collaborators=[];renderCollaboratorChoices_();updateTeamWorkerSummary_();scheduleDraft_()}
-function renderCollaboratorChoices_(){const box=qs('teamWorkerChoices');if(!box)return;const q=nrm(safeGet('teamWorkerSearch')),main=currentLoginEmpNo_();const rows=employeePool_().filter(e=>e.emp_no!==main&&(!q||nrm(e.emp_no+' '+e.emp_name).includes(q)));box.innerHTML=rows.map(e=>{const checked=App.collaborators.some(x=>x.emp_no===e.emp_no);return `<label class="teamWorkerChoice ${checked?'selected':''}"><input type="checkbox" ${checked?'checked':''} onchange="setCollaborator_('${html(e.emp_no)}','${html(e.emp_name)}',this.checked)"><span><b>${html(e.emp_no)}</b> ${html(e.emp_name||'未建姓名')}</span></label>`}).join('')||'<div class="miniText">沒有符合的人員，可按下方新增。</div>';updateTeamWorkerSummary_()}
+function renderCollaboratorChoices_(){const box=qs('teamWorkerChoices');if(!box)return;const q=nrm(safeGet('teamWorkerSearch')),main=currentLoginEmpNo_();const rows=employeePool_().filter(e=>!q||nrm(e.emp_no+' '+e.emp_name+' '+(e.department||'')).includes(q));box.innerHTML=rows.map(e=>{const checked=App.collaborators.some(x=>x.emp_no===e.emp_no);return `<label class="teamWorkerChoice ${checked?'selected':''}"><input type="checkbox" ${checked?'checked':''} onchange="setCollaborator_('${html(e.emp_no)}','${html(e.emp_name)}',this.checked)"><span><b>${html(e.emp_no)}</b> ${html(e.emp_name||'未建姓名')}</span></label>`}).join('')||(App.employeesLoading?'<div class="miniText">正在讀取 Employee 雲端名單…</div>':'<div class="miniText">沒有符合的雲端人員資料。</div>');updateTeamWorkerSummary_()}
 function setCollaborator_(no,name,checked){no=String(no||'').trim();if(!no||no===currentLoginEmpNo_())return;App.collaborators=App.collaborators.filter(x=>x.emp_no!==no);if(checked)App.collaborators.push({emp_no:no,emp_name:String(name||'').trim()});renderCollaboratorChoices_();scheduleDraft_()}
 function addManualCollaborator_(){const raw=prompt('請輸入「工號 姓名」\nกรอกรหัสพนักงานและชื่อ','');if(raw===null)return;const m=String(raw).trim().match(/^(\S+)\s+(.+)$/);if(!m){alert('格式請輸入：工號 姓名');return}const e={emp_no:m[1].trim(),emp_name:m[2].trim()};if(e.emp_no===currentLoginEmpNo_()){alert('主操作員不需重複加入');return}App.manualCollaborators=App.manualCollaborators.filter(x=>x.emp_no!==e.emp_no).concat(e);App.collaborators=App.collaborators.filter(x=>x.emp_no!==e.emp_no).concat(e);renderCollaboratorChoices_();scheduleDraft_()}
 function updateTeamWorkerSummary_(){const el=qs('teamWorkerSummary');if(!el)return;const on=qs('teamWorkEnabled')&&qs('teamWorkEnabled').checked,all=[{emp_no:currentLoginEmpNo_(),emp_name:currentLoginEmpName_()},...(on?App.collaborators:[])];el.textContent='共 '+all.length+' 人：'+all.map((e,i)=>(i===0?'主 ':'協同 ')+e.emp_no+' '+(e.emp_name||'')).join('｜')}
@@ -1250,7 +1295,7 @@ function afterSubmitClear(forceNext=false){clearDraft_();App.collaborators=[];if
 function setupFastInputKeys(){['work_order_no','actual_output','speed_qty_round','speed_minutes_round'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('focus',()=>{if(id==='actual_output')setMobileStep_(2);else if(id==='speed_qty_round')setMobileStep_(3);else if(id==='speed_minutes_round')setMobileStep_(4)});el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();mobileFocus_('actual_output',2)}else if(id==='actual_output'){if(isOptionalSpeedSite_()){const b=qs('mobileNextBtn')||document.querySelector('.saveNextBtn');if(b&&!b.disabled)saveAndNextOrder(b)}else mobileFocus_('speed_qty_round',3)}else if(id==='speed_qty_round'){mobileFocus_('speed_minutes_round',4)}else if(id==='speed_minutes_round'){const b=qs('mobileNextBtn')||document.querySelector('.saveNextBtn');if(b&&!b.disabled)saveAndNextOrder(b)}})})}
 async function submitKeyin(opts={}){const btn=qs('submitBtn');if(!NOTICE_AUTH.employee||!NOTICE_AUTH.token){if(window.MES)MES.toast('請先登入 / กรุณาเข้าสู่ระบบ');const m=qs('pinLoginModal');if(m)m.classList.remove('hide');return false}const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return false}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return false}if(safeGet('site')==='其他'&&!safeGet('other_process').trim()){const input=qs('other_process');if(window.MES)MES.toast('請填寫其他製程名稱 / กรุณาระบุกระบวนการอื่น');if(input){input.focus();input.reportValidity()}return false}if(!isOptionalSpeedSite_()&&!speedFieldsComplete_()){if(window.MES)MES.toast('請完成現場實測產速後再儲存 / กรุณากรอกข้อมูลความเร็วให้ครบ');const target=Number(safeGet('speed_qty_round'))>0?qs('speed_minutes_round'):qs('speed_qty_round');if(target){target.focus();target.reportValidity()}return false}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
 const submitWO=wo(matched.command_no||matched.work_order_no||w);
-const team=teamWorkerData_();if(team.enabled&&!team.collabs.length){if(window.MES)MES.toast('已勾選多人共同作業，請至少選擇一位協同人員');renderCollaboratorChoices_();return false}const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:team.emp_no,emp_name:team.emp_name,main_emp_no:team.main.emp_no,main_emp_name:team.main.emp_name,collaborator_emp_nos:team.collabs.map(x=>x.emp_no).join(','),collaborator_emp_names:team.collabs.map(x=>x.emp_name).join('、'),worker_count:team.all.length,team_work:team.enabled?'Y':'N',production_count_mode:'SINGLE',process_note:teamWorkNote_(otherProcessNote_(),team),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v118_team_single_keyin'};try{await postApi('saveKeyin',data);const localSaved={...data,created_at:new Date().toISOString()};App.keyin.push(localSaved);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear(!!opts.forceNext);renderPersonalWorkPanel();setTimeout(()=>loadKeyin(false),1200);return true}catch(e){alert('回報失敗：'+e.message);updateDraftState_('pending','儲存失敗，資料仍保留在畫面與草稿中');return false}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+const team=teamWorkerData_();if(team.enabled&&!team.collabs.length){if(window.MES)MES.toast('已勾選多人共同作業，請至少選擇一位協同人員');renderCollaboratorChoices_();return false}const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:team.emp_no,emp_name:team.emp_name,main_emp_no:team.main.emp_no,main_emp_name:team.main.emp_name,collaborator_emp_nos:team.collabs.map(x=>x.emp_no).join(','),collaborator_emp_names:team.collabs.map(x=>x.emp_name).join('、'),worker_count:team.all.length,team_work:team.enabled?'Y':'N',production_count_mode:'SINGLE',process_note:teamWorkNote_(otherProcessNote_(),team),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v1191_cloud_employee_safe'};try{await postApi('saveKeyin',data);const localSaved={...data,created_at:new Date().toISOString()};App.keyin.push(localSaved);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear(!!opts.forceNext);renderPersonalWorkPanel();setTimeout(()=>loadKeyin(false),1200);return true}catch(e){alert('回報失敗：'+e.message);updateDraftState_('pending','儲存失敗，資料仍保留在畫面與草稿中');return false}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function syncKeyinCollapseUI_(){const body=qs('keyinReportBody'),btn=qs('keyinCollapseBtn');if(body)body.classList.toggle('collapsed',!!App.keyinReportCollapsed);if(btn)btn.textContent=App.keyinReportCollapsed?'展開 / ขยาย':'收合 / ย่อ'}
 function toggleKeyinReport(){App.keyinReportCollapsed=!App.keyinReportCollapsed;syncKeyinCollapseUI_()}
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=(r0.fallback?'最新資料｜':'')+r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
@@ -1263,7 +1308,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   syncPlanCollapseUI_();syncKeyinCollapseUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();renderCollaboratorChoices_();onSiteChange();setupFastInputKeys();setMobileStep_(1);['speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});e.addEventListener('change',()=>{updateSpeedCalculated_();updateSubmitAvailability_()})}});loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V118 Team Single Key In Build 0112 | Fast Shared Index ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V119.1 Cloud Employee Safe Build 0113 | Fast Shared Index ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 
