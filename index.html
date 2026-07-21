@@ -100,7 +100,7 @@
   .keyinCollapseBtn{width:100%}
 }
 
-/* V119.3：幹部目標同步顯示修正；保留通知字典與 Cloud Employee Safe */
+/* V119.1：第一階段 Cloud Employee Safe，只改 Key In 前端 */
 .teamWorkBox{margin:12px 0;padding:12px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:15px}.teamWorkHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.teamWorkToggle{display:flex;align-items:center;gap:8px;font-weight:950;color:#1e3a8a}.teamWorkToggle input{width:auto;transform:scale(1.2)}.teamWorkBody{display:none;margin-top:10px}.teamWorkBox.active .teamWorkBody{display:block}.teamWorkerSearch{margin-bottom:8px}.teamWorkerChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:190px;overflow:auto;padding:2px}.teamWorkerChoice{display:flex;align-items:center;gap:8px;border:1px solid #dbe4f0;background:#fff;border-radius:11px;padding:9px;cursor:pointer;font-size:13px;font-weight:850}.teamWorkerChoice input{width:auto}.teamWorkerChoice.main{background:#e0e7ff;color:#1e40af}.teamWorkerChoice.selected{border-color:#2563eb;background:#eff6ff}.teamWorkerSummary{margin-top:9px;padding:8px 10px;border-radius:10px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:900}.teamWorkerAdd{border:0;border-radius:10px;padding:8px 10px;background:#e0e7ff;color:#1e40af;font-weight:900;cursor:pointer;margin-top:8px}.cloudEmployeeState{margin-top:8px;padding:8px 10px;border-radius:10px;background:#eef2ff;color:#1e40af;font-size:12px;font-weight:900}.cloudEmployeeState.ok{background:#dcfce7;color:#166534}.cloudEmployeeState.bad{background:#fee2e2;color:#b91c1c}@media(max-width:720px){.teamWorkerChoices{grid-template-columns:1fr;max-height:220px}.teamWorkBox{padding:11px}.teamWorkerChoice{min-height:46px;font-size:14px}}
 </style>
 </head>
@@ -780,9 +780,7 @@ function renderPersonalWorkPanel(){
 
   const no=String(NOTICE_AUTH.employee.emp_no||'').trim();
   const today=isoDate();
-  const allPlans=App.plans||[];
-
-  const plans=allPlans.filter(p=>{
+  const plans=(App.plans||[]).filter(p=>{
     const d=personalTaskPlanDate_(p);
     const empNos=personalTaskAssignedNos_(p);
     return d===today && empNos.includes(no);
@@ -838,13 +836,42 @@ function renderPersonalWorkPanel(){
     <div class="personalTaskKpi"><span>Key In 筆數 / จำนวนบันทึก</span><b>${keyins.length}</b></div>
     <div class="personalTaskKpi"><span>臨時工單 / งานด่วน</span><b>${manual.length}</b></div>
   </div><div class="personalTaskList">${rows.join('')||'<div class="noticeEmpty">今天尚未分派任務；可使用「搜尋其他工單」。</div>'}</div>`;
+}
+function noticeNormalizeBool(v){return v===true||v===1||String(v).toLowerCase()==='true'||String(v)==='1'}
+function noticeTypeInfo(r){const raw=String(r.notification_type||r.type||'urgent').toLowerCase();if(/due|交期/.test(raw))return {key:'due',icon:'🟠',zh:'交期變更',th:'เปลี่ยนกำหนดส่ง'};if(/aps|schedule|排程/.test(raw))return {key:'aps',icon:'🟡',zh:'APS 排程',th:'ตาราง APS'};if(/quality|品質/.test(raw))return {key:'quality',icon:'🟣',zh:'品質通知',th:'แจ้งคุณภาพ'};if(/machine|equipment|機台|設備/.test(raw))return {key:'machine',icon:'⚫',zh:'設備通知',th:'แจ้งเครื่องจักร'};if(/info|notice|公告|一般/.test(raw))return {key:'info',icon:'🔵',zh:'一般通知',th:'ประกาศทั่วไป'};return {key:'urgent',icon:'🔴',zh:'急單',th:'งานด่วน'}}
+function noticePriority(r){let n=Number(r.priority_level||r.priority||5);if(!Number.isFinite(n)||n<1)n=5;if(n>5)n=5;return {n,stars:'★'.repeat(n)+'☆'.repeat(5-n)}}
+function noticeDateMs(v){if(!v)return 0;const s=String(v).trim().replace(/\//g,'-');const d=new Date(s.includes('T')?s:s.replace(' ','T'));return Number.isFinite(d.getTime())?d.getTime():0}
+function noticeCountdown(v){const due=noticeDateMs(v);if(!due)return {text:'—'};const ms=due-Date.now(),abs=Math.abs(ms),h=Math.floor(abs/3600000),min=Math.floor(abs%3600000/60000);return ms<0?{text:`逾期 ${h}小時${min}分 / เกินกำหนด ${h}ชม.${min}น.`}:{text:`剩餘 ${h}小時${min}分 / เหลือ ${h}ชม.${min}น.`}}
+
+/* V119.4 Build 0116｜通知翻譯字典安全防呆 */
+var NOTICE_TH_DICT = (function(existing){
+  var base = {
+    "急件插單":"แทรกงานด่วน",
+    "交期變更":"เปลี่ยนกำหนดส่ง",
+    "交期延誤":"กำหนดส่งล่าช้า",
+    "交期 delay":"กำหนดส่งล่าช้า",
+    "客戶要求":"ลูกค้าร้องขอ",
+    "生管調整":"ฝ่ายวางแผนการผลิตปรับเปลี่ยน",
+    "前製程延誤":"กระบวนการก่อนหน้าล่าช้า",
+    "機台異常":"เครื่องจักรผิดปกติ",
+    "品質異常":"คุณภาพผิดปกติ",
+    "缺料":"วัตถุดิบไม่เพียงพอ",
+    "其他":"อื่นๆ"
+  };
+  if(existing && typeof existing === "object"){
+    Object.keys(existing).forEach(function(k){ base[k] = existing[k]; });
+  }
+  if(typeof window !== "undefined") window.NOTICE_TH_DICT = base;
+  return base;
 })(typeof window !== "undefined" ? window.NOTICE_TH_DICT : null);
 
 function noticeThaiText_(zh){
   var key = String(zh || "").trim();
   if(!key) return "";
   try{
-    var dict = (typeof window !== "undefined" && window.NOTICE_TH_DICT && typeof window.NOTICE_TH_DICT === "object")
+    var dict = (typeof window !== "undefined" &&
+                window.NOTICE_TH_DICT &&
+                typeof window.NOTICE_TH_DICT === "object")
       ? window.NOTICE_TH_DICT
       : NOTICE_TH_DICT;
     return String((dict && dict[key]) || "");
@@ -1421,7 +1448,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   syncPlanCollapseUI_();syncKeyinCollapseUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();renderCollaboratorChoices_();onSiteChange();setupFastInputKeys();setMobileStep_(1);['speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});e.addEventListener('change',()=>{updateSpeedCalculated_();updateSubmitAvailability_()})}});loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V119.3 Target Sync Safe Build 0115 | Fast Shared Index ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V119.4 Login Restore + Target Sync Build 0116 | Fast Shared Index ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 
