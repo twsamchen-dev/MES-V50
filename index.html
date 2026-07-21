@@ -100,7 +100,7 @@
   .keyinCollapseBtn{width:100%}
 }
 
-/* V119.2：通知中心翻譯字典源頭防呆；保留 V119.1 Cloud Employee Safe */
+/* V119.3：幹部目標同步顯示修正；保留通知字典與 Cloud Employee Safe */
 .teamWorkBox{margin:12px 0;padding:12px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:15px}.teamWorkHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.teamWorkToggle{display:flex;align-items:center;gap:8px;font-weight:950;color:#1e3a8a}.teamWorkToggle input{width:auto;transform:scale(1.2)}.teamWorkBody{display:none;margin-top:10px}.teamWorkBox.active .teamWorkBody{display:block}.teamWorkerSearch{margin-bottom:8px}.teamWorkerChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:190px;overflow:auto;padding:2px}.teamWorkerChoice{display:flex;align-items:center;gap:8px;border:1px solid #dbe4f0;background:#fff;border-radius:11px;padding:9px;cursor:pointer;font-size:13px;font-weight:850}.teamWorkerChoice input{width:auto}.teamWorkerChoice.main{background:#e0e7ff;color:#1e40af}.teamWorkerChoice.selected{border-color:#2563eb;background:#eff6ff}.teamWorkerSummary{margin-top:9px;padding:8px 10px;border-radius:10px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:900}.teamWorkerAdd{border:0;border-radius:10px;padding:8px 10px;background:#e0e7ff;color:#1e40af;font-weight:900;cursor:pointer;margin-top:8px}.cloudEmployeeState{margin-top:8px;padding:8px 10px;border-radius:10px;background:#eef2ff;color:#1e40af;font-size:12px;font-weight:900}.cloudEmployeeState.ok{background:#dcfce7;color:#166534}.cloudEmployeeState.bad{background:#fee2e2;color:#b91c1c}@media(max-width:720px){.teamWorkerChoices{grid-template-columns:1fr;max-height:220px}.teamWorkBox{padding:11px}.teamWorkerChoice{min-height:46px;font-size:14px}}
 </style>
 </head>
@@ -735,38 +735,109 @@ function setMobileStep_(step){const t=qs('mobileStepTitle'),h=qs('mobileStepHint
 function mobileFocus_(id,step){const el=qs(id);if(!el)return;document.querySelectorAll('.mobileFocusedField').forEach(x=>x.classList.remove('mobileFocusedField'));el.classList.add('mobileFocusedField');setMobileStep_(step);el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{try{el.focus({preventScroll:true});el.select&&el.select()}catch(e){el.focus()}},260)}
 function fillTaskFromPlanFast_(w){const p=(App.plans||[]).find(x=>personalTaskWo_(x)===w);if(!p)return false;const o=sourceObj(p);safeSet('work_order_no',w);if(o.batch_no)safeSet('batch_no',o.batch_no);if(o.machine_code)safeSet('machine_code',o.machine_code);if(o.process){safeSet('site',String(o.process).split('/')[0].trim());onSiteChange()}const u=String(p.target_unit||p.unit||'').toUpperCase();if(u==='M2')safeSet('unit','M2');else if(u==='R')safeSet('unit','R');return true}
 function pickPersonalTask_(w){w=wo(w);if(!w)return;saveDraftNow_();App.currentTaskWo=w;fillTaskFromPlanFast_(w);safeSet('work_order_no',w);renderPersonalWorkPanel();mobileFocus_('actual_output',2);setTimeout(()=>lookupWO(),30)}
-function renderPersonalWorkPanel(){const panel=qs('personalTaskPanel'),body=qs('personalTaskBody'),sub=qs('personalTaskSub');if(!panel||!body)return;if(!NOTICE_AUTH.employee){body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';return}const no=String(NOTICE_AUTH.employee.emp_no),today=isoDate(),plans=(App.plans||[]).filter(p=>dk(p.report_date||p.plan_date)===today&&String(p.operator_emp_no||p.assigned_emp_no||p.worker_emp_no||'').trim()===no),keyins=(App.keyin||[]).filter(k=>dk(k.report_date||k.created_at)===today&&String(k.emp_no||'').split(/[\s,，]+/).includes(no));const planWos=new Set(plans.map(personalTaskWo_).filter(Boolean)),manual=getManualTasks_().filter(w=>!planWos.has(w));let done=0;const rows=plans.map(p=>{const unit=String(p.target_unit||p.unit||(Number(p.target_m2)>0?'M2':'R')).toUpperCase(),target=unit==='M2'?Number(p.target_m2||0):Number(p.target_roll||p.target_qty||0),w=personalTaskWo_(p),actual=keyins.filter(k=>personalTaskWo_(k)===w).reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0),pct=target>0?Math.min(999,Math.round(actual/target*1000)/10):0,isDone=pct>=100;if(isDone)done++;return `<div class="personalTaskRow ${isDone?'done':''} ${App.currentTaskWo===w?'current':''}" onclick="pickPersonalTask_('${urgentEsc(w)}')"><div><b>${urgentEsc(w||'未指定工單')}</b><br><small>${urgentEsc(p.customer||'')}｜${urgentEsc(p.process_site||p.process||'')}</small></div><div><b>${urgentEsc(p.machine_code||p.machine||'-')}</b><br><small>機台 / เครื่อง</small></div><div><b>${target.toLocaleString()} ${unit==='M2'?'M²':'R'}</b><br><small>目標 / เป้าหมาย</small></div><div><b>${actual.toLocaleString()}｜${pct}%</b><br><small>${isDone?'已完成 / เสร็จแล้ว':'作業中 / กำลังทำ'}</small></div></div>`});manual.forEach(w=>{const actual=keyins.filter(k=>personalTaskWo_(k)===w).reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0);rows.push(`<div class="personalTaskRow ${App.currentTaskWo===w?'current':''}" onclick="pickPersonalTask_('${urgentEsc(w)}')"><div><b>${urgentEsc(w)}</b><span class="manualTaskTag">臨時／本機</span><br><small>未建立 Target 目標</small></div><div><b>-</b><br><small>機台自動帶入</small></div><div><b>-</b><br><small>無目標量</small></div><div><b>${actual.toLocaleString()}</b><br><small>${actual>0?'已回報':'尚未回報'}</small></div></div>`)});panel.classList.add('show');if(sub)sub.textContent=`${no} ${NOTICE_AUTH.employee.emp_name}｜${today}`;body.innerHTML=`<div class="personalTaskKpis"><div class="personalTaskKpi"><span>今日任務 / งานวันนี้</span><b>${plans.length+manual.length}</b></div><div class="personalTaskKpi"><span>已完成 / เสร็จแล้ว</span><b>${done}</b></div><div class="personalTaskKpi"><span>Key In 筆數 / จำนวนบันทึก</span><b>${keyins.length}</b></div><div class="personalTaskKpi"><span>臨時工單 / งานด่วน</span><b>${manual.length}</b></div></div><div class="personalTaskList">${rows.join('')||'<div class="noticeEmpty">今天尚未分派任務；可使用「搜尋其他工單」。</div>'}</div>`}
-function noticeNormalizeBool(v){return v===true||v===1||String(v).toLowerCase()==='true'||String(v)==='1'}
-function noticeTypeInfo(r){const raw=String(r.notification_type||r.type||'urgent').toLowerCase();if(/due|交期/.test(raw))return {key:'due',icon:'🟠',zh:'交期變更',th:'เปลี่ยนกำหนดส่ง'};if(/aps|schedule|排程/.test(raw))return {key:'aps',icon:'🟡',zh:'APS 排程',th:'ตาราง APS'};if(/quality|品質/.test(raw))return {key:'quality',icon:'🟣',zh:'品質通知',th:'แจ้งคุณภาพ'};if(/machine|equipment|機台|設備/.test(raw))return {key:'machine',icon:'⚫',zh:'設備通知',th:'แจ้งเครื่องจักร'};if(/info|notice|公告|一般/.test(raw))return {key:'info',icon:'🔵',zh:'一般通知',th:'ประกาศทั่วไป'};return {key:'urgent',icon:'🔴',zh:'急單',th:'งานด่วน'}}
-function noticePriority(r){let n=Number(r.priority_level||r.priority||5);if(!Number.isFinite(n)||n<1)n=5;if(n>5)n=5;return {n,stars:'★'.repeat(n)+'☆'.repeat(5-n)}}
-function noticeDateMs(v){if(!v)return 0;const s=String(v).trim().replace(/\//g,'-');const d=new Date(s.includes('T')?s:s.replace(' ','T'));return Number.isFinite(d.getTime())?d.getTime():0}
-function noticeCountdown(v){const due=noticeDateMs(v);if(!due)return {text:'—'};const ms=due-Date.now(),abs=Math.abs(ms),h=Math.floor(abs/3600000),min=Math.floor(abs%3600000/60000);return ms<0?{text:`逾期 ${h}小時${min}分 / เกินกำหนด ${h}ชม.${min}น.`}:{text:`剩餘 ${h}小時${min}分 / เหลือ ${h}ชม.${min}น.`}}
-
-/* V119.2 Build 0114｜通知中心翻譯字典源頭防呆
- * 目的：
- * 1. 即使舊快取、載入順序或翻譯資料缺失，也不讓通知中心整體中斷。
- * 2. 保留既有 window.NOTICE_TH_DICT，避免覆蓋其他版本已載入的翻譯。
- * 3. 查不到泰文時回退為空字串，畫面繼續顯示中文原文。
- */
-var NOTICE_TH_DICT = (function(existing){
-  var base = {
-    "急件插單":"แทรกงานด่วน",
-    "交期變更":"เปลี่ยนกำหนดส่ง",
-    "交期延誤":"กำหนดส่งล่าช้า",
-    "交期 delay":"กำหนดส่งล่าช้า",
-    "客戶要求":"ลูกค้าร้องขอ",
-    "生管調整":"ฝ่ายวางแผนการผลิตปรับเปลี่ยน",
-    "前製程延誤":"กระบวนการก่อนหน้าล่าช้า",
-    "機台異常":"เครื่องจักรผิดปกติ",
-    "品質異常":"คุณภาพผิดปกติ",
-    "缺料":"วัตถุดิบไม่เพียงพอ",
-    "其他":"อื่นๆ"
-  };
-  if(existing && typeof existing === "object"){
-    Object.keys(existing).forEach(function(k){ base[k] = existing[k]; });
+function personalTaskPlanDate_(p){
+  p=p||{};
+  return dk(
+    p.report_date||p.plan_date||p.target_date||p.work_date||
+    p.production_date||p.date||p['日期']||p['報工日期']||p['目標日期']||''
+  );
+}
+function personalTaskAssignedNos_(p){
+  p=p||{};
+  const raw=[
+    p.operator_emp_no,p.assigned_emp_no,p.worker_emp_no,p.employee_no,p.emp_no,
+    p['作業人員工號'],p['人員工號'],p['工號']
+  ].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='').join(',');
+  return String(raw).split(/[\s,，、;；|／/]+/).map(v=>v.trim()).filter(Boolean);
+}
+function personalTaskTarget_(p){
+  p=p||{};
+  const unit=normalizeProductionUnit_(
+    p.target_unit||p.unit||p['目標單位']||p['單位']||
+    (Number(p.target_m2||p['目標M2']||p['目標㎡'])>0?'M2':'R')
+  )||'R';
+  let target=0;
+  if(unit==='M2'){
+    target=Number(
+      p.target_m2||p['目標M2']||p['目標㎡']||p.target_qty||
+      p['目標數量']||p['預計產量']||0
+    );
+  }else{
+    target=Number(
+      p.target_roll||p.target_r||p.target_qty||
+      p['目標卷數']||p['目標R']||p['目標數量']||p['預計產量']||0
+    );
   }
-  try{ window.NOTICE_TH_DICT = base; }catch(e){}
-  return base;
+  return {unit:unit==='M2'?'M2':'R',target:Number.isFinite(target)?target:0};
+}
+function renderPersonalWorkPanel(){
+  const panel=qs('personalTaskPanel'),body=qs('personalTaskBody'),sub=qs('personalTaskSub');
+  if(!panel||!body)return;
+  if(!NOTICE_AUTH.employee){
+    body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';
+    return;
+  }
+
+  const no=String(NOTICE_AUTH.employee.emp_no||'').trim();
+  const today=isoDate();
+  const allPlans=App.plans||[];
+
+  const plans=allPlans.filter(p=>{
+    const d=personalTaskPlanDate_(p);
+    const empNos=personalTaskAssignedNos_(p);
+    return d===today && empNos.includes(no);
+  });
+
+  const keyins=(App.keyin||[]).filter(k=>
+    dk(k.report_date||k.created_at)===today &&
+    String(k.emp_no||'').split(/[\s,，、;；|／/]+/).includes(no)
+  );
+
+  const planWos=new Set(plans.map(personalTaskWo_).filter(Boolean));
+  const manual=getManualTasks_().filter(w=>!planWos.has(w));
+  let done=0;
+
+  const rows=plans.map(p=>{
+    const tg=personalTaskTarget_(p);
+    const unit=tg.unit,target=tg.target;
+    const w=personalTaskWo_(p);
+    const actual=keyins.filter(k=>personalTaskWo_(k)===w)
+      .reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0);
+    const pct=target>0?Math.min(999,Math.round(actual/target*1000)/10):0;
+    const isDone=target>0&&pct>=100;
+    if(isDone)done++;
+
+    const targetDisplay=target>0
+      ? `${target.toLocaleString()} ${unit==='M2'?'M²':'R'}`
+      : '待補目標 / รอเป้าหมาย';
+
+    return `<div class="personalTaskRow ${isDone?'done':''} ${App.currentTaskWo===w?'current':''}" onclick="pickPersonalTask_('${urgentEsc(w)}')">
+      <div><b>${urgentEsc(w||'未指定工單')}</b><br><small>${urgentEsc(p.customer||'')}｜${urgentEsc(p.process_site||p.process||'')}</small></div>
+      <div><b>${urgentEsc(p.machine_code||p.machine||'-')}</b><br><small>機台 / เครื่อง</small></div>
+      <div><b>${targetDisplay}</b><br><small>幹部目標 / เป้าหมายหัวหน้า</small></div>
+      <div><b>${actual.toLocaleString()}｜${target>0?pct+'%':'-'}</b><br><small>${isDone?'已完成 / เสร็จแล้ว':actual>0?'作業中 / กำลังทำ':'未作業 / ยังไม่เริ่ม'}</small></div>
+    </div>`;
+  });
+
+  manual.forEach(w=>{
+    const actual=keyins.filter(k=>personalTaskWo_(k)===w)
+      .reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0);
+    rows.push(`<div class="personalTaskRow ${App.currentTaskWo===w?'current':''}" onclick="pickPersonalTask_('${urgentEsc(w)}')">
+      <div><b>${urgentEsc(w)}</b><span class="manualTaskTag">臨時／本機</span><br><small>未建立 Target 目標</small></div>
+      <div><b>-</b><br><small>機台自動帶入</small></div>
+      <div><b>-</b><br><small>無目標量</small></div>
+      <div><b>${actual.toLocaleString()}</b><br><small>${actual>0?'已回報':'尚未回報'}</small></div>
+    </div>`);
+  });
+
+  panel.classList.add('show');
+  if(sub)sub.textContent=`${no} ${NOTICE_AUTH.employee.emp_name}｜${today}`;
+  body.innerHTML=`<div class="personalTaskKpis">
+    <div class="personalTaskKpi"><span>今日任務 / งานวันนี้</span><b>${plans.length+manual.length}</b></div>
+    <div class="personalTaskKpi"><span>已完成 / เสร็จแล้ว</span><b>${done}</b></div>
+    <div class="personalTaskKpi"><span>Key In 筆數 / จำนวนบันทึก</span><b>${keyins.length}</b></div>
+    <div class="personalTaskKpi"><span>臨時工單 / งานด่วน</span><b>${manual.length}</b></div>
+  </div><div class="personalTaskList">${rows.join('')||'<div class="noticeEmpty">今天尚未分派任務；可使用「搜尋其他工單」。</div>'}</div>`;
 })(typeof window !== "undefined" ? window.NOTICE_TH_DICT : null);
 
 function noticeThaiText_(zh){
@@ -1350,7 +1421,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   syncPlanCollapseUI_();syncKeyinCollapseUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();renderCollaboratorChoices_();onSiteChange();setupFastInputKeys();setMobileStep_(1);['speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});e.addEventListener('change',()=>{updateSpeedCalculated_();updateSubmitAvailability_()})}});loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V119.2 Notice Dictionary Safe Build 0114 | Fast Shared Index ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V119.3 Target Sync Safe Build 0115 | Fast Shared Index ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 
