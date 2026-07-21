@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V99 MES Target｜Ultra Match Stable｜Build 0103</title>
+<title>V99 MES Target｜Ultra Match Stable｜Build 0104</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}.targetListHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}.targetListHead h2{margin:0}.targetRangeBtns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.targetRangeBtn{border:1px solid #bfdbfe;background:#eef4ff;color:#1e3a8a;border-radius:10px;padding:8px 13px;font-weight:900;cursor:pointer}.targetRangeBtn:hover{background:#dbeafe}.targetRangeBtn.active{background:#2563eb;border-color:#2563eb;color:#fff}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
@@ -21,10 +21,13 @@
 .datahubCard{grid-column:span 12;border:1px solid #bfdbfe;background:linear-gradient(135deg,#f8fbff,#eef6ff);border-radius:16px;padding:14px}.datahubHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.datahubTitle{font-size:19px;font-weight:900}.datahubBadge{display:inline-block;border-radius:999px;padding:5px 10px;background:#dbeafe;color:#1e3a8a;font-weight:900;font-size:12px}.datahubGrid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px;margin-top:12px}.dhStat{background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:10px}.dhStat b{display:block;font-size:22px;margin-top:4px}.dhOk{color:#15803d}.dhWarn{color:#b45309}.dhBad{color:#b91c1c}.dhNote{margin-top:10px;color:#475569;font-size:13px;line-height:1.6}@media(max-width:900px){.datahubGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.datahubGrid{grid-template-columns:repeat(2,1fr)}}
 .requiredMark{color:#dc2626;font-weight:900}.fieldInvalid{border:2px solid #dc2626!important;background:#fff7f7!important}.targetUnitBox{border:1px solid #bfdbfe;background:#f8fbff;border-radius:12px;padding:10px}.targetUnitBox label{margin-top:0}.targetQtyHidden{display:none!important}.saveGuardHint{display:block;margin:8px 2px 0;color:#b91c1c;font-weight:800;font-size:13px}
 .targetFilters{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:8px;margin:12px 0 9px;padding:11px;background:#f8fafc;border:1px solid var(--line);border-radius:12px}.targetFilters input,.targetFilters select{min-height:38px;padding:7px 9px;font-size:13px}.filterActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}.filterCheck{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#991b1b}.filterCheck input{width:auto;min-height:0}.filterCount{font-weight:900;color:#1d4ed8}.clearFilterBtn{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 11px;font-weight:900;cursor:pointer}@media(max-width:1200px){.targetFilters{grid-template-columns:repeat(4,1fr)}}@media(max-width:700px){.targetFilters{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.targetFilters{grid-template-columns:1fr}}
+
+/* Build 0104：儲存成功中央提示 */
+.saveResultOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:12000;align-items:center;justify-content:center;padding:18px}.saveResultOverlay.show{display:flex}.saveResultPanel{width:min(520px,94vw);background:#fff;border-radius:22px;padding:28px 24px;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.38);border:4px solid #22c55e}.saveResultIcon{font-size:58px;line-height:1}.saveResultTitle{font-size:27px;font-weight:900;color:#15803d;margin-top:8px}.saveResultText{font-size:16px;color:#334155;line-height:1.7;margin-top:10px}.saveResultBar{height:10px;background:#dcfce7;border-radius:99px;overflow:hidden;margin-top:18px}.saveResultBar>div{height:100%;width:100%;background:#22c55e;animation:saveResultCountdown 1.8s linear forwards}.saveResultClose{margin-top:18px;border:0;border-radius:12px;background:#16a34a;color:#fff;padding:11px 22px;font-weight:900;font-size:16px;cursor:pointer}@keyframes saveResultCountdown{from{width:100%}to{width:0}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0103</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0104</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -143,6 +146,15 @@
     <button id="confirmSaveBtn" class="btn ok" onclick="confirmMultiSave()">確認建立 / ยืนยัน</button>
   </div>
 </div></div>
+<div id="saveResultOverlay" class="saveResultOverlay" role="alertdialog" aria-modal="true" aria-labelledby="saveResultTitle">
+  <div class="saveResultPanel">
+    <div class="saveResultIcon">✅</div>
+    <div id="saveResultTitle" class="saveResultTitle">上傳完成 / บันทึกสำเร็จ</div>
+    <div id="saveResultText" class="saveResultText">目標已成功同步至雲端，輸入欄位已清空。</div>
+    <div class="saveResultBar"><div></div></div>
+    <button type="button" class="saveResultClose" onclick="hideSaveResult_()">完成 / เสร็จสิ้น</button>
+  </div>
+</div>
 
 <script>
 const API_URL=window.MES_API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
@@ -992,8 +1004,31 @@ function prepareMultiRows(base){
  return dates.map((d,i)=>{const r=Object.assign({},base);r.report_date=d;r.week_no=isoWeek(d);r.planned_finish=d;r.target_plan_id='TP-'+d.replace(/-/g,'')+'-'+Date.now()+'-'+String(i+1).padStart(3,'0');if(alloc==='total'){r.target_roll=(totalRoll/dates.length).toFixed(3);r.target_m2=(totalM2/dates.length).toFixed(3)}return r});
 }
 function showMultiPreview(rows){PENDING_MULTI_ROWS=rows;$('saveOverlay').className='saveOverlay show';$('saveOverlayTitle').textContent='建立多日目標 / สร้างเป้าหมายหลายวัน';$('saveOverlayText').textContent='將建立 '+rows.length+' 筆目標，確認日期、單位與數量後再寫入雲端。';$('savePreviewList').innerHTML=rows.map(r=>{const u=normalizeTargetUnit_(r.target_unit),q=u==='M2'?r.target_m2:r.target_roll;return '<div class="previewRow"><b>'+esc(r.report_date)+'</b><span>'+esc(q)+' '+esc(u==='M2'?'M²':'R')+'｜'+esc(r.machine_code||'未指定機台')+'</span></div>'}).join('');$('saveProgressBar').style.width='0%';$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('confirmSaveBtn').textContent='確認建立 / ยืนยัน'}
-async function confirmMultiSave(){if(!PENDING_MULTI_ROWS.length)return;const rows=PENDING_MULTI_ROWS.slice();$('confirmSaveBtn').disabled=true;$('cancelSaveBtn').disabled=true;try{for(let i=0;i<rows.length;i++){$('saveOverlayText').textContent='正在建立第 '+(i+1)+' / '+rows.length+' 筆… / กำลังบันทึก';$('saveProgressBar').style.width=Math.round((i/rows.length)*100)+'%';await apiPost('savetargetplan',rows[i]);await new Promise(r=>setTimeout(r,120))}$('saveProgressBar').style.width='100%';$('saveOverlayTitle').textContent='✅ 建立成功';$('saveOverlayText').textContent='已建立 '+rows.length+' 筆多日目標並同步至雲端。';$('confirmSaveBtn').textContent='完成';setTimeout(()=>{$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[];loadBootstrap()},1000)}catch(e){$('saveOverlayText').textContent='建立失敗：'+e.message;$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false}}
-function clearForm(){['emp_no','leader_name','operator_name','note'].forEach(id=>$(id).value='');$('operator_emp_no').value='';fillOperatorName_();clearOrderFields();$('empStatus').className='empStatus';$('empStatus').textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';renderSearchIdle();setScheduleMode('single')}
+async function confirmMultiSave(){if(!PENDING_MULTI_ROWS.length)return;const rows=PENDING_MULTI_ROWS.slice();$('confirmSaveBtn').disabled=true;$('cancelSaveBtn').disabled=true;try{for(let i=0;i<rows.length;i++){$('saveOverlayText').textContent='正在建立第 '+(i+1)+' / '+rows.length+' 筆… / กำลังบันทึก';$('saveProgressBar').style.width=Math.round((i/rows.length)*100)+'%';await apiPost('savetargetplan',rows[i]);await new Promise(r=>setTimeout(r,120))}$('saveProgressBar').style.width='100%';$('saveOverlayTitle').textContent='✅ 建立成功';$('saveOverlayText').textContent='已建立 '+rows.length+' 筆多日目標並同步至雲端。';$('confirmSaveBtn').textContent='完成';setTimeout(()=>{$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[];clearEntryAfterSave_();showSaveResult_('已建立 '+rows.length+' 筆多日目標並同步至雲端，輸入欄位已清空。');loadBootstrap()},900)}catch(e){$('saveOverlayText').textContent='建立失敗：'+e.message;$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false}}
+function clearEntryAfterSave_(){
+  // 保留目標日期、班別及幹部身分，清空下一筆工單會變動的所有欄位。
+  if($('operator_emp_no'))$('operator_emp_no').value='';
+  if($('operator_name'))$('operator_name').value='';
+  fillOperatorName_();
+  clearOrderFields();
+  if($('note'))$('note').value='';
+  if($('status'))$('status').selectedIndex=0;
+  LAST_LOOKUP=null;
+  clearTargetValidation_();
+  renderSearchIdle();
+  setScheduleMode('single');
+  if($('saveMsg'))$('saveMsg').textContent='';
+  setTimeout(()=>{if($('work_order_no'))$('work_order_no').focus()},120);
+}
+function showSaveResult_(text){
+  const box=$('saveResultOverlay'),msg=$('saveResultText');
+  if(msg)msg.textContent=text||'目標已成功同步至雲端，輸入欄位已清空。';
+  if(box){box.classList.remove('show');void box.offsetWidth;box.classList.add('show')}
+  clearTimeout(window.__saveResultTimer);
+  window.__saveResultTimer=setTimeout(hideSaveResult_,1800);
+}
+function hideSaveResult_(){const box=$('saveResultOverlay');if(box)box.classList.remove('show')}
+function clearForm(){['emp_no','leader_name','operator_name','note'].forEach(id=>{if($(id))$(id).value=''});$('operator_emp_no').value='';fillOperatorName_();clearOrderFields();$('empStatus').className='empStatus';$('empStatus').textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';renderSearchIdle();setScheduleMode('single')}
 function clearTargetValidation_(){['report_date','emp_no','leader_name','operator_emp_no','work_order_no','machine_code','target_unit','target_roll','target_m2','note'].forEach(id=>{if($(id))$(id).classList.remove('fieldInvalid')})}
 function validateTargetBeforeSave_(data){
   clearTargetValidation_();const missing=[];
@@ -1012,7 +1047,7 @@ async function saveTarget(){
     return;
   }
   const btn=$('saveTargetBtn');btn.disabled=true;btn.textContent='儲存中… / กำลังบันทึก';$('saveMsg').textContent='正在同步雲端…';
-  try{data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();await apiPost('savetargetplan',data);$('saveMsg').textContent='✓ 已儲存並同步雲端';toast('目標已儲存');setTimeout(loadBootstrap,700)}catch(e){alert('儲存失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย'}
+  try{data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();await apiPost('savetargetplan',data);$('saveMsg').textContent='✅ 上傳完成｜已同步雲端';clearEntryAfterSave_();showSaveResult_('工單 '+(data.work_order_no||'')+' 已成功同步至雲端，下一筆輸入欄位已清空。');setTimeout(loadBootstrap,500)}catch(e){$('saveMsg').textContent='❌ 上傳失敗：'+e.message;alert('儲存失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย'}
 }
 async function consumeTargetPrefill_(){
   const q=new URLSearchParams(location.search),wo=q.get('prefill_wo')||'',date=dateKey(q.get('prefill_date')||''),machine=q.get('prefill_machine')||'',unit=normalizeTargetUnit_(q.get('prefill_unit')||'R');
