@@ -3,37 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SEALKING MES Master 管理中心</title>
+<title>SEALKING MES Enterprise V2</title>
 <style>
 :root{
-  --bg:#071426;--panel:#0e223d;--panel2:#132b4a;--line:#294a70;
-  --txt:#edf6ff;--muted:#9fb7d1;--brand:#3b82f6;--ok:#22c55e;
-  --notice:#eab308;--warn:#f97316;--danger:#ef4444;--shadow:0 12px 36px rgba(0,0,0,.24);
+  --bg:#071426;--panel:#0e223d;--panel2:#132b4a;--panel3:#0a1a30;--line:#294a70;
+  --txt:#edf6ff;--muted:#9fb7d1;--brand:#3b82f6;--ok:#22c55e;--notice:#eab308;
+  --warn:#f97316;--danger:#ef4444;--violet:#8b5cf6;--cyan:#06b6d4;
+  --shadow:0 12px 36px rgba(0,0,0,.24)
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;background:linear-gradient(145deg,#061120,#0a1c33 48%,#071426);color:var(--txt)}
 button,input,select{font:inherit}
 button{cursor:pointer}
 .hidden{display:none!important}
-.shell{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr)}
-.sidebar{position:sticky;top:0;height:100vh;padding:22px 16px;background:rgba(5,16,31,.94);border-right:1px solid var(--line);backdrop-filter:blur(14px)}
-.brand{display:flex;align-items:center;gap:12px;padding:4px 8px 22px}
-.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);font-weight:900;box-shadow:var(--shadow)}
+.shell{min-height:100vh;display:grid;grid-template-columns:270px minmax(0,1fr)}
+.sidebar{position:sticky;top:0;height:100vh;padding:20px 15px;background:rgba(5,16,31,.96);border-right:1px solid var(--line);overflow:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 8px 18px}
+.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);font-weight:900;box-shadow:var(--shadow)}
 .brand h1{font-size:17px;margin:0}
 .brand p{font-size:12px;color:var(--muted);margin:4px 0 0}
-.nav{display:grid;gap:8px}
-.nav button{border:1px solid transparent;background:transparent;color:var(--muted);padding:12px 14px;border-radius:12px;text-align:left}
+.nav-group{margin-top:14px}
+.nav-title{font-size:11px;color:#6f89a7;padding:0 10px 7px;text-transform:uppercase;letter-spacing:.08em}
+.nav{display:grid;gap:6px}
+.nav button{border:1px solid transparent;background:transparent;color:var(--muted);padding:11px 13px;border-radius:12px;text-align:left}
 .nav button:hover,.nav button.active{background:var(--panel2);color:#fff;border-color:var(--line)}
-.side-foot{position:absolute;left:16px;right:16px;bottom:18px;padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(19,43,74,.65);font-size:12px;color:var(--muted)}
+.side-foot{margin-top:20px;padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(19,43,74,.65);font-size:12px;color:var(--muted);line-height:1.55}
 .main{min-width:0;padding:24px}
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px}
-.topbar h2{margin:0;font-size:26px}
+.topbar h2{margin:0;font-size:27px}
 .topbar p{margin:7px 0 0;color:var(--muted)}
 .actions{display:flex;gap:9px;flex-wrap:wrap}
 .btn{border:1px solid var(--line);background:var(--panel2);color:#fff;padding:10px 14px;border-radius:11px}
 .btn:hover{filter:brightness(1.12)}
 .btn.primary{background:var(--brand);border-color:var(--brand)}
-.btn.danger{background:#7f1d1d;border-color:#b91c1c}
+.btn.ghost{background:transparent}
 .grid{display:grid;gap:14px}
 .cards{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}
 .card{background:linear-gradient(160deg,rgba(19,43,74,.96),rgba(11,29,51,.96));border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:var(--shadow)}
@@ -44,7 +47,8 @@ button{cursor:pointer}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 17px;border-bottom:1px solid var(--line)}
 .panel-head h3{margin:0;font-size:17px}
 .panel-body{padding:16px}
-.two{grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr)}
+.two{grid-template-columns:minmax(0,1.3fr) minmax(330px,.7fr)}
+.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .health-row{display:grid;grid-template-columns:110px minmax(0,1fr) 70px;gap:12px;align-items:center;margin:10px 0}
 .bar{height:11px;border-radius:99px;background:#061325;overflow:hidden;border:1px solid #25425f}
 .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);transition:.35s}
@@ -53,7 +57,8 @@ button{cursor:pointer}
 .badge.notice{color:#fde047;border-color:#854d0e}
 .badge.warning{color:#fdba74;border-color:#9a3412}
 .badge.critical{color:#fca5a5;border-color:#991b1b}
-.table-wrap{overflow:auto;max-height:520px}
+.badge.info{color:#93c5fd;border-color:#1d4ed8}
+.table-wrap{overflow:auto;max-height:560px}
 table{width:100%;border-collapse:collapse;min-width:760px}
 th,td{padding:10px 11px;border-bottom:1px solid #213e5e;text-align:left;font-size:13px;white-space:nowrap}
 th{position:sticky;top:0;background:#102945;color:#d8e9fb;z-index:1}
@@ -65,21 +70,35 @@ td{color:#d7e4f3}
 .module{padding:14px;border:1px solid var(--line);border-radius:13px;background:#0b2039}
 .module b{display:block;margin-bottom:5px}
 .module small{color:var(--muted)}
-.log{font-family:Consolas,monospace;white-space:pre-wrap;line-height:1.55;font-size:12px;color:#bcd0e6;background:#061325;padding:13px;border-radius:11px;max-height:250px;overflow:auto}
+.status-list{display:grid;gap:9px}
+.status-item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:#0a1d35}
+.status-item b{display:block}
+.status-item small{color:var(--muted)}
+.metric{font-weight:800}
+.log{font-family:Consolas,monospace;white-space:pre-wrap;line-height:1.55;font-size:12px;color:#bcd0e6;background:#061325;padding:13px;border-radius:11px;max-height:320px;overflow:auto}
+.notice-box{padding:12px;border:1px solid #7c5b13;background:rgba(120,83,10,.18);border-radius:11px;color:#fde68a;font-size:13px;line-height:1.6}
+.info-box{padding:12px;border:1px solid #1d4ed8;background:rgba(37,99,235,.14);border-radius:11px;color:#bfdbfe;font-size:13px;line-height:1.6}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:18px;z-index:20}
 .modal-card{width:min(620px,100%);background:#0b1f38;border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow);padding:20px}
 .modal-card h3{margin-top:0}
 .field{display:grid;gap:7px;margin:13px 0}
 .field label{font-size:13px;color:var(--muted)}
 .field input{width:100%;background:#061528;border:1px solid var(--line);color:#fff;padding:11px;border-radius:10px}
-.notice-box{padding:12px;border:1px solid #7c5b13;background:rgba(120,83,10,.18);border-radius:11px;color:#fde68a;font-size:13px;line-height:1.6}
+.kpi-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi-box{padding:13px;border:1px solid var(--line);border-radius:12px;background:#0a1b31}
+.kpi-box span{color:var(--muted);font-size:12px}
+.kpi-box b{display:block;font-size:20px;margin-top:6px}
 .mobile-nav{display:none}
+@media(max-width:1100px){
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .three{grid-template-columns:1fr}
+}
 @media(max-width:1000px){
   .shell{grid-template-columns:1fr}.sidebar{display:none}.main{padding:15px 12px 82px}
-  .mobile-nav{display:grid;position:fixed;left:0;right:0;bottom:0;grid-template-columns:repeat(4,1fr);z-index:15;background:#071426;border-top:1px solid var(--line)}
-  .mobile-nav button{padding:12px 5px;border:0;background:transparent;color:var(--muted);font-size:12px}
+  .mobile-nav{display:grid;position:fixed;left:0;right:0;bottom:0;grid-template-columns:repeat(5,1fr);z-index:15;background:#071426;border-top:1px solid var(--line)}
+  .mobile-nav button{padding:12px 4px;border:0;background:transparent;color:var(--muted);font-size:11px}
   .mobile-nav button.active{color:#fff;background:#102945}
-  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
 }
 @media(max-width:620px){
   .topbar{display:block}.actions{margin-top:14px}.cards{grid-template-columns:1fr 1fr}
@@ -90,19 +109,50 @@ td{color:#d7e4f3}
 <body>
 <div class="shell">
   <aside class="sidebar">
-    <div class="brand"><div class="logo">M</div><div><h1>MES Master Center</h1><p>唯讀安全版 V1.0</p></div></div>
-    <nav class="nav">
-      <button class="active" data-page="overview">總覽</button>
-      <button data-page="storage">儲存空間</button>
-      <button data-page="modules">資料模組</button>
-      <button data-page="diagnostic">系統診斷</button>
-    </nav>
-    <div class="side-foot">本頁僅呼叫現有 API，不新增、不修改、不刪除任何正式資料。</div>
+    <div class="brand"><div class="logo">E2</div><div><h1>SEALKING MES</h1><p>Enterprise V2 Preview</p></div></div>
+
+    <div class="nav-group">
+      <div class="nav-title">控制中心</div>
+      <nav class="nav">
+        <button class="active" data-page="overview">企業總覽</button>
+        <button data-page="health">系統健康</button>
+        <button data-page="updates">更新中心</button>
+      </nav>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-title">資料治理</div>
+      <nav class="nav">
+        <button data-page="datahub">DataHub</button>
+        <button data-page="erp">ERP 中心</button>
+        <button data-page="index">索引中心</button>
+        <button data-page="storage">儲存空間</button>
+      </nav>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-title">擴充模組</div>
+      <nav class="nav">
+        <button data-page="pm31">PM31</button>
+        <button data-page="schedule">製三排程</button>
+        <button data-page="orders">訂單命令單</button>
+        <button data-page="history">歷史銷售</button>
+      </nav>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-title">系統</div>
+      <nav class="nav">
+        <button data-page="diagnostic">診斷紀錄</button>
+      </nav>
+    </div>
+
+    <div class="side-foot">Preview 僅讀取現有 API，不修改 APS、Key In、Target、Dashboard，也不寫入大型資料。</div>
   </aside>
 
   <main class="main">
     <header class="topbar">
-      <div><h2 id="pageTitle">Master 管理中心</h2><p id="pageDesc">集中查看 MES 資料健康與各模組狀態。</p></div>
+      <div><h2 id="pageTitle">MES Enterprise V2</h2><p id="pageDesc">企業級控制塔、資料治理與容量監控。</p></div>
       <div class="actions">
         <button class="btn" id="btnSettings">連線設定</button>
         <button class="btn primary" id="btnRefresh">重新整理</button>
@@ -111,10 +161,10 @@ td{color:#d7e4f3}
 
     <section id="page-overview">
       <div class="grid cards">
-        <article class="card"><div class="label">資料庫健康</div><div class="value" id="healthLabel">尚未連線</div><div class="sub" id="healthTime">—</div></article>
+        <article class="card"><div class="label">系統健康</div><div class="value" id="healthLabel">尚未連線</div><div class="sub" id="healthTime">—</div></article>
         <article class="card"><div class="label">儲存使用率</div><div class="value" id="usagePct">—</div><div class="sub">Google Sheets 配置儲存格</div></article>
-        <article class="card"><div class="label">已配置儲存格</div><div class="value" id="allocatedCells">—</div><div class="sub" id="remainingCells">剩餘 —</div></article>
-        <article class="card"><div class="label">資料來源筆數</div><div class="value" id="sourceCount">—</div><div class="sub">由 masterstats 取得</div></article>
+        <article class="card"><div class="label">剩餘容量</div><div class="value" id="remainingCellsCard">—</div><div class="sub">以 1,000 萬格為上限</div></article>
+        <article class="card"><div class="label">容量策略</div><div class="value" id="capacityPolicy">尚未判定</div><div class="sub">依目前使用率自動顯示</div></article>
       </div>
 
       <div class="grid two">
@@ -125,20 +175,112 @@ td{color:#d7e4f3}
             <div id="topSheetsOverview" class="table-wrap"></div>
           </div>
         </section>
+
         <section class="panel">
-          <div class="panel-head"><h3>系統模組</h3></div>
+          <div class="panel-head"><h3>核心服務</h3></div>
           <div class="panel-body">
-            <div class="module-list">
-              <div class="module"><b>APS</b><small>現有排程結構保持不變</small></div>
-              <div class="module"><b>Target</b><small>現有目標資料保持不變</small></div>
-              <div class="module"><b>Key In</b><small>永久作業資料不進行整理</small></div>
-              <div class="module"><b>ERP DataHub</b><small>僅顯示目前資料狀態</small></div>
-              <div class="module"><b>PM31</b><small>預留後續獨立匯入模組</small></div>
-              <div class="module"><b>歷史銷售</b><small>預留彙總索引，不載入 APS</small></div>
+            <div class="status-list">
+              <div class="status-item"><div><b>APS</b><small>正式排程頁面不變</small></div><span class="badge ok">保護</span></div>
+              <div class="status-item"><div><b>Key In</b><small>永久回報資料不整理</small></div><span class="badge ok">保護</span></div>
+              <div class="status-item"><div><b>Target</b><small>正式目標資料不整理</small></div><span class="badge ok">保護</span></div>
+              <div class="status-item"><div><b>Dashboard</b><small>現有資料流程不變</small></div><span class="badge ok">保護</span></div>
+              <div class="status-item"><div><b>DataHub</b><small>先做唯讀管理入口</small></div><span class="badge info">Preview</span></div>
             </div>
           </div>
         </section>
       </div>
+    </section>
+
+    <section id="page-health" class="hidden">
+      <div class="grid three">
+        <section class="panel"><div class="panel-head"><h3>前端服務</h3></div><div class="panel-body status-list">
+          <div class="status-item"><div><b>GitHub Pages</b><small>目前 Master 頁已成功載入</small></div><span class="badge ok">正常</span></div>
+          <div class="status-item"><div><b>Apps Script API</b><small id="apiHealthText">尚未檢查</small></div><span id="apiHealthBadge" class="badge">未知</span></div>
+        </div></section>
+        <section class="panel"><div class="panel-head"><h3>資料服務</h3></div><div class="panel-body status-list">
+          <div class="status-item"><div><b>Storage API</b><small>容量與配置儲存格</small></div><span id="storageApiBadge" class="badge">未知</span></div>
+          <div class="status-item"><div><b>Master Stats</b><small>主資料統計</small></div><span id="masterApiBadge" class="badge">未知</span></div>
+        </div></section>
+        <section class="panel"><div class="panel-head"><h3>資料保護</h3></div><div class="panel-body status-list">
+          <div class="status-item"><div><b>永久資料</b><small>Key In / Target / APS 正式紀錄</small></div><span class="badge ok">不處理</span></div>
+          <div class="status-item"><div><b>大型外部檔案</b><small>不直接匯入正式主資料庫</small></div><span class="badge ok">按需載入</span></div>
+        </div></section>
+      </div>
+    </section>
+
+    <section id="page-updates" class="hidden">
+      <section class="panel">
+        <div class="panel-head"><h3>更新中心</h3><span class="badge info">唯讀規劃版</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>項目</th><th>目前狀態</th><th>更新策略</th><th>容量影響</th></tr></thead>
+          <tbody>
+            <tr><td>八份 ERP</td><td>沿用現有流程</td><td>匯入前容量檢查、匯入後重建 DataHub</td><td><span class="badge warning">中</span></td></tr>
+            <tr><td>PM31</td><td>尚未整合</td><td>後續獨立模組，不隨 APS 載入</td><td><span class="badge ok">低</span></td></tr>
+            <tr><td>製三排程</td><td>尚未整合</td><td>只保留目前有效排程</td><td><span class="badge ok">低</span></td></tr>
+            <tr><td>訂單更新命令單</td><td>尚未整合</td><td>建立訂單索引，不複製所有欄位</td><td><span class="badge notice">低至中</span></td></tr>
+            <tr><td>2012～2021 歷史銷售</td><td>尚未整合</td><td>先彙總，再按需查詢</td><td><span class="badge ok">低</span></td></tr>
+          </tbody>
+        </table></div>
+      </section>
+    </section>
+
+    <section id="page-datahub" class="hidden">
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head"><h3>DataHub 資料來源</h3><span class="badge info">Preview</span></div>
+          <div class="panel-body module-list">
+            <div class="module"><b>ERP 8 份</b><small>4-3、PD11B、SL31A、9-1、9-3、3-9、5-C、5-3</small></div>
+            <div class="module"><b>Key In</b><small>現場永久回報</small></div>
+            <div class="module"><b>Target</b><small>幹部目標</small></div>
+            <div class="module"><b>APS</b><small>WorkPool、Schedule、Speed Master</small></div>
+            <div class="module"><b>PM31</b><small>業績分析來源</small></div>
+            <div class="module"><b>歷史銷售</b><small>按需查詢，不啟動載入</small></div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><h3>DataHub 安全策略</h3></div>
+          <div class="panel-body">
+            <div class="info-box">DataHub V2 目前只顯示資料來源與治理規則，不建立新工作表、不重複複製大型資料。</div>
+            <div style="height:12px"></div>
+            <div class="kpi-mini">
+              <div class="kpi-box"><span>新增工作表</span><b>0</b></div>
+              <div class="kpi-box"><span>新增大型索引</span><b>0</b></div>
+              <div class="kpi-box"><span>正式流程變更</span><b>0</b></div>
+              <div class="kpi-box"><span>永久資料刪除</span><b>0</b></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="page-erp" class="hidden">
+      <section class="panel">
+        <div class="panel-head"><h3>ERP 八份資料中心</h3><span class="badge info">沿用目前匯入</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>資料表</th><th>用途</th><th>目前策略</th><th>V2 策略</th></tr></thead>
+          <tbody>
+            <tr><td>4-3</td><td>訂單／預交日</td><td>正式使用中</td><td>不變</td></tr>
+            <tr><td>PD11B</td><td>部門日報</td><td>正式使用中</td><td>不變</td></tr>
+            <tr><td>SL31A</td><td>三樞紐／換算</td><td>正式使用中</td><td>不變</td></tr>
+            <tr><td>9-1 / 9-3 / 3-9</td><td>投入／產出／工單關聯</td><td>正式使用中</td><td>不變</td></tr>
+            <tr><td>5-C / 5-3</td><td>產出資料</td><td>正式使用中</td><td>不變</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+    </section>
+
+    <section id="page-index" class="hidden">
+      <section class="panel">
+        <div class="panel-head">
+          <h3>索引中心</h3>
+          <div class="toolbar"><input id="indexSearch" class="input" placeholder="搜尋 Index / Cache"></div>
+        </div>
+        <div class="notice-box" style="margin:16px">此頁只分析索引與快取大小，不提供重建、清除或刪除按鈕。</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>工作表</th><th>類型判定</th><th>配置格</th><th>使用格</th><th>多餘配置格</th><th>建議</th></tr></thead>
+          <tbody id="indexTbody"><tr><td colspan="6" class="empty">尚未載入</td></tr></tbody>
+        </table></div>
+      </section>
     </section>
 
     <section id="page-storage" class="hidden">
@@ -154,27 +296,35 @@ td{color:#d7e4f3}
       </section>
     </section>
 
-    <section id="page-modules" class="hidden">
-      <section class="panel">
-        <div class="panel-head"><h3>資料模組狀態</h3></div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>模組</th><th>目前用途</th><th>資料來源</th><th>整合策略</th><th>狀態</th></tr></thead>
-          <tbody>
-            <tr><td>Master</td><td>人員、機台、產速、規則</td><td>目前 Google Sheets</td><td>先唯讀，後續分項開放編輯</td><td><span class="badge ok">現有</span></td></tr>
-            <tr><td>訂單更新命令單</td><td>訂單、命令單、未交量</td><td>Excel / ERP</td><td>匯入 DataHub，不改 APS 畫面</td><td><span class="badge notice">預留</span></td></tr>
-            <tr><td>製三排程</td><td>生產排程與製程日期</td><td>Excel</td><td>轉成 APS 外部參考資料</td><td><span class="badge notice">預留</span></td></tr>
-            <tr><td>PM31</td><td>業績、客戶、產品分析</td><td>Excel</td><td>供 Dashboard 使用，不放入 APS 啟動載入</td><td><span class="badge notice">預留</span></td></tr>
-            <tr><td>2012～2021 歷史銷售</td><td>歷史同期與趨勢</td><td>大型 Excel</td><td>先彙總或建立索引，按需載入</td><td><span class="badge notice">預留</span></td></tr>
-          </tbody>
-        </table></div>
-      </section>
+    <section id="page-pm31" class="hidden">
+      <section class="panel"><div class="panel-head"><h3>PM31 Center</h3><span class="badge notice">待整合</span></div><div class="panel-body">
+        <div class="info-box">PM31 將作為 Dashboard 與管理分析來源，不放入 APS 啟動資料，也不直接複製整份 Excel 到目前主 Sheet。</div>
+      </div></section>
+    </section>
+
+    <section id="page-schedule" class="hidden">
+      <section class="panel"><div class="panel-head"><h3>製三排程 Center</h3><span class="badge notice">待整合</span></div><div class="panel-body">
+        <div class="info-box">只保留目前有效排程與必要欄位，舊版本排程不在主資料庫累積。</div>
+      </div></section>
+    </section>
+
+    <section id="page-orders" class="hidden">
+      <section class="panel"><div class="panel-head"><h3>訂單更新命令單 Center</h3><span class="badge notice">待整合</span></div><div class="panel-body">
+        <div class="info-box">後續建立訂單／命令單／未交量查詢索引，供 APS 與 Dashboard 查詢；不會重寫目前 APS。</div>
+      </div></section>
+    </section>
+
+    <section id="page-history" class="hidden">
+      <section class="panel"><div class="panel-head"><h3>歷史銷售 Center</h3><span class="badge notice">待整合</span></div><div class="panel-body">
+        <div class="info-box">2012～2021 歷史銷售會先彙總或外部保存，只有進入歷史分析時才讀取，避免占用目前 81% 以上的 Google Sheets 容量。</div>
+      </div></section>
     </section>
 
     <section id="page-diagnostic" class="hidden">
       <section class="panel">
         <div class="panel-head"><h3>API 診斷紀錄</h3><button class="btn" id="btnClearLog">清除畫面紀錄</button></div>
         <div class="panel-body">
-          <div class="notice-box">這一版不提供「自動整理、刪除、重建索引、修改 Master」按鈕，確保不動到目前正式結構。</div>
+          <div class="notice-box">Enterprise V2 Preview 不提供自動整理、刪除、重建索引、修改 Master 或大型匯入操作。</div>
           <div style="height:12px"></div>
           <div class="log" id="diagnosticLog">尚未執行。</div>
         </div>
@@ -185,9 +335,10 @@ td{color:#d7e4f3}
 
 <nav class="mobile-nav">
   <button class="active" data-page="overview">總覽</button>
+  <button data-page="health">健康</button>
+  <button data-page="datahub">資料</button>
+  <button data-page="index">索引</button>
   <button data-page="storage">空間</button>
-  <button data-page="modules">模組</button>
-  <button data-page="diagnostic">診斷</button>
 </nav>
 
 <div id="settingsModal" class="modal hidden">
@@ -201,32 +352,26 @@ td{color:#d7e4f3}
 
 <script>
 "use strict";
+const APP={apiUrl:localStorage.getItem("MES_MASTER_API_URL")||"",storageRows:[],lastHealth:null};
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const fmt=n=>Number(n||0).toLocaleString("zh-TW");
+const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nowText=()=>new Date().toLocaleString("zh-TW",{hour12:false});
 
-const APP = {
-  apiUrl: localStorage.getItem("MES_MASTER_API_URL") || "",
-  storageRows: [],
-  lastHealth: null
-};
-
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const fmt = n => Number(n || 0).toLocaleString("zh-TW");
-const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const nowText = () => new Date().toLocaleString("zh-TW",{hour12:false});
-
-function log(msg, obj){
-  const el = $("#diagnosticLog");
-  const line = `[${nowText()}] ${msg}` + (obj !== undefined ? "\n" + safeJson(obj) : "");
-  el.textContent = el.textContent === "尚未執行。" ? line : line + "\n\n" + el.textContent;
+function log(msg,obj){
+  const el=$("#diagnosticLog");
+  const line=`[${nowText()}] ${msg}`+(obj!==undefined?"\n"+safeJson(obj):"");
+  el.textContent=el.textContent==="尚未執行。"?line:line+"\n\n"+el.textContent;
 }
-function safeJson(obj){ try{return JSON.stringify(obj,null,2)}catch(e){return String(obj)} }
+function safeJson(obj){try{return JSON.stringify(obj,null,2)}catch(e){return String(obj)}}
 
-function jsonp(action, params = {}, timeout = 45000){
+function jsonp(action,params={},timeout=45000){
   return new Promise((resolve,reject)=>{
-    if(!APP.apiUrl) return reject(new Error("尚未設定 Apps Script API 網址"));
-    const callback = "__mesMasterCb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-    const query = new URLSearchParams({...params,action,callback,_t:Date.now()});
-    const script = document.createElement("script");
+    if(!APP.apiUrl)return reject(new Error("尚未設定 Apps Script API 網址"));
+    const callback="__mesE2Cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    const query=new URLSearchParams({...params,action,callback,_t:Date.now()});
+    const script=document.createElement("script");
     let timer;
     const cleanup=()=>{clearTimeout(timer);delete window[callback];script.remove()};
     window[callback]=data=>{cleanup();resolve(data)};
@@ -238,36 +383,35 @@ function jsonp(action, params = {}, timeout = 45000){
 }
 
 async function refreshAll(){
-  if(!APP.apiUrl){ openSettings(); return; }
-  $("#btnRefresh").disabled=true;
-  $("#btnRefresh").textContent="載入中…";
-  log("開始讀取唯讀 API");
+  if(!APP.apiUrl){openSettings();return}
+  $("#btnRefresh").disabled=true;$("#btnRefresh").textContent="載入中…";
+  log("開始讀取 Enterprise V2 唯讀 API");
   try{
-    const results = await Promise.allSettled([
-      jsonp("storagehealth"),
-      jsonp("storageinspect"),
-      jsonp("masterstats")
-    ]);
+    const results=await Promise.allSettled([jsonp("storagehealth"),jsonp("storageinspect"),jsonp("masterstats")]);
+    setApiState(results);
     if(results[0].status==="fulfilled"){
-      APP.lastHealth=results[0].value;
-      renderHealth(results[0].value);
-      log("storagehealth 成功",results[0].value);
+      APP.lastHealth=results[0].value;renderHealth(results[0].value);log("storagehealth 成功",results[0].value);
     }else log("storagehealth 失敗",results[0].reason.message);
     if(results[1].status==="fulfilled"){
-      const d=results[1].value;
-      APP.storageRows=d.sheets||d.rows||[];
-      renderStorage(APP.storageRows);
-      if(!APP.lastHealth) renderHealth(d);
+      const d=results[1].value;APP.storageRows=d.sheets||d.rows||[];
+      renderStorage(APP.storageRows);renderIndexes(APP.storageRows);
+      if(!APP.lastHealth)renderHealth(d);
       log("storageinspect 成功",{count:APP.storageRows.length,total_allocated_cells:d.total_allocated_cells,usage_pct:d.usage_pct});
     }else log("storageinspect 失敗",results[1].reason.message);
-    if(results[2].status==="fulfilled"){
-      renderMasterStats(results[2].value);
-      log("masterstats 成功",results[2].value);
-    }else log("masterstats 失敗",results[2].reason.message);
-  }finally{
-    $("#btnRefresh").disabled=false;
-    $("#btnRefresh").textContent="重新整理";
-  }
+    if(results[2].status==="fulfilled")log("masterstats 成功",results[2].value);
+    else log("masterstats 失敗",results[2].reason.message);
+  }finally{$("#btnRefresh").disabled=false;$("#btnRefresh").textContent="重新整理"}
+}
+
+function setApiState(results){
+  const anyOk=results.some(r=>r.status==="fulfilled");
+  $("#apiHealthText").textContent=anyOk?"已成功連線":"連線失敗";
+  $("#apiHealthBadge").className="badge "+(anyOk?"ok":"critical");
+  $("#apiHealthBadge").textContent=anyOk?"正常":"異常";
+  $("#storageApiBadge").className="badge "+(results[0].status==="fulfilled"?"ok":"critical");
+  $("#storageApiBadge").textContent=results[0].status==="fulfilled"?"正常":"失敗";
+  $("#masterApiBadge").className="badge "+(results[2].status==="fulfilled"?"ok":"critical");
+  $("#masterApiBadge").textContent=results[2].status==="fulfilled"?"正常":"失敗";
 }
 
 function renderHealth(d){
@@ -275,80 +419,89 @@ function renderHealth(d){
   const pct=Number(d.usage_pct||0);
   const level=d.level||levelByPct(pct);
   const label=d.label||labelByLevel(level);
+  const remaining=d.remaining_cells||d.storage_remaining_cells||Math.max(0,10000000-(d.total_allocated_cells||0));
   $("#healthLabel").textContent=label;
   $("#healthTime").textContent="最後檢查："+(d.time||nowText());
   $("#usagePct").textContent=pct.toFixed(2)+"%";
-  $("#allocatedCells").textContent=fmt(d.total_allocated_cells||0);
-  $("#remainingCells").textContent="剩餘 "+fmt(d.remaining_cells||d.storage_remaining_cells||Math.max(0,10000000-(d.total_allocated_cells||0)));
+  $("#remainingCellsCard").textContent=fmt(remaining);
+  $("#capacityPolicy").textContent=policyByPct(pct);
   $("#usageBar").style.width=Math.min(100,pct)+"%";
   $("#usageBarText").textContent=pct.toFixed(1)+"%";
-  const badge=$("#healthBadge");
-  badge.className="badge "+level;
-  badge.textContent=label;
-  const top=d.top_sheets||d.top||[];
-  renderTopSheets(top);
+  const badge=$("#healthBadge");badge.className="badge "+level;badge.textContent=label;
+  renderTopSheets(d.top_sheets||d.top||[]);
 }
-
-function levelByPct(p){return p>=92?"critical":p>=80?"warning":p>=75?"notice":"ok"}
-function labelByLevel(l){return ({critical:"危險",warning:"需要整理",notice:"注意",ok:"正常"})[l]||"未知"}
-
+function levelByPct(p){return p>=92?"critical":p>=85?"critical":p>=80?"warning":p>=75?"notice":"ok"}
+function labelByLevel(l){return({critical:"危險",warning:"需要整理",notice:"注意",ok:"正常"})[l]||"未知"}
+function policyByPct(p){
+  if(p>=92)return"緊急模式";
+  if(p>=85)return"禁止大型匯入";
+  if(p>=80)return"停止新增大型快取";
+  if(p>=75)return"容量注意";
+  return"正常運作";
+}
 function renderTopSheets(rows){
   const el=$("#topSheetsOverview");
   if(!rows.length){el.innerHTML='<div class="empty">尚無最大工作表資料</div>';return}
   el.innerHTML='<table><thead><tr><th>最大工作表</th><th>配置格</th><th>使用格</th></tr></thead><tbody>'+
-    rows.map(r=>`<tr><td>${esc(r.sheet)}</td><td>${fmt(r.allocated_cells)}</td><td>${fmt(r.used_cells)}</td></tr>`).join("")+
-    '</tbody></table>';
+    rows.map(r=>`<tr><td>${esc(r.sheet)}</td><td>${fmt(r.allocated_cells)}</td><td>${fmt(r.used_cells)}</td></tr>`).join("")+'</tbody></table>';
 }
-
-function renderMasterStats(d){
-  const c=(d&&d.counts)||{};
-  const candidates=[
-    c.total_source_rows,c.total,c.source_data,c.count,
-    c.rows,c.source_count
-  ];
-  const found=candidates.find(v=>Number.isFinite(Number(v)));
-  $("#sourceCount").textContent=found===undefined?"已連線":fmt(found);
-}
-
 function renderStorage(rows){
   const q=$("#sheetSearch").value.trim().toLowerCase();
   const list=(rows||[]).filter(r=>!q||String(r.sheet||"").toLowerCase().includes(q));
   const tb=$("#storageTbody");
   if(!list.length){tb.innerHTML='<tr><td colspan="8" class="empty">沒有符合資料</td></tr>';return}
-  tb.innerHTML=list.map(r=>`<tr>
-    <td>${esc(r.sheet)}</td><td>${fmt(r.max_rows)}</td><td>${fmt(r.max_cols)}</td>
-    <td>${fmt(r.allocated_cells)}</td><td>${fmt(r.used_rows)}</td><td>${fmt(r.used_cols)}</td>
-    <td>${fmt(r.used_cells)}</td><td>${fmt(r.excess_cells)}</td>
-  </tr>`).join("");
+  tb.innerHTML=list.map(r=>`<tr><td>${esc(r.sheet)}</td><td>${fmt(r.max_rows)}</td><td>${fmt(r.max_cols)}</td><td>${fmt(r.allocated_cells)}</td><td>${fmt(r.used_rows)}</td><td>${fmt(r.used_cols)}</td><td>${fmt(r.used_cells)}</td><td>${fmt(r.excess_cells)}</td></tr>`).join("");
+}
+function indexType(name){
+  const n=String(name||"").toLowerCase();
+  if(n.includes("index"))return"索引";
+  if(n.includes("cache"))return"快取";
+  if(n.includes("workpool"))return"工作池";
+  if(n.includes("source_data"))return"資料中介層";
+  return"其他";
+}
+function indexAdvice(r){
+  const excess=Number(r.excess_cells||0),alloc=Number(r.allocated_cells||0);
+  if(excess>500000)return"檢查多餘配置";
+  if(alloc>1000000)return"大型表，維持唯讀監控";
+  return"正常";
+}
+function renderIndexes(rows){
+  const q=$("#indexSearch").value.trim().toLowerCase();
+  const list=(rows||[]).filter(r=>{
+    const n=String(r.sheet||"").toLowerCase();
+    const relevant=n.includes("index")||n.includes("cache")||n.includes("workpool")||n.includes("source_data");
+    return relevant&&(!q||n.includes(q));
+  });
+  const tb=$("#indexTbody");
+  if(!list.length){tb.innerHTML='<tr><td colspan="6" class="empty">沒有符合索引資料</td></tr>';return}
+  tb.innerHTML=list.map(r=>`<tr><td>${esc(r.sheet)}</td><td>${indexType(r.sheet)}</td><td>${fmt(r.allocated_cells)}</td><td>${fmt(r.used_cells)}</td><td>${fmt(r.excess_cells)}</td><td>${indexAdvice(r)}</td></tr>`).join("");
 }
 
-function openSettings(){
-  $("#apiUrlInput").value=APP.apiUrl;
-  $("#settingsModal").classList.remove("hidden");
-}
-function closeSettings(){ $("#settingsModal").classList.add("hidden"); }
-
+function openSettings(){$("#apiUrlInput").value=APP.apiUrl;$("#settingsModal").classList.remove("hidden")}
+function closeSettings(){$("#settingsModal").classList.add("hidden")}
 async function saveSettings(){
   const url=$("#apiUrlInput").value.trim();
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/i.test(url)){
-    alert("請貼上正確的 Apps Script /exec 網址");
-    return;
-  }
-  APP.apiUrl=url;
-  localStorage.setItem("MES_MASTER_API_URL",url);
-  closeSettings();
-  await refreshAll();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/i.test(url)){alert("請貼上正確的 Apps Script /exec 網址");return}
+  APP.apiUrl=url;localStorage.setItem("MES_MASTER_API_URL",url);closeSettings();await refreshAll();
 }
-
 function showPage(page){
   $$("[id^='page-']").forEach(el=>el.classList.add("hidden"));
   $("#page-"+page).classList.remove("hidden");
   $$("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
   const meta={
-    overview:["Master 管理中心","集中查看 MES 資料健康與各模組狀態。"],
-    storage:["儲存空間","檢查所有工作表配置與實際使用量。"],
-    modules:["資料模組","規劃外部資料整合，但不改動現有 APS 結構。"],
-    diagnostic:["系統診斷","查看唯讀 API 的執行結果。"]
+    overview:["MES Enterprise V2","企業級控制塔、資料治理與容量監控。"],
+    health:["系統健康","檢查前端、API、資料與保護狀態。"],
+    updates:["更新中心","檢視各資料來源的更新策略與容量影響。"],
+    datahub:["DataHub","集中管理資料來源，但不複製大型資料。"],
+    erp:["ERP 中心","沿用目前八份 ERP 正式流程。"],
+    index:["索引中心","分析 Index、Cache、WorkPool 與中介資料層。"],
+    storage:["儲存空間","檢查全部工作表配置與實際使用量。"],
+    pm31:["PM31 Center","業績與管理分析的獨立資料模組。"],
+    schedule:["製三排程 Center","排程外部參考資料模組。"],
+    orders:["訂單命令單 Center","訂單、命令單與未交量查詢模組。"],
+    history:["歷史銷售 Center","歷史同期與趨勢分析模組。"],
+    diagnostic:["診斷紀錄","查看 Enterprise V2 唯讀 API 執行結果。"]
   }[page];
   $("#pageTitle").textContent=meta[0];$("#pageDesc").textContent=meta[1];
 }
@@ -359,10 +512,10 @@ $("#btnCancelSettings").addEventListener("click",closeSettings);
 $("#btnSaveSettings").addEventListener("click",saveSettings);
 $("#btnRefresh").addEventListener("click",refreshAll);
 $("#sheetSearch").addEventListener("input",()=>renderStorage(APP.storageRows));
+$("#indexSearch").addEventListener("input",()=>renderIndexes(APP.storageRows));
 $("#btnClearLog").addEventListener("click",()=>$("#diagnosticLog").textContent="尚未執行。");
 $("#settingsModal").addEventListener("click",e=>{if(e.target.id==="settingsModal")closeSettings()});
-
-if(APP.apiUrl) refreshAll(); else openSettings();
+if(APP.apiUrl)refreshAll();else openSettings();
 </script>
 </body>
 </html>
