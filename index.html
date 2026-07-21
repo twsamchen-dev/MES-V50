@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V112 MES 生產 Key In｜個人任務與通知中心｜Build 0104</title>
+<title>V112.1 MES 生產 Key In｜登入保持與快速啟動｜Build 0105</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -74,7 +74,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V112 個人任務與通知中心｜Build 0104</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V112.1 登入保持與快速啟動｜Build 0105</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -160,19 +160,17 @@
 
   <div class="card col6">
     <h2>人員與產出 / พนักงานและผลผลิต</h2>
-    <label>工號（可輸入多位，用逗號或空白分隔）/ รหัสพนักงาน</label><input id="emp_no" placeholder="例如 41420,41433" oninput="fillName();clearTimeout(window._urgentEmpTimer);window._urgentEmpTimer=setTimeout(loadUrgentNotices,500)">
-    <label>姓名 / ชื่อ</label><input id="emp_name" placeholder="依工號自動帶入，可手動補充">
     <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02" oninput="applyHistoricalSpeed()">
     <div class="row"><button class="btn ghost" onclick="showMyPlans()">我的待排工單 / งานของฉัน</button><button class="btn ghost" onclick="nextOrder()">下一張工單 / งานถัดไป</button></div>
     <div class="fastPanel">
       <div class="fastTitle">快速連續輸入 / ป้อนข้อมูลเร็ว</div>
-      <label><input id="fastMode" type="checkbox" checked style="width:auto"> 連續輸入模式：保留日期、站點、工號、姓名、機台、單位 / โหมดป้อนต่อเนื่อง: เก็บวันที่ จุดงาน รหัส ชื่อ เครื่องจักร และหน่วย</label>
+      <label><input id="fastMode" type="checkbox" checked style="width:auto"> 連續輸入模式：保留日期、站點、機台、單位 / โหมดป้อนต่อเนื่อง: เก็บวันที่ จุดงาน เครื่องจักร และหน่วย</label>
       <label><input id="autoNext" type="checkbox" checked style="width:auto"> 送出後自動跳下一張 / ส่งแล้วไปงานถัดไปอัตโนมัติ</label>
       <div class="quickBtns">
         <button class="quickBtn green" onclick="nextOrder()">🟢 下一張工單 / งานถัดไป</button>
         <button class="quickBtn" onclick="copyLastSubmit()">🔵 沿用上一筆 / ใช้ข้อมูลรายการก่อน</button>
         <button class="quickBtn orange" onclick="clearCurrentInput()">🟠 清除本筆 / ล้างรายการนี้</button>
-        <button class="quickBtn gray" onclick="saveQuickProfile()">💾 記住工號/機台 / จำรหัสและเครื่อง</button>
+        <button class="quickBtn gray" onclick="saveQuickProfile()">💾 記住機台 / จำเครื่อง</button>
       </div>
       <div class="miniText">提示：工單欄按 Enter 會跳到產量；產量欄按 Enter 會直接送出。 / กด Enter ที่ช่องใบงานเพื่อไปช่องผลผลิต และกด Enter ที่ช่องผลผลิตเพื่อส่งทันที</div>
       <div id="recentBox" class="recentBox"></div>
@@ -644,9 +642,35 @@ function pinApi(action,params){return new Promise((resolve,reject)=>{const cb='P
 function urgentEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
 const NOTICE_UI={filter:'unread',lang:'bi',collapsed:{read:true,unread:false},refreshMs:30000};
 const NOTICE_AUTH={token:'',employee:null};
+const AUTH_SESSION_KEY='MES_KEYIN_AUTH_SESSION_V1121';
+const AUTH_SESSION_TTL=8*60*60*1000;
+function saveAuthSession_(){
+  try{
+    if(!NOTICE_AUTH.token||!NOTICE_AUTH.employee)return;
+    localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify({token:NOTICE_AUTH.token,employee:NOTICE_AUTH.employee,saved_at:Date.now()}));
+  }catch(e){}
+}
+function clearAuthSession_(){try{localStorage.removeItem(AUTH_SESSION_KEY)}catch(e){}}
+async function restoreAuthSession_(){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||'null')}catch(e){clearAuthSession_()}
+  if(!saved||!saved.token||!saved.employee||Date.now()-Number(saved.saved_at||0)>AUTH_SESSION_TTL){clearAuthSession_();return false}
+  NOTICE_AUTH.token=saved.token;NOTICE_AUTH.employee=saved.employee;
+  renderNoticeIdentity();
+  const modal=qs('pinLoginModal');if(modal)modal.classList.add('hide');
+  try{
+    await pinApi('employeeheartbeat',{auth_token:NOTICE_AUTH.token});
+    saved.saved_at=Date.now();localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify(saved));
+    return true;
+  }catch(e){
+    NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;clearAuthSession_();renderNoticeIdentity();
+    if(modal)modal.classList.remove('hide');
+    return false;
+  }
+}
 function renderNoticeIdentity(){const e=qs('noticeIdentity');if(!e)return;e.innerHTML=NOTICE_AUTH.employee?`目前人員 / ผู้ใช้งานปัจจุบัน：${urgentEsc(NOTICE_AUTH.employee.emp_no)} ${urgentEsc(NOTICE_AUTH.employee.emp_name)} <button onclick="switchNoticeEmployee()">切換人員 / เปลี่ยนผู้ใช้</button>`:''}
-function switchNoticeEmployee(){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;App.urgentOrders=[];renderNoticeIdentity();const body=qs('personalTaskBody');if(body)body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';const list=qs('urgentNoticeList');if(list)list.innerHTML='<div class="noticeEmpty">請先登入以讀取個人通知 / กรุณาเข้าสู่ระบบเพื่อดูการแจ้งเตือน</div>';const count=qs('urgentNoticeCount');if(count)count.textContent='請先登入 / กรุณาเข้าสู่ระบบ';const m=qs('pinLoginModal');if(m)m.classList.remove('hide');const p=qs('pinLoginPin');if(p)p.value=''}
-async function loginEmployeePin(){const no=String(safeGet('pinLoginEmpNo')||'').trim(),pin=String(safeGet('pinLoginPin')||'').trim(),msg=qs('pinLoginMsg'),btn=document.querySelector('.pinPrimary');if(!no||!/^\d{4,6}$/.test(pin)){if(msg)msg.textContent='請輸入工號及 4～6 位數 PIN。 / กรุณากรอกรหัสพนักงานและ PIN 4–6 หลัก';return}if(btn)btn.disabled=true;try{if(msg){msg.className='urgentReaderName';msg.textContent='驗證中… / กำลังตรวจสอบ…'}let r=await pinApi('employeepinlogin',{emp_no:no,pin:pin,source:'keyin-login'});if(!r.token||!r.employee)throw new Error('登入回傳資料不完整，請重新部署 Code.gs');NOTICE_AUTH.token=r.token;NOTICE_AUTH.employee=r.employee;if(r.must_change){const n1=prompt('第一次登入，請設定新的 4～6 位數 PIN（不可使用 0000）\nเข้าสู่ระบบครั้งแรก กรุณาตั้ง PIN ใหม่ 4–6 หลัก (ห้ามใช้ 0000)');if(!n1)return switchNoticeEmployee();const n2=prompt('請再次輸入新 PIN\nกรุณากรอก PIN ใหม่อีกครั้ง');if(n1!==n2)throw new Error('兩次新 PIN 不一致 / PIN ใหม่ทั้งสองครั้งไม่ตรงกัน');await pinApi('employeepinchange',{auth_token:r.token,old_pin:pin,new_pin:n1});alert('PIN 已更新，請妥善保管。\nอัปเดต PIN แล้ว กรุณาเก็บรักษาให้ดี')}const m=qs('pinLoginModal');if(m)m.classList.add('hide');renderNoticeIdentity();await loadUrgentNotices();renderPersonalWorkPanel()}catch(e){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;if(msg){msg.className='urgentReaderName bad';msg.textContent=String(e.message||e)}}finally{if(btn)btn.disabled=false}}
+function switchNoticeEmployee(){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;clearAuthSession_();App.urgentOrders=[];renderNoticeIdentity();const body=qs('personalTaskBody');if(body)body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';const list=qs('urgentNoticeList');if(list)list.innerHTML='<div class="noticeEmpty">請先登入以讀取個人通知 / กรุณาเข้าสู่ระบบเพื่อดูการแจ้งเตือน</div>';const count=qs('urgentNoticeCount');if(count)count.textContent='請先登入 / กรุณาเข้าสู่ระบบ';const m=qs('pinLoginModal');if(m)m.classList.remove('hide');const p=qs('pinLoginPin');if(p)p.value=''}
+async function loginEmployeePin(){const no=String(safeGet('pinLoginEmpNo')||'').trim(),pin=String(safeGet('pinLoginPin')||'').trim(),msg=qs('pinLoginMsg'),btn=document.querySelector('.pinPrimary');if(!no||!/^\d{4,6}$/.test(pin)){if(msg)msg.textContent='請輸入工號及 4～6 位數 PIN。 / กรุณากรอกรหัสพนักงานและ PIN 4–6 หลัก';return}if(btn)btn.disabled=true;try{if(msg){msg.className='urgentReaderName';msg.textContent='驗證中… / กำลังตรวจสอบ…'}let r=await pinApi('employeepinlogin',{emp_no:no,pin:pin,source:'keyin-login'});if(!r.token||!r.employee)throw new Error('登入回傳資料不完整，請重新部署 Code.gs');NOTICE_AUTH.token=r.token;NOTICE_AUTH.employee=r.employee;saveAuthSession_();if(r.must_change){const n1=prompt('第一次登入，請設定新的 4～6 位數 PIN（不可使用 0000）\nเข้าสู่ระบบครั้งแรก กรุณาตั้ง PIN ใหม่ 4–6 หลัก (ห้ามใช้ 0000)');if(!n1)return switchNoticeEmployee();const n2=prompt('請再次輸入新 PIN\nกรุณากรอก PIN ใหม่อีกครั้ง');if(n1!==n2)throw new Error('兩次新 PIN 不一致 / PIN ใหม่ทั้งสองครั้งไม่ตรงกัน');await pinApi('employeepinchange',{auth_token:r.token,old_pin:pin,new_pin:n1});alert('PIN 已更新，請妥善保管。\nอัปเดต PIN แล้ว กรุณาเก็บรักษาให้ดี')}saveAuthSession_();const m=qs('pinLoginModal');if(m)m.classList.add('hide');renderNoticeIdentity();await loadUrgentNotices();renderPersonalWorkPanel()}catch(e){NOTICE_AUTH.token='';NOTICE_AUTH.employee=null;if(msg){msg.className='urgentReaderName bad';msg.textContent=String(e.message||e)}}finally{if(btn)btn.disabled=false}}
 function personalTaskWo_(r){return wo(r.work_order_no||r.command_no||r.order_no||'')}
 function renderPersonalWorkPanel(){const panel=qs('personalTaskPanel'),body=qs('personalTaskBody'),sub=qs('personalTaskSub');if(!panel||!body)return;if(!NOTICE_AUTH.employee){body.innerHTML='<div class="noticeEmpty">請先登入以讀取今日任務 / กรุณาเข้าสู่ระบบเพื่อดูงานวันนี้</div>';return}const no=String(NOTICE_AUTH.employee.emp_no),today=isoDate(),plans=(App.plans||[]).filter(p=>dk(p.report_date||p.plan_date)===today&&String(p.operator_emp_no||p.assigned_emp_no||p.worker_emp_no||'').trim()===no),keyins=(App.keyin||[]).filter(k=>dk(k.report_date||k.created_at)===today&&String(k.emp_no||'').split(/[\s,，]+/).includes(no));let total=0,done=0;const rows=plans.map(p=>{const unit=String(p.target_unit||p.unit||(Number(p.target_m2)>0?'M2':'R')).toUpperCase(),target=unit==='M2'?Number(p.target_m2||0):Number(p.target_roll||p.target_qty||0),w=personalTaskWo_(p),actual=keyins.filter(k=>personalTaskWo_(k)===w).reduce((a,k)=>a+Number(k.actual_output||k.actual_qty||0),0),pct=target>0?Math.min(999,Math.round(actual/target*1000)/10):0;total+=target;if(pct>=100)done++;return `<div class="personalTaskRow"><div><b>${urgentEsc(w||'未指定工單')}</b><br><small>${urgentEsc(p.customer||'')}｜${urgentEsc(p.process_site||p.process||'')}</small></div><div><b>${urgentEsc(p.machine_code||p.machine||'-')}</b><br><small>機台 / เครื่อง</small></div><div><b>${target.toLocaleString()} ${unit==='M2'?'M²':'R'}</b><br><small>目標 / เป้าหมาย</small></div><div><b>${actual.toLocaleString()}｜${pct}%</b><br><small>${pct>=100?'已完成 / เสร็จแล้ว':'作業中 / กำลังทำ'}</small></div></div>`});panel.classList.add('show');if(sub)sub.textContent=`${no} ${NOTICE_AUTH.employee.emp_name}｜${today}`;body.innerHTML=`<div class="personalTaskKpis"><div class="personalTaskKpi"><span>今日任務 / งานวันนี้</span><b>${plans.length}</b></div><div class="personalTaskKpi"><span>已完成 / เสร็จแล้ว</span><b>${done}</b></div><div class="personalTaskKpi"><span>Key In 筆數 / จำนวนบันทึก</span><b>${keyins.length}</b></div><div class="personalTaskKpi"><span>未完成 / ยังไม่เสร็จ</span><b>${Math.max(0,plans.length-done)}</b></div></div><div class="personalTaskList">${rows.join('')||'<div class="noticeEmpty">今天尚未分派任務 / วันนี้ยังไม่มีงานที่ได้รับมอบหมาย</div>'}</div>`}
 async function adminResetEmployeePin(){const no=prompt('請輸入要重設的員工工號');if(!no)return;const admin=prompt('請輸入課長密碼');if(!admin)return;try{await pinApi('employeepinreset',{emp_no:no.trim(),admin_pin:admin});alert('已重設為 0000；該員工下次登入必須更改 PIN。')}catch(e){alert('重設失敗：'+e.message)}}
@@ -663,34 +687,34 @@ function setNoticeLanguage(v){NOTICE_UI.lang=v;[['Bi','bi'],['Zh','zh'],['Th','t
 function toggleNoticeGroup(k){NOTICE_UI.collapsed[k]=!NOTICE_UI.collapsed[k];renderUrgentNotices()}
 function toggleNoticeDetails(id){const e=qs('notice_detail_'+String(id).replace(/[^a-zA-Z0-9_-]/g,'_'));if(e)e.classList.toggle('show')}
 async function loadUrgentNotices(){if(!NOTICE_AUTH.token){switchNoticeEmployee();return}try{const r=await getApi('urgentorders',{auth_token:NOTICE_AUTH.token,_:Date.now()});App.urgentOrders=rowsOf(r).map(x=>Object.assign({},x,{is_read:noticeNormalizeBool(x.is_read)}));renderUrgentNotices()}catch(e){console.warn('urgentorders',e);const panel=qs('urgentNoticePanel'),list=qs('urgentNoticeList'),count=qs('urgentNoticeCount');if(panel)panel.classList.add('show');if(count)count.textContent='通知載入失敗 / โหลดไม่สำเร็จ';if(list)list.innerHTML='<div class="noticeEmpty" style="color:#b91c1c">通知載入失敗 / โหลดการแจ้งเตือนไม่สำเร็จ：'+urgentEsc(e.message||e)+'<br><button class="noticeDetailBtn" onclick="loadUrgentNotices()">重新讀取 / โหลดใหม่</button></div>';if(/登入|逾時/.test(String(e.message||e)))setTimeout(switchNoticeEmployee,600)}}
-async function sendEmployeeHeartbeat(){if(!NOTICE_AUTH.token||document.visibilityState!=='visible')return;try{await pinApi('employeeheartbeat',{auth_token:NOTICE_AUTH.token})}catch(e){if(/登入|逾時/.test(String(e.message||e)))switchNoticeEmployee()}}
+async function sendEmployeeHeartbeat(){if(!NOTICE_AUTH.token||document.visibilityState!=='visible')return;try{await pinApi('employeeheartbeat',{auth_token:NOTICE_AUTH.token});saveAuthSession_()}catch(e){if(/登入|逾時/.test(String(e.message||e)))switchNoticeEmployee()}}
 function noticeCardHtml(r){const t=noticeTypeInfo(r),p=noticePriority(r),cd=noticeCountdown(r.new_due),id=urgentEsc(r.urgent_id||''),reason=noticeTextPair(r,'reason'),note=noticeTextPair(r,'note'),safeId=String(r.urgent_id||'').replace(/[^a-zA-Z0-9_-]/g,'_');return `<div class="urgentNoticeItem type-${t.key} ${r.is_read?'read':''}"><div class="urgentNoticeTop"><div><div class="urgentNoticeWo">${t.icon} ${urgentEsc(r.work_order_no||'—')}｜${urgentEsc(r.process||'—')}</div><div class="noticeBadges"><span class="noticeBadge">${t.zh} / ${t.th}</span><span class="noticeBadge priority">${p.stars}</span><span class="noticeBadge ${r.is_read?'read':'unread'}">${r.is_read?'✓ 已讀 / อ่านแล้ว':'● 未讀 / ยังไม่ได้อ่าน'}</span></div></div><div class="miniText">${urgentEsc(r.urgent_id||'')}</div></div><div class="noticeGrid"><div class="noticeField"><div class="noticeLabel">客戶 / ลูกค้า</div><div class="noticeValue">${urgentEsc(r.customer||'—')}</div></div><div class="noticeField"><div class="noticeLabel">料號 / รหัสสินค้า</div><div class="noticeValue">${urgentEsc(r.part_no||'—')}</div></div><div class="noticeField"><div class="noticeLabel">數量 / จำนวน</div><div class="noticeValue">${urgentEsc(r.qty||'0')} ${urgentEsc(r.unit||'')}</div></div><div class="noticeField"><div class="noticeLabel">指定機台 / เครื่องจักรที่กำหนด</div><div class="noticeValue">${urgentEsc(r.machine||'自動選擇 / เลือกอัตโนมัติ')}</div></div><div class="noticeField"><div class="noticeLabel">原交期 / กำหนดส่งเดิม</div><div class="noticeValue">${urgentEsc(r.original_due||'—')}</div></div><div class="noticeField"><div class="noticeLabel">最新交期 / กำหนดส่งใหม่</div><div class="noticeValue noticeDue">${urgentEsc(r.new_due||'—')}<br><span class="noticeCountdown">${urgentEsc(cd.text)}</span></div></div></div>${noticePairHtml('原因','สาเหตุ',reason)}<div id="notice_detail_${safeId}" class="noticeDetails">${note.original||note.zh||note.th?noticePairHtml('備註','หมายเหตุ',note):''}<div class="noticeGrid"><div class="noticeField"><div class="noticeLabel">前製程 / กระบวนการก่อนหน้า</div><div class="noticeValue">${urgentEsc(r.preprocess_status||'—')}</div></div><div class="noticeField"><div class="noticeLabel">發布人 / ผู้ประกาศ</div><div class="noticeValue">${urgentEsc(r.publisher_emp_no||'')} ${urgentEsc(r.publisher_name||'')}｜${urgentEsc(r.publisher_dept||'')}</div></div><div class="noticeField"><div class="noticeLabel">發布時間 / เวลาประกาศ</div><div class="noticeValue">${urgentEsc(r.created_at||'—')}</div></div><div class="noticeField"><div class="noticeLabel">確認時間 / เวลาอ่าน</div><div class="noticeValue">${urgentEsc(r.read_at||'—')}</div></div></div></div><div class="noticeActions"><button class="noticeDetailBtn" onclick="toggleNoticeDetails('${id}')">查看詳情 / ดูรายละเอียด</button><button class="urgentReadBtn" ${r.is_read?'disabled':''} onclick="markUrgentRead('${id}')">${r.is_read?'✓ 已確認 / รับทราบแล้ว':'確認已讀 / ยืนยันว่าอ่านแล้ว'}</button></div></div>`}
 function renderUrgentNotices(){const panel=qs('urgentNoticePanel'),list=qs('urgentNoticeList'),count=qs('urgentNoticeCount');if(!panel||!list||!count)return;let rows=(App.urgentOrders||[]).filter(r=>!/closed|completed|cancelled|已解除|完成/i.test(String(r.status||'')));if(!rows.length){panel.classList.add('show');count.textContent='0 筆未讀 / 0 ยังไม่ได้อ่าน';if(qs('noticeKpiUnread'))qs('noticeKpiUnread').textContent='🔴 未讀 0 / ยังไม่ได้อ่าน 0';if(qs('noticeKpiTotal'))qs('noticeKpiTotal').textContent='📋 全部 0 / ทั้งหมด 0';list.innerHTML='<div class="noticeEmpty">目前沒有未解除的通知 / ขณะนี้ไม่มีการแจ้งเตือนที่ยังไม่ปิด</div>';return}panel.classList.add('show');rows.sort((a,b)=>Number(a.is_read)-Number(b.is_read)||noticePriority(b).n-noticePriority(a).n||((noticeDateMs(a.new_due)||9e15)-(noticeDateMs(b.new_due)||9e15))||String(b.created_at||'').localeCompare(String(a.created_at||'')));const unreadAll=rows.filter(r=>!r.is_read),dueSoon=rows.filter(r=>{const d=noticeDateMs(r.new_due)-Date.now();return d>=0&&d<=86400000}).length;count.textContent=`${unreadAll.length} 筆未讀 / ${unreadAll.length} ยังไม่ได้อ่าน`;if(qs('noticeKpiUnread'))qs('noticeKpiUnread').textContent=`🔴 未讀 ${unreadAll.length} / ยังไม่ได้อ่าน ${unreadAll.length}`;if(qs('noticeKpiTotal'))qs('noticeKpiTotal').textContent=`📋 全部 ${rows.length} / ทั้งหมด ${rows.length}`;if(qs('noticeKpiDue'))qs('noticeKpiDue').textContent=`⏱ 24小時內 ${dueSoon} / ภายใน 24ชม. ${dueSoon}`;const q=String(safeGet('noticeSearch')||'').trim().toLowerCase();if(q)rows=rows.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));if(NOTICE_UI.filter==='unread')rows=rows.filter(r=>!r.is_read);const groups=[['unread','🔴 未讀通知 / ยังไม่ได้อ่าน',rows.filter(r=>!r.is_read)],['read','✅ 已讀通知 / อ่านแล้ว',rows.filter(r=>r.is_read)]];list.innerHTML=groups.filter(g=>g[2].length).map(g=>`<section class="noticeGroup ${NOTICE_UI.collapsed[g[0]]?'collapsed':''}"><div class="noticeGroupTitle" onclick="toggleNoticeGroup('${g[0]}')"><span>${g[1]} (${g[2].length})</span><span>${NOTICE_UI.collapsed[g[0]]?'▶':'▼'}</span></div><div class="noticeGroupBody">${g[2].map(noticeCardHtml).join('')}</div></section>`).join('')||'<div class="noticeEmpty">目前沒有符合條件的通知 / ไม่มีการแจ้งเตือนที่ตรงกับเงื่อนไข</div>'}
 let pendingUrgentReadId='';
 function markUrgentRead(urgentId){pendingUrgentReadId=String(urgentId||'');const modal=qs('urgentReaderModal'),input=qs('urgentReaderEmpNo');if(!modal||!input)return;input.value='';resolveUrgentReader();modal.classList.add('show');setTimeout(()=>input.focus(),30)}
 function closeUrgentReaderModal(){pendingUrgentReadId='';const modal=qs('urgentReaderModal');if(modal)modal.classList.remove('show')}
 function resolveUrgentReader(){const pin=String(safeGet('urgentReaderEmpNo')||'').trim(),box=qs('urgentReaderName'),btn=qs('urgentReaderConfirm'),ok=/^\d{4,6}$/.test(pin);if(box){box.className='urgentReaderName'+(ok?' ok':pin?' bad':'');box.textContent=ok?'PIN 格式正確，按確認後驗證。 / รูปแบบ PIN ถูกต้อง กดยืนยันเพื่อตรวจสอบ':pin?'PIN 必須為 4～6 位數字。 / PIN ต้องเป็นตัวเลข 4–6 หลัก':'請再次輸入個人 PIN。 / กรุณากรอก PIN ส่วนตัวอีกครั้ง'}if(btn)btn.disabled=!ok;return {pin:pin,ok:ok}}
-async function submitUrgentRead(){if(!pendingUrgentReadId||!NOTICE_AUTH.employee)return;const reader=resolveUrgentReader();if(!reader.ok)return;const btn=qs('urgentReaderConfirm');if(btn)btn.disabled=true;try{const login=await pinApi('employeepinlogin',{emp_no:NOTICE_AUTH.employee.emp_no,pin:reader.pin,source:'urgent-confirm'});NOTICE_AUTH.token=login.token;await pinApi('urgentread',{urgent_id:pendingUrgentReadId,auth_token:NOTICE_AUTH.token,source:'keyin-pin'});closeUrgentReaderModal();if(window.MES)MES.toast('已確認閱讀 / ยืนยันการอ่านแล้ว');await loadUrgentNotices()}catch(e){if(btn)btn.disabled=false;alert('PIN 驗證或已讀紀錄失敗 / การตรวจสอบ PIN หรือบันทึกการอ่านล้มเหลว：'+e.message)}}
+async function submitUrgentRead(){if(!pendingUrgentReadId||!NOTICE_AUTH.employee)return;const reader=resolveUrgentReader();if(!reader.ok)return;const btn=qs('urgentReaderConfirm');if(btn)btn.disabled=true;try{const login=await pinApi('employeepinlogin',{emp_no:NOTICE_AUTH.employee.emp_no,pin:reader.pin,source:'urgent-confirm'});NOTICE_AUTH.token=login.token;saveAuthSession_();await pinApi('urgentread',{urgent_id:pendingUrgentReadId,auth_token:NOTICE_AUTH.token,source:'keyin-pin'});closeUrgentReaderModal();if(window.MES)MES.toast('已確認閱讀 / ยืนยันการอ่านแล้ว');await loadUrgentNotices()}catch(e){if(btn)btn.disabled=false;alert('PIN 驗證或已讀紀錄失敗 / การตรวจสอบ PIN หรือบันทึกการอ่านล้มเหลว：'+e.message)}}
 document.addEventListener('click',e=>{const modal=qs('urgentReaderModal');if(modal&&e.target===modal)closeUrgentReaderModal()});
 
 async function loadStartup(){
   try{const lang=localStorage.getItem('MES_NOTICE_LANG');if(['bi','zh','th'].includes(lang))NOTICE_UI.lang=lang}catch(e){}
   setNoticeLanguage(NOTICE_UI.lang);
-  qs('loadStatus').textContent='讀取基本資料...';
-  try{
-    const [e,p,sf]=await Promise.all([getApi('listEmployees'),getApi('listTargetPlans'),getApi('speedfeedback')]);
-    App.employees=rowsOf(e);
-    App.plans=rowsOf(p);
-    App.speedFeedback=rowsOf(sf);
-    App.idx=-1;
-    renderPlansHint();
-    await loadKeyin(false);
-    await loadUrgentNotices();
-    qs('loadStatus').textContent='基本資料已讀取；可直接輸入工單查詢，「讀取最新工單」僅載入完整清單';
-  }catch(err){
-    qs('loadStatus').textContent='基本資料讀取失敗';
-    if(window.MES)MES.toast('基本資料讀取失敗：'+err.message);
-  }
+  setLoadStatus('表單已可使用；背景同步資料中… / พร้อมใช้งาน กำลังซิงค์ข้อมูล','success');
+
+  const restored=await restoreAuthSession_();
+  if(restored){renderPersonalWorkPanel();loadUrgentNotices().catch(()=>{});}
+
+  // 分批背景載入，避免開頁時等待全部資料完成。
+  Promise.allSettled([getApi('listTargetPlans'),getApi('speedfeedback')]).then(results=>{
+    if(results[0].status==='fulfilled')App.plans=rowsOf(results[0].value);
+    if(results[1].status==='fulfilled')App.speedFeedback=rowsOf(results[1].value);
+    App.idx=-1;renderPlansHint();renderPersonalWorkPanel();
+  });
+  loadKeyin(false).catch(()=>{});
+
+  // 工單完整清單維持按需載入，不在啟動時下載。
+  setTimeout(()=>setLoadStatus('可直接 Key In；需要完整工單時再按「讀取最新工單」','success'),600);
 }
 async function loadAll(){
   setButtonState('loadOrdersBtn','loading','讀取工單中... / กำลังโหลดใบงาน...');
@@ -1051,7 +1075,8 @@ async function lookupWOAsync(){
   UI_PERF.search_ms=Math.round(perfNow_()-searchStarted);
   await applyResolvedOrderDOM_(r,matches,seq,searchStarted);
 }
-function fillName(){const nos=safeGet('emp_no').split(/[ ,，]+/).filter(Boolean);const names=nos.map(no=>{const e=App.employees.find(x=>nrm(x.emp_no||x['工號'])===nrm(no));return e?(e.emp_name||e['姓名']||''):''}).filter(Boolean);if(names.length)safeSet('emp_name',names.join(','))}
+function currentLoginEmpNo_(){return String(NOTICE_AUTH.employee&&NOTICE_AUTH.employee.emp_no||'').trim()}
+function currentLoginEmpName_(){return String(NOTICE_AUTH.employee&&NOTICE_AUTH.employee.emp_name||'').trim()}
 function planSearchText_(p){
   const o=sourceObj(p);
   return nrm([o.work_order_no,o.command_no,o.order_no,o.daily_report_no,o.report_no,o.batch_no,o.part_no,o.customer,o.product_spec,o.machine_code,o.process,empDisplay(p),roleDisplay(p),p.operator_emp_no,p.operator_name,p.assigned_emp_no,p.assigned_name].join(' '));
@@ -1070,7 +1095,7 @@ function renderPlansHint(){
   qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';
   if(box)box.innerHTML='<span class="hint">整理資料中… / กำลังจัดข้อมูล…</span>';
   requestAnimationFrame(()=>{
-    const all=currentPlans(r),loginNos=String(safeGet('emp_no')||'').split(/[\s,，]+/).map(nrm).filter(Boolean),hasAssignments=all.some(p=>assignedEmpNo_(p));
+    const all=currentPlans(r),loginNos=currentLoginEmpNo_()?[nrm(currentLoginEmpNo_())]:[],hasAssignments=all.some(p=>assignedEmpNo_(p));
     const list=loginNos.length&&hasAssignments?all.filter(p=>!assignedEmpNo_(p)||loginNos.includes(nrm(assignedEmpNo_(p)))):all,actualMap=buildActualMap_();
     const enriched=list.map(p=>({p,st:matchStatus(p,actualMap)}));
     const q=nrm(safeGet('planSearch'));
@@ -1104,8 +1129,8 @@ function otherProcessNote_(){
   return ['其他製程：'+actual,original].filter(Boolean).join('｜');
 }
 
-function quickDataFromForm(){return{site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:wo(safeGet('work_order_no')),batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:safeGet('process_note')}}
-function applyQuickData(d,keepOutput=false){if(!d)return;safeSet('site',d.site||safeGet('site'));safeSet('other_process',d.other_process||'');onSiteChange();safeSet('report_date',dk(d.report_date)||safeGet('report_date')||isoDate());safeSet('work_order_no',wo(d.work_order_no||''));safeSet('batch_no',d.batch_no||'');safeSet('machine_code',d.machine_code||'');safeSet('unit',d.unit||safeGet('unit'));safeSet('emp_no',d.emp_no||safeGet('emp_no'));safeSet('emp_name',d.emp_name||safeGet('emp_name'));if(keepOutput){safeSet('actual_output',d.actual_output||'');safeSet('process_note',d.process_note||'')}lookupWO();setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},80)}
+function quickDataFromForm(){return{site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:wo(safeGet('work_order_no')),batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),process_note:safeGet('process_note')}}
+function applyQuickData(d,keepOutput=false){if(!d)return;safeSet('site',d.site||safeGet('site'));safeSet('other_process',d.other_process||'');onSiteChange();safeSet('report_date',dk(d.report_date)||safeGet('report_date')||isoDate());safeSet('work_order_no',wo(d.work_order_no||''));safeSet('batch_no',d.batch_no||'');safeSet('machine_code',d.machine_code||'');safeSet('unit',d.unit||safeGet('unit'));if(keepOutput){safeSet('actual_output',d.actual_output||'');safeSet('process_note',d.process_note||'')}lookupWO();setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},80)}
 function getRecentList(){try{return JSON.parse(localStorage.getItem(LS_RECENT)||'[]')}catch(e){return[]}}
 function setRecentList(list){localStorage.setItem(LS_RECENT,JSON.stringify((list||[]).slice(0,5)));renderRecentBox()}
 function addRecent(d){const list=getRecentList().filter(x=>!(wo(x.work_order_no)===wo(d.work_order_no)&&String(x.created_at||'')===String(d.created_at||'')));list.unshift({...d,created_at:new Date().toLocaleString('zh-TW',{hour12:false})});setRecentList(list)}
@@ -1113,23 +1138,23 @@ function renderRecentBox(){const box=qs('recentBox');if(!box)return;const list=g
 function useRecent(i){const r=getRecentList()[i];applyQuickData(r,true)}
 function copyLastSubmit(){const r=App.lastSubmit||getRecentList()[0];if(!r){if(window.MES)MES.toast('尚無上一筆可沿用');return}applyQuickData(r,true)}
 function clearCurrentInput(){safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');const w=qs('work_order_no');if(w)w.focus()}
-function saveQuickProfile(){const d={emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),machine_code:safeGet('machine_code'),site:safeGet('site'),unit:safeGet('unit')};localStorage.setItem(LS_PROFILE,JSON.stringify(d));if(window.MES)MES.toast('已記住常用工號/機台')}
-function loadQuickProfile(){try{const d=JSON.parse(localStorage.getItem(LS_PROFILE)||'{}');if(d.emp_no)safeSet('emp_no',d.emp_no);if(d.emp_name)safeSet('emp_name',d.emp_name);if(d.machine_code)safeSet('machine_code',d.machine_code);if(d.site)safeSet('site',d.site);if(d.unit)safeSet('unit',d.unit)}catch(e){}renderRecentBox()}
+function saveQuickProfile(){const d={machine_code:safeGet('machine_code'),site:safeGet('site'),unit:safeGet('unit')};localStorage.setItem(LS_PROFILE,JSON.stringify(d));if(window.MES)MES.toast('已記住常用機台')}
+function loadQuickProfile(){try{const d=JSON.parse(localStorage.getItem(LS_PROFILE)||'{}');if(d.machine_code)safeSet('machine_code',d.machine_code);if(d.site)safeSet('site',d.site);if(d.unit)safeSet('unit',d.unit)}catch(e){}renderRecentBox()}
 function afterSubmitClear(){if(qs('fastMode')&&qs('fastMode').checked){safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','');if(qs('autoNext')&&qs('autoNext').checked)nextOrder();else safeSet('work_order_no',''),safeSet('batch_no','');setTimeout(()=>{const target=safeGet('work_order_no')?qs('actual_output'):qs('work_order_no');if(target)target.focus()},80)}else{safeSet('work_order_no','');safeSet('batch_no','');safeSet('actual_output','');safeSet('process_note','');safeSet('other_process','');safeSet('speed_qty_round','');safeSet('speed_minutes_round','')}}
 function setupFastInputKeys(){['work_order_no','actual_output'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();setTimeout(()=>qs('actual_output')&&qs('actual_output').focus(),80)}else if(id==='actual_output'){submitKeyin()}})})}
-async function submitKeyin(){const btn=qs('submitBtn');const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}if(safeGet('site')==='其他'&&!safeGet('other_process').trim()){const input=qs('other_process');if(window.MES)MES.toast('請填寫其他製程名稱 / กรุณาระบุกระบวนการอื่น');if(input){input.focus();input.reportValidity()}return}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
+async function submitKeyin(){const btn=qs('submitBtn');if(!NOTICE_AUTH.employee||!NOTICE_AUTH.token){if(window.MES)MES.toast('請先登入 / กรุณาเข้าสู่ระบบ');const m=qs('pinLoginModal');if(m)m.classList.remove('hide');return}const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return}if(safeGet('site')==='其他'&&!safeGet('other_process').trim()){const input=qs('other_process');if(window.MES)MES.toast('請填寫其他製程名稱 / กรุณาระบุกระบวนการอื่น');if(input){input.focus();input.reportValidity()}return}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
 const submitWO=wo(matched.command_no||matched.work_order_no||w);
-const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:safeGet('emp_no'),emp_name:safeGet('emp_name'),process_note:otherProcessNote_(),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v83_keyin_speed_learning'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:currentLoginEmpNo_(),emp_name:currentLoginEmpName_(),process_note:otherProcessNote_(),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v83_keyin_speed_learning'};try{await postApi('saveKeyin',data);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear();setTimeout(()=>loadKeyin(false),1200)}catch(e){alert('回報失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=(r0.fallback?'最新資料｜':'')+r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
-function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,emp_no:r.emp_no,emp_name:r.emp_name,process_note:r.process_note},true)}
+function copyKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,process_note:r.process_note},true)}
 function exportCSV(){const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='keyin_v69_6.csv';a.click()}
 document.addEventListener('DOMContentLoaded',()=>{
   cacheUI_();
   App.planCollapsed=!!(window.matchMedia&&window.matchMedia('(max-width:720px)').matches);
   syncPlanCollapseUI_();
   keyInCacheLoad_();
-  safeSet('report_date',isoDate());loadQuickProfile();onSiteChange();setupFastInputKeys();loadStartup();setInterval(()=>{if(document.visibilityState==='visible')loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V98.3 Build 0102 | Mobile Target List ready',KeyInSharedLookupStatus());
+  safeSet('report_date',isoDate());loadQuickProfile();onSiteChange();setupFastInputKeys();loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
+  console.log('SEAL KING Smart Key In V112.1 Build 0105 | Mobile Target List ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 </script>
