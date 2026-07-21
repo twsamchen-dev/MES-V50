@@ -27,6 +27,7 @@
 
 
 /* V98.3：手機版幹部目標清單固定高度、收合、搜尋與摘要 */
+.planManagerBar{display:none;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;padding:9px 10px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff}.planManagerBar.show{display:flex}.planScopeBtn{border:1px solid #bfdbfe;background:#fff;color:#1e3a8a;border-radius:999px;padding:7px 12px;font-weight:900;cursor:pointer}.planScopeBtn.active{background:#2563eb;color:#fff;border-color:#2563eb}.planOperatorSelect{width:auto;min-width:220px;min-height:36px!important;padding:6px 10px!important}.managerOnlyLabel{font-size:12px;font-weight:900;color:#1e3a8a}
 .planSummaryBar{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 8px}
 .planSummaryChip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;background:#fff;border:1px solid #dbe4f0;color:#334155}
 .planSummaryChip.done{background:#dcfce7;color:#166534;border-color:#bbf7d0}.planSummaryChip.run{background:#fff7ed;color:#c2410c;border-color:#fed7aa}.planSummaryChip.none{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
@@ -106,7 +107,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V117 Mobile Speed Labels｜Build 0111</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V118 Manager Task Scope｜Build 0114</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -180,6 +181,12 @@
         <button id="range_today" class="rangeBtn active" onclick="setPlanRange('today')">今日 / วันนี้</button>
         <button id="range_week" class="rangeBtn" onclick="setPlanRange('week')">一周 / 1 สัปดาห์</button>
         <button id="range_month" class="rangeBtn" onclick="setPlanRange('month')">本月 / เดือนนี้</button>
+      </div>
+      <div id="planManagerBar" class="planManagerBar">
+        <span class="managerOnlyLabel">課長查看 / มุมมองหัวหน้าแผนก</span>
+        <button id="planScopeMine" type="button" class="planScopeBtn active" onclick="setPlanScope_('mine')">我的任務 / งานของฉัน</button>
+        <button id="planScopeAll" type="button" class="planScopeBtn" onclick="setPlanScope_('all')">全部任務 / งานทั้งหมด</button>
+        <select id="planOperatorFilter" class="planOperatorSelect" onchange="setPlanOperatorFilter_(this.value)"><option value="all">全部作業人員 / พนักงานทั้งหมด</option></select>
       </div>
       <div id="planSummaryBar" class="planSummaryBar"></div>
       <div class="planListTools">
@@ -256,7 +263,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[]};
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',planScope:'mine',planOperatorFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[]};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
 const KEYIN_SHARED_LOOKUP={
@@ -1172,12 +1179,38 @@ function teamWorkerData_(){const on=!!(qs('teamWorkEnabled')&&qs('teamWorkEnable
 function teamWorkNote_(base,team){if(!team.enabled||!team.collabs.length)return base;const txt='共同作業：'+team.all.map((e,i)=>(i===0?'主操作員 ':'協同 ')+e.emp_no+' '+(e.emp_name||'')).join('、')+'；產量僅計一筆';return [base,txt].filter(Boolean).join('｜')}
 function currentLoginEmpNo_(){return String(NOTICE_AUTH.employee&&NOTICE_AUTH.employee.emp_no||'').trim()}
 function currentLoginEmpName_(){return String(NOTICE_AUTH.employee&&NOTICE_AUTH.employee.emp_name||'').trim()}
+function isSectionManager_(){return nrm(currentLoginEmpNo_())==='11035'}
 function planSearchText_(p){
   const o=sourceObj(p);
   return nrm([o.work_order_no,o.command_no,o.order_no,o.daily_report_no,o.report_no,o.batch_no,o.part_no,o.customer,o.product_spec,o.machine_code,o.process,empDisplay(p),roleDisplay(p),p.operator_emp_no,p.operator_name,p.assigned_emp_no,p.assigned_name].join(' '));
 }
 function assignedEmpNo_(p){return String((p||{}).operator_emp_no||(p||{}).assigned_emp_no||(p||{}).worker_emp_no||(p||{})['作業人員工號']||'').trim()}
 function assignedName_(p){return String((p||{}).operator_name||(p||{}).assigned_name||(p||{}).worker_name||(p||{})['作業人員姓名']||'').trim()}
+function setPlanScope_(scope){
+  if(!isSectionManager_())scope='mine';
+  App.planScope=scope==='all'?'all':'mine';
+  App.planOperatorFilter='all';
+  App.planStatusFilter='all';
+  renderPlansHint();
+}
+function setPlanOperatorFilter_(value){App.planOperatorFilter=String(value||'all');App.planStatusFilter='all';renderPlansHint()}
+function updatePlanManagerControls_(all){
+  const bar=qs('planManagerBar'),isManager=isSectionManager_();
+  if(bar)bar.classList.toggle('show',isManager);
+  if(!isManager){App.planScope='mine';App.planOperatorFilter='all';return}
+  const mine=qs('planScopeMine'),allBtn=qs('planScopeAll'),sel=qs('planOperatorFilter');
+  if(mine)mine.classList.toggle('active',App.planScope!=='all');
+  if(allBtn)allBtn.classList.toggle('active',App.planScope==='all');
+  if(sel){
+    const keep=String(App.planOperatorFilter||'all');
+    const map=new Map();
+    (all||[]).forEach(p=>{const no=assignedEmpNo_(p),name=assignedName_(p);if(no)map.set(no,name)});
+    sel.innerHTML='<option value="all">全部作業人員 / พนักงานทั้งหมด</option><option value="unassigned">未指派 / ยังไม่ได้มอบหมาย</option>'+Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([no,name])=>'<option value="'+html(no)+'">'+html(no+(name?'｜'+name:''))+'</option>').join('');
+    sel.disabled=App.planScope!=='all';
+    sel.value=Array.from(sel.options).some(o=>o.value===keep)?keep:'all';
+    App.planOperatorFilter=sel.value;
+  }
+}
 function syncPlanCollapseUI_(){
   const box=qs('todayPlans'),btn=qs('planToggleBtn');
   if(box)box.classList.toggle('collapsed',!!App.planCollapsed);
@@ -1188,22 +1221,28 @@ function setPlanStatusFilter(filter){App.planStatusFilter=filter||'all';App.plan
 function renderPlansHint(){
   const r=rangeObj(),box=qs('todayPlans');
   qs('planRangeText').textContent=(r.fallback?'最新資料｜':'')+r.label+' '+r.start+(r.start!==r.end?' ~ '+r.end:'');
-  qs('planTitle').textContent=r.label+'幹部目標工單 / งานเป้าหมายหัวหน้า';
+  const all=currentPlans(r),managerAll=isSectionManager_()&&App.planScope==='all';
+  updatePlanManagerControls_(all);
+  qs('planTitle').textContent=r.label+(managerAll?'全部任務 / งานทั้งหมด':'我的任務 / งานของฉัน');
   if(box)box.innerHTML='<span class="hint">整理資料中… / กำลังจัดข้อมูล…</span>';
   requestAnimationFrame(()=>{
-    const all=currentPlans(r),loginNos=currentLoginEmpNo_()?[nrm(currentLoginEmpNo_())]:[],hasAssignments=all.some(p=>assignedEmpNo_(p));
-    const list=loginNos.length&&hasAssignments?all.filter(p=>loginNos.includes(nrm(assignedEmpNo_(p)))):all,actualMap=buildActualMap_();
-    const enriched=list.map(p=>({p,st:matchStatus(p,actualMap)}));
+    const loginNo=nrm(currentLoginEmpNo_());
+    let list=managerAll?all:all.filter(p=>loginNo&&nrm(assignedEmpNo_(p))===loginNo);
+    if(managerAll&&App.planOperatorFilter==='unassigned')list=list.filter(p=>!assignedEmpNo_(p));
+    else if(managerAll&&App.planOperatorFilter!=='all')list=list.filter(p=>nrm(assignedEmpNo_(p))===nrm(App.planOperatorFilter));
+    const actualMap=buildActualMap_(),enriched=list.map(p=>({p,st:matchStatus(p,actualMap)}));
     const q=nrm(safeGet('planSearch'));
-    const statusFilter=App.planStatusFilter||'all';const statusMatched=enriched.filter(x=>statusFilter==='all'||(statusFilter==='done'&&(x.st.label==='作業完成'||x.st.label==='已超目標'))||(statusFilter==='run'&&x.st.actual>0&&x.st.label!=='作業完成'&&x.st.label!=='已超目標')||(statusFilter==='none'&&!(x.st.actual>0)));const filtered=statusMatched.filter(x=>!q||planSearchText_(x.p).includes(q));
+    const statusFilter=App.planStatusFilter||'all';
+    const statusMatched=enriched.filter(x=>statusFilter==='all'||(statusFilter==='done'&&(x.st.label==='作業完成'||x.st.label==='已超目標'))||(statusFilter==='run'&&x.st.actual>0&&x.st.label!=='作業完成'&&x.st.label!=='已超目標')||(statusFilter==='none'&&!(x.st.actual>0))||(statusFilter==='unassigned'&&!assignedEmpNo_(x.p)));
+    const filtered=statusMatched.filter(x=>!q||planSearchText_(x.p).includes(q));
     App.planView=filtered.map(x=>x.p);
     const done=enriched.filter(x=>x.st.label==='作業完成'||x.st.label==='已超目標').length;
     const run=enriched.filter(x=>x.st.actual>0&&x.st.label!=='作業完成'&&x.st.label!=='已超目標').length;
-    const none=Math.max(0,enriched.length-done-run);
+    const none=Math.max(0,enriched.length-done-run),unassigned=enriched.filter(x=>!assignedEmpNo_(x.p)).length;
     const summary=qs('planSummaryBar');
-    if(summary)summary.innerHTML='<button type="button" class="planSummaryChip '+(statusFilter==='all'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'all\')">'+(loginNos.length&&hasAssignments?'我的任務 ':'共 ')+enriched.length+' 張 / '+enriched.length+' งาน</button><button type="button" class="planSummaryChip done '+(statusFilter==='done'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'done\')">完成 '+done+'</button><button type="button" class="planSummaryChip run '+(statusFilter==='run'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'run\')">生產中 '+run+'</button><button type="button" class="planSummaryChip none '+(statusFilter==='none'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'none\')">未開始 '+none+'</button>'+(q?'<span class="planSummaryChip">搜尋結果 '+filtered.length+'</span>':'');
+    if(summary)summary.innerHTML='<button type="button" class="planSummaryChip '+(statusFilter==='all'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'all\')">'+(managerAll?'全部任務 ':'我的任務 ')+enriched.length+' 張 / '+enriched.length+' งาน</button><button type="button" class="planSummaryChip done '+(statusFilter==='done'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'done\')">完成 '+done+'</button><button type="button" class="planSummaryChip run '+(statusFilter==='run'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'run\')">生產中 '+run+'</button><button type="button" class="planSummaryChip none '+(statusFilter==='none'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'none\')">未開始 '+none+'</button>'+(managerAll?'<button type="button" class="planSummaryChip none '+(statusFilter==='unassigned'?'filterActive':'')+'" onclick="setPlanStatusFilter(\'unassigned\')">未指派 '+unassigned+'</button>':'')+(q?'<span class="planSummaryChip">搜尋結果 '+filtered.length+'</span>':'');
     if(!box)return;
-    box.innerHTML=filtered.length?filtered.map((x,i)=>{const p=x.p,o=sourceObj(p),st=x.st;const itemCls=st.label==='作業完成'||st.label==='已超目標'?'planDone':st.actual>0?'planRun':'planNone';return '<div class="planItem '+itemCls+'" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint"><b>作業人員 / ผู้ปฏิบัติงาน：</b>'+html([assignedEmpNo_(p),assignedName_(p)].filter(Boolean).join('｜')||'未指派 / ยังไม่ได้มอบหมาย')+'</span><br><span class="hint">幹部 / หัวหน้า：'+html(empDisplay(p)||'-')+'｜'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">累積完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' R / '+(st.target?st.target.toLocaleString()+' R':'未設 R 目標')+'</div><div class="progressText">'+(st.matchedKey?'跨日累積 '+st.count+' 筆':'尚無配對實績')+'</div></div></div></div>'}).join(''):(q?'查無符合「'+html(safeGet('planSearch'))+'」的工單。':(statusFilter!=='all'?'此狀態目前沒有工單 / ไม่มีงานในสถานะนี้':'查無 '+r.label+'個人任務（'+r.start+(r.start!==r.end?' ~ '+r.end:'')+'）。'));
+    box.innerHTML=filtered.length?filtered.map((x,i)=>{const p=x.p,o=sourceObj(p),st=x.st;const itemCls=st.label==='作業完成'||st.label==='已超目標'?'planDone':st.actual>0?'planRun':'planNone';return '<div class="planItem '+itemCls+'" onclick="pickPlan('+i+')"><div class="planTop"><div class="planMain"><b>'+html(o.work_order_no)+'</b><br><span class="hint">'+html([o.machine_code,o.customer,o.product_spec,o.process].filter(Boolean).join('｜'))+'</span><br><span class="hint"><b>作業人員 / ผู้ปฏิบัติงาน：</b>'+html([assignedEmpNo_(p),assignedName_(p)].filter(Boolean).join('｜')||'未指派 / ยังไม่ได้มอบหมาย')+'</span><br><span class="hint">幹部 / หัวหน้า：'+html(empDisplay(p)||'-')+'｜'+html(roleDisplay(p)||'-')+'</span><br><span class="hint">日期 / วันที่：'+html(rowDate(p)||'-')+'｜周別 / สัปดาห์：'+html(isoWeek(rowDate(p)))+'</span></div><div class="planStatus"><span class="statusPill '+st.cls+'">'+html(st.label)+' / '+html(st.th)+'</span><div class="progressText">累積完成度 '+st.pct.toFixed(0)+'%</div><div class="progressText">'+st.actual.toLocaleString()+' R / '+(st.target?st.target.toLocaleString()+' R':'未設 R 目標')+'</div><div class="progressText">'+(st.matchedKey?'跨日累積 '+st.count+' 筆':'尚無配對實績')+'</div></div></div></div>'}).join(''):(q?'查無符合「'+html(safeGet('planSearch'))+'」的工單。':(statusFilter!=='all'?'此篩選目前沒有工單 / ไม่มีงานตามตัวกรองนี้':'查無 '+r.label+(managerAll?'全部任務':'個人任務')+'（'+r.start+(r.start!==r.end?' ~ '+r.end:'')+'）。'));
     syncPlanCollapseUI_();
   });
 }
