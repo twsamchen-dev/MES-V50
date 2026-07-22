@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MES Master Center V3.0</title>
+<title>MES Master Center V3.1</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--nav:#153f50;--nav2:#0f3342;--ink:#1d2d38;--muted:#6d7d88;--line:#dce4e9;--bg:#f3f6f8;--card:#fff;--accent:#236d87;--warn:#b56810;--danger:#b43c3c;--good:#16724b}
@@ -27,6 +27,14 @@ main{padding:22px;min-width:0}.page{display:none}.page.active{display:block}.pag
 .search-box{width:290px;height:38px;border:1px solid var(--line);border-radius:8px;padding:0 11px;background:#fff}.select{height:38px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:#fff}
 .btn{height:38px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:0 12px;cursor:pointer;font-weight:700}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .empty{padding:38px;text-align:center;color:var(--muted)}footer{color:#798892;font-size:12px;padding:18px 2px}
+
+.filter-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.filter-panel .field{display:flex;flex-direction:column;gap:5px;min-width:145px}
+.filter-panel .field.customer{min-width:240px;flex:1;max-width:360px}
+.filter-panel label{font-size:12px;color:var(--muted);font-weight:700}
+.filter-panel select{height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 10px}
+.filter-summary{margin-left:auto;min-width:220px;padding:9px 12px;background:#edf5f8;border-radius:8px;color:#416473;font-size:12px;line-height:1.5}
+
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.cols2,.cols3{grid-template-columns:1fr}.shell{grid-template-columns:190px 1fr}.radar{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.top{height:auto;padding:13px;flex-wrap:wrap}.brand{min-width:0}.top-search{order:3;min-width:100%}.shell{display:block}aside{position:static;height:auto}.nav{display:flex;overflow:auto}.nav-title,.side-status{display:none}.nav button{min-width:125px}.kpis,.import-grid{grid-template-columns:1fr}main{padding:13px}.page-head{display:block}.toolbar{margin-top:10px}}
 </style>
@@ -34,7 +42,7 @@ main{padding:22px;min-width:0}.page{display:none}.page.active{display:block}.pag
 <body>
 <div class="app">
 <header class="top">
-  <div class="brand"><h1>MES Master Center</h1><small>V3.0 · READ ONLY MANAGEMENT HUB</small></div>
+  <div class="brand"><h1>MES Master Center</h1><small>V3.1 · FILTERABLE MANAGEMENT HUB</small></div>
   <div class="top-search"><input id="globalSearch" placeholder="搜尋訂單、命令單、客戶、料號…"></div>
   <div class="top-actions"><a href="index.html">Key In</a><a href="Target.html">幹部目標</a><a href="dashboard.html">戰情室</a><a href="aps.html">APS 排程</a></div>
 </header>
@@ -54,6 +62,14 @@ main{padding:22px;min-width:0}.page{display:none}.page.active{display:block}.pag
 <main>
 <section id="overview" class="page active">
  <div class="page-head"><div><h2>營運總覽</h2><p>銷售、未交、缺口與排程風險集中呈現。</p></div><div class="toolbar"><button class="btn" onclick="goPage('business')">查看八大類</button><button class="btn primary" onclick="goPage('data')">更新資料</button></div></div>
+ <div class="filter-panel">
+   <div class="field"><label>開始年度</label><select id="filterStartYear"></select></div>
+   <div class="field"><label>結束年度</label><select id="filterEndYear"></select></div>
+   <div class="field customer"><label>客戶</label><select id="filterCustomer"><option value="">全部客戶</option></select></div>
+   <button class="btn primary" id="applyOverviewFilter">套用篩選</button>
+   <button class="btn" id="resetOverviewFilter">清除篩選</button>
+   <div class="filter-summary" id="filterSummary">全部年度｜全部客戶</div>
+ </div>
  <div class="grid kpis" id="overviewKpis"></div>
  <div class="grid cols2" style="margin-top:14px">
    <div class="card"><div class="card-head"><h3>年度金額與產量趨勢</h3><span class="badge">2012–2026</span></div><div class="chart"><canvas id="overviewTrend"></canvas></div></div>
@@ -107,7 +123,7 @@ main{padding:22px;min-width:0}.page{display:none}.page.active{display:block}.pag
  <div class="card" style="margin-top:14px"><div class="card-head"><h3>解析進度</h3><span id="progressText">待命</span></div><div class="progress"><i id="progressBar"></i></div></div>
  <div class="card" style="margin-top:14px"><h3>資料來源狀態</h3><div id="sourceStatus"></div></div>
 </section>
-<footer>MES Master Center V3.0 · 所有分析均為唯讀旁路模組；不寫入 ERP 八份資料、不修改 APS 排程、不改動 Dashboard／Target／Key In。</footer>
+<footer>MES Master Center V3.1 · 所有分析均為唯讀旁路模組；不寫入 ERP 八份資料、不修改 APS 排程、不改動 Dashboard／Target／Key In。</footer>
 </main>
 </div>
 </div>
@@ -117,6 +133,7 @@ const STORAGE='MES_MASTER_V3_DATA', STATUS_KEY='MES_MASTER_V3_STATUS';
 let DATA=JSON.parse(localStorage.getItem(STORAGE)||'null')||INITIAL_DATA;
 let STATUS=JSON.parse(localStorage.getItem(STATUS_KEY)||'{}');
 let businessMetric='amount', businessYear='all';
+let overviewFilter={start:'',end:'',customer:''};
 const CAT8=['保密','一般雙面','破壞','特雙','黑白膜','泡棉','文具','其他'];
 const fmt=n=>new Intl.NumberFormat('zh-TW',{maximumFractionDigits:Math.abs(Number(n)||0)<1000?2:0}).format(Number(n)||0);
 const money=n=>'NT$ '+fmt(n);
@@ -141,13 +158,50 @@ function drawBars(id,rows,key,label){
  x.fillStyle='#4a606d';x.font='12px Segoe UI';x.textAlign='left';x.fillText(label,5,h-2)
 }
 function normalizeCat(v){v=String(v||'').trim();if(v==='特殊雙面')return'特雙';return CAT8.includes(v)?v:'其他'}
+
+function getFilteredSales(){
+ const all=DATA.annual||[], start=overviewFilter.start||all[0]?.year||'', end=overviewFilter.end||all.at(-1)?.year||'';
+ const annual=all.filter(r=>(!start||r.year>=start)&&(!end||r.year<=end)).map(r=>({...r}));
+ const customer=overviewFilter.customer;
+ if(!customer)return {annual,categories:aggregateCategoriesForYears(start,end),customer:null,exact:true};
+ const cy=DATA.customer_year||{};
+ if(cy[customer]){
+   const rows=Object.entries(cy[customer]).filter(([y])=>(!start||y>=start)&&(!end||y<=end)).map(([year,v])=>({year,...v}));
+   const cats=Object.fromEntries(CAT8.map(c=>[c,{category:c,amount:0,R:0,M2:0,PCS:0,rows:0}]));
+   rows.forEach(r=>Object.entries(r.categories||{}).forEach(([c,v])=>{c=normalizeCat(c);['amount','R','M2','PCS','rows'].forEach(k=>cats[c][k]+=(Number(v[k])||0))}));
+   return {annual:rows,categories:CAT8.map(c=>cats[c]),customer,exact:true};
+ }
+ const c=(DATA.customers||[]).find(x=>x.customer===customer);
+ return {annual:c?[{year:start===end?start:'所選期間',amount:c.amount||0,R:c.R||0,M2:c.M2||0,PCS:c.PCS||0,rows:c.rows||0}]:[],categories:[],customer,exact:false};
+}
+function aggregateCategoriesForYears(start,end){
+ const yc=DATA.year_category||{},cats=Object.fromEntries(CAT8.map(c=>[c,{category:c,amount:0,R:0,M2:0,PCS:0,rows:0}]));
+ Object.entries(yc).filter(([y])=>(!start||y>=start)&&(!end||y<=end)).forEach(([y,m])=>Object.entries(m||{}).forEach(([c,v])=>{c=normalizeCat(c);['amount','R','M2','PCS','rows'].forEach(k=>cats[c][k]+=(Number(v[k])||0))}));
+ return CAT8.map(c=>cats[c]);
+}
+function populateOverviewFilters(){
+ const years=(DATA.annual||[]).map(x=>x.year), min=years[0]||'', max=years.at(-1)||'';
+ const sy=document.getElementById('filterStartYear'),ey=document.getElementById('filterEndYear'),cu=document.getElementById('filterCustomer');
+ if(!sy||!ey||!cu)return;
+ sy.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+ ey.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+ if(!overviewFilter.start)overviewFilter.start=min;if(!overviewFilter.end)overviewFilter.end=max;
+ sy.value=overviewFilter.start;ey.value=overviewFilter.end;
+ const current=overviewFilter.customer;
+ cu.innerHTML='<option value="">全部客戶</option>'+[...(DATA.customers||[])].sort((a,b)=>String(a.customer).localeCompare(String(b.customer),'zh-Hant')).map(c=>`<option value="${esc(c.customer)}">${esc(c.customer)}</option>`).join('');
+ cu.value=current;
+}
+
 function renderOverview(){
- const k=DATA.kpi||{},a=DATA.annual||[],latest=a[a.length-1]||{},sumR=a.reduce((s,r)=>s+(r.R||0),0),sumM2=a.reduce((s,r)=>s+(r.M2||0),0);
- const cards=[['歷史銷售總額',money(k.historical_sales_total||a.reduce((s,r)=>s+r.amount,0)),'全部年度累計'],[(latest.year||'最新')+' 銷售額',money(latest.amount),'截至資料日期'],['未交訂單金額',money(k.unshipped_amount),'未交資料彙整'],['生產不足量',fmt(k.gap_total),'APS 輔助風險'],['歷史產量 R',fmt(sumR),'交易數量依單位 R'],['歷史產量 M²',fmt(sumM2),'交易數量依單位 M²'],['排程訂單',fmt(k.schedule_orders),'製三排程'],['實際日期已回填',fmt(k.schedule_with_actual),'排程進度']];
+ const k=DATA.kpi||{},f=getFilteredSales(),a=f.annual||[],latest=a[a.length-1]||{},sumAmount=a.reduce((s,r)=>s+(r.amount||0),0),sumR=a.reduce((s,r)=>s+(r.R||0),0),sumM2=a.reduce((s,r)=>s+(r.M2||0),0);
+ const period=(overviewFilter.start||'')+(overviewFilter.end&&overviewFilter.end!==overviewFilter.start?'–'+overviewFilter.end:'');
+ const subject=overviewFilter.customer||'全部客戶';
+ const cards=[['篩選銷售總額',money(sumAmount),period+'｜'+subject],[(latest.year||'所選期間')+' 銷售額',money(latest.amount),'目前篩選結果'],['未交訂單金額',money(k.unshipped_amount),'未交資料彙整'],['生產不足量',fmt(k.gap_total),'APS 輔助風險'],['篩選產量 R',fmt(sumR),'交易數量依單位 R'],['篩選產量 M²',fmt(sumM2),'交易數量依單位 M²'],['排程訂單',fmt(k.schedule_orders),'製三排程'],['實際日期已回填',fmt(k.schedule_with_actual),'排程進度']];
  document.getElementById('overviewKpis').innerHTML=cards.map(x=>`<div class="kpi"><label>${x[0]}</label><b>${x[1]}</b><small>${x[2]}</small></div>`).join('');
  const gaps=DATA.top_gap_orders||[];document.getElementById('radar').innerHTML=[['高缺口',gaps.filter(x=>(x.gap||0)>5000).length],['逾期／近期',gaps.filter(x=>x.due).length],['排程未回填',Math.max(0,(k.schedule_orders||0)-(k.schedule_with_actual||0))],['受影響客戶',new Set(gaps.map(x=>x.customer).filter(Boolean)).size]].map(x=>`<div><span>${x[0]}</span><b>${fmt(x[1])}</b></div>`).join('');
  document.getElementById('gapRows').innerHTML=gaps.slice(0,30).map(r=>`<tr><td><span class="badge ${(r.gap||0)>10000?'high':'mid'}">${(r.gap||0)>10000?'高':'中'}</span></td><td>${esc(r.customer)}</td><td>${esc(r.order||r.command||'—')}</td><td class="num">${fmt(r.gap)}</td><td>${esc(r.due||'—')}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">尚無缺口資料</td></tr>';
- drawLine('overviewTrend',a,'amount','銷售金額');drawBars('overviewCat',[...(DATA.categories||[])].sort((x,y)=>y.amount-x.amount),'amount','金額');
+ document.getElementById('filterSummary').innerHTML=`${period||'全部年度'}｜${esc(subject)}${f.exact?'':'<br><span style="color:#99600c">客戶＋年度交叉篩選需重新載入歷史銷售檔</span>'}`;
+ drawLine('overviewTrend',a,'amount','銷售金額');drawBars('overviewCat',[...(f.categories||[])].sort((x,y)=>y.amount-x.amount),'amount','金額');
 }
 function selectedCats(){
  if(businessYear==='all')return DATA.categories||[];
@@ -188,11 +242,22 @@ function renderPageCharts(){if(document.getElementById('overview').classList.con
 function renderAll(){
  document.getElementById('sideDate').textContent=DATA.generated_at||'—';
  const ys=(DATA.annual||[]).map(x=>x.year);document.getElementById('yearSelect').innerHTML='<option value="all">全部年度</option>'+ys.slice().reverse().map(y=>`<option value="${y}">${y}</option>`).join('');
- renderOverview();renderBusiness();renderAPS();renderOrders();renderCustomers();renderSources()
+ populateOverviewFilters();renderOverview();renderBusiness();renderAPS();renderOrders();renderCustomers();renderSources()
 }
 document.querySelectorAll('#metricSeg button').forEach(b=>b.onclick=()=>{businessMetric=b.dataset.metric;document.querySelectorAll('#metricSeg button').forEach(x=>x.classList.toggle('active',x===b));renderBusiness()});
 document.getElementById('yearSelect').onchange=e=>{businessYear=e.target.value;renderBusiness()};
 document.getElementById('orderSearch').oninput=renderOrders;document.getElementById('riskFilter').onchange=renderOrders;document.getElementById('customerMetric').onchange=renderCustomers;
+
+document.getElementById('applyOverviewFilter').onclick=()=>{
+ const s=document.getElementById('filterStartYear').value,e=document.getElementById('filterEndYear').value;
+ overviewFilter={start:s,end:e,customer:document.getElementById('filterCustomer').value};
+ if(s&&e&&s>e){overviewFilter.start=e;overviewFilter.end=s;populateOverviewFilters()}
+ renderOverview()
+};
+document.getElementById('resetOverviewFilter').onclick=()=>{
+ const ys=(DATA.annual||[]).map(x=>x.year);overviewFilter={start:ys[0]||'',end:ys.at(-1)||'',customer:''};populateOverviewFilters();renderOverview()
+};
+
 document.getElementById('globalSearch').onkeydown=e=>{if(e.key==='Enter'){goPage('orders');document.getElementById('orderSearch').value=e.target.value;renderOrders()}};
 window.addEventListener('resize',()=>clearTimeout(window.__rz)||(window.__rz=setTimeout(()=>{window.__rz=null;renderPageCharts()},160)));
 
@@ -204,14 +269,15 @@ async function parseSales(wb){
  const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true}),head=arr[0].map(x=>String(x||'').trim());
  const ix=n=>head.indexOf(n),iy=ix('年'),iq=ix('交易數量'),iu=ix('單位'),ia=ix('銷售金額'),ic=ix('大分類'),icu=ix('客戶簡稱');
  if([iy,iq,iu,ia,ic].some(i=>i<0))throw Error('必要欄位不足：年／交易數量／單位／銷售金額／大分類');
- const years={},cats=Object.fromEntries(CAT8.map(c=>[c,{category:c,amount:0,R:0,M2:0,PCS:0,rows:0}])),yc={},customers={};
+ const years={},cats=Object.fromEntries(CAT8.map(c=>[c,{category:c,amount:0,R:0,M2:0,PCS:0,rows:0}])),yc={},customers={},customerYear={};
  const unit=v=>{v=String(v||'').trim().toUpperCase();return v==='㎡'||v==='M²'||v==='M2'?'M2':v==='R'?'R':v==='PCS'||v==='PC'?'PCS':''};
  for(let i=1;i<arr.length;i++){const r=arr[i],y=String(parseInt(r[iy]));if(!/^\d{4}$/.test(y))continue;const c=normalizeCat(r[ic]),q=val(r[iq]),u=unit(r[iu]),a=val(r[ia]),cu=String(r[icu]||'未填客戶').trim();
-  years[y]??={year:y,amount:0,R:0,M2:0,PCS:0,rows:0};yc[y]??={};yc[y][c]??={amount:0,R:0,M2:0,PCS:0};customers[cu]??={customer:cu,amount:0,R:0,M2:0,PCS:0,rows:0};
-  [years[y],cats[c],customers[cu]].forEach(o=>{o.amount+=a;o.rows++;if(u)o[u]+=q});yc[y][c].amount+=a;if(u)yc[y][c][u]+=q;
+  years[y]??={year:y,amount:0,R:0,M2:0,PCS:0,rows:0};yc[y]??={};yc[y][c]??={amount:0,R:0,M2:0,PCS:0,rows:0};customers[cu]??={customer:cu,amount:0,R:0,M2:0,PCS:0,rows:0};
+  customerYear[cu]??={};customerYear[cu][y]??={amount:0,R:0,M2:0,PCS:0,rows:0,categories:{}};customerYear[cu][y].categories[c]??={amount:0,R:0,M2:0,PCS:0,rows:0};
+  [years[y],cats[c],customers[cu],customerYear[cu][y],customerYear[cu][y].categories[c]].forEach(o=>{o.amount+=a;o.rows++;if(u)o[u]+=q});yc[y][c].amount+=a;yc[y][c].rows++;if(u)yc[y][c][u]+=q;
   if(i%10000===0){setProgress(`解析歷史銷售 ${fmt(i)} / ${fmt(arr.length-1)}`,15+70*i/arr.length);await new Promise(r=>setTimeout(r,0))}
  }
- DATA.annual=Object.values(years).sort((a,b)=>a.year.localeCompare(b.year));DATA.categories=CAT8.map(c=>cats[c]);DATA.year_category=yc;DATA.customers=Object.values(customers).sort((a,b)=>b.amount-a.amount).slice(0,300);
+ DATA.annual=Object.values(years).sort((a,b)=>a.year.localeCompare(b.year));DATA.categories=CAT8.map(c=>cats[c]);DATA.year_category=yc;DATA.customers=Object.values(customers).sort((a,b)=>b.amount-a.amount).slice(0,500);DATA.customer_year=customerYear;
  DATA.kpi=DATA.kpi||{};DATA.kpi.historical_sales_total=DATA.annual.reduce((s,r)=>s+r.amount,0);const latest=DATA.annual.at(-1);if(latest)DATA.kpi.sales_2026=latest.amount;return arr.length-1
 }
 async function parsePM31(wb){const ws=wb.Sheets['期間別未交訂單'];if(!ws)return 0;const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});let total=0,rows=0;for(const r of arr){for(const v of r){if(typeof v==='number'&&v>0){total+=0}}rows++}DATA.kpi=DATA.kpi||{};DATA.kpi.unshipped_rows=Math.max(0,rows-1);return rows-1}
@@ -227,7 +293,7 @@ async function processFile(file,forced){
  DATA.generated_at=new Date().toISOString().slice(0,10);STATUS[type]={file:file.name,updated:new Date().toLocaleString('zh-TW'),rows,status:'OK'};save();setProgress('完成：'+file.name,100);renderAll()
 }
 document.querySelectorAll('.drop').forEach(z=>{const input=z.querySelector('input'),type=z.dataset.type;z.onclick=()=>input.click();input.onchange=()=>input.files[0]&&processFile(input.files[0],type).catch(e=>{setProgress('失敗：'+e.message,100);alert(e.message)});z.ondragover=e=>{e.preventDefault();z.classList.add('drag')};z.ondragleave=()=>z.classList.remove('drag');z.ondrop=e=>{e.preventDefault();z.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)processFile(f,type).catch(x=>alert(x.message))}});
-document.getElementById('exportBackup').onclick=()=>{const blob=new Blob([JSON.stringify({version:'3.0',data:DATA,status:STATUS})],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Master_V3_Backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};
+document.getElementById('exportBackup').onclick=()=>{const blob=new Blob([JSON.stringify({version:'3.1',data:DATA,status:STATUS})],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Master_V3.1_Backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};
 document.getElementById('importBackupBtn').onclick=()=>document.getElementById('importBackup').click();
 document.getElementById('importBackup').onchange=async e=>{try{const o=JSON.parse(await e.target.files[0].text());DATA=o.data;STATUS=o.status||{};save();renderAll();alert('備份匯入完成')}catch(x){alert('備份格式錯誤：'+x.message)}};
 document.getElementById('clearMaster').onclick=()=>{if(confirm('只清除 Master V3 瀏覽器快取，不影響 ERP／APS。確定嗎？')){localStorage.removeItem(STORAGE);localStorage.removeItem(STATUS_KEY);location.reload()}};
