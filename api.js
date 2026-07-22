@@ -7,7 +7,7 @@
  * 3. today() 改成 yyyy-MM-dd，避免今日/一周篩選失效
  ****************************************************/
 
-const MES_API_URL = "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+const MES_API_URL = "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
 
 window.MES = {
   get,
