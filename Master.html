@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MES 資料彙整中心</title>
+<title>MES Master Center V1.5</title>
 <style>
 :root{--bg:#f4f6f8;--card:#fff;--ink:#263238;--muted:#68737d;--line:#dfe5e9;--accent:#245d73;--accent2:#3b829a;--warn:#b45f06;--danger:#a93226;--good:#287a4d}
 *{box-sizing:border-box} body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink)}
@@ -39,16 +39,56 @@ footer{color:var(--muted);font-size:12px;padding:18px 0} .progress{height:8px;ba
 @media(max-width:1000px){.import-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){main{padding:10px}.grid,.import-grid{grid-template-columns:1fr}h1{font-size:18px}.head{padding:12px}.status-row{grid-template-columns:1fr}.status-head{display:none}}
 
+
+/* V1.5 Master Center */
+.head-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mode-btn{border:1px solid #ffffff55;background:#ffffff12;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+.mode-btn:hover{background:#ffffff25}
+.quick-card{margin-bottom:12px}
+.quick-grid{display:grid;grid-template-columns:repeat(8,minmax(110px,1fr));gap:10px}
+.quick-link{display:flex;flex-direction:column;gap:5px;min-height:76px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#f9fbfc;text-decoration:none;color:var(--ink);transition:.18s}
+.quick-link:hover{transform:translateY(-2px);border-color:#8eabb7;box-shadow:0 5px 15px #0000000e}
+.quick-link b{font-size:14px}.quick-link small{font-size:11px;color:var(--muted)}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.executive-badge{display:none;padding:5px 10px;border-radius:999px;background:#d9edf3;color:#17485a;font-size:12px;font-weight:700}
+.risk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.risk-item{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fafcfd}
+.risk-item .v{font-size:23px;font-weight:800;margin-top:5px}
+body.executive .tabs,body.executive #import,body.executive #sources,body.executive .quick-card{display:none!important}
+body.executive #orders,body.executive #schedule{display:none!important}
+body.executive #overview{display:block!important}
+body.executive .executive-badge{display:inline-block}
+body.executive header{position:relative}
+body.executive main{max-width:1700px}
+body.executive .card{box-shadow:none}
+body.executive footer{display:none}
+@media(max-width:1200px){.quick-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:700px){.quick-grid,.risk-grid{grid-template-columns:repeat(2,1fr)}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <header><div class="head">
-<div><h1>MES 資料彙整中心</h1><div class="sub">銷售 × 未交訂單 × 生產缺口 × 排程進度｜資料快照：<span id="snapshotDate">2026-07-22</span></div><div class="role-tags">CHAIRMAN · GM · PM · DPM</div></div>
-<nav>
+<div><h1>MES Master Center</h1><div class="sub">銷售 × 未交訂單 × 生產缺口 × 排程進度｜資料快照：<span id="snapshotDate">2026-07-22</span></div><div class="role-tags">CHAIRMAN · GM · PM · DPM</div></div>
+<div class="head-tools"><nav>
 <a href="index.html">Key In</a><a href="Target.html">幹部目標</a><a href="dashboard.html">戰情室</a><a href="aps.html">APS 排程</a>
-</nav></div></header>
+</nav><button class="mode-btn" id="executiveModeBtn">主管檢視</button></div></div></header>
 <main>
+
+<div class="card quick-card">
+<div class="section-title"><h2 style="margin:0">系統捷徑</h2><span class="executive-badge">EXECUTIVE MODE｜CHAIRMAN · GM · PM · DPM</span></div>
+<div class="quick-grid" style="margin-top:12px">
+<a class="quick-link" href="dashboard.html"><b>戰情室</b><small>產出、達成率、異常</small></a>
+<a class="quick-link" href="aps.html"><b>APS 排程</b><small>機台、工單、甘特圖</small></a>
+<a class="quick-link" href="Target.html"><b>幹部目標</b><small>目標與人員安排</small></a>
+<a class="quick-link" href="index.html"><b>Key In</b><small>現場產出回報</small></a>
+<a class="quick-link" href="month.html"><b>月報</b><small>月度績效與趨勢</small></a>
+<a class="quick-link" href="week.html"><b>週報</b><small>週別生產彙整</small></a>
+<a class="quick-link" href="emergency.html"><b>急件管理</b><small>插單與已讀狀態</small></a>
+<a class="quick-link" href="#" data-open-tab="import"><b>Master 載入</b><small>四份獨立資料</small></a>
+</div></div>
+
 <div class="tabs">
 <button class="tab active" data-tab="overview">總覽</button>
 <button class="tab" data-tab="orders">未交與缺口</button>
@@ -68,6 +108,15 @@ footer{color:var(--muted);font-size:12px;padding:18px 0} .progress{height:8px;ba
 <div class="card"><h3>生產不足量類別</h3><div id="gapChart" class="chart"></div></div>
 <div class="card"><h3>排程實際回填率</h3><div id="scheduleRate"></div></div>
 </div>
+
+<div class="two">
+<div class="card"><h2>客戶銷售排行</h2><div id="customerChart" class="chart"></div></div>
+<div class="card">
+<div class="section-title"><h2 style="margin:0">交期風險摘要</h2><span class="executive-badge">主管摘要</span></div>
+<div class="risk-grid" id="riskSummary"></div>
+</div>
+</div>
+
 </section>
 
 <section id="orders" class="panel">
@@ -137,6 +186,42 @@ const fmt=n=>new Intl.NumberFormat('zh-TW').format(Math.round(Number(n)||0));
 const money=n=>'NT$ '+fmt(n);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
+document.querySelectorAll('[data-open-tab]').forEach(a=>a.onclick=e=>{
+ e.preventDefault();
+ const target=a.dataset.openTab;
+ const tab=document.querySelector(`.tab[data-tab="${target}"]`);
+ if(tab) tab.click();
+ window.scrollTo({top:0,behavior:'smooth'});
+});
+const executiveBtn=document.getElementById('executiveModeBtn');
+function setExecutiveMode(on){
+ document.body.classList.toggle('executive',on);
+ executiveBtn.textContent=on?'返回完整模式':'主管檢視';
+ localStorage.setItem('MASTER_EXECUTIVE_MODE',on?'1':'0');
+}
+executiveBtn.onclick=()=>setExecutiveMode(!document.body.classList.contains('executive'));
+setExecutiveMode(localStorage.getItem('MASTER_EXECUTIVE_MODE')==='1');
+
+function parseDue(s){
+ const m=String(s||'').match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+ return m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):null;
+}
+function renderRisk(){
+ const rows=DATA.top_gap_orders||[], now=new Date(); now.setHours(0,0,0,0);
+ const in7=new Date(now);in7.setDate(in7.getDate()+7);
+ const overdue=rows.filter(r=>{const d=parseDue(r.due);return d&&d<now&&Number(r.gap)>0});
+ const due7=rows.filter(r=>{const d=parseDue(r.due);return d&&d>=now&&d<=in7&&Number(r.gap)>0});
+ const zeroOutput=rows.filter(r=>Number(r.gap)>0&&Number(r.output||0)===0);
+ const customers=new Set(rows.filter(r=>Number(r.gap)>0).map(r=>r.customer).filter(Boolean));
+ const items=[
+  ['已逾期缺口',overdue.length,'依目前載入資料'],
+  ['7天內到期',due7.length,'需優先確認排程'],
+  ['尚無產出',zeroOutput.length,'缺口大於0且產出為0'],
+  ['受影響客戶',customers.size,'缺口訂單客戶數']
+ ];
+ document.getElementById('riskSummary').innerHTML=items.map((x,i)=>`<div class="risk-item"><div class="label">${x[0]}</div><div class="v ${i<2?'danger':''}">${fmt(x[1])}</div><div class="note">${x[2]}</div></div>`).join('');
+}
+
 const K=DATA.kpi;
 const kpis=[
 ['歷史銷售總額',money(K.historical_sales_total),'2012–2026 累計'],
@@ -161,6 +246,9 @@ lineChart(document.getElementById('salesChart'),DATA.annual_sales,'year','amount
 barChart(document.getElementById('categoryChart'),DATA.sales_by_category,'category','amount');
 barChart(document.getElementById('unshipChart'),DATA.unshipped_by_category,'category','amount');
 barChart(document.getElementById('gapChart'),DATA.gap_by_category,'category','gap');
+barChart(document.getElementById('customerChart'),(DATA.top_customers||[]).map(x=>({customer:x.customer,amount:x.amount})),'customer','amount');
+renderRisk();
+
 const rate=K.schedule_with_actual/K.schedule_orders*100;
 document.getElementById('scheduleRate').innerHTML=`<div style="font-size:34px;font-weight:800;margin:36px 0 15px">${rate.toFixed(1)}%</div><div class="progress"><i style="width:${rate}%"></i></div><p class="note">${fmt(K.schedule_with_actual)} / ${fmt(K.schedule_orders)} 筆已有實際日期</p>`;
 
@@ -265,6 +353,7 @@ async function processFile(file,forcedType=''){
  if(forcedType&&type!==forcedType)throw new Error(`此區需要「${typeLabel[forcedType]}」，目前檔案判定為「${typeLabel[type]}」`);
  let count=0;if(type==='sales')count=await parseSales(wb);if(type==='pm31')count=await parsePM31(wb);if(type==='orders')count=await parseOrders(wb);if(type==='schedule')count=await parseSchedule(wb);
  DATA.generated_at=new Date().toISOString().slice(0,10);localStorage.setItem('MES_DATA_CENTER_V1',JSON.stringify(DATA));
+ try{barChart(document.getElementById('customerChart'),(DATA.top_customers||[]).map(x=>({customer:x.customer,amount:x.amount})),'customer','amount');renderRisk();}catch(_e){}
  importStatus[type]={file:file.name,updated:new Date().toLocaleString('zh-TW'),rows:count,status:'OK'};localStorage.setItem(MASTER_STATUS_KEY,JSON.stringify(importStatus));renderImportStatus();finishProgress(`${typeLabel[type]} 更新完成，共 ${fmt(count)} 筆`);return type;
 }
 function renderImportStatus(){
