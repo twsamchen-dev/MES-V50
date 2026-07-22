@@ -3856,4 +3856,80 @@ body.v12-shell,body.v11-redesigned{padding-left:var(--wb-side)!important;backgro
 })();
 </script>
 
+
+<style id="v122-name-home-style">
+/* === V12.2 名稱統一與首頁結構修正 === */
+.v122RoleBox{display:flex;align-items:center;gap:7px;height:34px;padding:0 9px;border:1px solid #d3dee7;background:#fff;border-radius:7px;color:#526d82;font-size:12px;font-weight:700}
+.v122RoleBox select{width:auto!important;min-width:96px;padding:4px 24px 4px 7px!important;border:0!important;background:#fff!important;box-shadow:none!important;color:#243b53!important;font-weight:800}
+body[data-page="home"] #roleSwitchMount{display:none!important}
+body[data-page="home"] #contentPanel{margin-top:8px!important}
+body[data-page="home"] #contentTitle{font-size:16px!important;padding:11px 14px!important;color:#334e68!important}
+body[data-page="home"] #contentTitle::after{content:""!important}
+.v121PageTitle h2{font-size:24px!important}
+.v121PageTitle p{font-size:13px!important}
+.footer{font-size:11px!important}
+@media(max-width:760px){.v122RoleBox{display:none!important}}
+</style>
+<script id="v122-name-home-script">
+(function(){
+  const NAME_MAP={
+    dashboard:'營運總覽',production:'生產中心',orders:'訂單中心',analytics:'分析中心',data:'資料中心',system:'系統管理'
+  };
+  const PAGE_MAP={
+    home:['營運總覽','今日生產、交期、急件與異常集中管理'],
+    route:['APS 排程中心','查看訂單製程、排程進度與交期風險'],
+    processmaster:['Process Master','產品製程、可用機台與 APS 基礎資料'],
+    postprocess:['後製程中心','後製程加工與未完成量追蹤'],
+    process:['產能負荷中心','掌握各製程產能、塞車與交期風險'],
+    customer:['客戶進度中心','依客戶檢視訂單、交期與完成狀態'],
+    check:['異常中心','集中處理缺漏、待確認與資料異常'],
+    eightcat:['銷售分析','八大類已出與未出金額'],
+    salesyoy:['同期分析','年度、季度與月份銷售比較'],
+    pareto:['客戶貢獻分析','客戶貢獻與 Pareto 分析']
+  };
+  function setPage(view){
+    const m=PAGE_MAP[view]||PAGE_MAP.home;
+    const t=document.getElementById('v121PageTitle'),s=document.getElementById('v121PageSub');
+    if(t)t.textContent=m[0]; if(s)s.textContent=m[1];
+    const ct=document.getElementById('contentTitle');
+    if(view==='home'&&ct)ct.textContent='即時營運資訊';
+  }
+  function addRoleSelector(){
+    const actions=document.querySelector('.v12TopActions');
+    if(!actions||document.getElementById('v122RoleSelect'))return;
+    const box=document.createElement('label'); box.className='v122RoleBox';
+    box.innerHTML='<span>檢視角色</span><select id="v122RoleSelect"></select>';
+    const sel=box.querySelector('select');
+    const roles=(window.ROLE_LIST&&Array.isArray(window.ROLE_LIST))?window.ROLE_LIST:['董事長','廠長','生管','前製程','後製程','採購資材','儲運出貨','業務主管'];
+    sel.innerHTML=roles.map(r=>'<option value="'+r+'">'+r+'</option>').join('');
+    sel.value=window.activeRole||'董事長';
+    sel.addEventListener('change',()=>{if(typeof window.setRole==='function')window.setRole(sel.value);setTimeout(()=>setPage(document.body.dataset.page||'home'),0)});
+    actions.insertBefore(box,actions.firstChild);
+  }
+  function applyNames(){
+    document.title='SEALKING MES Enterprise｜營運總覽 V12.2';
+    const brand=document.querySelector('.v12BrandTitle'); if(brand)brand.innerHTML='SEALKING MES Enterprise <span>V12.2</span>';
+    document.querySelectorAll('.v12RailBtn[data-group]').forEach(b=>{const s=b.querySelector('small');if(s&&NAME_MAP[b.dataset.group])s.textContent=NAME_MAP[b.dataset.group]});
+    const foot=document.querySelector('.footer');if(foot)foot.textContent='SEALKING MES Enterprise V12.2｜資料於瀏覽器本機處理，不會自動上傳。';
+    if(window.V12_MENUS){
+      V12_MENUS.production.title='生產中心';
+      V12_MENUS.orders.title='訂單中心';
+      V12_MENUS.analytics.title='分析中心';
+      V12_MENUS.data.title='資料中心';
+      V12_MENUS.system.title='系統管理';
+    }
+    setPage(document.body.dataset.page||'home'); addRoleSelector();
+  }
+  const oldNav=window.navView;
+  if(typeof oldNav==='function')window.navView=function(view,btn){const r=oldNav.apply(this,arguments);setTimeout(()=>setPage(view),0);return r};
+  const oldRole=window.setRole;
+  if(typeof oldRole==='function')window.setRole=function(role){const r=oldRole.apply(this,arguments);const sel=document.getElementById('v122RoleSelect');if(sel)sel.value=role;setTimeout(()=>setPage(document.body.dataset.page||'home'),0);return r};
+  function ready(){applyNames();setTimeout(applyNames,100);setTimeout(()=>setPage('home'),250)}
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ready):ready();
+  window.addEventListener('load',()=>{applyNames();setPage(document.body.dataset.page||'home')});
+  const mo=new MutationObserver(()=>{const ct=document.getElementById('contentTitle');if(document.body.dataset.page==='home'&&ct&&/經營戰情室|首頁/.test(ct.textContent))ct.textContent='即時營運資訊'});
+  document.addEventListener('DOMContentLoaded',()=>{const ct=document.getElementById('contentTitle');if(ct)mo.observe(ct,{childList:true,subtree:true,characterData:true})});
+})();
+</script>
+
 </body></html>
