@@ -3814,4 +3814,46 @@ function v12GoDashboard(btn){v12ActivateRail(btn||document.querySelector('[data-
 function v12RunGlobalSearch(){const q=(document.getElementById('v12Search')?.value||'').trim();if(!q)return;const target=document.getElementById('searchInput');if(target){target.value=q;navView('route',null);render();setTimeout(()=>target.focus(),50)}}
 (function(){const tick=()=>{const d=new Date();const c=document.getElementById('v12Clock');if(c)c.textContent=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});const hd=document.getElementById('v12HeroDate');if(hd)hd.textContent=d.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'})};tick();setInterval(tick,30000);document.addEventListener('click',e=>{const p=document.getElementById('v12ModulePanel');if(p?.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('.v12RailBtn'))v12CloseGroup()})})();
 </script>
+
+<style id="v121-workbench-style">
+/* === V12.1 MES 工作台：實務操作版（最終覆蓋） === */
+:root{--wb-side:216px;--wb-navy:#102a43;--wb-navy2:#0b2239;--wb-blue:#1769aa;--wb-bg:#eef2f6;--wb-line:#d7e0e8;--wb-text:#243b53;--wb-muted:#6b7c8f}
+body.v12-shell,body.v11-redesigned{padding-left:var(--wb-side)!important;background:var(--wb-bg)!important}
+.mesSidebar.v12Rail{width:var(--wb-side)!important;padding:14px 12px 18px!important;align-items:stretch!important;background:linear-gradient(180deg,var(--wb-navy),var(--wb-navy2))!important;box-shadow:4px 0 16px rgba(16,42,67,.14)!important}
+.v12Mark{width:100%!important;height:52px!important;margin:0 0 14px!important;border:0!important;border-radius:8px!important;background:rgba(255,255,255,.06)!important;text-align:left!important;padding:0 14px!important;font-size:0!important}
+.v12Mark::before{content:"SEALKING MES";font-size:18px;font-weight:900;letter-spacing:.5px;color:#fff}.v12Mark::after{content:"  生產管理系統";font-size:10px;color:#9fb3c8;margin-left:7px}
+.v12RailNav{gap:4px!important}.v12RailBtn{min-height:45px!important;width:100%!important;flex-direction:row!important;justify-content:flex-start!important;gap:12px!important;border-radius:7px!important;padding:0 12px!important;color:#c5d2df!important}
+.v12RailBtn span{font-size:17px!important;width:22px;text-align:center}.v12RailBtn small{font-size:14px!important;font-weight:700!important}.v12RailBtn:hover,.v12RailBtn.active{background:#1769aa!important;color:#fff!important;box-shadow:none!important}.v12RailBtn.active{box-shadow:inset 3px 0 0 #6dd5ed!important}.v12Bottom{margin-top:auto!important}
+.v12ModulePanel{left:var(--wb-side)!important;width:258px!important;box-shadow:8px 0 24px rgba(16,42,67,.14)!important}.v12ModuleHead{height:64px!important;padding:12px 16px!important}.v12ModuleHead small,.v12ModuleItems button small{display:none!important}.v12ModuleHead strong{font-size:18px!important;margin:0!important}.v12ModuleItems{padding:10px!important}.v12ModuleItems button{padding:11px 12px!important;border-radius:7px!important;font-size:14px!important}
+.mesApp{margin-left:0!important;background:var(--wb-bg)!important}.mesHeader.v12Topbar{height:64px!important;min-height:64px!important;padding:0 20px!important;grid-template-columns:260px minmax(300px,560px) 1fr!important;gap:16px!important;box-shadow:none!important;border-bottom:1px solid var(--wb-line)!important}.v12BrandEyebrow{display:none!important}.v12BrandTitle{font-size:20px!important;color:var(--wb-text)!important}.v12BrandTitle span{font-size:10px!important;background:#526d82!important}.v12GlobalSearch{height:38px!important;border-radius:7px!important;background:#f7f9fb!important}.v12TopActions{gap:6px!important}.v12IconBtn{height:34px!important;border-radius:7px!important;padding:0 11px!important;font-size:12px!important}.v12Live{font-size:12px!important}
+.wrap{padding:16px 20px 28px!important}.v12Hero{display:none!important}.v121WorkbenchBar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}.v121PageTitle h2{margin:0;color:#102a43;font-size:22px}.v121PageTitle p{margin:3px 0 0;color:#7b8794;font-size:12px}.v121Quick{display:flex;gap:7px;flex-wrap:wrap}.v121Quick button{height:34px;border:1px solid #cbd5df;background:#fff;color:#334e68;border-radius:7px;padding:0 12px;font-weight:700;cursor:pointer;font-family:inherit}.v121Quick button:hover{border-color:#1769aa;color:#1769aa;background:#f4f8fb}.v121Quick button.primary{background:#1769aa;border-color:#1769aa;color:#fff}
+.notice{padding:9px 12px!important;margin:0 0 12px!important;border-radius:8px!important;font-size:12px!important}.grid{grid-template-columns:repeat(5,minmax(150px,1fr))!important;gap:10px!important;margin:0 0 12px!important}.card{border-radius:9px!important;padding:13px 14px!important;box-shadow:none!important}.card::before{width:3px!important}.k{font-size:12px!important}.v{font-size:24px!important}.small{font-size:10px!important}.filters{padding:9px!important;border-radius:9px!important;margin:10px 0!important;gap:8px!important}.filters select,.filters input{padding:8px 9px!important}.legacyTabs{margin:0 0 10px!important;border-radius:8px!important;padding:4px!important}.legacyTabs .tab{padding:7px 10px!important;font-size:12px!important;border-radius:6px!important}.mesSectionGrid{gap:10px!important}.mesPanel{border-radius:9px!important}.mesPanelTitle{font-size:14px!important;padding:12px 14px!important}#contentPanel{border-radius:9px!important}#contentTitle{font-size:18px!important}body[data-page="home"] #contentTitle::after{content:""!important}.footer{font-size:11px!important}
+.v11DataOverlay{display:none!important}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)!important}.mesHeader.v12Topbar{grid-template-columns:1fr auto!important}.v12GlobalSearch{grid-column:1/-1}.v121WorkbenchBar{align-items:flex-start;flex-direction:column}}
+@media(max-width:760px){body.v12-shell,body.v11-redesigned{padding-left:0!important}.mesSidebar.v12Rail{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;height:60px!important;flex-direction:row!important;padding:5px 7px!important}.v12Mark{display:none!important}.v12RailNav{flex-direction:row!important;justify-content:space-around!important}.v12RailBtn{min-height:48px!important;justify-content:center!important;flex-direction:column!important;gap:2px!important;padding:0 5px!important}.v12RailBtn span{font-size:16px!important}.v12RailBtn small{font-size:10px!important}.v12Bottom{margin:0!important}.v12ModulePanel{left:0!important;bottom:60px!important}.wrap{padding:12px 10px 74px!important}.v121Quick{width:100%}.v121Quick button{flex:1}.grid{grid-template-columns:1fr 1fr!important}}
+</style>
+<script id="v121-workbench-script">
+(function(){
+ function ready(fn){document.readyState==='loading'?document.addEventListener('DOMContentLoaded',fn):fn()}
+ ready(function(){
+   document.title='SEALKING MES｜MES 工作台 V12.1';
+   const brand=document.querySelector('.v12BrandTitle'); if(brand) brand.innerHTML='MES 工作台 <span>V12.1</span>';
+   const wrap=document.querySelector('.wrap');
+   if(wrap && !document.getElementById('v121WorkbenchBar')){
+     const bar=document.createElement('section');bar.id='v121WorkbenchBar';bar.className='v121WorkbenchBar';
+     bar.innerHTML='<div class="v121PageTitle"><h2 id="v121PageTitle">MES 工作台</h2><p id="v121PageSub">訂單、產能、交期與異常集中管理</p></div><div class="v121Quick"><button class="primary" onclick="navView(\'route\',null)">生產排程</button><button onclick="navView(\'check\',null)">異常檢核</button><button onclick="navView(\'processmaster\',null)">Process Master</button><button onclick="openDataCenter()">資料中心</button></div>';
+     wrap.insertBefore(bar,wrap.firstChild);
+   }
+   const contentTitle=document.getElementById('contentTitle');if(contentTitle&&/訂單製程總覽|前製程首頁/.test(contentTitle.textContent))contentTitle.textContent='營運總覽';
+   const labels={dashboard:'工作台',production:'生產管理',orders:'訂單管理',analytics:'分析報表',data:'資料中心',system:'系統設定'};
+   document.querySelectorAll('.v12RailBtn[data-group]').forEach(b=>{const s=b.querySelector('small');if(s&&labels[b.dataset.group])s.textContent=labels[b.dataset.group]});
+   const hero=document.getElementById('v12Hero');if(hero)hero.setAttribute('aria-hidden','true');
+ });
+ const oldNav=window.navView;
+ if(typeof oldNav==='function'){
+   window.navView=function(view,btn){const r=oldNav.apply(this,arguments);const map={home:['MES 工作台','訂單、產能、交期與異常集中管理'],route:['生產排程','查看訂單製程與排程進度'],processmaster:['Process Master','產品製程、分類與 APS 基礎資料'],postprocess:['後製程管理','後製程加工與未完成量追蹤'],process:['製程負荷','掌握各製程產能與風險'],customer:['客戶訂單進度','依客戶檢視交期與完成狀態'],check:['異常檢核','集中處理缺漏與資料異常'],eightcat:['銷售分析','八大類已出與未出金額'],salesyoy:['同期比較','年度與月份銷售比較'],pareto:['客戶分析','客戶貢獻與 Pareto 分析']};const m=map[view]||[view,''];const t=document.getElementById('v121PageTitle'),s=document.getElementById('v121PageSub');if(t)t.textContent=m[0];if(s)s.textContent=m[1];return r}
+ }
+})();
+</script>
+
 </body></html>
