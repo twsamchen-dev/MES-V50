@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V99 MES Target｜Ultra Match Stable｜Build 0107</title>
+<title>V99 MES Target｜Ultra Match Stable｜Build 0107.1</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.listitem.active{background:#dbeafe;outline:2px solid #2563eb;outline-offset:-2px}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}.targetListHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}.targetListHead h2{margin:0}.targetRangeBtns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.targetRangeBtn{border:1px solid #bfdbfe;background:#eef4ff;color:#1e3a8a;border-radius:10px;padding:8px 13px;font-weight:900;cursor:pointer}.targetRangeBtn:hover{background:#dbeafe}.targetRangeBtn.active{background:#2563eb;border-color:#2563eb;color:#fff}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
@@ -22,12 +22,12 @@
 .requiredMark{color:#dc2626;font-weight:900}.fieldInvalid{border:2px solid #dc2626!important;background:#fff7f7!important}.targetUnitBox{border:1px solid #bfdbfe;background:#f8fbff;border-radius:12px;padding:10px}.targetUnitBox label{margin-top:0}.targetQtyHidden{display:none!important}.saveGuardHint{display:block;margin:8px 2px 0;color:#b91c1c;font-weight:800;font-size:13px}
 .targetFilters{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:8px;margin:12px 0 9px;padding:11px;background:#f8fafc;border:1px solid var(--line);border-radius:12px}.targetFilters input,.targetFilters select{min-height:38px;padding:7px 9px;font-size:13px}.filterActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}.filterCheck{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#991b1b}.filterCheck input{width:auto;min-height:0}.filterCount{font-weight:900;color:#1d4ed8}.clearFilterBtn{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 11px;font-weight:900;cursor:pointer}@media(max-width:1200px){.targetFilters{grid-template-columns:repeat(4,1fr)}}@media(max-width:700px){.targetFilters{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.targetFilters{grid-template-columns:1fr}}
 
-/* Build 0107：按需載入＋搜尋去重＋鍵盤選取 */
+/* Build 0107.1：班別獨立配對＋等待班別回報＋全天完成率 */
 .saveResultOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:12000;align-items:center;justify-content:center;padding:18px}.saveResultOverlay.show{display:flex}.saveResultPanel{width:min(520px,94vw);background:#fff;border-radius:22px;padding:28px 24px;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.38);border:4px solid #22c55e}.saveResultIcon{font-size:58px;line-height:1}.saveResultTitle{font-size:27px;font-weight:900;color:#15803d;margin-top:8px}.saveResultText{font-size:16px;color:#334155;line-height:1.7;margin-top:10px}.saveResultBar{height:10px;background:#dcfce7;border-radius:99px;overflow:hidden;margin-top:18px}.saveResultBar>div{height:100%;width:100%;background:#22c55e;animation:saveResultCountdown 1.8s linear forwards}.saveResultClose{margin-top:18px;border:0;border-radius:12px;background:#16a34a;color:#fff;padding:11px 22px;font-weight:900;font-size:16px;cursor:pointer}@keyframes saveResultCountdown{from{width:100%}to{width:0}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0107</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0107.1</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -880,27 +880,108 @@ function indexedActualForTarget_(t){
 }
 function derivedTargetM2_(r){const direct=num(r&&r.target_m2);if(direct>0)return direct;const roll=num(r&&(r.target_roll||r.target_qty));const len=num(r&&(r.pivot_len||r.length||r['樞紐長']||r['長']));const width=num(r&&(r.pivot_width||r.width||r['樞紐寬']||r['寬']));return roll>0&&len>0&&width>0?roll*len*width/1000:0}
 function varianceInfo_(target,actual){if(!(target>0)||!(actual>=0))return {qty:0,text:'—',kind:'wait'};const diff=actual-target;if(diff>0)return {qty:diff,text:'▲ 超產 '+Number(diff.toFixed(3)).toLocaleString()+' R',kind:'over'};if(diff<0)return {qty:diff,text:'尚差 '+Number(Math.abs(diff).toFixed(3)).toLocaleString()+' R',kind:'gap'};return {qty:0,text:'達成目標',kind:'over'}}
+function fullDayGroupKey_(r){
+  return [
+    dateKey(r.report_date),
+    primaryWorkOrder_(r),
+    machineKey_(r),
+    processKey_(r)
+  ].join('|');
+}
+function waitingShiftText_(r){
+  const shift=shiftKey_(r);
+  if(shift==='早班')return '等待早班回報';
+  if(shift==='夜班')return '等待夜班回報';
+  if(shift==='中班')return '等待中班回報';
+  return '等待 Key In 回報';
+}
 function buildClientMatches(){
   const duplicateSeen=new Set();
-  MATCH_ROWS=TARGETS.map(t=>{
+
+  const mapped=TARGETS.map(t=>{
     const target=num(t.target_roll||t.target_qty);
     const hit=indexedActualForTarget_(t);
     let actual=hit.qty;
-    const dupKey=[dateKey(t.report_date),shiftKey_(t),primaryWorkOrder_(t),machineKey_(t),processKey_(t)].join('|');
+
+    // 同日期、同班別、同工單、同機台、同製程才視為同一目標。
+    // 早班與夜班分別計算，不會互相判定重複。
+    const dupKey=[
+      dateKey(t.report_date),
+      shiftKey_(t),
+      primaryWorkOrder_(t),
+      machineKey_(t),
+      processKey_(t)
+    ].join('|');
+
     const duplicate=actual>0&&duplicateSeen.has(dupKey);
-    if(actual>0)duplicateSeen.add(dupKey);
+    if(actual>0&&!duplicate)duplicateSeen.add(dupKey);
     if(duplicate)actual=0;
+
     const pct=target>0&&actual>0?Math.min(999,Math.round(actual/target*1000)/10):'';
     const variance=varianceInfo_(target,actual);
     let workStatus='未作業';
-    if(actual>0&&target>0)workStatus=actual>=target?(actual>target?'已完成（超產）':'已完成'):'作業中';
-    else if(actual>0)workStatus='作業中';
-    let matchText='尚未找到跨日 Key In 實績';
-    if(duplicate)matchText='同日同班別同工單同機台目標已採用實績｜本筆不重複計算';
-    else if(actual>0)matchText='已配對跨日 Key In｜累積 '+hit.count+' 筆｜R 單位';
-    return Object.assign({},t,{keyin_qty:actual>0?actual:'',keyin_unit:'R',data_source:actual>0?'Key In':'',actual_source:actual>0?'Key In':'',erp_taken_over:false,file_match_status:matchText,work_status:workStatus,completion_rate:pct,completion_pct:pct,variance_qty:variance.qty,variance_text:actual>0?variance.text:'',variance_kind:actual>0?variance.kind:'wait'});
+    let matchText=waitingShiftText_(t);
+
+    if(duplicate){
+      // 仍阻止同班別重複目標重複採計實績，但不再顯示「本筆不重複計算」。
+      workStatus='同班別重複目標';
+      matchText='同班別重複目標｜實績已歸入主要目標';
+    }else if(actual>0){
+      workStatus=target>0
+        ? (actual>=target?(actual>target?'已完成（超產）':'已完成'):'作業中')
+        : '作業中';
+      matchText='已配對'+(shiftKey_(t)||'班別')+' Key In｜累積 '+hit.count+' 筆｜R 單位';
+    }
+
+    return Object.assign({},t,{
+      keyin_qty:actual>0?actual:'',
+      keyin_unit:'R',
+      data_source:actual>0?'Key In':'',
+      actual_source:actual>0?'Key In':'',
+      erp_taken_over:false,
+      file_match_status:matchText,
+      work_status:workStatus,
+      completion_rate:pct,
+      completion_pct:pct,
+      variance_qty:variance.qty,
+      variance_text:actual>0?variance.text:'',
+      variance_kind:actual>0?variance.kind:'wait',
+      duplicate_target:duplicate
+    });
   });
-  renderTargets();updateKpi();
+
+  // 依「日期＋工單＋機台＋製程」彙總早班與夜班，計算全天完成率。
+  // 同班別重複目標不重複加入全天目標與全天實績。
+  const fullDayGroups=new Map();
+  mapped.forEach(r=>{
+    const key=fullDayGroupKey_(r);
+    if(!fullDayGroups.has(key)){
+      fullDayGroups.set(key,{target:0,actual:0,rows:0});
+    }
+    const g=fullDayGroups.get(key);
+    if(!r.duplicate_target){
+      g.target+=num(r.target_roll||r.target_qty);
+      g.actual+=num(r.keyin_qty);
+      g.rows++;
+    }
+  });
+
+  MATCH_ROWS=mapped.map(r=>{
+    const g=fullDayGroups.get(fullDayGroupKey_(r))||{target:0,actual:0,rows:0};
+    const dayPct=g.target>0?Math.min(999,Math.round(g.actual/g.target*1000)/10):'';
+    const dayText=g.target>0
+      ? Number(g.actual.toFixed(3)).toLocaleString()+' / '+Number(g.target.toFixed(3)).toLocaleString()+' R｜'+dayPct+'%'
+      : '—';
+    return Object.assign({},r,{
+      full_day_target_roll:Number(g.target.toFixed(3)),
+      full_day_actual_roll:Number(g.actual.toFixed(3)),
+      full_day_completion_rate:dayPct,
+      full_day_completion_text:dayText
+    });
+  });
+
+  renderTargets();
+  updateKpi();
 }
 async function loadMatchList(force=false){
   if(__loadingMatch&&!force)return;
@@ -921,7 +1002,7 @@ async function recalculateMatches(force=true){
   if(force){KEYIN_ROWS=[];KEYIN_INDEX=null;KEYIN_INDEX_READY=false;KEYIN_CACHE_AT=0;MATCH_ROWS=[]}
   try{await loadMatchList(force)}finally{if(btn){btn.disabled=false;btn.textContent='重新計算配對'}}
 }
-function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已更新'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('資料不完整')||v.includes('資料待確認')||v.includes('等待 ERP 更新'))return 'status-run';return 'status-wait'}
+function statusClass(v){v=String(v||'');if(v.includes('完成')||v.includes('เสร็จ')||v.includes('已配對')||v.includes('ERP 已更新'))return 'status-ok';if(v.includes('作業中')||v.includes('กำลัง')||v.includes('等待早班')||v.includes('等待夜班')||v.includes('等待中班')||v.includes('等待 Key In')||v.includes('資料不完整')||v.includes('資料待確認')||v.includes('等待 ERP 更新'))return 'status-run';return 'status-wait'}
 function renderTargetsFallback(){MATCH_ROWS=TARGETS.map(r=>Object.assign({},r,{keyin_qty:'',file_match_status:'等待載入跨日 Key In 實績',work_status:r.status||'未作業',completion_rate:''}));renderTargets()}
 function targetFilterValue_(id){const el=$(id);return el?String(el.value||'').trim():''}
 function syncTargetFilterOptions_(rows){
@@ -945,7 +1026,7 @@ function filteredTargetRows_(rows){
     if(machine&&String(r.machine_code||'')!==machine)return false;
     const ms=String(r.file_match_status||''),src=String(r.actual_source||r.data_source||'').toUpperCase();
     const paired=src==='ERP'||src==='KEY IN'||ms.includes('ERP 已更新')||ms.includes('已配對');
-    const duplicate=ms.includes('不重複計算')||ms.includes('另一筆目標採用');
+    const duplicate=!!r.duplicate_target||ms.includes('同班別重複目標');
     if(match==='paired'&&!paired)return false;if(match==='unmatched'&&(paired||duplicate))return false;if(match==='duplicate'&&!duplicate)return false;
     const ws=String(r.work_status||r.status||''),pct=num(r.completion_rate);
     if(work==='not_started'&&!ws.includes('未作業'))return false;if(work==='running'&&!ws.includes('作業中'))return false;if(work==='completed'&&!ws.includes('完成'))return false;
@@ -963,7 +1044,7 @@ function renderTargets(){
   if(!baseRows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前篩選條件查無資料，請清除或調整篩選。</div>';updateDataHubHealth_();return}
   const heads=[
-    ['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','完成率<br>%'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):((r[h[0]]===undefined||r[h[0]]===null)?'':r[h[0]]);
@@ -987,9 +1068,9 @@ function buildDataHubSnapshot_(){
   rows.forEach(r=>{const s=String(r.file_match_status||''),src=String(r.actual_source||r.data_source||'').toUpperCase();
     if(src==='ERP'||s.includes('ERP 已更新'))stats.erp++;
     if(src==='KEY IN'||s.includes('已配對'))stats.keyin++;
-    if(s.includes('不重複計算')||s.includes('另一筆目標採用'))stats.duplicate++;
+    if(r.duplicate_target||s.includes('同班別重複目標'))stats.duplicate++;
     if(s.includes('單位')&&(s.includes('確認')||s.includes('待確認')))stats.unitPending++;
-    if(s.includes('未找到')||s.includes('等待同日'))stats.missing++;
+    if(s.includes('未找到')||s.includes('等待早班')||s.includes('等待夜班')||s.includes('等待中班')||s.includes('等待 Key In'))stats.missing++;
   });
   return {generated_at:new Date().toISOString(),range:{mode:currentRange,start:$('rangeStart').value,end:$('rangeEnd').value},stats,orders:[...map.values()].map(g=>({key:g.key,count:g.rows.length,rows:g.rows}))};
 }
