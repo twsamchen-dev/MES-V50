@@ -248,7 +248,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <script>
 var AppState={d43:[],pd:[],sl:[],prod5cRaw:[],prod53Raw:[],prod5c:[],prod53:[],source:[],idx:{},keyin:[],targets:[],targetDate:"",activeView:"dashboard",meetingTimer:null,meetingIndex:0,tables:{}};
 /* V54 Hybrid API：Apps Script 內嵌用 google.script.run；GitHub Pages 自動改用 Apps Script Web API */
-var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
 (function setupHybridApi(){
   var hasGas = !!(window.google && google.script && google.script.run);
   window.MES_IS_GITHUB = !hasGas;
@@ -2157,7 +2157,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 <!-- V61.0 Clean Dashboard Loader｜完整乾淨版：只保留一套 API 讀取邏輯 -->
 <script id="v610_clean_dashboard_loader">
 (function(){
-  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
   var loading = false;
 
   function ymd(){
@@ -2593,7 +2593,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 <!-- V65.0 Emergency Stable Loader｜直接讀獨立分頁摘要，不再讀 source_data 大表 -->
 <script id="v650_emergency_loader">
 (function(){
-  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
   var loading=false;
   function s(v){return String(v==null?"":v).trim();}
   function norm(v){return s(v).replace(/\s+/g,"").toUpperCase();}
@@ -2627,7 +2627,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 <!-- V65.2 Stable Unified DataHub Loader｜單一讀取邏輯，修正卡片與右下角狀態列 -->
 <script id="v652_stable_unified_loader">
 (function(){
-  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var API_URL = window.MES_API_URL || "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
   var loading = false;
 
   function s(v){ return String(v == null ? "" : v).trim(); }
@@ -3206,7 +3206,7 @@ body:not(.epSideCollapsed) header,body:not(.epSideCollapsed) .wrap{margin-left:2
 <script id="v805CommandCenterJs">
 (function(){
   'use strict';
-  var API=window.MES_API_URL||window.API_URL||"https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+  var API=window.MES_API_URL||window.API_URL||"https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
   var state={status:null,mode:"",rows:[],total:0,loading:false,filter:"",page:1,pageSize:100,error:"",prevCounts:{}};
 
   function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
@@ -3777,7 +3777,7 @@ table tbody tr:hover td{background:#fff2f3!important}
 
   const API_URL =
     window.MES_API_URL ||
-    "https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec";
+    "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
 
   let loading = false;
   let loaded = false;
@@ -4017,7 +4017,7 @@ table tbody tr:hover td{background:#fff2f3!important}
   var state={rows:[],loading:false,last:''};
   function E(id){return document.getElementById(id)}
   function H(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function api(action,params){return new Promise(function(resolve,reject){var cb='URG110_'+Date.now()+'_'+Math.floor(Math.random()*99999),base=window.API_URL||window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec',url=new URL(base),tag=document.createElement('script'),timer=setTimeout(function(){done();reject(new Error('讀取逾時'))},45000);function done(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}window[cb]=function(r){done();resolve(r||{})};tag.onerror=function(){done();reject(new Error('連線失敗'))};url.searchParams.set('action',action);url.searchParams.set('callback',cb);url.searchParams.set('_',Date.now());Object.keys(params||{}).forEach(function(k){url.searchParams.set(k,params[k])});tag.src=url.toString();document.body.appendChild(tag)})}
+  function api(action,params){return new Promise(function(resolve,reject){var cb='URG110_'+Date.now()+'_'+Math.floor(Math.random()*99999),base=window.API_URL||window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec',url=new URL(base),tag=document.createElement('script'),timer=setTimeout(function(){done();reject(new Error('讀取逾時'))},45000);function done(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}window[cb]=function(r){done();resolve(r||{})};tag.onerror=function(){done();reject(new Error('連線失敗'))};url.searchParams.set('action',action);url.searchParams.set('callback',cb);url.searchParams.set('_',Date.now());Object.keys(params||{}).forEach(function(k){url.searchParams.set(k,params[k])});tag.src=url.toString();document.body.appendChild(tag)})}
   function ensure(){var grid=E('dashboardGrid');if(!grid)return null;var card=E('urg110Card');if(!card){card=document.createElement('div');card.id='urg110Card';card.className='urg110-card';grid.insertBefore(card,grid.firstChild)}else if(card.parentNode!==grid)grid.insertBefore(card,grid.firstChild);return card}
   function readers(r){var list=Array.isArray(r.readers)?r.readers:[];if(!list.length)return '<span style="color:#b91c1c;font-weight:900">尚無人確認</span>';return list.map(function(x){return '<span style="display:inline-block;margin:3px 10px 3px 0"><b>'+H(x.reader_emp_no)+' '+H(x.reader_name)+'</b>｜'+H(x.read_at||'')+'</span>'}).join('')}
   function N(v){var n=Number(v||0);return isFinite(n)?n:0}
@@ -4056,7 +4056,7 @@ table tbody tr:hover td{background:#fff2f3!important}
 (function(){
  var state={rows:[],collapsed:false,filters:{q:'',login:'all',task:'all',urgent:'all'}};
  function E(id){return document.getElementById(id)} function H(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
- function api(){return new Promise(function(resolve,reject){var cb='PS112_'+Date.now()+'_'+Math.floor(Math.random()*99999),base=window.API_URL||window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec',u=new URL(base),s=document.createElement('script'),t=setTimeout(function(){done();reject(new Error('讀取逾時'))},45000);function done(){clearTimeout(t);try{delete window[cb]}catch(e){}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=function(r){done();r&&r.ok===false?reject(new Error(r.message||'讀取失敗')):resolve(r||{})};s.onerror=function(){done();reject(new Error('連線失敗'))};u.searchParams.set('action','personnelstats');u.searchParams.set('callback',cb);u.searchParams.set('_',Date.now());s.src=u.toString();document.body.appendChild(s)})}
+ function api(){return new Promise(function(resolve,reject){var cb='PS112_'+Date.now()+'_'+Math.floor(Math.random()*99999),base=window.API_URL||window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec',u=new URL(base),s=document.createElement('script'),t=setTimeout(function(){done();reject(new Error('讀取逾時'))},45000);function done(){clearTimeout(t);try{delete window[cb]}catch(e){}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=function(r){done();r&&r.ok===false?reject(new Error(r.message||'讀取失敗')):resolve(r||{})};s.onerror=function(){done();reject(new Error('連線失敗'))};u.searchParams.set('action','personnelstats');u.searchParams.set('callback',cb);u.searchParams.set('_',Date.now());s.src=u.toString();document.body.appendChild(s)})}
  function ensure(){var g=E('dashboardGrid');if(!g)return null;var c=E('ps112Card');if(!c){c=document.createElement('div');c.id='ps112Card';c.className='ps112-card';g.insertBefore(c,g.firstChild)}return c}
  function row(r){var online=r.online_30m,st=online?'目前在線':'今日曾登入',wo=(r.work_orders||[]).join('、')||'-',mc=(r.machines||[]).join('、')||'-',last=r.last_report||'尚未回報',warn=r.unread_count?'<span class="ps112-warn">未讀 '+r.unread_count+'</span>':'已全部閱讀';return '<tr><td><b>'+H(r.emp_no)+' '+H(r.emp_name)+'</b><br><small>'+H(r.role||'')+'</small></td><td><span class="ps112-online '+(online?'':'ps112-offline')+'">'+st+'</span><br><small>'+H(r.last_login||'')+'</small></td><td>'+r.task_count+'</td><td>'+H(wo)+'</td><td>'+H(mc)+'</td><td>'+r.keyin_count+'</td><td>'+Number(r.actual_qty||0).toLocaleString()+'</td><td>'+Number(r.completion_rate||0)+'%</td><td>'+H(last)+'</td><td>'+warn+'</td></tr>'}
  function filtered(){var f=state.filters,q=String(f.q||'').toLowerCase();return state.rows.filter(function(r){if(q&&[r.emp_no,r.emp_name,r.role,(r.work_orders||[]).join(' '),(r.machines||[]).join(' ')].join(' ').toLowerCase().indexOf(q)<0)return false;if(f.login==='online'&&!r.online_30m)return false;if(f.login==='today'&&r.online_30m)return false;if(f.task==='assigned'&&!(Number(r.task_count)>0))return false;if(f.task==='none'&&Number(r.task_count)>0)return false;if(f.urgent==='unread'&&!(Number(r.unread_count)>0))return false;if(f.urgent==='read'&&Number(r.unread_count)>0)return false;return true})}
