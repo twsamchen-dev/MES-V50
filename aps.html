@@ -9452,6 +9452,158 @@ if(document.readyState==='loading'){
   setTimeout(apply,2500);
 })();
 </script>
+
+<style id="urgent-order-multiwo-v122-style">
+#urgentOrderChooserV122{display:none;position:fixed;inset:0;z-index:52000;background:rgba(0,0,0,.76);align-items:center;justify-content:center;padding:16px}
+#urgentOrderChooserV122.show{display:flex}
+.uoc122-dialog{width:min(980px,97vw);max-height:90vh;overflow:auto;background:#101b24;border:1px solid #40576a;border-radius:15px;padding:16px;box-shadow:0 26px 80px #000}
+.uoc122-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+.uoc122-head h2{margin:0}.uoc122-sub{color:#9db0bd;font-size:12px;margin-top:4px}
+.uoc122-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.uoc122-tools input{flex:1;min-width:220px;background:#07111a;color:#fff;border:1px solid #365061;border-radius:8px;padding:9px}
+.uoc122-table{overflow:auto;border:1px solid #344a5a;border-radius:10px;max-height:58vh}
+.uoc122-table table{width:100%;border-collapse:collapse;white-space:nowrap}
+.uoc122-table th{position:sticky;top:0;background:#1a2a36;color:#fff;padding:9px;text-align:left;z-index:1}
+.uoc122-table td{padding:9px;border-bottom:1px solid #263845;color:#dce7ee}
+.uoc122-row{cursor:pointer}.uoc122-row:hover td{background:#173047}.uoc122-row.selected td{background:#123b33;outline:1px solid #22c55e}
+.uoc122-badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:11px;background:#173e65;color:#9bd0ff}
+.uoc122-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.uoc122-actions button{border:0;border-radius:9px;padding:9px 13px;font-weight:850;cursor:pointer}
+.uoc122-cancel{background:#334155;color:#fff}.uoc122-use{background:#16835f;color:#fff}.uoc122-use:disabled{background:#596774;cursor:not-allowed}
+@media(max-width:720px){.uoc122-dialog{padding:11px}.uoc122-table{max-height:62vh}.uoc122-table th,.uoc122-table td{padding:8px;font-size:12px}}
+</style>
+<script id="urgent-order-multiwo-v122-script">
+(function(){
+'use strict';
+const clean=v=>String(v==null?'':v).trim();
+const norm=v=>clean(v).toUpperCase().replace(/\s+/g,'');
+const first=(r,ks,d='')=>{for(const k of ks){const v=r&&r[k];if(v!==undefined&&v!==null&&clean(v)!=='')return v}return d};
+let chooserRows=[],selectedWo='';
+
+function allRows(){
+  const rows=[];
+  const add=a=>{if(Array.isArray(a))rows.push(...a)};
+  add(window.S?.pool);
+  add(window.S?.rows?.workpool);
+  add(window.S?.rows?.datahub);
+  add(window.__BUILD0057_DATAHUB_ROWS__);
+  try{add(JSON.parse(localStorage.getItem('SK_APS_DATAHUB_WORKORDERS_V57')||'[]'))}catch(_){}
+  return rows;
+}
+function woOf(r){return clean(first(r,['wo','work_order_no','workOrderNo','工單','工單號','命令單號']))}
+function orderOf(r){return clean(first(r,['order','order_no','orderNo','訂單','訂單號','訂單單號']))}
+function customerOf(r){return clean(first(r,['customer','customer_name','cust','client','客戶']))}
+function partOf(r){return clean(first(r,['part','part_no','partNo','product_no','item_no','產品料號','料號']))}
+function processOf(r){return clean(first(r,['process','process_site','site','operation','製程','站別']))}
+function machineOf(r){return clean(first(r,['machine','machine_code','sourceMachine','assigned_machine','primary_machine','機台']))}
+function qtyOf(r){return first(r,['remaining','remaining_qty','target_qty','planned','qty','quantity','需求數量'],'')}
+function unitOf(r){return clean(first(r,['unit','target_unit','qty_unit','單位'],'㎡'))}
+function dueOf(r){return first(r,['due','due_date','planned_finish','delivery_date','plan_date','預交日'],'')}
+function uniqueRows(rows){
+  const map=new Map();
+  rows.forEach(r=>{
+    const wo=woOf(r);
+    if(!wo)return;
+    const old=map.get(norm(wo));
+    if(!old || Object.keys(r||{}).length>Object.keys(old||{}).length)map.set(norm(wo),r);
+  });
+  return [...map.values()];
+}
+function findMatches(q){
+  q=norm(q);
+  const rows=uniqueRows(allRows());
+  const exactWo=rows.filter(r=>norm(woOf(r))===q);
+  if(exactWo.length)return {kind:'work_order',rows:exactWo};
+  const exactOrder=rows.filter(r=>norm(orderOf(r))===q);
+  if(exactOrder.length)return {kind:'order',rows:exactOrder};
+  const other=rows.filter(r=>[
+    first(r,['command_no','命令單號']),first(r,['daily_no','report_no','日報號']),
+    first(r,['batch','batch_no','生產批號']),partOf(r)
+  ].some(v=>norm(v)===q));
+  return {kind:'other',rows:other};
+}
+function ensureModal(){
+  if(document.getElementById('urgentOrderChooserV122'))return;
+  const m=document.createElement('div');
+  m.id='urgentOrderChooserV122';
+  m.innerHTML='<div class="uoc122-dialog"><div class="uoc122-head"><div><h2 id="uoc122Title">選擇對應工單</h2><div class="uoc122-sub" id="uoc122Sub"></div></div><button class="uoc122-cancel" type="button" onclick="UrgentOrderChooserV122.close()">關閉</button></div><div class="uoc122-tools"><input id="uoc122Search" placeholder="篩選工單、品名、製程、機台" oninput="UrgentOrderChooserV122.render()"><span id="uoc122Count" class="uoc122-badge"></span></div><div class="uoc122-table"><table><thead><tr><th>選擇</th><th>MM 工單</th><th>訂單</th><th>客戶</th><th>料號／品名</th><th>製程</th><th>數量</th><th>機台</th><th>預交日</th></tr></thead><tbody id="uoc122Body"></tbody></table></div><div class="uoc122-actions"><button class="uoc122-cancel" type="button" onclick="UrgentOrderChooserV122.close()">取消</button><button id="uoc122Use" class="uoc122-use" type="button" disabled onclick="UrgentOrderChooserV122.use()">帶入選取工單</button></div></div>';
+  document.body.appendChild(m);
+}
+function esc(v){return clean(v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
+function openChooser(rows,input){
+  ensureModal();chooserRows=rows;selectedWo='';
+  document.getElementById('uoc122Title').textContent=`訂單 ${input} 對應工單`;
+  document.getElementById('uoc122Sub').textContent=`找到 ${rows.length} 張 MM 工單，請選擇本次要發布急件的工單。`;
+  document.getElementById('uoc122Search').value='';
+  document.getElementById('urgentOrderChooserV122').classList.add('show');
+  renderChooser();
+}
+function renderChooser(){
+  const q=norm(document.getElementById('uoc122Search')?.value);
+  const rows=chooserRows.filter(r=>!q||[woOf(r),orderOf(r),customerOf(r),partOf(r),processOf(r),machineOf(r)].some(v=>norm(v).includes(q)));
+  document.getElementById('uoc122Count').textContent=`顯示 ${rows.length}／${chooserRows.length}`;
+  document.getElementById('uoc122Body').innerHTML=rows.map(r=>{
+    const wo=woOf(r),selected=norm(wo)===norm(selectedWo);
+    return `<tr class="uoc122-row ${selected?'selected':''}" onclick="UrgentOrderChooserV122.select('${esc(wo)}')"><td><input type="radio" name="uoc122Radio" ${selected?'checked':''}></td><td><b>${esc(wo)}</b></td><td>${esc(orderOf(r)||'—')}</td><td>${esc(customerOf(r)||'—')}</td><td>${esc(partOf(r)||'—')}</td><td>${esc(processOf(r)||'—')}</td><td>${esc(qtyOf(r)||'—')} ${esc(unitOf(r)||'')}</td><td>${esc(machineOf(r)||'—')}</td><td>${esc(dueOf(r)||'—')}</td></tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;padding:25px">沒有符合條件的工單</td></tr>';
+}
+function selectWo(wo){selectedWo=wo;document.getElementById('uoc122Use').disabled=false;renderChooser()}
+function closeChooser(){document.getElementById('urgentOrderChooserV122')?.classList.remove('show')}
+function useSelected(){
+  const row=chooserRows.find(r=>norm(woOf(r))===norm(selectedWo));
+  if(!row)return;
+  closeChooser();
+  fillRow(row);
+}
+function fillRow(row){
+  const mod=window.UrgentOrderModule0101;
+  if(!mod)return alert('急件模組尚未完成載入');
+  mod.el('urgentLookup').value=woOf(row);
+  mod.el('urgentWo').value=woOf(row);
+  mod.el('urgentCustomer').value=customerOf(row);
+  mod.el('urgentPart').value=partOf(row);
+  mod.el('urgentQty').value=qtyOf(row);
+  const p=processOf(row);if(p)mod.setSelectValue('urgentProcess',p);
+  const u=unitOf(row);if(u)mod.setSelectValue('urgentUnit',u);
+  const m=machineOf(row);if(m)mod.ensureMachineOption(m);
+  const d=dueOf(row);
+  if(d){mod.setDateFromValue(d,'urgentOriginalDueDate','urgentOriginalDueTime');mod.setDateFromValue(d,'urgentDueDate','urgentDueTime')}
+  const hrs=Number(first(row,['estimated_hours','hours'],0));
+  if(hrs>0)mod.el('urgentHours').value=hrs;
+  else if(Number(row.minutes)>0)mod.el('urgentHours').value=(Number(row.minutes)/60).toFixed(2);
+  mod.el('urgentFormMsg').textContent=`已帶入 ${woOf(row)}（訂單 ${orderOf(row)||'—'}），可調整後模擬`;
+  mod.el('urgentFormMsg').style.color='var(--green)';
+  mod.update();
+}
+function patch(){
+  const mod=window.UrgentOrderModule0101;
+  if(!mod){setTimeout(patch,300);return}
+  ensureModal();
+  const label=mod.el('urgentLookup')?.closest('.urgent-field')?.querySelector('label');
+  if(label)label.textContent='從既有訂單／工單快速帶入';
+  const input=mod.el('urgentLookup');
+  if(input)input.placeholder='輸入訂單號或 MM 工單號';
+  mod.loadExistingOrder=function(){
+    const input=clean(this.el('urgentLookup')?.value);
+    if(!input){alert('請先輸入訂單號或 MM 工單號');return}
+    const found=findMatches(input);
+    if(!found.rows.length){
+      this.el('urgentFormMsg').textContent='找不到對應訂單或工單，請確認 DataHub 已同步完成';
+      this.el('urgentFormMsg').style.color='var(--red)';
+      this.update();return;
+    }
+    if(found.kind==='order' && found.rows.length>1){openChooser(found.rows,input);return}
+    fillRow(found.rows[0]);
+  };
+  const btn=mod.el('loadUrgentWo');
+  if(btn){const clone=btn.cloneNode(true);btn.replaceWith(clone);clone.addEventListener('click',()=>mod.loadExistingOrder())}
+  input?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mod.loadExistingOrder()}});
+}
+window.UrgentOrderChooserV122={render:renderChooser,select:selectWo,close:closeChooser,use:useSelected};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(patch,700),{once:true});else setTimeout(patch,700);
+})();
+</script>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
