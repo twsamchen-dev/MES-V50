@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.6</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0105.0</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -958,7 +958,7 @@ function render(){['renderPool','renderSchedule','renderHome','updateKpi','rende
 async function waitEngine(){for(let i=0;i<80;i++){if(window.Build0051APSSpeedEngine?.sync&&window.S)return true;await sleep(250)}return false}
 async function run(force=false){if(running)return;running=true;forceLabel();state(force?'手動重新同步':'開始載入');try{const rows=await fetchRows();if(!rows.length)throw new Error('DataHub 回傳 0 筆');window.__BUILD0057_DATAHUB_ROWS__=rows.slice();await waitEngine();let usedEngine=false;if(window.Build0051APSSpeedEngine?.sync){state('DataHub '+rows.length+' 筆｜產速配對中');await window.Build0051APSSpeedEngine.sync(false);await sleep(500);usedEngine=Array.isArray(window.S?.pool)&&window.S.pool.length>0}if(!window.S)window.S={files:{},rows:{},pool:[],schedule:[],machines:{},logs:[]};if(!usedEngine){window.S.pool=fallbackConvert(rows);window.S.rows=window.S.rows||{};window.S.rows.datahub=rows}if(!Array.isArray(window.S.schedule))window.S.schedule=[];render();try{window.SKAPSSystem?.saveSnapshots?.(true)}catch{};const p=window.S.pool.length,s=window.S.schedule.length;if(!p)throw new Error('已下載 '+rows.length+' 筆，但工單池轉換為 0');state('已載入｜DataHub '+rows.length+'｜工單 '+p+'｜排程 '+s,'ok');}catch(err){console.error('APS 0096',err);state('失敗：'+(err.message||err)+'｜點此重試','bad')}finally{running=false;forceLabel()}}
 function install(){
-  // Build 0104.6：救援模組完全改為手動待命。
+  // Build 0105.0：救援模組完全改為手動待命。
   // 啟動時不建立右下角狀態、不移除右上 APS 雲端狀態，也不自動下載 DataHub。
   window.APSRecovery0096={run};
   window.__APS_RECOVERY_MANUAL_ONLY__=true;
@@ -10102,7 +10102,7 @@ window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,versi
 
 
 <style id="build0104-6-aps3day-layout-fix">
-/* Build 0104.6｜僅修正三天排程版面，不改資料與排程邏輯 */
+/* Build 0105.0｜僅修正三天排程版面，不改資料與排程邏輯 */
 #schedule3d .aps3d-gantt-wrap{
   overflow:auto !important;
   position:relative !important;
@@ -10232,6 +10232,355 @@ window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,versi
   display:block !important;
 }
 </style>
+
+
+<style id="build0105-0-offline-3day-style">
+/* Build 0105.0｜依離線版重建三天甘特圖 */
+#schedule3d .aps3d-toolbar{
+  align-items:center!important;
+  padding:10px 14px!important;
+}
+#schedule3d .aps3d-toolbar .section-kicker,
+#schedule3d .aps3d-toolbar .sub{display:none!important}
+#schedule3d .aps3d-toolbar h2{
+  font-size:24px!important;
+  margin:0!important;
+  letter-spacing:.5px;
+}
+#schedule3d .aps3d-summary{
+  display:none!important;
+}
+#schedule3d .aps3d-layout{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#schedule3d .aps3d-machine-panel,
+#schedule3d .aps3d-check-panel{
+  display:none!important;
+}
+#schedule3d .aps3d-gantt-panel{
+  border-radius:12px!important;
+  background:#f5f7fa!important;
+  border:1px solid #c9d2dc!important;
+  color:#17202a!important;
+}
+#schedule3d .aps3d-status{
+  height:auto!important;
+  min-height:48px!important;
+  padding:8px 12px!important;
+  background:#f8fafc!important;
+  color:#34495e!important;
+  border-bottom:1px solid #cbd5df!important;
+}
+#schedule3d .aps3d-gantt-wrap{
+  background:#f5f7fa!important;
+  overflow:auto!important;
+}
+#schedule3d .offline3-wrap{
+  min-width:1120px;
+  background:#f5f7fa;
+}
+#schedule3d .offline3-top{
+  position:sticky;
+  top:0;
+  z-index:50;
+  display:grid;
+  grid-template-columns:270px minmax(840px,1fr);
+  background:#f8fafc;
+  border-bottom:1px solid #cbd5df;
+}
+#schedule3d .offline3-corner{
+  position:sticky;
+  left:0;
+  z-index:60;
+  padding:12px 14px;
+  font-size:17px;
+  font-weight:800;
+  background:#f8fafc;
+  border-right:1px solid #cbd5df;
+  color:#1f2d3d;
+}
+#schedule3d .offline3-axis{
+  position:relative;
+  height:58px;
+  background:#f8fafc;
+}
+#schedule3d .offline3-day{
+  position:absolute;
+  top:0;
+  height:24px;
+  border-left:1px solid #cbd5df;
+  border-right:1px solid #e5e9ee;
+  text-align:center;
+  font-weight:800;
+  font-size:12px;
+  line-height:24px;
+  color:#334155;
+  background:#eef4f8;
+}
+#schedule3d .offline3-tick{
+  position:absolute;
+  top:24px;
+  bottom:0;
+  border-left:1px solid #d7dee6;
+  font-size:11px;
+  color:#506174;
+  padding:9px 4px 0;
+  white-space:nowrap;
+}
+#schedule3d .offline3-row{
+  display:grid;
+  grid-template-columns:270px minmax(840px,1fr);
+  min-height:92px;
+  border-bottom:1px solid #d9e1e8;
+}
+#schedule3d .offline3-label{
+  position:sticky;
+  left:0;
+  z-index:30;
+  padding:14px 12px;
+  background:#fff;
+  border-right:1px solid #cbd5df;
+  color:#17202a;
+}
+#schedule3d .offline3-label b{
+  display:block;
+  font-size:20px;
+  margin-bottom:4px;
+}
+#schedule3d .offline3-label span{
+  display:block;
+  font-size:13px;
+  color:#4c6377;
+  line-height:1.5;
+}
+#schedule3d .offline3-track{
+  position:relative;
+  min-height:92px;
+  background:
+    linear-gradient(90deg,rgba(255,244,205,.75) 0 0) right/24% 100% no-repeat,
+    repeating-linear-gradient(90deg,#f8fbfd 0,#f8fbfd calc(var(--slot-w) - 1px),#dfe7ee calc(var(--slot-w) - 1px),#dfe7ee var(--slot-w));
+}
+#schedule3d .offline3-job{
+  position:absolute;
+  top:18px;
+  height:56px;
+  border-radius:10px;
+  padding:8px 12px;
+  overflow:hidden;
+  color:#fff;
+  border:3px solid rgba(0,0,0,.14);
+  box-shadow:0 3px 7px rgba(0,0,0,.22);
+  min-width:18px;
+}
+#schedule3d .offline3-job strong{
+  display:block;
+  font-size:16px;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#schedule3d .offline3-job small{
+  display:block;
+  font-size:12px;
+  margin-top:5px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#schedule3d .offline3-job.normal{background:#2f8b37;border-color:#1f6727}
+#schedule3d .offline3-job.urgent{background:#d93434;border-color:#a61f1f}
+#schedule3d .offline3-job.delay{background:#f07b10;border-color:#b95708}
+#schedule3d .offline3-job.wait{background:#d99c14;border-color:#9e7008}
+#schedule3d .offline3-job.maint{background:#7a7f86;border-color:#555a60}
+#schedule3d .offline3-job.manual{background:#168b92;border-color:#0e666b}
+#schedule3d .offline3-legend{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+#schedule3d .offline3-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid #cfd8e3;
+  border-radius:999px;
+  padding:3px 8px;
+  background:#fff;
+  font-size:12px;
+  color:#46576a;
+}
+#schedule3d .offline3-dot{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  display:inline-block;
+}
+#schedule3d .offline3-dot.normal{background:#2f8b37}
+#schedule3d .offline3-dot.urgent{background:#d93434}
+#schedule3d .offline3-dot.delay{background:#f07b10}
+#schedule3d .offline3-dot.wait{background:#d99c14}
+#schedule3d .offline3-dot.maint{background:#7a7f86}
+#schedule3d .offline3-dot.manual{background:#168b92}
+#schedule3d .offline3-scale{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+#schedule3d .offline3-scale b{
+  color:#607080;
+  font-size:12px;
+}
+#schedule3d .offline3-scale button{
+  border:1px solid #cbd5df;
+  background:#fff;
+  color:#334155;
+  border-radius:8px;
+  padding:8px 13px;
+  font-weight:800;
+  cursor:pointer;
+}
+#schedule3d .offline3-scale button.active{
+  background:#2576d2;
+  color:#fff;
+  border-color:#2576d2;
+}
+#schedule3d #aps3dZoom{display:none!important}
+</style>
+
+
+<script id="build0105-0-offline-3day-js">
+(()=>{
+  'use strict';
+  if(window.__APS_OFFLINE_3DAY_01050__)return;
+  window.__APS_OFFLINE_3DAY_01050__=true;
+
+  const $=id=>document.getElementById(id),DAY=86400000;
+  const FIXED=['1B02','1B08','1B10','1B19','1S02','1S18','1S03','1S12','1S16','1S19','1S07','1B22','1V09','1V01','1V02','1C18'];
+  let scale=60;
+
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const toDate=v=>{if(v instanceof Date)return isNaN(v)?null:new Date(v);const d=new Date(v);return isNaN(d)?null:d};
+  const fmtDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const fmtTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+  function source(){return Array.isArray(window.S?.schedule)?window.S.schedule:[]}
+  function norm(x,i){
+    const date=toDate(x.date||x.production_date||x.schedule_date);
+    const parse=v=>{
+      if(v instanceof Date)return toDate(v);
+      const s=String(v??'').trim();
+      if(/^\d{1,2}:\d{2}$/.test(s)&&date){const d=new Date(date),p=s.split(':').map(Number);d.setHours(p[0],p[1],0,0);return d}
+      return toDate(v);
+    };
+    let start=parse(x.start??x.start_time??x.startTime??x.begin);
+    let end=parse(x.end??x.end_time??x.endTime??x.finish);
+    if(!end&&start&&Number.isFinite(Number(x.minutes)))end=new Date(start.getTime()+Number(x.minutes)*60000);
+    if(start&&end&&end<=start)end=new Date(end.getTime()+DAY);
+    return{
+      uid:String(x.uid||x.id||i),
+      wo:String(x.wo||x.work_order_no||x.order_no||'').trim(),
+      machine:String(x.machine||x.machine_code||x.sourceMachine||'').trim(),
+      start,end,
+      spec:String(x.spec||x.product_spec||x.part||x.part_no||''),
+      target:String(x.target||x.remaining||x.qty||x.quantity||''),
+      unit:String(x.unit||''),
+      customer:String(x.customer||''),
+      status:String(x.status||'normal').toLowerCase(),
+      reason:String(x.reason||''),
+      due:toDate(x.due||x.due_date)
+    }
+  }
+  function cls(j){
+    if(j.status.includes('maint')||j.reason.includes('保養'))return'maint';
+    if(j.status.includes('urgent')||j.reason.includes('急'))return'urgent';
+    if(j.status.includes('wait')||j.reason.includes('待'))return'wait';
+    if(j.status.includes('manual'))return'manual';
+    if(j.due&&j.end>j.due)return'delay';
+    return'normal'
+  }
+  function prodBase(d){const x=new Date(d);x.setHours(8,30,0,0);if(d<x)x.setDate(x.getDate()-1);return x}
+  function baseDate(valid){
+    const input=$('aps3dDate');
+    if(input?.value)return new Date(input.value+'T08:30:00');
+    const first=valid.slice().sort((a,b)=>a.start-b.start)[0];
+    const b=first?prodBase(first.start):prodBase(new Date());
+    if(input)input.value=fmtDate(b);
+    return b
+  }
+  function ensureToolbar(){
+    const actions=$('schedule3d')?.querySelector('.aps3d-actions');
+    if(!actions||actions.querySelector('.offline3-scale'))return;
+    const box=document.createElement('div');box.className='offline3-scale';
+    box.innerHTML='<b>時間比例</b><button data-s="30">30分</button><button data-s="60" class="active">1小時</button><button data-s="120">2小時</button>';
+    actions.insertBefore(box,actions.firstChild);
+    box.addEventListener('click',e=>{
+      const b=e.target.closest('[data-s]');if(!b)return;
+      scale=Number(b.dataset.s)||60;
+      box.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));
+      render()
+    });
+    const title=$('schedule3d')?.querySelector('.aps3d-toolbar>div:first-child');
+    if(title&&!title.querySelector('.offline3-legend')){
+      const lg=document.createElement('div');lg.className='offline3-legend';
+      lg.innerHTML='<span><i class="offline3-dot normal"></i>正常</span><span><i class="offline3-dot urgent"></i>急件</span><span><i class="offline3-dot delay"></i>延遲</span><span><i class="offline3-dot wait"></i>待料</span><span><i class="offline3-dot maint"></i>保養</span><span><i class="offline3-dot manual"></i>手動</span>';
+      title.appendChild(lg)
+    }
+  }
+  function render(){
+    ensureToolbar();
+    const raw=source(),valid=raw.map(norm).filter(j=>j.start&&j.end&&j.machine);
+    let base=baseDate(valid),end=new Date(base.getTime()+3*DAY);
+    let jobs=valid.filter(j=>j.end>base&&j.start<end);
+    if(!jobs.length&&valid.length&&!$('aps3dDate')?.dataset.userPicked){
+      base=prodBase(valid.slice().sort((a,b)=>Math.abs(a.start-base)-Math.abs(b.start-base))[0].start);
+      end=new Date(base.getTime()+3*DAY);
+      jobs=valid.filter(j=>j.end>base&&j.start<end);
+      $('aps3dDate').value=fmtDate(base)
+    }
+    const machines=[...new Set([...FIXED,...Object.keys(window.S?.machines||{}),...jobs.map(j=>j.machine)])];
+    const pxPerHour=scale===30?132:scale===60?66:33;
+    const width=72*pxPerHour;
+    const slotW=scale===30?33:scale===60?66:66;
+    let html=`<div class="offline3-wrap" style="width:${270+width}px"><div class="offline3-top"><div class="offline3-corner">機台｜目前工單／規格／目標</div><div class="offline3-axis" style="width:${width}px">`;
+    for(let d=0;d<3;d++)html+=`<div class="offline3-day" style="left:${d*24*pxPerHour}px;width:${24*pxPerHour}px">${fmtDate(new Date(base.getTime()+d*DAY))}</div>`;
+    const tickStep=scale===30?1:scale===60?2:2;
+    for(let h=0;h<=72;h+=tickStep){
+      const t=new Date(base.getTime()+h*3600000);
+      html+=`<div class="offline3-tick" style="left:${h*pxPerHour}px">${fmtTime(t)}</div>`
+    }
+    html+='</div></div>';
+    for(const m of machines){
+      const list=jobs.filter(j=>j.machine===m).sort((a,b)=>a.start-b.start);
+      const first=list[0];
+      html+=`<div class="offline3-row"><div class="offline3-label"><b>${esc(m)}</b><span>${first?`${esc(first.wo||'目前有排程')}<br>${esc(first.spec||first.customer||'')} ${esc(first.target||'')} ${esc(first.unit||'')}`:'目前無排程'}</span></div><div class="offline3-track" style="width:${width}px;--slot-w:${slotW}px">`;
+      for(const j of list){
+        const s=Math.max(0,(j.start-base)/3600000),e=Math.min(72,(j.end-base)/3600000);
+        if(e<=s)continue;
+        const w=Math.max(20,(e-s)*pxPerHour);
+        html+=`<div class="offline3-job ${cls(j)}" style="left:${s*pxPerHour}px;width:${w}px" title="${esc(j.wo)}｜${fmtDate(j.start)} ${fmtTime(j.start)}～${fmtDate(j.end)} ${fmtTime(j.end)}"><strong>● ${esc(j.wo||'未命名')}</strong><small>${esc(j.status||'正常')}｜${esc(j.spec||j.customer||'')} ${esc(j.target||'')} ${esc(j.unit||'')}</small></div>`
+      }
+      html+='</div></div>'
+    }
+    html+='</div>';
+    const wrap=$('aps3dGanttWrap');if(wrap)wrap.innerHTML=html;
+    const st=$('aps3dStatus');if(st)st.textContent=`${fmtDate(base)} 08:30 ～ ${fmtDate(end)} 08:30｜${jobs.length} 個排程區段｜${machines.filter(m=>jobs.some(j=>j.machine===m)).length} 台有排程｜原始 ${raw.length}／有效 ${valid.length}`;
+    if($('aps3dJobs'))$('aps3dJobs').textContent=new Set(jobs.map(j=>j.wo||j.uid)).size;
+    if($('aps3dMachines'))$('aps3dMachines').textContent=machines.filter(m=>jobs.some(j=>j.machine===m)).length
+  }
+  function install(){
+    ensureToolbar();
+    $('aps3dDate')?.addEventListener('change',()=>{$('aps3dDate').dataset.userPicked='1';setTimeout(render,0)},true);
+    $('aps3dRefresh')?.addEventListener('click',()=>setTimeout(render,0),true);
+    document.querySelectorAll('[data-page="schedule3d"]').forEach(b=>b.addEventListener('click',()=>setTimeout(render,80),true));
+    setTimeout(render,200);setTimeout(render,1400)
+  }
+  window.APSOffline3Day={render};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install()
+})();
+</script>
 
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
@@ -10760,7 +11109,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
     core:'V95.1',
-    build:'0104.6',
+    build:'0105.0',
     engine:'IndexedDB Stable',
     date:'2026-07-23'
   });
@@ -10880,7 +11229,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V95.1',build:'0104.6',engine:'IndexedDB Stable'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0105.0',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
