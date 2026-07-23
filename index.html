@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V117 MES 生產 Key In｜Mobile Speed Labels｜Build 0111</title>
+<title>V119.5 MES 生產 Key In｜API Login Cache Safe｜Build 0117</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V117 Mobile Speed Labels｜Build 0111</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.5 API Login Cache Safe｜Build 0117</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,6 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
+// V119.5 Build 0117：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -264,6 +265,9 @@ const KEYIN_SHARED_LOOKUP={
   cache:new Map(),
   ttlMs:12*60*60*1000,
   maxEntries:180,
+  persistMaxEntries:24,
+  persistMaxRowsPerEntry:8,
+  persistDisabled:false,
   storageKey:'MES_KEYIN_ULTRA_CACHE_V936',
   storageLoaded:false,
   queries:0,
@@ -332,15 +336,50 @@ function keyInCacheTrim_(){
   valid.slice(0,KEYIN_SHARED_LOOKUP.maxEntries).forEach(([k,v])=>KEYIN_SHARED_LOOKUP.cache.set(k,v));
 }
 function keyInCachePersist_(){
+  if(KEYIN_SHARED_LOOKUP.persistDisabled)return;
   try{
     keyInCacheTrim_();
-    const payload=[];
+    const entries=[];
     KEYIN_SHARED_LOOKUP.cache.forEach((v,k)=>{
-      payload.push({k,at:v.at,lastUsed:v.lastUsed||v.at,rows:v.rows});
+      if(!v||!Array.isArray(v.rows))return;
+      entries.push({k,at:v.at,lastUsed:v.lastUsed||v.at,rows:v.rows});
     });
-    localStorage.setItem(KEYIN_SHARED_LOOKUP.storageKey,JSON.stringify(payload));
+    entries.sort((a,b)=>(b.lastUsed||b.at)-(a.lastUsed||a.at));
+    const buildPayload=(entryLimit,rowLimit)=>entries.slice(0,entryLimit).map(v=>({
+      k:v.k,at:v.at,lastUsed:v.lastUsed,
+      rows:v.rows.slice(0,rowLimit).map(r=>({
+        source:r.source||'',work_order_no:r.work_order_no||'',command_no:r.command_no||'',
+        order_no:r.order_no||'',daily_report_no:r.daily_report_no||'',report_no:r.report_no||'',
+        part_no:r.part_no||'',input_part_no:r.input_part_no||'',output_part_no:r.output_part_no||'',
+        batch_no:r.batch_no||'',input_lot_no:r.input_lot_no||'',output_lot_no:r.output_lot_no||'',
+        customer:r.customer||'',product_spec:r.product_spec||'',process:r.process||'',
+        machine_code:r.machine_code||r.machine||'',machine:r.machine||r.machine_code||'',
+        target_qty:r.target_qty||'',due_date:r.due_date||'',plan_date:r.plan_date||'',updated_at:r.updated_at||''
+      }))
+    }));
+    let payload=buildPayload(KEYIN_SHARED_LOOKUP.persistMaxEntries,KEYIN_SHARED_LOOKUP.persistMaxRowsPerEntry);
+    let text=JSON.stringify(payload);
+    if(text.length>3500000){payload=buildPayload(12,4);text=JSON.stringify(payload)}
+    localStorage.setItem(KEYIN_SHARED_LOOKUP.storageKey,text);
   }catch(err){
-    console.warn('Key In Ultra Cache persist skipped',String(err&&err.message||err));
+    const quota=/quota|exceeded/i.test(String(err&&err.message||err));
+    if(quota){
+      try{
+        localStorage.removeItem(KEYIN_SHARED_LOOKUP.storageKey);
+        const tiny=[];
+        let n=0;
+        KEYIN_SHARED_LOOKUP.cache.forEach((v,k)=>{
+          if(n>=6||!v||!Array.isArray(v.rows))return;
+          tiny.push({k,at:v.at,lastUsed:v.lastUsed||v.at,rows:v.rows.slice(0,2)});n++;
+        });
+        localStorage.setItem(KEYIN_SHARED_LOOKUP.storageKey,JSON.stringify(tiny));
+        console.warn('Key In Ultra Cache 已自動縮小，避免瀏覽器容量超限');
+      }catch(err2){
+        KEYIN_SHARED_LOOKUP.persistDisabled=true;
+        try{localStorage.removeItem(KEYIN_SHARED_LOOKUP.storageKey)}catch(_){}
+        console.warn('Key In Ultra Cache 本機永久快取已停用；記憶體高速查詢仍正常',String(err2&&err2.message||err2));
+      }
+    }else console.warn('Key In Ultra Cache persist skipped',String(err&&err.message||err));
   }
 }
 function keyInCacheLoad_(){
@@ -690,7 +729,33 @@ function setButtonState(id,state,loadingText,doneText){
 
 async function getApi(action,params){if(window.MES&&typeof MES.get==='function')return MES.get(action,[],params||{});throw new Error('MES API 未載入')}
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
-function pinApi(action,params){return new Promise((resolve,reject)=>{const cb='PIN112_'+Date.now()+'_'+Math.floor(Math.random()*999999),base=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbyW4ayFKOWHRUWAvMNgKfXcnEsTDsXoq3Dxd9ki97dEdeXuhPuJ7sVvhEsm-o6wf1V3/exec',url=new URL(base),tag=document.createElement('script');let done=false;const timer=setTimeout(()=>finish(new Error('登入服務逾時，請確認 Code.gs 已建立新版本並部署。 / บริการเข้าสู่ระบบหมดเวลา')),25000);function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}function finish(err,data){if(done)return;done=true;cleanup();err?reject(err):resolve(data)}window[cb]=r=>{if(r&&r.ok===false)finish(new Error(r.message||r.error||'API error'));else finish(null,r||{})};tag.onerror=()=>finish(new Error('登入服務連線失敗 / ไม่สามารถเชื่อมต่อบริการเข้าสู่ระบบ'));url.searchParams.set('action',action);url.searchParams.set('callback',cb);url.searchParams.set('_',Date.now());Object.entries(params||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,v)});tag.src=url.toString();document.head.appendChild(tag)})}
+async function pinApi(action,params){
+  // V119.5：登入與一般查詢共用 api.js 的正式 MES API URL，避免硬編碼舊部署網址。
+  if(window.MES&&typeof MES.get==='function'){
+    try{
+      const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('登入服務逾時 / บริการเข้าสู่ระบบหมดเวลา')),25000));
+      const r=await Promise.race([MES.get(action,[],params||{}),timeout]);
+      if(r&&r.ok===false)throw new Error(r.message||r.error||'API error');
+      return r||{};
+    }catch(err){
+      throw new Error(String(err&&err.message||err));
+    }
+  }
+  return new Promise((resolve,reject)=>{
+    const cb='PIN1195_'+Date.now()+'_'+Math.floor(Math.random()*999999);
+    const base=String(window.MES_API_URL||'').trim();
+    if(!base){reject(new Error('MES API 未載入，請確認 api.js 與部署網址 / MES API ยังไม่พร้อมใช้งาน'));return}
+    const url=new URL(base),tag=document.createElement('script');let done=false;
+    const timer=setTimeout(()=>finish(new Error('登入服務逾時 / บริการเข้าสู่ระบบหมดเวลา')),25000);
+    function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}
+    function finish(err,data){if(done)return;done=true;cleanup();err?reject(err):resolve(data)}
+    window[cb]=r=>{if(r&&r.ok===false)finish(new Error(r.message||r.error||'API error'));else finish(null,r||{})};
+    tag.onerror=()=>finish(new Error('登入服務連線失敗 / ไม่สามารถเชื่อมต่อบริการเข้าสู่ระบบ'));
+    url.searchParams.set('action',action);url.searchParams.set('callback',cb);url.searchParams.set('_',Date.now());
+    Object.entries(params||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,v)});
+    tag.src=url.toString();document.head.appendChild(tag);
+  });
+}
 
 function urgentEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
 const NOTICE_UI={filter:'unread',lang:'bi',collapsed:{read:true,unread:false},refreshMs:30000};
