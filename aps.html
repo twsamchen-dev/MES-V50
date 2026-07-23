@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0105.0</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0105.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -958,7 +958,7 @@ function render(){['renderPool','renderSchedule','renderHome','updateKpi','rende
 async function waitEngine(){for(let i=0;i<80;i++){if(window.Build0051APSSpeedEngine?.sync&&window.S)return true;await sleep(250)}return false}
 async function run(force=false){if(running)return;running=true;forceLabel();state(force?'手動重新同步':'開始載入');try{const rows=await fetchRows();if(!rows.length)throw new Error('DataHub 回傳 0 筆');window.__BUILD0057_DATAHUB_ROWS__=rows.slice();await waitEngine();let usedEngine=false;if(window.Build0051APSSpeedEngine?.sync){state('DataHub '+rows.length+' 筆｜產速配對中');await window.Build0051APSSpeedEngine.sync(false);await sleep(500);usedEngine=Array.isArray(window.S?.pool)&&window.S.pool.length>0}if(!window.S)window.S={files:{},rows:{},pool:[],schedule:[],machines:{},logs:[]};if(!usedEngine){window.S.pool=fallbackConvert(rows);window.S.rows=window.S.rows||{};window.S.rows.datahub=rows}if(!Array.isArray(window.S.schedule))window.S.schedule=[];render();try{window.SKAPSSystem?.saveSnapshots?.(true)}catch{};const p=window.S.pool.length,s=window.S.schedule.length;if(!p)throw new Error('已下載 '+rows.length+' 筆，但工單池轉換為 0');state('已載入｜DataHub '+rows.length+'｜工單 '+p+'｜排程 '+s,'ok');}catch(err){console.error('APS 0096',err);state('失敗：'+(err.message||err)+'｜點此重試','bad')}finally{running=false;forceLabel()}}
 function install(){
-  // Build 0105.0：救援模組完全改為手動待命。
+  // Build 0105.1：救援模組完全改為手動待命。
   // 啟動時不建立右下角狀態、不移除右上 APS 雲端狀態，也不自動下載 DataHub。
   window.APSRecovery0096={run};
   window.__APS_RECOVERY_MANUAL_ONLY__=true;
@@ -10102,7 +10102,7 @@ window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,versi
 
 
 <style id="build0104-6-aps3day-layout-fix">
-/* Build 0105.0｜僅修正三天排程版面，不改資料與排程邏輯 */
+/* Build 0105.1｜僅修正三天排程版面，不改資料與排程邏輯 */
 #schedule3d .aps3d-gantt-wrap{
   overflow:auto !important;
   position:relative !important;
@@ -10235,7 +10235,7 @@ window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,versi
 
 
 <style id="build0105-0-offline-3day-style">
-/* Build 0105.0｜依離線版重建三天甘特圖 */
+/* Build 0105.1｜依離線版重建三天甘特圖 */
 #schedule3d .aps3d-toolbar{
   align-items:center!important;
   padding:10px 14px!important;
@@ -10579,6 +10579,92 @@ window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,versi
   }
   window.APSOffline3Day={render};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install()
+})();
+</script>
+
+
+<style id="build0105-1-collapse-guard-style">
+/* Build 0105.1｜離線版三天排程不再使用舊版左右收合 */
+#schedule3d #aps3dToggleLeft,
+#schedule3d #aps3dToggleRight,
+#schedule3d #aps3dLeftClose,
+#schedule3d #aps3dRightClose{
+  display:none !important;
+  pointer-events:none !important;
+}
+#schedule3d .aps3d-actions label:has(#aps3dZoom){
+  display:none !important;
+}
+#schedule3d .aps3d-layout,
+#schedule3d .aps3d-layout.left-collapsed,
+#schedule3d .aps3d-layout.right-collapsed,
+#schedule3d .aps3d-layout.left-collapsed.right-collapsed{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+}
+#schedule3d .aps3d-layout::before,
+#schedule3d .aps3d-layout::after{
+  display:none !important;
+}
+#schedule3d .aps3d-gantt-panel{
+  display:flex !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+#schedule3d .aps3d-machine-panel,
+#schedule3d .aps3d-check-panel{
+  display:none !important;
+  width:0 !important;
+  min-width:0 !important;
+  padding:0 !important;
+  border:0 !important;
+}
+</style>
+
+
+<script id="build0105-1-collapse-guard-js">
+(()=>{
+  'use strict';
+  if(window.__APS_3DAY_COLLAPSE_GUARD_01051__) return;
+  window.__APS_3DAY_COLLAPSE_GUARD_01051__=true;
+
+  function resetLayout(){
+    const layout=document.querySelector('#schedule3d .aps3d-layout');
+    if(layout){
+      layout.classList.remove('left-collapsed','right-collapsed','user-left-open','user-right-open');
+    }
+    try{ window.APSOffline3Day?.render?.(); }catch(e){ console.warn('APS 0105.1 render failed',e); }
+  }
+
+  function blockOldToggle(e){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    resetLayout();
+  }
+
+  function install(){
+    ['aps3dToggleLeft','aps3dToggleRight','aps3dLeftClose','aps3dRightClose'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.addEventListener('click',blockOldToggle,true);
+    });
+
+    const page=document.getElementById('schedule3d');
+    if(page){
+      const observer=new MutationObserver(()=>{
+        const layout=page.querySelector('.aps3d-layout');
+        if(layout&&(layout.classList.contains('left-collapsed')||layout.classList.contains('right-collapsed'))){
+          layout.classList.remove('left-collapsed','right-collapsed','user-left-open','user-right-open');
+        }
+      });
+      observer.observe(page,{subtree:true,attributes:true,attributeFilter:['class']});
+    }
+
+    resetLayout();
+    setTimeout(resetLayout,500);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true});
+  else install();
 })();
 </script>
 
@@ -11109,7 +11195,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
     core:'V95.1',
-    build:'0105.0',
+    build:'0105.1',
     engine:'IndexedDB Stable',
     date:'2026-07-23'
   });
@@ -11229,7 +11315,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V95.1',build:'0105.0',engine:'IndexedDB Stable'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0105.1',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
