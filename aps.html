@@ -3983,6 +3983,8 @@ $('simulateUrgent').onclick=simulateUrgent;$('resetUrgent').onclick=resetUrgent;
 (function(){
 'use strict';
 const CFG_KEY='SK_APS_SYSTEM_SETTINGS_V1',POOL_KEY='SK_APS_POOL_SNAPSHOT_V1',SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
+const LARGE_POOL_KEY='SK_APS_POOL_SNAPSHOT_LARGE_V1',LARGE_SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1';
+const LARGE_BACKUP_KEYS=[LARGE_POOL_KEY,LARGE_SCH_KEY,'SK_APS_FAST_POOL_V1107','SK_APS_FAST_SCHEDULE_V1107','SK_APS_FAST_META_V1107','SK_APS_SPEED_MASTER_V1','SK_APS_SPEED_FEEDBACK_V2'];
 const ADMIN_PASSWORD='0857',ADMIN_FAIL_KEY='SK_APS_ADMIN_PASSWORD_FAIL_V1',ADMIN_LOCK_MS=10*60*1000;
 const $s=id=>document.getElementById(id);
 const defaults={name:'SEAL KING Smart APS',admin:'系統管理員',department:'加工課',subtitle:'加工課智慧排程與決策平台',version:'Enterprise Preview 2',dataOwner:'',animations:true,compact:false,stickySidebar:true,tooltips:true,persistPool:true,autoLoadPool:true,persistSchedule:true,autoLoadSchedule:true,missingSpeedAlert:1,overdueAlert:1,machineLoadAlert:90,staleHours:24};
@@ -4008,29 +4010,114 @@ function adminPasswordGuard(action){
 function bytes(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';n+=(k.length+v.length)*2}return n}
 function apsKeys(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('SK_APS_'))a.push(k)}return a.sort()}
 function renderStats(){if($s('sysPoolCount'))$s('sysPoolCount').textContent=(window.S?.pool||[]).length;if($s('sysScheduleCount'))$s('sysScheduleCount').textContent=(window.S?.schedule||[]).length;if($s('sysStorageCount'))$s('sysStorageCount').textContent=apsKeys().length;if($s('sysStorageSize'))$s('sysStorageSize').textContent=(bytes()/1024).toFixed(1)+' KB';const keys=apsKeys();if(!$s('sysStorageTable'))return;if(!keys.length){$s('sysStorageTable').className='empty';$s('sysStorageTable').textContent='目前沒有 APS 永久資料';return}$s('sysStorageTable').className='tablewrap';$s('sysStorageTable').innerHTML=`<table><thead><tr><th>資料鍵</th><th>容量</th><th>更新資訊</th><th>處理</th></tr></thead><tbody>${keys.map(k=>{const v=localStorage.getItem(k)||'';let info='—';try{const j=JSON.parse(v);info=Array.isArray(j)?`${j.length} 筆`:typeof j==='object'?`${Object.keys(j||{}).length} 個欄位`:'值'}catch{info='文字'}return `<tr><td class="sys-storage-key">${k}</td><td>${((k.length+v.length)*2/1024).toFixed(1)} KB</td><td>${info}</td><td class="sys-storage-actions"><button class="btn ghost" data-sys-download="${k}">下載</button> <button class="btn red" data-sys-delete="${k}">刪除</button></td></tr>`}).join('')}</tbody></table>`}
-function download(name,obj){const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function download(name,data,mime='application/json;charset=utf-8'){
+  const blob=data instanceof Blob?data:new Blob([typeof data==='string'?data:JSON.stringify(data)],{type:mime});
+  const a=document.createElement('a'),url=URL.createObjectURL(blob);
+  a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+const sysYield=()=>new Promise(resolve=>{if('requestIdleCallback' in window)requestIdleCallback(()=>resolve(),{timeout:120});else setTimeout(resolve,0)});
+async function downloadStorageKey(key){
+  const raw=localStorage.getItem(key);
+  if(raw===null){alert('找不到此筆永久資料：'+key);return}
+  await sysYield();
+  download(`${key}.json`,raw,'application/json;charset=utf-8');
+}
 function saveSnapshots(silent=false){
- const c=readCfg(),pool=window.S?.pool||[],schedule=window.S?.schedule||[];
+ const c=readCfg(),pool=window.S?.pool||[],schedule=window.S?.schedule||[],savedAt=new Date().toISOString();
  try{
   if(c.persistPool){
-   if(pool.length<=500)localStorage.setItem(POOL_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:pool}));
-   else{localStorage.removeItem(POOL_KEY);window.APSLargeStore?.set?.('SK_APS_POOL_SNAPSHOT_LARGE_V1',{savedAt:new Date().toISOString(),rows:pool},{mirrorSmall:false});}
+   localStorage.removeItem(POOL_KEY);
+   window.APSLargeStore?.set?.(LARGE_POOL_KEY,{savedAt,rows:pool},{mirrorSmall:false});
   }
-  if(c.persistSchedule)localStorage.setItem(SCH_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:schedule,machines:window.S?.machines||{}}));
+  if(c.persistSchedule){
+   localStorage.removeItem(SCH_KEY);
+   window.APSLargeStore?.set?.(LARGE_SCH_KEY,{savedAt,rows:schedule,machines:window.S?.machines||{}},{mirrorSmall:false});
+  }
  }catch(e){console.warn('APS snapshot skipped',e?.message||e)}
- updateSnapshotStatus();renderStats();if(!silent)toast('目前工單池與排程已保存')
+ updateSnapshotStatus();renderStats();if(!silent)toast('目前工單池與排程已保存至大型資料庫')
 }
-function restoreSnapshots(){const c=readCfg();try{if(c.autoLoadPool&&!(window.S?.pool||[]).length){const p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');if(p?.rows?.length)window.S.pool=p.rows}if(c.autoLoadSchedule&&!(window.S?.schedule||[]).length){const q=JSON.parse(localStorage.getItem(SCH_KEY)||'null');if(q?.rows?.length){window.S.schedule=q.rows;window.S.machines=q.machines||window.S.machines||{}}}}catch(e){console.warn('snapshot restore failed',e)}try{window.renderPool?.();window.renderSchedule?.();window.updateKpi?.()}catch{}}
-function updateSnapshotStatus(){const e=$s('sysSnapshotStatus');if(!e)return;let p=null,q=null;try{p=JSON.parse(localStorage.getItem(POOL_KEY)||'null');q=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch{};e.textContent=`工單池快照：${p?.rows?.length||0} 筆${p?.savedAt?'（'+new Date(p.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}；排程快照：${q?.rows?.length||0} 段${q?.savedAt?'（'+new Date(q.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}。`}
-function exportAll(){const storage={};apsKeys().forEach(k=>storage[k]=localStorage.getItem(k));download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,{format:'SEAL_KING_APS_BACKUP',build:'0047.1',exportedAt:new Date().toISOString(),storage,state:{pool:window.S?.pool||[],schedule:window.S?.schedule||[],machines:window.S?.machines||{}}})}
-async function importAll(file){if(!adminPasswordGuard('匯入完整備份並覆蓋目前 APS 資料'))return;const txt=await file.text(),obj=JSON.parse(txt);if(obj.format!=='SEAL_KING_APS_BACKUP'&&!obj.storage)throw new Error('不是有效的 APS 完整備份');if(!confirm('密碼正確。確定以此備份覆蓋目前 APS 資料？'))return;Object.entries(obj.storage||{}).forEach(([k,v])=>{if(k.startsWith('SK_APS_'))localStorage.setItem(k,String(v))});if(obj.state&&window.S){window.S.pool=obj.state.pool||[];window.S.schedule=obj.state.schedule||[];window.S.machines=obj.state.machines||{}}const c=readCfg();fillForm(c);applyCfg(c);renderStats();updateSnapshotStatus();window.renderPool?.();window.renderSchedule?.();window.updateKpi?.();toast('完整系統備份已匯入')}
+async function restoreSnapshots(){
+ const c=readCfg();
+ try{
+  let p=null,q=null;
+  if(c.autoLoadPool&&!(window.S?.pool||[]).length){
+   p=await window.APSLargeStore?.hydrate?.(LARGE_POOL_KEY,null);
+   if(!p){try{p=JSON.parse(localStorage.getItem(POOL_KEY)||'null')}catch{}}
+   if(p?.rows?.length)window.S.pool=p.rows;
+  }
+  if(c.autoLoadSchedule&&!(window.S?.schedule||[]).length){
+   q=await window.APSLargeStore?.hydrate?.(LARGE_SCH_KEY,null);
+   if(!q){try{q=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch{}}
+   if(q?.rows?.length){window.S.schedule=q.rows;window.S.machines=q.machines||window.S.machines||{}}
+  }
+ }catch(e){console.warn('snapshot restore failed',e)}
+ try{window.renderPool?.();window.renderSchedule?.();window.updateKpi?.()}catch{}
+ updateSnapshotStatus();renderStats();
+}
+function updateSnapshotStatus(){
+ const e=$s('sysSnapshotStatus');if(!e)return;
+ let p=window.APSLargeStore?.getSync?.(LARGE_POOL_KEY,null),q=window.APSLargeStore?.getSync?.(LARGE_SCH_KEY,null);
+ if(!p){try{p=JSON.parse(localStorage.getItem(POOL_KEY)||'null')}catch{}}
+ if(!q){try{q=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch{}}
+ e.textContent=`工單池快照：${p?.rows?.length||0} 筆${p?.savedAt?'（'+new Date(p.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}；排程快照：${q?.rows?.length||0} 段${q?.savedAt?'（'+new Date(q.savedAt).toLocaleString('zh-TW',{hour12:false})+'）':''}｜大型資料庫。`;
+}
+async function exportAll(){
+  const btn=$s('sysExportAll');
+  if(btn?.dataset.busy==='1')return;
+  const oldText=btn?.textContent||'下載完整系統備份';
+  if(btn){btn.dataset.busy='1';btn.disabled=true;btn.textContent='正在整理備份…'}
+  try{
+    // 先把目前工單池／排程寫入既有快照，再只備份 localStorage，避免同一份大型資料重複序列化兩次。
+    try{saveSnapshots(true)}catch(e){console.warn('snapshot before export skipped',e)}
+    await sysYield();
+    const keys=apsKeys(),parts=[];
+    parts.push('{"format":"SEAL_KING_APS_BACKUP","build":"0104.0-indexeddb-stable","exportedAt":');
+    parts.push(JSON.stringify(new Date().toISOString()));
+    parts.push(',"storage":{');
+    for(let i=0;i<keys.length;i++){
+      const k=keys[i],raw=localStorage.getItem(k);
+      if(i)parts.push(',');
+      parts.push(JSON.stringify(k),':',JSON.stringify(raw));
+      if(btn)btn.textContent=`正在整理備份 ${i+1}/${keys.length}`;
+      await sysYield();
+    }
+    parts.push('},"largeStorage":{');
+    let largeWritten=0;
+    for(const key of LARGE_BACKUP_KEYS){
+      const value=await window.APSLargeStore?.hydrate?.(key,null);
+      if(value===null||value===undefined)continue;
+      if(largeWritten++)parts.push(',');
+      parts.push(JSON.stringify(key),':',JSON.stringify(value));
+      if(btn)btn.textContent=`正在整理大型資料 ${largeWritten}`;
+      await sysYield();
+    }
+    parts.push('},"stateSummary":',JSON.stringify({poolCount:window.S?.pool?.length||0,scheduleCount:window.S?.schedule?.length||0,machineCount:Object.keys(window.S?.machines||{}).length}),'}');
+    download(`SEAL_KING_APS_完整備份_${new Date().toISOString().slice(0,10)}.json`,new Blob(parts,{type:'application/json;charset=utf-8'}));
+    toast('完整系統備份已開始下載');
+  }catch(err){console.error(err);alert('備份下載失敗：'+(err.message||err))}
+  finally{if(btn){btn.dataset.busy='0';btn.disabled=false;btn.textContent=oldText}}
+}
+async function importAll(file){
+ if(!adminPasswordGuard('匯入完整備份並覆蓋目前 APS 資料'))return;
+ const txt=await file.text(),obj=JSON.parse(txt);
+ if(obj.format!=='SEAL_KING_APS_BACKUP'&&!obj.storage)throw new Error('不是有效的 APS 完整備份');
+ if(!confirm('密碼正確。確定以此備份覆蓋目前 APS 資料？'))return;
+ Object.entries(obj.storage||{}).forEach(([k,v])=>{if(k.startsWith('SK_APS_'))localStorage.setItem(k,String(v))});
+ for(const [k,v] of Object.entries(obj.largeStorage||{})){
+   if(k.startsWith('SK_APS_'))await window.APSLargeStore?.set?.(k,v,{mirrorSmall:false});
+ }
+ if(obj.state&&window.S){window.S.pool=obj.state.pool||[];window.S.schedule=obj.state.schedule||[];window.S.machines=obj.state.machines||{}}
+ await restoreSnapshots();
+ const c=readCfg();fillForm(c);applyCfg(c);renderStats();updateSnapshotStatus();window.renderPool?.();window.renderSchedule?.();window.updateKpi?.();toast('完整系統備份已匯入')
+}
 function clearAll(){const count=apsKeys().length;if(!confirm(`確定清除全部 APS 永久資料（共 ${count} 項）？此操作無法復原，建議先下載備份。`))return;if(!adminPasswordGuard(`清除全部 APS 永久資料（${count} 項）`))return;if(!confirm(`密碼正確。最後確認：永久刪除 ${count} 項 APS 資料？`))return;apsKeys().forEach(k=>localStorage.removeItem(k));if(window.S){window.S.pool=[];window.S.schedule=[];window.S.machines={}}fillForm(defaults);applyCfg(defaults);renderStats();updateSnapshotStatus();toast('全部 APS 永久資料已清除')}
 function hookPersistence(){const wrap=(name,type)=>{const f=window[name];if(typeof f!=='function'||f.__sysWrapped)return;const g=function(...args){const r=f.apply(this,args);setTimeout(()=>{const c=readCfg();if((type==='pool'&&c.persistPool)||(type==='schedule'&&c.persistSchedule))saveSnapshots(true)},0);return r};g.__sysWrapped=true;window[name]=g};wrap('buildPool','pool');wrap('runSchedule','schedule');wrap('renderSchedule','schedule')}
 const cfg=readCfg();applyCfg(cfg);document.addEventListener('DOMContentLoaded',()=>{fillForm(cfg);restoreSnapshots();renderStats();updateSnapshotStatus();hookPersistence()});setTimeout(()=>{fillForm(readCfg());restoreSnapshots();renderStats();updateSnapshotStatus();hookPersistence()},300);
-$s('sysSaveAll')?.addEventListener('click',()=>{const c=cfgFromForm();writeCfg(c);applyCfg(c);renderStats();toast('系統設定已永久儲存')});$s('sysExportAll')?.addEventListener('click',exportAll);$s('sysImportAll')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{await importAll(f)}catch(err){alert('匯入失敗：'+err.message)}e.target.value=''});$s('sysSaveSnapshot')?.addEventListener('click',()=>saveSnapshots(false));$s('sysClearSnapshots')?.addEventListener('click',()=>{if(!confirm('確定清除工單池與排程快照？'))return;if(!adminPasswordGuard('清除工單池與排程快照'))return;if(!confirm('密碼正確。最後確認：立即清除兩份快照？'))return;localStorage.removeItem(POOL_KEY);localStorage.removeItem(SCH_KEY);updateSnapshotStatus();renderStats();toast('快照已清除')});$s('sysRefreshStorage')?.addEventListener('click',renderStats);$s('sysClearAllStorage')?.addEventListener('click',clearAll);
-document.addEventListener('click',e=>{const d=e.target.closest('[data-sys-download]');if(d){const k=d.dataset.sysDownload;let v=localStorage.getItem(k);try{v=JSON.parse(v)}catch{}download(`${k}.json`,{key:k,value:v,exportedAt:new Date().toISOString()})}const x=e.target.closest('[data-sys-delete]');if(x){const key=x.dataset.sysDelete;if(!confirm(`確定刪除永久資料「${key}」？`))return;if(!adminPasswordGuard(`刪除永久資料 ${key}`))return;if(!confirm(`密碼正確。最後確認：刪除「${key}」？`))return;localStorage.removeItem(key);renderStats();updateSnapshotStatus();toast(`已刪除 ${key}`)}});
+$s('sysSaveAll')?.addEventListener('click',()=>{const c=cfgFromForm();writeCfg(c);applyCfg(c);renderStats();toast('系統設定已永久儲存')});$s('sysExportAll')?.addEventListener('click',exportAll);$s('sysImportAll')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{await importAll(f)}catch(err){alert('匯入失敗：'+err.message)}e.target.value=''});$s('sysSaveSnapshot')?.addEventListener('click',()=>saveSnapshots(false));$s('sysClearSnapshots')?.addEventListener('click',()=>{if(!confirm('確定清除工單池與排程快照？'))return;if(!adminPasswordGuard('清除工單池與排程快照'))return;if(!confirm('密碼正確。最後確認：立即清除兩份快照？'))return;localStorage.removeItem(POOL_KEY);localStorage.removeItem(SCH_KEY);window.APSLargeStore?.remove?.(LARGE_POOL_KEY);window.APSLargeStore?.remove?.(LARGE_SCH_KEY);updateSnapshotStatus();renderStats();toast('快照已清除')});$s('sysRefreshStorage')?.addEventListener('click',renderStats);$s('sysClearAllStorage')?.addEventListener('click',clearAll);
+document.addEventListener('click',e=>{const d=e.target.closest('[data-sys-download]');if(d){e.preventDefault();downloadStorageKey(d.dataset.sysDownload)}const x=e.target.closest('[data-sys-delete]');if(x){const key=x.dataset.sysDelete;if(!confirm(`確定刪除永久資料「${key}」？`))return;if(!adminPasswordGuard(`刪除永久資料 ${key}`))return;if(!confirm(`密碼正確。最後確認：刪除「${key}」？`))return;localStorage.removeItem(key);renderStats();updateSnapshotStatus();toast(`已刪除 ${key}`)}});
 window.SKAPSAdminGuard=adminPasswordGuard;
-window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats};
+window.SKAPSSystem={readCfg,saveSnapshots,restoreSnapshots,exportAll,renderStats,LARGE_POOL_KEY,LARGE_SCH_KEY};
 })();
 </script>
 
@@ -8149,6 +8236,8 @@ body::after{
 
   const POOL_KEY='SK_APS_POOL_SNAPSHOT_V1';
   const SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_V1';
+  const LARGE_POOL_KEY='SK_APS_POOL_SNAPSHOT_LARGE_V1';
+  const LARGE_SCH_KEY='SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1';
   const VERSION_LABEL='V95 Enterprise｜Build 0102.1.1.2';
 
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -8165,28 +8254,20 @@ body::after{
     });
   }
 
-  function restoreSnapshotFirst(){
+  async function restoreSnapshotFirst(){
     if(!window.S) return false;
-
-    const poolSnap=rowsOfSnapshot(POOL_KEY);
-    const scheduleSnap=rowsOfSnapshot(SCH_KEY);
-
-    // 快照優先：頁面一開啟先恢復上次正常畫面。
-    if((!Array.isArray(window.S.pool)||window.S.pool.length===0) && poolSnap.length){
-      window.S.pool=poolSnap;
-    }
+    let poolObj=await window.APSLargeStore?.hydrate?.(LARGE_POOL_KEY,null);
+    let scheduleObj=await window.APSLargeStore?.hydrate?.(LARGE_SCH_KEY,null);
+    if(!poolObj){try{poolObj=JSON.parse(localStorage.getItem(POOL_KEY)||'null')}catch(_){}}
+    if(!scheduleObj){try{scheduleObj=JSON.parse(localStorage.getItem(SCH_KEY)||'null')}catch(_){}}
+    const poolSnap=poolObj&&Array.isArray(poolObj.rows)?poolObj.rows:[];
+    const scheduleSnap=scheduleObj&&Array.isArray(scheduleObj.rows)?scheduleObj.rows:[];
+    if((!Array.isArray(window.S.pool)||window.S.pool.length===0) && poolSnap.length)window.S.pool=poolSnap;
     if((!Array.isArray(window.S.schedule)||window.S.schedule.length===0) && scheduleSnap.length){
       window.S.schedule=scheduleSnap;
-      try{
-        const q=JSON.parse(localStorage.getItem(SCH_KEY)||'null');
-        if(q&&q.machines) window.S.machines=q.machines;
-      }catch(_){}
+      if(scheduleObj?.machines)window.S.machines=scheduleObj.machines;
     }
-
-    if((window.S.pool||[]).length || (window.S.schedule||[]).length){
-      renderAll();
-      return true;
-    }
+    if((window.S.pool||[]).length || (window.S.schedule||[]).length){renderAll();return true}
     return false;
   }
 
@@ -8195,22 +8276,10 @@ body::after{
     try{
       const pool=Array.isArray(window.S.pool)?window.S.pool:[];
       const schedule=Array.isArray(window.S.schedule)?window.S.schedule:[];
-      if(pool.length){
-        localStorage.setItem(POOL_KEY,JSON.stringify({
-          savedAt:new Date().toISOString(),
-          rows:pool
-        }));
-      }
-      if(schedule.length){
-        localStorage.setItem(SCH_KEY,JSON.stringify({
-          savedAt:new Date().toISOString(),
-          rows:schedule,
-          machines:window.S.machines||{}
-        }));
-      }
-    }catch(err){
-      console.warn('Build0100.3 snapshot save',err);
-    }
+      const savedAt=new Date().toISOString();
+      if(pool.length){localStorage.removeItem(POOL_KEY);window.APSLargeStore?.set?.(LARGE_POOL_KEY,{savedAt,rows:pool},{mirrorSmall:false});}
+      if(schedule.length){localStorage.removeItem(SCH_KEY);window.APSLargeStore?.set?.(LARGE_SCH_KEY,{savedAt,rows:schedule,machines:window.S.machines||{}},{mirrorSmall:false});}
+    }catch(err){console.warn('Build0100.3 snapshot save',err)}
   }
 
   function dataHubIsReady(){
@@ -8275,7 +8344,7 @@ body::after{
     // 等待主狀態建立後，先恢復快照。
     for(let i=0;i<40;i++){
       if(window.S){
-        restoreSnapshotFirst();
+        restoreSnapshotFirst().catch(err=>console.warn('Build0100.3 restore',err));
         break;
       }
       await sleep(150);
@@ -8295,7 +8364,7 @@ body::after{
         }else if(pool && !schedule && dataHubIsReady()){
           await generateScheduleIfNeeded();
         }else if(!pool){
-          restoreSnapshotFirst();
+          restoreSnapshotFirst().catch(err=>console.warn('Build0100.3 restore',err));
         }
       }
 
@@ -9653,6 +9722,21 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<script id="aps-build01041-visible-label">
+(()=>{
+  const LABEL='Build 0104.1 IndexedDB Stable';
+  const apply=()=>{
+    document.title='SEAL KING Smart APS｜'+LABEL;
+    document.querySelectorAll('.header-time small,.version').forEach(el=>{
+      const t=String(el.textContent||'');
+      if(/Build\s*00\d+|Enterprise Preview|V9\d/i.test(t))el.textContent=LABEL;
+    });
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+  setTimeout(apply,1200);
+})();
+</script>
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
