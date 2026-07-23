@@ -1535,7 +1535,8 @@ window.noticeCardHtml=function(r){
  const badge=`<span class="noticeBadge ${updated?'updated':''}">V${version}${updated?'｜已更新 / อัปเดตแล้ว':''}</span>`;
  html=html.replace('<div class="noticeBadges">','<div class="noticeBadges">'+badge);
  if(updated){
-   const summary=`<div class="noticeChangeBox">⚠ 急件內容已更新 / อัปเดตรายการเร่งด่วน<br>更新人：${urgentEsc(r.last_modified_by_name||'—')}｜時間：${urgentEsc(r.last_modified_at||r.updated_at||'—')}<br>變更：${urgentEsc(r.last_change_summary||'請查看詳細內容')}</div>`;
+   const managementNote=r.management_note?`<br>急件備註：${urgentEsc(r.management_note)}`:'';
+   const summary=`<div class="noticeChangeBox">⚠ 急件內容已更新 / อัปเดตรายการเร่งด่วน<br>更新人：${urgentEsc(r.last_modified_by_name||'—')}｜時間：${urgentEsc(r.last_modified_at||r.updated_at||'—')}<br>變更：${urgentEsc(r.last_change_summary||'請查看詳細內容')}${managementNote}</div>`;
    html=html.replace('<div class="noticeActions">',summary+'<div class="noticeActions">');
  }
  return html;
