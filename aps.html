@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.2</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.3</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -9630,10 +9630,25 @@ function rows(){
  return Array.isArray(window.S?.schedule)?window.S.schedule:[];
 }
 function normalize(x,i){
- const dateBase=x.date||x.production_date||x.schedule_date;
- let start=dt(x.start||x.start_time||x.begin),end=dt(x.end||x.end_time||x.finish);
+ const dateBase=x.date||x.production_date||x.schedule_date||x.productionDate;
+ const parseDateTime=(value,base)=>{
+   if(value instanceof Date)return isNaN(value)?null:value;
+   const s=String(value??'').trim();
+   if(!s)return null;
+   // 相容只有 HH:mm 的時間欄位，搭配排程日期組成完整時間。
+   if(/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)&&base){
+     const bd=dt(base);if(!bd)return null;
+     const p=s.split(':').map(Number);
+     bd.setHours(p[0]||0,p[1]||0,p[2]||0,0);
+     return bd;
+   }
+   return dt(s);
+ };
+ let start=parseDateTime(x.start??x.start_time??x.startTime??x.begin,dateBase);
+ let end=parseDateTime(x.end??x.end_time??x.endTime??x.finish,dateBase);
  if(!start&&dateBase&&x.start_minute!=null){start=dt(dateBase);if(start)start=new Date(start.getTime()+Number(x.start_minute)*MIN)}
  if(!end&&start&&x.minutes!=null)end=new Date(start.getTime()+Number(x.minutes)*MIN);
+ if(start&&end&&end<=start&&dateBase)end=new Date(end.getTime()+DAY);
  return{raw:x,i,uid:String(x.uid||x.id||`${x.wo||x.work_order_no||'ROW'}-${i}`),wo:String(x.wo||x.work_order_no||x.order_no||''),machine:String(x.machine||x.machine_code||''),start,end,customer:String(x.customer||x.customer_name||''),spec:String(x.spec||x.product_spec||x.name||x.part||''),due:dt(x.due||x.due_date||x.delivery_date),reason:String(x.reason||''),status:String(x.status||'normal').toLowerCase(),dept:String(x.dept||x.department||'')};
 }
 function earliestScheduleDate(){
@@ -9643,8 +9658,19 @@ function earliestScheduleDate(){
 }
 function syncAutoDate(){
  const input=$('aps3dDate');if(!input||!autoDate)return;
- const dashboard=$('dashboardDate')?.value,start=$('startDate')?.value;
- const preferred=dashboard||start||(earliestScheduleDate()?fmtDate(earliestScheduleDate()):'');
+ // 三天排程必須先對準「實際已有排程」的最早生產日。
+ // dashboardDate 可能是今天，與既有排程日期不同；也可能使用 YYYY/MM/DD，
+ // 直接塞入 type=date 會被瀏覽器判定為空值。
+ const earliest=earliestScheduleDate();
+ const normalizeDateValue=v=>{
+   const s=String(v||'').trim().replaceAll('/','-');
+   const m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+   return m?`${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`:'';
+ };
+ const scheduleDate=earliest?fmtDate(earliest):'';
+ const start=normalizeDateValue($('startDate')?.value);
+ const dashboard=normalizeDateValue($('dashboardDate')?.value);
+ const preferred=scheduleDate||start||dashboard;
  if(preferred&&input.value!==preferred)input.value=preferred;
 }
 function deptOf(machine){const m=String(machine).toUpperCase();if(['1B02','1B08','1B10','1B19','1S02','1S18'].includes(m))return'工業';if(['1S03','1S12','1S16','1S19','1S07'].includes(m))return'保密';if(['1B22','1V09','1V01','1V02','1C18'].includes(m))return'文具';return'其他'}
@@ -9672,7 +9698,7 @@ setInterval(()=>{
     if(count!==__aps3dLastCount){__aps3dLastCount=count;render();}
   }catch(e){console.warn('APS3D passive refresh failed',e)}
 },5000);
-window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,version:'V93.1-safe-readonly'};
+window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,version:'V93.2-date-aligned-readonly'};
 })();
 </script>\n
 
@@ -10317,7 +10343,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
     core:'V95.1',
-    build:'0104.2',
+    build:'0104.3',
     engine:'IndexedDB Stable',
     date:'2026-07-23'
   });
@@ -10437,7 +10463,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V95.1',build:'0104.2',engine:'IndexedDB Stable'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0104.3',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
