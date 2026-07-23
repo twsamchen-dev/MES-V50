@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.3</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.4</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -958,7 +958,7 @@ function render(){['renderPool','renderSchedule','renderHome','updateKpi','rende
 async function waitEngine(){for(let i=0;i<80;i++){if(window.Build0051APSSpeedEngine?.sync&&window.S)return true;await sleep(250)}return false}
 async function run(force=false){if(running)return;running=true;forceLabel();state(force?'手動重新同步':'開始載入');try{const rows=await fetchRows();if(!rows.length)throw new Error('DataHub 回傳 0 筆');window.__BUILD0057_DATAHUB_ROWS__=rows.slice();await waitEngine();let usedEngine=false;if(window.Build0051APSSpeedEngine?.sync){state('DataHub '+rows.length+' 筆｜產速配對中');await window.Build0051APSSpeedEngine.sync(false);await sleep(500);usedEngine=Array.isArray(window.S?.pool)&&window.S.pool.length>0}if(!window.S)window.S={files:{},rows:{},pool:[],schedule:[],machines:{},logs:[]};if(!usedEngine){window.S.pool=fallbackConvert(rows);window.S.rows=window.S.rows||{};window.S.rows.datahub=rows}if(!Array.isArray(window.S.schedule))window.S.schedule=[];render();try{window.SKAPSSystem?.saveSnapshots?.(true)}catch{};const p=window.S.pool.length,s=window.S.schedule.length;if(!p)throw new Error('已下載 '+rows.length+' 筆，但工單池轉換為 0');state('已載入｜DataHub '+rows.length+'｜工單 '+p+'｜排程 '+s,'ok');}catch(err){console.error('APS 0096',err);state('失敗：'+(err.message||err)+'｜點此重試','bad')}finally{running=false;forceLabel()}}
 function install(){
-  // Build 0104.3：救援模組完全改為手動待命。
+  // Build 0104.4：救援模組完全改為手動待命。
   // 啟動時不建立右下角狀態、不移除右上 APS 雲端狀態，也不自動下載 DataHub。
   window.APSRecovery0096={run};
   window.__APS_RECOVERY_MANUAL_ONLY__=true;
@@ -9632,10 +9632,9 @@ function rows(){
 function normalize(x,i){
  const dateBase=x.date||x.production_date||x.schedule_date||x.productionDate;
  const parseDateTime=(value,base)=>{
-   if(value instanceof Date)return isNaN(value)?null:value;
+   if(value instanceof Date)return isNaN(value)?null:new Date(value);
    const s=String(value??'').trim();
    if(!s)return null;
-   // 相容只有 HH:mm 的時間欄位，搭配排程日期組成完整時間。
    if(/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)&&base){
      const bd=dt(base);if(!bd)return null;
      const p=s.split(':').map(Number);
@@ -9644,12 +9643,14 @@ function normalize(x,i){
    }
    return dt(s);
  };
- let start=parseDateTime(x.start??x.start_time??x.startTime??x.begin,dateBase);
- let end=parseDateTime(x.end??x.end_time??x.endTime??x.finish,dateBase);
+ let start=parseDateTime(x.start??x.start_time??x.startTime??x.begin??x.begin_time,dateBase);
+ let end=parseDateTime(x.end??x.end_time??x.endTime??x.finish??x.finish_time,dateBase);
  if(!start&&dateBase&&x.start_minute!=null){start=dt(dateBase);if(start)start=new Date(start.getTime()+Number(x.start_minute)*MIN)}
  if(!end&&start&&x.minutes!=null)end=new Date(start.getTime()+Number(x.minutes)*MIN);
- if(start&&end&&end<=start&&dateBase)end=new Date(end.getTime()+DAY);
- return{raw:x,i,uid:String(x.uid||x.id||`${x.wo||x.work_order_no||'ROW'}-${i}`),wo:String(x.wo||x.work_order_no||x.order_no||''),machine:String(x.machine||x.machine_code||''),start,end,customer:String(x.customer||x.customer_name||''),spec:String(x.spec||x.product_spec||x.name||x.part||''),due:dt(x.due||x.due_date||x.delivery_date),reason:String(x.reason||''),status:String(x.status||'normal').toLowerCase(),dept:String(x.dept||x.department||'')};
+ if(start&&end&&end<=start)end=new Date(end.getTime()+DAY);
+ const wo=x.wo||x.work_order_no||x.workOrderNo||x.order_no||x.command_no||'';
+ const machine=x.machine||x.machine_code||x.machineCode||x.sourceMachine||'';
+ return{raw:x,i,uid:String(x.uid||x.id||`${wo||'ROW'}-${i}`),wo:String(wo).trim(),machine:String(machine).trim(),start,end,customer:String(x.customer||x.customer_name||''),spec:String(x.spec||x.product_spec||x.name||x.part||x.part_no||''),due:dt(x.due||x.due_date||x.delivery_date),reason:String(x.reason||''),status:String(x.status||'normal').toLowerCase(),dept:String(x.dept||x.department||'')};
 }
 function earliestScheduleDate(){
  const starts=rows().map(normalize).map(j=>j.start).filter(Boolean).sort((a,b)=>a-b);
@@ -9675,9 +9676,24 @@ function syncAutoDate(){
 }
 function deptOf(machine){const m=String(machine).toUpperCase();if(['1B02','1B08','1B10','1B19','1S02','1S18'].includes(m))return'工業';if(['1S03','1S12','1S16','1S19','1S07'].includes(m))return'保密';if(['1B22','1V09','1V01','1V02','1C18'].includes(m))return'文具';return'其他'}
 function statusOf(j){if(j.status.includes('maint')||j.reason.includes('保養'))return'maint';if(j.status.includes('urgent')||j.reason.includes('急'))return'urgent';if(j.status.includes('wait')||j.reason.includes('待料'))return'wait';if(j.status.includes('manual'))return'manual';if(j.due&&j.end&&j.end>j.due)return'delay';return'normal'}
-function data(){const base=startOfProductionDay($('aps3dDate')?.value),end=new Date(base.getTime()+3*DAY);return{base,end,jobs:rows().map(normalize).filter(j=>j.start&&j.end&&j.end>base&&j.start<end)}}
+function data(){
+ const raw=rows(),normalized=raw.map(normalize),valid=normalized.filter(j=>j.start&&j.end&&j.end>j.start);
+ let base=startOfProductionDay($('aps3dDate')?.value),end=new Date(base.getTime()+3*DAY);
+ let jobs=valid.filter(j=>j.end>base&&j.start<end),autoAligned=false;
+ // 有正式排程但所選三天區間完全沒有資料時，重新整理會自動對準最近的排程生產日，
+ // 避免 36 筆正式排程因日期區間不符而全部顯示為 0。
+ if(!jobs.length&&valid.length){
+   const nearest=valid.map(j=>j.start).sort((a,b)=>Math.abs(a-base)-Math.abs(b-base))[0];
+   const aligned=new Date(nearest);aligned.setHours(8,30,0,0);if(nearest<aligned)aligned.setDate(aligned.getDate()-1);
+   base=aligned;end=new Date(base.getTime()+3*DAY);
+   jobs=valid.filter(j=>j.end>base&&j.start<end);
+   const input=$('aps3dDate');if(input)input.value=fmtDate(base);
+   autoAligned=true;
+ }
+ return{base,end,jobs,rawCount:raw.length,validCount:valid.length,autoAligned};
+}
 function validate(jobs){const issues=[],bad=new Set();jobs.forEach(j=>{if(!j.wo){issues.push({type:'error',title:'缺少工單號',text:`${j.machine||'未指定機台'}｜${j.start?fmtDate(j.start)+' '+fmtTime(j.start):'時間不明'}`,uids:[j.uid]});bad.add(j.uid)}if(!j.machine){issues.push({type:'error',title:'缺少機台',text:`${j.wo||'未命名工單'}`,uids:[j.uid]});bad.add(j.uid)}if(!j.start||!j.end||j.end<=j.start){issues.push({type:'error',title:'排程時間異常',text:`${j.wo||j.uid}`,uids:[j.uid]});bad.add(j.uid)}if(j.due&&j.end&&j.end>j.due)issues.push({type:'warn',title:'完工晚於預交日',text:`${j.wo}｜完工 ${fmtDate(j.end)} ${fmtTime(j.end)}`,uids:[j.uid]})});const by={};jobs.filter(j=>j.machine&&j.start&&j.end).forEach(j=>(by[j.machine]??=[]).push(j));Object.entries(by).forEach(([m,a])=>{a.sort((x,y)=>x.start-y.start);for(let i=1;i<a.length;i++){if(a[i].start<a[i-1].end){issues.push({type:'error',title:'同機時間重疊',text:`${m}｜${a[i-1].wo} 與 ${a[i].wo}`,uids:[a[i-1].uid,a[i].uid]});bad.add(a[i-1].uid);bad.add(a[i].uid)}}});return{issues,bad,conflicts:issues.filter(x=>x.title==='同機時間重疊').length,warnings:issues.filter(x=>x.type==='warn').length}}
-function render(){syncAutoDate();const {base,end,jobs}=data(),q=String($('aps3dSearch')?.value||'').toLowerCase(),dept=$('aps3dDept')?.value||'',zoom=Number($('aps3dZoom')?.value||70),totalW=72*zoom;const vr=validate(jobs);lastIssues=vr.issues;const machines=[...new Set(jobs.map(j=>j.machine).filter(Boolean))].sort();const filteredMachines=machines.filter(m=>{const list=jobs.filter(j=>j.machine===m),hay=[m,...list.flatMap(j=>[j.wo,j.customer,j.spec])].join(' ').toLowerCase();return(!dept||deptOf(m)===dept)&&(!q||hay.includes(q))&&(!selectedMachine||m===selectedMachine)});$('aps3dJobs').textContent=new Set(jobs.map(j=>j.wo||j.uid)).size;$('aps3dMachines').textContent=machines.length;$('aps3dConflicts').textContent=vr.conflicts;$('aps3dWarnings').textContent=vr.warnings;$('aps3dStatus').textContent=`${fmtDate(base)} 08:30 ～ ${fmtDate(new Date(end-DAY))} 08:30｜${jobs.length} 個排程區段｜${filteredMachines.length} 台機台`;$('aps3dMachineList').innerHTML=machines.map(m=>{const list=jobs.filter(j=>j.machine===m);return`<div class="aps3d-machine-card ${selectedMachine===m?'active':''}" data-machine="${esc(m)}"><b>${esc(m)}<span>${list.length}</span></b><small>${deptOf(m)}｜${list.reduce((s,j)=>s+(j.end-j.start)/3600000,0).toFixed(1)} hr</small></div>`}).join('')||'<div class="aps3d-empty">三天內沒有排程機台</div>';if(!filteredMachines.length){$('aps3dGanttWrap').innerHTML='<div class="aps3d-empty">沒有符合條件的三天排程</div>';return}let html=`<div class="aps3d-canvas" style="width:${150+totalW}px"><div class="aps3d-head"><div class="aps3d-corner">機台／72 小時</div><div class="aps3d-axis" style="width:${totalW}px">`;for(let d=0;d<3;d++){const dd=new Date(base.getTime()+d*DAY);html+=`<div class="aps3d-day-label" style="left:${d*24*zoom}px;width:${24*zoom}px">${fmtDate(dd)}</div>`}for(let h=0;h<72;h+=2){const dd=new Date(base.getTime()+h*3600000);html+=`<div class="aps3d-hour-label" style="left:${h*zoom}px;width:${2*zoom}px">${fmtTime(dd)}</div>`}html+='</div></div>';filteredMachines.forEach(m=>{html+=`<div class="aps3d-row"><div class="aps3d-row-label"><b>${esc(m)}</b><small>${deptOf(m)}</small></div><div class="aps3d-track" style="width:${totalW}px">`;for(let h=0;h<=72;h+=2)html+=`<i class="aps3d-gridline" style="left:${h*zoom}px"></i>`;for(let d=0;d<3;d++)html+=`<i class="aps3d-night" style="left:${(d*24+12)*zoom}px;width:${12*zoom}px"></i>`;jobs.filter(j=>j.machine===m).forEach(j=>{const s=Math.max(0,(j.start-base)/3600000),e=Math.min(72,(j.end-base)/3600000),w=Math.max(3,(e-s)*zoom),cls=statusOf(j)+(vr.bad.has(j.uid)?' conflict':'');html+=`<div class="aps3d-job ${cls}" style="left:${s*zoom}px;width:${w}px" title="${esc(j.wo)}｜${fmtDate(j.start)} ${fmtTime(j.start)}～${fmtDate(j.end)} ${fmtTime(j.end)}｜${esc(j.customer)}"><strong>${esc(j.wo||'未命名')}</strong><span>${esc(j.spec||j.customer||'')}｜${fmtTime(j.start)}-${fmtTime(j.end)}</span></div>`});html+='</div></div>'});html+='</div>';$('aps3dGanttWrap').innerHTML=html}
+function render(){syncAutoDate();const {base,end,jobs,rawCount,validCount,autoAligned}=data(),q=String($('aps3dSearch')?.value||'').toLowerCase(),dept=$('aps3dDept')?.value||'',zoom=Number($('aps3dZoom')?.value||70),totalW=72*zoom;const vr=validate(jobs);lastIssues=vr.issues;const machines=[...new Set(jobs.map(j=>j.machine).filter(Boolean))].sort();const filteredMachines=machines.filter(m=>{const list=jobs.filter(j=>j.machine===m),hay=[m,...list.flatMap(j=>[j.wo,j.customer,j.spec])].join(' ').toLowerCase();return(!dept||deptOf(m)===dept)&&(!q||hay.includes(q))&&(!selectedMachine||m===selectedMachine)});$('aps3dJobs').textContent=new Set(jobs.map(j=>j.wo||j.uid)).size;$('aps3dMachines').textContent=machines.length;$('aps3dConflicts').textContent=vr.conflicts;$('aps3dWarnings').textContent=vr.warnings;$('aps3dStatus').textContent=`${fmtDate(base)} 08:30 ～ ${fmtDate(new Date(end-DAY))} 08:30｜${jobs.length} 個排程區段｜${filteredMachines.length} 台機台｜原始 ${rawCount}／有效 ${validCount}${autoAligned?'｜已自動對準最近排程日':''}`;$('aps3dMachineList').innerHTML=machines.map(m=>{const list=jobs.filter(j=>j.machine===m);return`<div class="aps3d-machine-card ${selectedMachine===m?'active':''}" data-machine="${esc(m)}"><b>${esc(m)}<span>${list.length}</span></b><small>${deptOf(m)}｜${list.reduce((s,j)=>s+(j.end-j.start)/3600000,0).toFixed(1)} hr</small></div>`}).join('')||'<div class="aps3d-empty">三天內沒有排程機台</div>';if(!filteredMachines.length){$('aps3dGanttWrap').innerHTML='<div class="aps3d-empty">沒有符合條件的三天排程</div>';return}let html=`<div class="aps3d-canvas" style="width:${150+totalW}px"><div class="aps3d-head"><div class="aps3d-corner">機台／72 小時</div><div class="aps3d-axis" style="width:${totalW}px">`;for(let d=0;d<3;d++){const dd=new Date(base.getTime()+d*DAY);html+=`<div class="aps3d-day-label" style="left:${d*24*zoom}px;width:${24*zoom}px">${fmtDate(dd)}</div>`}for(let h=0;h<72;h+=2){const dd=new Date(base.getTime()+h*3600000);html+=`<div class="aps3d-hour-label" style="left:${h*zoom}px;width:${2*zoom}px">${fmtTime(dd)}</div>`}html+='</div></div>';filteredMachines.forEach(m=>{html+=`<div class="aps3d-row"><div class="aps3d-row-label"><b>${esc(m)}</b><small>${deptOf(m)}</small></div><div class="aps3d-track" style="width:${totalW}px">`;for(let h=0;h<=72;h+=2)html+=`<i class="aps3d-gridline" style="left:${h*zoom}px"></i>`;for(let d=0;d<3;d++)html+=`<i class="aps3d-night" style="left:${(d*24+12)*zoom}px;width:${12*zoom}px"></i>`;jobs.filter(j=>j.machine===m).forEach(j=>{const s=Math.max(0,(j.start-base)/3600000),e=Math.min(72,(j.end-base)/3600000),w=Math.max(3,(e-s)*zoom),cls=statusOf(j)+(vr.bad.has(j.uid)?' conflict':'');html+=`<div class="aps3d-job ${cls}" style="left:${s*zoom}px;width:${w}px" title="${esc(j.wo)}｜${fmtDate(j.start)} ${fmtTime(j.start)}～${fmtDate(j.end)} ${fmtTime(j.end)}｜${esc(j.customer)}"><strong>${esc(j.wo||'未命名')}</strong><span>${esc(j.spec||j.customer||'')}｜${fmtTime(j.start)}-${fmtTime(j.end)}</span></div>`});html+='</div></div>'});html+='</div>';$('aps3dGanttWrap').innerHTML=html}
 function renderChecks(){const {jobs}=data(),v=validate(jobs);lastIssues=v.issues;$('aps3dConflicts').textContent=v.conflicts;$('aps3dWarnings').textContent=v.warnings;$('aps3dCheckList').innerHTML=!v.issues.length?'<div class="aps3d-check-item ok"><b>驗證通過</b><span>目前三天排程未發現重疊、時間或交期問題。</span></div>':v.issues.map(x=>`<div class="aps3d-check-item ${x.type==='error'?'error':''}"><b>${x.type==='error'?'⛔':'⚠'} ${esc(x.title)}</b><span>${esc(x.text)}</span></div>`).join('');render()}
 function today(){autoDate=false;const d=startOfProductionDay();$('aps3dDate').value=fmtDate(d);render()}
 function install(){if(!$('schedule3d'))return;syncAutoDate();if(!$('aps3dDate').value)$('aps3dDate').value=fmtDate(startOfProductionDay());
@@ -9698,7 +9714,7 @@ setInterval(()=>{
     if(count!==__aps3dLastCount){__aps3dLastCount=count;render();}
   }catch(e){console.warn('APS3D passive refresh failed',e)}
 },5000);
-window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,version:'V93.2-date-aligned-readonly'};
+window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,version:'V93.3-filter-aligned-readonly'};
 })();
 </script>\n
 
@@ -10343,7 +10359,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
     core:'V95.1',
-    build:'0104.3',
+    build:'0104.4',
     engine:'IndexedDB Stable',
     date:'2026-07-23'
   });
@@ -10463,7 +10479,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V95.1',build:'0104.3',engine:'IndexedDB Stable'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0104.4',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
