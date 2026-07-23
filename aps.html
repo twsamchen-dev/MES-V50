@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.5</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.6</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -958,7 +958,7 @@ function render(){['renderPool','renderSchedule','renderHome','updateKpi','rende
 async function waitEngine(){for(let i=0;i<80;i++){if(window.Build0051APSSpeedEngine?.sync&&window.S)return true;await sleep(250)}return false}
 async function run(force=false){if(running)return;running=true;forceLabel();state(force?'手動重新同步':'開始載入');try{const rows=await fetchRows();if(!rows.length)throw new Error('DataHub 回傳 0 筆');window.__BUILD0057_DATAHUB_ROWS__=rows.slice();await waitEngine();let usedEngine=false;if(window.Build0051APSSpeedEngine?.sync){state('DataHub '+rows.length+' 筆｜產速配對中');await window.Build0051APSSpeedEngine.sync(false);await sleep(500);usedEngine=Array.isArray(window.S?.pool)&&window.S.pool.length>0}if(!window.S)window.S={files:{},rows:{},pool:[],schedule:[],machines:{},logs:[]};if(!usedEngine){window.S.pool=fallbackConvert(rows);window.S.rows=window.S.rows||{};window.S.rows.datahub=rows}if(!Array.isArray(window.S.schedule))window.S.schedule=[];render();try{window.SKAPSSystem?.saveSnapshots?.(true)}catch{};const p=window.S.pool.length,s=window.S.schedule.length;if(!p)throw new Error('已下載 '+rows.length+' 筆，但工單池轉換為 0');state('已載入｜DataHub '+rows.length+'｜工單 '+p+'｜排程 '+s,'ok');}catch(err){console.error('APS 0096',err);state('失敗：'+(err.message||err)+'｜點此重試','bad')}finally{running=false;forceLabel()}}
 function install(){
-  // Build 0104.5：救援模組完全改為手動待命。
+  // Build 0104.6：救援模組完全改為手動待命。
   // 啟動時不建立右下角狀態、不移除右上 APS 雲端狀態，也不自動下載 DataHub。
   window.APSRecovery0096={run};
   window.__APS_RECOVERY_MANUAL_ONLY__=true;
@@ -10100,6 +10100,139 @@ window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,versi
 })();
 </script>
 
+
+<style id="build0104-6-aps3day-layout-fix">
+/* Build 0104.6｜僅修正三天排程版面，不改資料與排程邏輯 */
+#schedule3d .aps3d-gantt-wrap{
+  overflow:auto !important;
+  position:relative !important;
+  background:#08141b !important;
+}
+#schedule3d .aps3d-canvas{
+  position:relative !important;
+  display:block !important;
+  min-height:100% !important;
+  background:#08141b !important;
+}
+#schedule3d .aps3d-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:30 !important;
+  display:block !important;
+  height:64px !important;
+  min-height:64px !important;
+  background:#0b1a23 !important;
+  border-bottom:1px solid #36505e !important;
+}
+#schedule3d .aps3d-corner{
+  position:sticky !important;
+  left:0 !important;
+  top:0 !important;
+  z-index:35 !important;
+  display:flex !important;
+  align-items:center !important;
+  width:150px !important;
+  height:64px !important;
+  padding:10px !important;
+  background:#10212c !important;
+  border-right:1px solid #36505e !important;
+  white-space:nowrap !important;
+}
+#schedule3d .aps3d-axis{
+  position:absolute !important;
+  left:150px !important;
+  top:0 !important;
+  display:block !important;
+  height:64px !important;
+  white-space:nowrap !important;
+}
+#schedule3d .aps3d-day-label,
+#schedule3d .aps3d-hour-label{
+  position:absolute !important;
+  display:block !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  text-align:center !important;
+}
+#schedule3d .aps3d-day-label{
+  top:0 !important;
+  height:28px !important;
+  padding-top:6px !important;
+}
+#schedule3d .aps3d-hour-label{
+  top:28px !important;
+  height:36px !important;
+  padding:9px 4px !important;
+}
+#schedule3d .aps3d-row{
+  position:relative !important;
+  display:block !important;
+  height:66px !important;
+  min-height:66px !important;
+  border-bottom:1px solid #1d3440 !important;
+}
+#schedule3d .aps3d-row-label{
+  position:sticky !important;
+  left:0 !important;
+  top:auto !important;
+  z-index:20 !important;
+  display:block !important;
+  width:150px !important;
+  height:66px !important;
+  padding:9px 10px !important;
+  background:#0d1b24 !important;
+  border-right:1px solid #36505e !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+#schedule3d .aps3d-row-label b,
+#schedule3d .aps3d-row-label small{
+  display:block !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#schedule3d .aps3d-track{
+  position:absolute !important;
+  left:150px !important;
+  top:0 !important;
+  display:block !important;
+  height:66px !important;
+  min-height:66px !important;
+}
+#schedule3d .aps3d-gridline,
+#schedule3d .aps3d-night{
+  position:absolute !important;
+  top:0 !important;
+  bottom:0 !important;
+  display:block !important;
+}
+#schedule3d .aps3d-job{
+  position:absolute !important;
+  top:11px !important;
+  display:block !important;
+  height:44px !important;
+  min-height:44px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+#schedule3d .aps3d-job strong,
+#schedule3d .aps3d-job span{
+  display:block !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+#schedule3d .aps3d-machine-list{
+  overflow:auto !important;
+}
+#schedule3d .aps3d-machine-card{
+  display:block !important;
+}
+</style>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -10627,7 +10760,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
     core:'V95.1',
-    build:'0104.5',
+    build:'0104.6',
     engine:'IndexedDB Stable',
     date:'2026-07-23'
   });
@@ -10747,7 +10880,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V95.1',build:'0104.5',engine:'IndexedDB Stable'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0104.6',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
