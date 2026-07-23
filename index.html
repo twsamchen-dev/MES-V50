@@ -1519,5 +1519,29 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 document.addEventListener('DOMContentLoaded',()=>setupDraftProtection_());
 </script>
+
+<style id="urgent-notice-v120-style">
+.noticeBadge.updated{background:#fef3c7;color:#92400e}.noticeChangeBox{margin-top:9px;padding:9px 10px;border:1px solid #f59e0b;border-radius:11px;background:#fffbeb;color:#92400e;font-weight:800}
+</style>
+<script id="urgent-notice-v120-script">
+(function(){
+'use strict';
+const oldCard=window.noticeCardHtml;
+if(typeof oldCard!=='function')return;
+window.noticeCardHtml=function(r){
+ let html=oldCard(r);
+ const version=Math.max(1,Number(r.version||1));
+ const updated=version>1;
+ const badge=`<span class="noticeBadge ${updated?'updated':''}">V${version}${updated?'｜已更新 / อัปเดตแล้ว':''}</span>`;
+ html=html.replace('<div class="noticeBadges">','<div class="noticeBadges">'+badge);
+ if(updated){
+   const summary=`<div class="noticeChangeBox">⚠ 急件內容已更新 / อัปเดตรายการเร่งด่วน<br>更新人：${urgentEsc(r.last_modified_by_name||'—')}｜時間：${urgentEsc(r.last_modified_at||r.updated_at||'—')}<br>變更：${urgentEsc(r.last_change_summary||'請查看詳細內容')}</div>`;
+   html=html.replace('<div class="noticeActions">',summary+'<div class="noticeActions">');
+ }
+ return html;
+};
+})();
+</script>
+
 </body>
 </html>
