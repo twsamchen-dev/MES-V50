@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0103.1</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -872,6 +872,50 @@ body::after{
   }
 }
 </style>
+
+<style id="build0013-format-repair-final">
+/* 三天排程格式修復：只處理畫面，不改資料、不寫入 localStorage */
+#schedule3d{padding:0!important;overflow:hidden!important;color:#eef6fb!important;color-scheme:dark}
+#schedule3d .aps3d-shell{height:calc(100vh - 118px)!important;min-height:640px!important;display:flex!important;flex-direction:column!important;gap:10px!important}
+#schedule3d .aps3d-toolbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;flex-wrap:wrap!important;background:linear-gradient(145deg,#101b23,#0a141b)!important;border:1px solid #2b3f4a!important;border-radius:10px!important;padding:14px 16px!important}
+#schedule3d .aps3d-toolbar>div:first-child{min-width:280px;flex:1}
+#schedule3d .aps3d-toolbar h2{font-size:24px!important;margin:2px 0 5px!important}
+#schedule3d .aps3d-actions{display:flex!important;align-items:flex-end!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important}
+#schedule3d .aps3d-actions label{display:flex!important;flex-direction:column!important;gap:5px!important;font-size:12px!important;color:#a8bac4!important;white-space:nowrap!important}
+#schedule3d input,#schedule3d select{box-sizing:border-box!important;height:38px!important;border:1px solid #385260!important;background:#0a161e!important;color:#edf7fb!important;border-radius:7px!important;padding:0 10px!important;font:inherit!important;outline:none!important}
+#schedule3d input:focus,#schedule3d select:focus{border-color:#42b9ea!important;box-shadow:0 0 0 2px rgba(66,185,234,.16)!important}
+#schedule3d .btn{height:38px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0 15px!important;border-radius:8px!important;white-space:nowrap!important}
+#schedule3d .aps3d-summary{display:grid!important;grid-template-columns:repeat(4,minmax(120px,1fr)) minmax(200px,1.35fr)!important;gap:8px!important}
+#schedule3d .aps3d-summary>div{display:flex!important;flex-direction:column!important;justify-content:center!important;min-height:72px!important;background:linear-gradient(145deg,#101b23,#0a141b)!important;border:1px solid #2b3f4a!important;border-radius:9px!important;padding:10px 13px!important}
+#schedule3d .aps3d-summary span{display:block!important;font-size:12px!important;color:#91a7b3!important}
+#schedule3d .aps3d-summary b{display:block!important;margin-top:4px!important;font-size:24px!important;line-height:1.1!important;color:#fff!important}
+#schedule3d .aps3d-source b{font-size:13px!important;color:#73d8ff!important;overflow-wrap:anywhere!important}
+#schedule3d .aps3d-layout{flex:1!important;min-height:0!important;display:grid!important;grid-template-columns:220px minmax(620px,1fr) 290px!important;gap:9px!important}
+#schedule3d .aps3d-machine-panel,#schedule3d .aps3d-gantt-panel,#schedule3d .aps3d-check-panel{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;background:linear-gradient(145deg,#101b23,#09131a)!important;border:1px solid #2b3f4a!important;border-radius:10px!important;overflow:hidden!important}
+#schedule3d .aps3d-machine-panel,#schedule3d .aps3d-check-panel{padding:11px!important}
+#schedule3d .aps3d-panel-title{display:block!important;font-size:15px!important;font-weight:800!important;padding-bottom:9px!important;margin-bottom:9px!important;border-bottom:1px solid #2b3f4a!important}
+#schedule3d .aps3d-machine-panel input,#schedule3d .aps3d-machine-panel select{width:100%!important;flex:0 0 auto!important}
+#schedule3d .aps3d-machine-list,#schedule3d .aps3d-check-list{flex:1!important;min-height:0!important;overflow:auto!important}
+#schedule3d .aps3d-status{flex:0 0 42px!important;display:flex!important;align-items:center!important;padding:0 13px!important;border-bottom:1px solid #2b3f4a!important;color:#9dccdf!important;font-size:12px!important}
+#schedule3d .aps3d-gantt-wrap{flex:1!important;min-height:0!important;overflow:auto!important;background:#071219!important}
+#schedule3d .empty,#schedule3d .aps3d-empty{display:flex!important;align-items:center!important;justify-content:center!important;min-height:150px!important;padding:28px!important;text-align:center!important;color:#94aab5!important}
+@media(max-width:1350px){#schedule3d .aps3d-layout{grid-template-columns:190px minmax(520px,1fr) 250px!important}#schedule3d .aps3d-summary{grid-template-columns:repeat(3,1fr)!important}}
+@media(max-width:1050px){#schedule3d{overflow:auto!important}#schedule3d .aps3d-shell{height:auto!important}#schedule3d .aps3d-layout{grid-template-columns:1fr!important}#schedule3d .aps3d-machine-panel,#schedule3d .aps3d-check-panel{max-height:280px!important}#schedule3d .aps3d-gantt-panel{min-height:520px!important}}
+/* Build0013.1｜三天排程左右面板可收合 */
+#schedule3d .aps3d-panel-title{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+#schedule3d .aps3d-collapse-btn{width:26px;height:26px;flex:0 0 26px;border:1px solid #36505e;border-radius:6px;background:#0a1720;color:#dceaf1;font-size:20px;line-height:20px;cursor:pointer}
+#schedule3d .aps3d-collapse-btn:hover{background:#173040;border-color:#4b829e}
+#schedule3d .aps3d-layout.left-collapsed{grid-template-columns:42px minmax(620px,1fr) 290px!important}
+#schedule3d .aps3d-layout.right-collapsed{grid-template-columns:220px minmax(620px,1fr) 42px!important}
+#schedule3d .aps3d-layout.left-collapsed.right-collapsed{grid-template-columns:42px minmax(620px,1fr) 42px!important}
+#schedule3d .aps3d-layout.left-collapsed .aps3d-machine-panel,#schedule3d .aps3d-layout.right-collapsed .aps3d-check-panel{padding:7px 5px!important;overflow:hidden!important}
+#schedule3d .aps3d-layout.left-collapsed .aps3d-machine-panel>*:not(.aps3d-panel-title),#schedule3d .aps3d-layout.right-collapsed .aps3d-check-panel>*:not(.aps3d-panel-title){display:none!important}
+#schedule3d .aps3d-layout.left-collapsed .aps3d-machine-panel .aps3d-panel-title span,#schedule3d .aps3d-layout.right-collapsed .aps3d-check-panel .aps3d-panel-title span{display:none!important}
+#schedule3d .aps3d-layout.left-collapsed .aps3d-machine-panel .aps3d-panel-title,#schedule3d .aps3d-layout.right-collapsed .aps3d-check-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}
+@media(max-width:1450px){#schedule3d .aps3d-layout:not(.user-right-open){grid-template-columns:220px minmax(560px,1fr) 42px!important}#schedule3d .aps3d-layout:not(.user-right-open) .aps3d-check-panel{padding:7px 5px!important;overflow:hidden!important}#schedule3d .aps3d-layout:not(.user-right-open) .aps3d-check-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-layout:not(.user-right-open) .aps3d-check-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-layout:not(.user-right-open) .aps3d-check-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}}
+@media(max-width:1180px){#schedule3d .aps3d-layout:not(.user-left-open){grid-template-columns:42px minmax(500px,1fr) 42px!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel{padding:7px 5px!important;overflow:hidden!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}}
+@media(max-width:1050px){#schedule3d .aps3d-layout,#schedule3d .aps3d-layout.left-collapsed,#schedule3d .aps3d-layout.right-collapsed,#schedule3d .aps3d-layout.left-collapsed.right-collapsed{grid-template-columns:42px minmax(680px,1fr) 42px!important;min-width:780px!important}#schedule3d .aps3d-machine-panel,#schedule3d .aps3d-check-panel{max-height:none!important;padding:7px 5px!important}#schedule3d .aps3d-machine-panel>*:not(.aps3d-panel-title),#schedule3d .aps3d-check-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-machine-panel .aps3d-panel-title span,#schedule3d .aps3d-check-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-machine-panel .aps3d-panel-title,#schedule3d .aps3d-check-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}#schedule3d{overflow:auto!important}}
+</style>
 </head>
 <body>
 <script id="aps-build0094-direct-recovery">
@@ -987,7 +1031,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     </div>
   </div>
 </header>
-<div class="app-shell"><aside class="sidebar"><div class="side-title">SMART FACTORY</div><nav class="tabs side-nav"><button class="tab active" data-page="home"><span>⌂</span>戰情中心</button><button class="tab" data-page="upload"><span>⇧</span>ERP 資料更新</button><button class="tab" data-page="pool"><span>▤</span>工單池</button><button class="tab" data-page="schedule"><span>▥</span>APS 排程中心</button><button class="tab" data-page="missingSpeed"><span>⚠</span>AI 缺產速中心</button>
+<div class="app-shell"><aside class="sidebar"><div class="side-title">SMART FACTORY</div><nav class="tabs side-nav"><button class="tab active" data-page="home"><span>⌂</span>戰情中心</button><button class="tab" data-page="upload"><span>⇧</span>ERP 資料更新</button><button class="tab" data-page="pool"><span>▤</span>工單池</button><button class="tab" data-page="schedule"><span>▥</span>APS 排程中心</button><button class="tab" data-page="schedule3d"><span>▦</span>三天排程</button><button class="tab" data-page="missingSpeed"><span>⚠</span>AI 缺產速中心</button>
 <button class="tab urgent-nav" data-page="urgent"><span>!</span>急單／插單模擬</button>
 <button class="tab" data-page="workforce"><span>♙</span>人力中心</button>
 <button class="tab" data-page="preprocess"><span>▦</span>前製程中心</button>
@@ -1034,6 +1078,51 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <div class="card col12"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><h2>有限產能排程結果</h2><div class="sub">以每日時間軸顯示機台安排。綠色為正常工單、紅色為急單、橘色為交期延遲風險。</div></div><div class="actions"><button class="btn" id="rerunSchedule">重新排程</button><button class="btn ghost" id="exportSchedule">匯出排程 CSV</button></div></div><div id="scheduleTimeline" style="margin-top:14px"><div class="empty">尚未產生排程</div></div></div>
 <div class="card col12"><h2>排程明細</h2><div id="scheduleTable" class="empty">尚未產生排程</div></div></div></section>
 
+
+<section id="schedule3d" class="page">
+  <div class="aps3d-shell">
+    <div class="aps3d-toolbar">
+      <div>
+        <div class="section-kicker">BUILD0013 SAFE INTEGRATION</div>
+        <h2>三天甘特排程</h2>
+        <div class="sub">只讀取目前 APS 正式排程資料，不改寫工單池、排程結果或雲端資料。</div>
+      </div>
+      <div class="aps3d-actions">
+        <label>起始生產日 <input id="aps3dDate" type="date"></label>
+        <label>時間比例 <select id="aps3dZoom"><option value="40">2 小時</option><option value="70" selected>1 小時</option><option value="120">30 分鐘</option></select></label>
+        <button class="btn ghost" id="aps3dToday">今天</button>
+        <button class="btn ghost" id="aps3dToggleLeft" type="button">收合篩選</button>
+        <button class="btn ghost" id="aps3dToggleRight" type="button">收合驗證</button>
+        <button class="btn ghost" id="aps3dValidate">排程驗證</button>
+        <button class="btn" id="aps3dRefresh">重新整理</button>
+      </div>
+    </div>
+    <div class="aps3d-summary">
+      <div><span>三天工單</span><b id="aps3dJobs">0</b></div>
+      <div><span>排程機台</span><b id="aps3dMachines">0</b></div>
+      <div><span>重疊衝突</span><b id="aps3dConflicts">0</b></div>
+      <div><span>交期警告</span><b id="aps3dWarnings">0</b></div>
+      <div class="aps3d-source"><span>資料來源</span><b>window.S.schedule</b></div>
+    </div>
+    <div class="aps3d-layout">
+      <aside class="aps3d-machine-panel">
+        <div class="aps3d-panel-title"><span>機台篩選</span><button class="aps3d-collapse-btn" id="aps3dLeftClose" type="button" title="收合機台篩選">‹</button></div>
+        <input id="aps3dSearch" placeholder="搜尋機台／工單／客戶／規格">
+        <select id="aps3dDept"><option value="">全部部門</option><option>工業</option><option>保密</option><option>文具</option></select>
+        <div id="aps3dMachineList" class="aps3d-machine-list"></div>
+      </aside>
+      <section class="aps3d-gantt-panel">
+        <div id="aps3dStatus" class="aps3d-status">尚未載入三天排程</div>
+        <div id="aps3dGanttWrap" class="aps3d-gantt-wrap"><div class="empty">請按「重新整理」</div></div>
+      </section>
+      <aside class="aps3d-check-panel">
+        <div class="aps3d-panel-title"><span>排程驗證</span><button class="aps3d-collapse-btn" id="aps3dRightClose" type="button" title="收合排程驗證">›</button></div>
+        <div class="aps3d-rule-note">驗證同機重疊、時間異常、缺工單／缺機台及交期逾期。此頁只提示，不會自動修改排程。</div>
+        <div id="aps3dCheckList" class="aps3d-check-list"><div class="empty">尚未執行檢查</div></div>
+      </aside>
+    </div>
+  </div>
+</section>
 <section id="urgent" class="page"><div class="grid">
 <div class="card col5"><div class="section-kicker">DYNAMIC RESCHEDULING</div><h2>急單／插單 Key In</h2><div class="sub">先模擬，不直接改動正式排程。系統會比較插單前後完成時間並標出 Delay。</div>
 <div class="urgent-form">
@@ -9522,221 +9611,164 @@ if(document.readyState==='loading'){
 })();
 </script>
 
-<style id="urgent-order-multiwo-v123-style">
-#urgentOrderChooserV123{display:none;position:fixed;inset:0;z-index:52000;background:rgba(0,0,0,.76);align-items:center;justify-content:center;padding:16px}
-#urgentOrderChooserV123.show{display:flex}
-.uoc123-dialog{width:min(980px,97vw);max-height:90vh;overflow:auto;background:#101b24;border:1px solid #40576a;border-radius:15px;padding:16px;box-shadow:0 26px 80px #000}
-.uoc123-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
-.uoc123-head h2{margin:0}.uoc123-sub{color:#9db0bd;font-size:12px;margin-top:4px}
-.uoc123-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-.uoc123-tools input{flex:1;min-width:220px;background:#07111a;color:#fff;border:1px solid #365061;border-radius:8px;padding:9px}
-.uoc123-table{overflow:auto;border:1px solid #344a5a;border-radius:10px;max-height:58vh}
-.uoc123-table table{width:100%;border-collapse:collapse;white-space:nowrap}
-.uoc123-table th{position:sticky;top:0;background:#1a2a36;color:#fff;padding:9px;text-align:left;z-index:1}
-.uoc123-table td{padding:9px;border-bottom:1px solid #263845;color:#dce7ee}
-.uoc123-row{cursor:pointer}.uoc123-row:hover td{background:#173047}.uoc123-row.selected td{background:#123b33;outline:1px solid #22c55e}
-.uoc123-badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:11px;background:#173e65;color:#9bd0ff}
-.uoc123-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-.uoc123-actions button{border:0;border-radius:9px;padding:9px 13px;font-weight:850;cursor:pointer}
-.uoc123-cancel{background:#334155;color:#fff}.uoc123-use{background:#16835f;color:#fff}.uoc123-use:disabled{background:#596774;cursor:not-allowed}
-@media(max-width:720px){.uoc123-dialog{padding:11px}.uoc123-table{max-height:62vh}.uoc123-table th,.uoc123-table td{padding:8px;font-size:12px}}
+<style id="build0013-safe-3day-css">
+#schedule3d{padding:0!important}.aps3d-shell{height:calc(100vh - 112px);min-height:620px;display:flex;flex-direction:column;gap:10px}.aps3d-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--card,#0d1b24);border:1px solid var(--line,#29404d);border-radius:12px;padding:14px 16px}.aps3d-toolbar h2{margin:2px 0 4px}.aps3d-actions{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}.aps3d-actions label{font-size:12px;color:#9fb2bd;display:grid;gap:4px}.aps3d-actions input,.aps3d-actions select,.aps3d-machine-panel input,.aps3d-machine-panel select{height:36px;border:1px solid #36505e;background:#09151d;color:#e7f2f7;border-radius:7px;padding:0 9px}.aps3d-summary{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr)) minmax(180px,1.3fr);gap:8px}.aps3d-summary>div{background:#0d1b24;border:1px solid #29404d;border-radius:10px;padding:9px 12px}.aps3d-summary span{display:block;font-size:11px;color:#8fa6b2}.aps3d-summary b{font-size:20px;color:#f4fbff}.aps3d-source b{font-size:13px}.aps3d-layout{flex:1;min-height:0;display:grid;grid-template-columns:230px minmax(600px,1fr) 300px;gap:9px}.aps3d-machine-panel,.aps3d-gantt-panel,.aps3d-check-panel{background:#0d1b24;border:1px solid #29404d;border-radius:12px;min-width:0;overflow:hidden}.aps3d-machine-panel{display:flex;flex-direction:column;padding:10px;gap:8px}.aps3d-panel-title{font-weight:800;font-size:15px;padding-bottom:7px;border-bottom:1px solid #29404d}.aps3d-machine-list{flex:1;min-height:0;overflow:auto}.aps3d-machine-card{border:1px solid #29404d;border-radius:8px;padding:8px;margin-bottom:7px;background:#0a1720;cursor:pointer}.aps3d-machine-card.active{border-color:#29a3ff;box-shadow:0 0 0 1px #29a3ff inset}.aps3d-machine-card b{display:flex;justify-content:space-between}.aps3d-machine-card small{display:block;color:#8fa6b2;margin-top:3px}.aps3d-gantt-panel{display:flex;flex-direction:column}.aps3d-status{height:40px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid #29404d;color:#9fc7dc;font-size:12px}.aps3d-gantt-wrap{flex:1;min-height:0;overflow:auto;background:#08141b}.aps3d-canvas{position:relative;min-height:100%;background:#08141b}.aps3d-head{position:sticky;top:0;z-index:20;height:64px;background:#0b1a23;border-bottom:1px solid #36505e}.aps3d-corner{position:sticky;left:0;z-index:24;width:150px;height:64px;display:flex;align-items:center;padding:10px;background:#10212c;border-right:1px solid #36505e;font-weight:800}.aps3d-axis{position:absolute;left:150px;top:0;height:64px}.aps3d-day-label{position:absolute;top:0;height:28px;border-left:1px solid #36505e;border-right:1px solid #203744;text-align:center;padding-top:6px;font-weight:800;color:#65d7ff}.aps3d-hour-label{position:absolute;top:28px;height:36px;border-left:1px solid #29404d;padding:9px 4px;font-size:10px;color:#9fb2bd}.aps3d-row{position:relative;height:66px;border-bottom:1px solid #1d3440}.aps3d-row-label{position:sticky;left:0;z-index:12;width:150px;height:66px;background:#0d1b24;border-right:1px solid #36505e;padding:9px 10px}.aps3d-row-label b{display:block}.aps3d-row-label small{color:#8fa6b2}.aps3d-track{position:absolute;left:150px;top:0;height:66px}.aps3d-gridline{position:absolute;top:0;bottom:0;border-left:1px solid #17303c}.aps3d-night{position:absolute;top:0;bottom:0;background:rgba(100,120,145,.10)}.aps3d-job{position:absolute;top:11px;height:44px;border-radius:7px;padding:5px 7px;color:#fff;overflow:hidden;border:1px solid rgba(255,255,255,.15);box-shadow:0 2px 5px rgba(0,0,0,.3);min-width:3px}.aps3d-job.normal{background:#238a44}.aps3d-job.urgent{background:#cf2838}.aps3d-job.delay{background:#d96d12}.aps3d-job.wait{background:#b88b13}.aps3d-job.maint{background:#666}.aps3d-job.manual{background:#078592}.aps3d-job.conflict{box-shadow:0 0 0 3px #ff1744 inset,0 2px 5px rgba(0,0,0,.3)}.aps3d-job strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.aps3d-job span{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}.aps3d-check-panel{padding:10px;overflow:auto}.aps3d-rule-note{font-size:11px;color:#9fb2bd;line-height:1.5;padding:8px 0}.aps3d-check-item{border:1px solid #3c4c55;border-left:4px solid #f59e0b;border-radius:7px;padding:8px;margin-bottom:7px;font-size:12px;background:#101d24}.aps3d-check-item.error{border-left-color:#ef4444;background:#251417}.aps3d-check-item.ok{border-left-color:#22c55e;background:#102219}.aps3d-check-item b{display:block;margin-bottom:3px}.aps3d-check-item span{color:#a7bbc5;line-height:1.4}.aps3d-empty{padding:30px;color:#93a9b4;text-align:center}@media(max-width:1250px){.aps3d-layout{grid-template-columns:190px minmax(520px,1fr) 250px}.aps3d-summary{grid-template-columns:repeat(5,1fr)}}
 </style>
-<script id="urgent-order-multiwo-v123-script">
-(function(){
+<script id="build0013-safe-3day-js">
+(()=>{
 'use strict';
-const clean=v=>String(v==null?'':v).trim();
-const norm=v=>clean(v).toUpperCase().replace(/\s+/g,'');
-const first=(r,ks,d='')=>{for(const k of ks){const v=r&&r[k];if(v!==undefined&&v!==null&&clean(v)!=='')return v}return d};
-let chooserRows=[],selectedWo='';
+if(window.__APS_BUILD0013_SAFE_3DAY__)return;window.__APS_BUILD0013_SAFE_3DAY__=true;
+const $=id=>document.getElementById(id),DAY=86400000,MIN=60000;let selectedMachine='',lastIssues=[];
+const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+const dt=v=>{if(v instanceof Date)return isNaN(v)?null:v;const d=new Date(v);return isNaN(d)?null:d};
+const fmtDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fmtTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+const startOfProductionDay=value=>{const d=value?new Date(value+'T08:30:00'):new Date();if(!value){d.setHours(8,30,0,0);if(new Date()<d)d.setDate(d.getDate()-1)}return d};
+const rows=()=>Array.isArray(window.S?.schedule)?window.S.schedule:[];
+function normalize(x,i){const start=dt(x.start||x.start_time||x.begin),end=dt(x.end||x.end_time||x.finish);return{raw:x,i,uid:String(x.uid||x.id||`${x.wo||x.work_order_no||'ROW'}-${i}`),wo:String(x.wo||x.work_order_no||x.order_no||''),machine:String(x.machine||x.machine_code||''),start,end,customer:String(x.customer||x.customer_name||''),spec:String(x.spec||x.product_spec||x.name||x.part||''),due:dt(x.due||x.due_date||x.delivery_date),reason:String(x.reason||''),status:String(x.status||'normal').toLowerCase(),dept:String(x.dept||x.department||'')};}
+function deptOf(machine){const m=String(machine).toUpperCase();if(['1B02','1B08','1B10','1B19','1S02','1S18'].includes(m))return'工業';if(['1S03','1S12','1S16','1S19','1S07'].includes(m))return'保密';if(['1B22','1V09','1V01','1V02','1C18'].includes(m))return'文具';return'其他'}
+function statusOf(j){if(j.status.includes('maint')||j.reason.includes('保養'))return'maint';if(j.status.includes('urgent')||j.reason.includes('急'))return'urgent';if(j.status.includes('wait')||j.reason.includes('待料'))return'wait';if(j.status.includes('manual'))return'manual';if(j.due&&j.end&&j.end>j.due)return'delay';return'normal'}
+function data(){const base=startOfProductionDay($('aps3dDate')?.value),end=new Date(base.getTime()+3*DAY);return{base,end,jobs:rows().map(normalize).filter(j=>j.start&&j.end&&j.end>base&&j.start<end)}}
+function validate(jobs){const issues=[],bad=new Set();jobs.forEach(j=>{if(!j.wo){issues.push({type:'error',title:'缺少工單號',text:`${j.machine||'未指定機台'}｜${j.start?fmtDate(j.start)+' '+fmtTime(j.start):'時間不明'}`,uids:[j.uid]});bad.add(j.uid)}if(!j.machine){issues.push({type:'error',title:'缺少機台',text:`${j.wo||'未命名工單'}`,uids:[j.uid]});bad.add(j.uid)}if(!j.start||!j.end||j.end<=j.start){issues.push({type:'error',title:'排程時間異常',text:`${j.wo||j.uid}`,uids:[j.uid]});bad.add(j.uid)}if(j.due&&j.end&&j.end>j.due)issues.push({type:'warn',title:'完工晚於預交日',text:`${j.wo}｜完工 ${fmtDate(j.end)} ${fmtTime(j.end)}`,uids:[j.uid]})});const by={};jobs.filter(j=>j.machine&&j.start&&j.end).forEach(j=>(by[j.machine]??=[]).push(j));Object.entries(by).forEach(([m,a])=>{a.sort((x,y)=>x.start-y.start);for(let i=1;i<a.length;i++){if(a[i].start<a[i-1].end){issues.push({type:'error',title:'同機時間重疊',text:`${m}｜${a[i-1].wo} 與 ${a[i].wo}`,uids:[a[i-1].uid,a[i].uid]});bad.add(a[i-1].uid);bad.add(a[i].uid)}}});return{issues,bad,conflicts:issues.filter(x=>x.title==='同機時間重疊').length,warnings:issues.filter(x=>x.type==='warn').length}}
+function render(){const {base,end,jobs}=data(),q=String($('aps3dSearch')?.value||'').toLowerCase(),dept=$('aps3dDept')?.value||'',zoom=Number($('aps3dZoom')?.value||70),totalW=72*zoom;const vr=validate(jobs);lastIssues=vr.issues;const machines=[...new Set(jobs.map(j=>j.machine).filter(Boolean))].sort();const filteredMachines=machines.filter(m=>{const list=jobs.filter(j=>j.machine===m),hay=[m,...list.flatMap(j=>[j.wo,j.customer,j.spec])].join(' ').toLowerCase();return(!dept||deptOf(m)===dept)&&(!q||hay.includes(q))&&(!selectedMachine||m===selectedMachine)});$('aps3dJobs').textContent=new Set(jobs.map(j=>j.wo||j.uid)).size;$('aps3dMachines').textContent=machines.length;$('aps3dConflicts').textContent=vr.conflicts;$('aps3dWarnings').textContent=vr.warnings;$('aps3dStatus').textContent=`${fmtDate(base)} 08:30 ～ ${fmtDate(new Date(end-DAY))} 08:30｜${jobs.length} 個排程區段｜${filteredMachines.length} 台機台`;$('aps3dMachineList').innerHTML=machines.map(m=>{const list=jobs.filter(j=>j.machine===m);return`<div class="aps3d-machine-card ${selectedMachine===m?'active':''}" data-machine="${esc(m)}"><b>${esc(m)}<span>${list.length}</span></b><small>${deptOf(m)}｜${list.reduce((s,j)=>s+(j.end-j.start)/3600000,0).toFixed(1)} hr</small></div>`}).join('')||'<div class="aps3d-empty">三天內沒有排程機台</div>';if(!filteredMachines.length){$('aps3dGanttWrap').innerHTML='<div class="aps3d-empty">沒有符合條件的三天排程</div>';return}let html=`<div class="aps3d-canvas" style="width:${150+totalW}px"><div class="aps3d-head"><div class="aps3d-corner">機台／72 小時</div><div class="aps3d-axis" style="width:${totalW}px">`;for(let d=0;d<3;d++){const dd=new Date(base.getTime()+d*DAY);html+=`<div class="aps3d-day-label" style="left:${d*24*zoom}px;width:${24*zoom}px">${fmtDate(dd)}</div>`}for(let h=0;h<72;h+=2){const dd=new Date(base.getTime()+h*3600000);html+=`<div class="aps3d-hour-label" style="left:${h*zoom}px;width:${2*zoom}px">${fmtTime(dd)}</div>`}html+='</div></div>';filteredMachines.forEach(m=>{html+=`<div class="aps3d-row"><div class="aps3d-row-label"><b>${esc(m)}</b><small>${deptOf(m)}</small></div><div class="aps3d-track" style="width:${totalW}px">`;for(let h=0;h<=72;h+=2)html+=`<i class="aps3d-gridline" style="left:${h*zoom}px"></i>`;for(let d=0;d<3;d++)html+=`<i class="aps3d-night" style="left:${(d*24+12)*zoom}px;width:${12*zoom}px"></i>`;jobs.filter(j=>j.machine===m).forEach(j=>{const s=Math.max(0,(j.start-base)/3600000),e=Math.min(72,(j.end-base)/3600000),w=Math.max(3,(e-s)*zoom),cls=statusOf(j)+(vr.bad.has(j.uid)?' conflict':'');html+=`<div class="aps3d-job ${cls}" style="left:${s*zoom}px;width:${w}px" title="${esc(j.wo)}｜${fmtDate(j.start)} ${fmtTime(j.start)}～${fmtDate(j.end)} ${fmtTime(j.end)}｜${esc(j.customer)}"><strong>${esc(j.wo||'未命名')}</strong><span>${esc(j.spec||j.customer||'')}｜${fmtTime(j.start)}-${fmtTime(j.end)}</span></div>`});html+='</div></div>'});html+='</div>';$('aps3dGanttWrap').innerHTML=html}
+function renderChecks(){const {jobs}=data(),v=validate(jobs);lastIssues=v.issues;$('aps3dConflicts').textContent=v.conflicts;$('aps3dWarnings').textContent=v.warnings;$('aps3dCheckList').innerHTML=!v.issues.length?'<div class="aps3d-check-item ok"><b>驗證通過</b><span>目前三天排程未發現重疊、時間或交期問題。</span></div>':v.issues.map(x=>`<div class="aps3d-check-item ${x.type==='error'?'error':''}"><b>${x.type==='error'?'⛔':'⚠'} ${esc(x.title)}</b><span>${esc(x.text)}</span></div>`).join('');render()}
+function today(){const d=startOfProductionDay();$('aps3dDate').value=fmtDate(d);render()}
+function install(){if(!$('schedule3d'))return;if(!$('aps3dDate').value)$('aps3dDate').value=fmtDate(startOfProductionDay());
+const layout=$('schedule3d')?.querySelector('.aps3d-layout');
+const syncPanelButtons=()=>{if(!layout)return;const l=layout.classList.contains('left-collapsed'),r=layout.classList.contains('right-collapsed');const bl=$('aps3dToggleLeft'),br=$('aps3dToggleRight'),il=$('aps3dLeftClose'),ir=$('aps3dRightClose');if(bl)bl.textContent=l?'展開篩選':'收合篩選';if(br)br.textContent=r?'展開驗證':'收合驗證';if(il)il.textContent=l?'›':'‹';if(ir)ir.textContent=r?'‹':'›'};
+const toggleLeft=()=>{if(!layout)return;layout.classList.toggle('left-collapsed');layout.classList.add('user-left-open');syncPanelButtons()};
+const toggleRight=()=>{if(!layout)return;layout.classList.toggle('right-collapsed');layout.classList.add('user-right-open');syncPanelButtons()};
+$('aps3dToggleLeft')?.addEventListener('click',toggleLeft);$('aps3dLeftClose')?.addEventListener('click',toggleLeft);$('aps3dToggleRight')?.addEventListener('click',toggleRight);$('aps3dRightClose')?.addEventListener('click',toggleRight);
+if(layout&&window.innerWidth<=1450)layout.classList.add('right-collapsed');if(layout&&window.innerWidth<=1180)layout.classList.add('left-collapsed');syncPanelButtons();
+$('aps3dRefresh')?.addEventListener('click',render);$('aps3dValidate')?.addEventListener('click',renderChecks);$('aps3dToday')?.addEventListener('click',today);$('aps3dDate')?.addEventListener('change',render);$('aps3dZoom')?.addEventListener('change',render);$('aps3dSearch')?.addEventListener('input',render);$('aps3dDept')?.addEventListener('change',render);$('aps3dMachineList')?.addEventListener('click',e=>{const c=e.target.closest('[data-machine]');if(!c)return;selectedMachine=selectedMachine===c.dataset.machine?'':c.dataset.machine;render()});document.querySelectorAll('[data-page="schedule3d"]').forEach(b=>b.addEventListener('click',()=>setTimeout(render,0)));const old=window.renderSchedule;if(typeof old==='function'&&!old.__aps3dWrapped){const wrapped=function(){const r=old.apply(this,arguments);try{if($('schedule3d')?.classList.contains('active'))render()}catch(e){console.warn('APS3D refresh failed',e)}return r};wrapped.__aps3dWrapped=true;window.renderSchedule=wrapped}render()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+let __aps3dLastCount=-1;
+setInterval(()=>{
+  try{
+    const page=$('schedule3d');
+    if(!page||!page.classList.contains('active'))return;
+    const count=rows().length;
+    if(count!==__aps3dLastCount){__aps3dLastCount=count;render();}
+  }catch(e){console.warn('APS3D passive refresh failed',e)}
+},5000);
+window.APS3Day={render,validate:renderChecks,sourceCount:()=>rows().length,version:'V93.1-safe-readonly'};
+})();
+</script>\n
 
-function allRows(){
-  const rows=[];
-  const add=a=>{if(Array.isArray(a))rows.push(...a)};
-  add(window.S?.pool);
-  add(window.S?.rows?.workpool);
-  add(window.S?.rows?.datahub);
-  add(window.__BUILD0057_DATAHUB_ROWS__);
-  try{add(JSON.parse(localStorage.getItem('SK_APS_DATAHUB_WORKORDERS_V57')||'[]'))}catch(_){}
-  return rows;
-}
-function woOf(r){return clean(first(r,['wo','work_order_no','workOrderNo','工單','工單號','命令單號']))}
-function orderOf(r){return clean(first(r,['order','order_no','orderNo','訂單','訂單號','訂單單號']))}
-function customerOf(r){return clean(first(r,['customer','customer_name','cust','client','客戶']))}
-function partOf(r){return clean(first(r,['part','part_no','partNo','product_no','item_no','產品料號','料號']))}
-function processOf(r){return clean(first(r,['process','process_site','site','operation','製程','站別']))}
-function machineOf(r){return clean(first(r,['machine','machine_code','sourceMachine','assigned_machine','primary_machine','機台']))}
-function qtyOf(r){return first(r,['remaining','remaining_qty','target_qty','planned','qty','quantity','需求數量'],'')}
-function unitOf(r){return clean(first(r,['unit','target_unit','qty_unit','單位'],'㎡'))}
-function dueOf(r){return first(r,['due','due_date','planned_finish','delivery_date','plan_date','預交日'],'')}
-function uniqueRows(rows){
-  const map=new Map();
-  rows.forEach(r=>{
-    const wo=woOf(r);
-    if(!wo)return;
-    const old=map.get(norm(wo));
-    if(!old || Object.keys(r||{}).length>Object.keys(old||{}).length)map.set(norm(wo),r);
-  });
-  return [...map.values()];
-}
-function findMatches(q){
-  q=norm(q);
-  const rows=uniqueRows(allRows());
-  const exactWo=rows.filter(r=>norm(woOf(r))===q);
-  if(exactWo.length)return {kind:'work_order',rows:exactWo};
-  const exactOrder=rows.filter(r=>norm(orderOf(r))===q);
-  if(exactOrder.length)return {kind:'order',rows:exactOrder};
-  const other=rows.filter(r=>[
-    first(r,['command_no','命令單號']),first(r,['daily_no','report_no','日報號']),
-    first(r,['batch','batch_no','生產批號']),partOf(r)
-  ].some(v=>norm(v)===q));
-  return {kind:'other',rows:other};
-}
-async function remoteMatches(q){
-  if(typeof window.apsGlobalJsonp!=='function')return [];
-  const calls=[
-    ['workorderlookup',{q:q,limit:100,_:Date.now()}],
-    ['sharedlookup',{q:q,exact:'1',limit:100,_:Date.now()}]
-  ];
-  const all=[];
-  for(const [action,payload] of calls){
-    try{
-      const r=await window.apsGlobalJsonp(action,payload,45000);
-      if(Array.isArray(r?.rows))all.push(...r.rows);
-    }catch(err){
-      console.warn('訂單多工單遠端查詢失敗',action,err);
+<!-- V95.1 左側主分頁收合｜格式確認版 -->
+<style id="v951-main-sidebar-collapse-style">
+  .app-shell{
+    transition:grid-template-columns .22s ease;
+  }
+  .sidebar{
+    position:sticky;
+    overflow:visible !important;
+    transition:width .22s ease,padding .22s ease;
+  }
+  #mainSidebarCollapseBtn{
+    position:absolute;
+    z-index:80;
+    top:12px;
+    right:-18px;
+    width:36px;
+    height:36px;
+    padding:0;
+    display:grid;
+    place-items:center;
+    border:1px solid #38515e;
+    border-radius:9px;
+    background:#0d1b23;
+    color:#eef7fb;
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+    box-shadow:0 5px 16px rgba(0,0,0,.38);
+  }
+  #mainSidebarCollapseBtn:hover{
+    background:#142934;
+    border-color:#5e8293;
+  }
+  body.main-sidebar-collapsed .app-shell{
+    grid-template-columns:58px minmax(0,1fr) !important;
+  }
+  body.main-sidebar-collapsed .sidebar{
+    width:58px !important;
+    min-width:58px !important;
+    padding-left:6px !important;
+    padding-right:6px !important;
+  }
+  body.main-sidebar-collapsed .side-nav .tab{
+    justify-content:center !important;
+    gap:0 !important;
+    padding-left:4px !important;
+    padding-right:4px !important;
+    font-size:0 !important;
+    white-space:nowrap;
+  }
+  body.main-sidebar-collapsed .side-nav .tab span{
+    width:auto !important;
+    margin:0 !important;
+    font-size:20px !important;
+  }
+  body.main-sidebar-collapsed .side-footer,
+  body.main-sidebar-collapsed .side-title{
+    display:none !important;
+  }
+  body.main-sidebar-collapsed #mainSidebarCollapseBtn{
+    right:-18px;
+  }
+  @media(max-width:720px){
+    #mainSidebarCollapseBtn{display:none !important}
+    body.main-sidebar-collapsed .app-shell{display:block !important}
+    body.main-sidebar-collapsed .sidebar{
+      width:auto !important;
+      min-width:0 !important;
     }
   }
-  return uniqueRows(all);
-}
-function mergeMatchRows(localRows,remoteRows,q){
-  const merged=uniqueRows([...(localRows||[]),...(remoteRows||[])]);
-  const nq=norm(q);
-  const exactWo=merged.filter(r=>norm(woOf(r))===nq);
-  if(exactWo.length)return {kind:'work_order',rows:exactWo};
-  const exactOrder=merged.filter(r=>norm(orderOf(r))===nq);
-  if(exactOrder.length)return {kind:'order',rows:exactOrder};
-  const other=merged.filter(r=>[
-    first(r,['command_no','命令單號']),first(r,['daily_no','report_no','日報號']),
-    first(r,['batch','batch_no','生產批號']),partOf(r)
-  ].some(v=>norm(v)===nq));
-  return {kind:'other',rows:other};
-}
-function ensureModal(){
-  if(document.getElementById('urgentOrderChooserV123'))return;
-  const m=document.createElement('div');
-  m.id='urgentOrderChooserV123';
-  m.innerHTML='<div class="uoc123-dialog"><div class="uoc123-head"><div><h2 id="uoc123Title">選擇對應工單</h2><div class="uoc123-sub" id="uoc123Sub"></div></div><button class="uoc123-cancel" type="button" onclick="UrgentOrderChooserV123.close()">關閉</button></div><div class="uoc123-tools"><input id="uoc123Search" placeholder="篩選工單、品名、製程、機台" oninput="UrgentOrderChooserV123.render()"><span id="uoc123Count" class="uoc123-badge"></span></div><div class="uoc123-table"><table><thead><tr><th>選擇</th><th>MM 工單</th><th>訂單</th><th>客戶</th><th>料號／品名</th><th>製程</th><th>數量</th><th>機台</th><th>預交日</th></tr></thead><tbody id="uoc123Body"></tbody></table></div><div class="uoc123-actions"><button class="uoc123-cancel" type="button" onclick="UrgentOrderChooserV123.close()">取消</button><button id="uoc123Use" class="uoc123-use" type="button" disabled onclick="UrgentOrderChooserV123.use()">帶入選取工單</button></div></div>';
-  document.body.appendChild(m);
-}
-function esc(v){return clean(v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
-function openChooser(rows,input){
-  ensureModal();chooserRows=rows;selectedWo='';
-  document.getElementById('uoc123Title').textContent=`訂單 ${input} 對應工單`;
-  document.getElementById('uoc123Sub').textContent=`找到 ${rows.length} 張 MM 工單，請選擇本次要發布急件的工單。`;
-  document.getElementById('uoc123Search').value='';
-  document.getElementById('urgentOrderChooserV123').classList.add('show');
-  renderChooser();
-}
-function renderChooser(){
-  const q=norm(document.getElementById('uoc123Search')?.value);
-  const rows=chooserRows.filter(r=>!q||[woOf(r),orderOf(r),customerOf(r),partOf(r),processOf(r),machineOf(r)].some(v=>norm(v).includes(q)));
-  document.getElementById('uoc123Count').textContent=`顯示 ${rows.length}／${chooserRows.length}`;
-  document.getElementById('uoc123Body').innerHTML=rows.map(r=>{
-    const wo=woOf(r),selected=norm(wo)===norm(selectedWo);
-    return `<tr class="uoc123-row ${selected?'selected':''}" onclick="UrgentOrderChooserV123.select('${esc(wo)}')"><td><input type="radio" name="uoc123Radio" ${selected?'checked':''}></td><td><b>${esc(wo)}</b></td><td>${esc(orderOf(r)||'—')}</td><td>${esc(customerOf(r)||'—')}</td><td>${esc(partOf(r)||'—')}</td><td>${esc(processOf(r)||'—')}</td><td>${esc(qtyOf(r)||'—')} ${esc(unitOf(r)||'')}</td><td>${esc(machineOf(r)||'—')}</td><td>${esc(dueOf(r)||'—')}</td></tr>`;
-  }).join('')||'<tr><td colspan="9" style="text-align:center;padding:25px">沒有符合條件的工單</td></tr>';
-}
-function selectWo(wo){selectedWo=wo;document.getElementById('uoc123Use').disabled=false;renderChooser()}
-function closeChooser(){document.getElementById('urgentOrderChooserV123')?.classList.remove('show')}
-function useSelected(){
-  const row=chooserRows.find(r=>norm(woOf(r))===norm(selectedWo));
-  if(!row)return;
-  closeChooser();
-  fillRow(row);
-}
-function fillRow(row){
-  const mod=window.UrgentOrderModule0101;
-  if(!mod)return alert('急件模組尚未完成載入');
-  mod.el('urgentLookup').value=woOf(row);
-  mod.el('urgentWo').value=woOf(row);
-  mod.el('urgentCustomer').value=customerOf(row);
-  mod.el('urgentPart').value=partOf(row);
-  mod.el('urgentQty').value=qtyOf(row);
-  const p=processOf(row);if(p)mod.setSelectValue('urgentProcess',p);
-  const u=unitOf(row);if(u)mod.setSelectValue('urgentUnit',u);
-  const m=machineOf(row);if(m)mod.ensureMachineOption(m);
-  const d=dueOf(row);
-  if(d){mod.setDateFromValue(d,'urgentOriginalDueDate','urgentOriginalDueTime');mod.setDateFromValue(d,'urgentDueDate','urgentDueTime')}
-  const hrs=Number(first(row,['estimated_hours','hours'],0));
-  if(hrs>0)mod.el('urgentHours').value=hrs;
-  else if(Number(row.minutes)>0)mod.el('urgentHours').value=(Number(row.minutes)/60).toFixed(2);
-  mod.el('urgentFormMsg').textContent=`已帶入 ${woOf(row)}（訂單 ${orderOf(row)||'—'}），可調整後模擬`;
-  mod.el('urgentFormMsg').style.color='var(--green)';
-  mod.update();
-}
-function patch(){
-  const mod=window.UrgentOrderModule0101;
-  if(!mod){setTimeout(patch,300);return}
-  ensureModal();
-  const label=mod.el('urgentLookup')?.closest('.urgent-field')?.querySelector('label');
-  if(label)label.textContent='從既有訂單／工單快速帶入';
-  const input=mod.el('urgentLookup');
-  if(input)input.placeholder='輸入訂單號或 MM 工單號';
-  mod.loadExistingOrder=async function(){
-    const input=clean(this.el('urgentLookup')?.value);
-    if(!input){alert('請先輸入訂單號或 MM 工單號');return}
-    const btn=this.el('loadUrgentWo');
-    const oldText=btn?.textContent||'帶入';
-    if(btn){btn.disabled=true;btn.textContent='查詢全部工單中…'}
-    this.el('urgentFormMsg').textContent='正在從中央索引與 ERP 資料查詢此訂單的全部 MM 工單…';
-    this.el('urgentFormMsg').style.color='var(--yellow)';
-    try{
-      const local=findMatches(input);
-      const remote=await remoteMatches(input);
-      const found=mergeMatchRows(local.rows,remote,input);
-      if(!found.rows.length){
-        this.el('urgentFormMsg').textContent='找不到對應訂單或工單，請確認中央索引／DataHub 已同步完成';
-        this.el('urgentFormMsg').style.color='var(--red)';
-        this.update();return;
-      }
-      if(found.kind==='order' && found.rows.length>1){
-        this.el('urgentFormMsg').textContent=`訂單 ${input} 找到 ${found.rows.length} 張 MM 工單，請選擇。`;
-        this.el('urgentFormMsg').style.color='var(--green)';
-        openChooser(found.rows,input);this.update();return;
-      }
-      fillRow(found.rows[0]);
-      if(found.kind==='order'){
-        this.el('urgentFormMsg').textContent=`訂單 ${input} 目前只查到 1 張 MM 工單：${woOf(found.rows[0])}。`;
-        this.el('urgentFormMsg').style.color='var(--yellow)';
-      }
-    }finally{
-      if(btn){btn.disabled=false;btn.textContent=oldText}
-    }
-  };
-  const btn=mod.el('loadUrgentWo');
-  if(btn){const clone=btn.cloneNode(true);btn.replaceWith(clone);clone.addEventListener('click',()=>mod.loadExistingOrder())}
-  input?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mod.loadExistingOrder()}});
-}
-window.UrgentOrderChooserV123={render:renderChooser,select:selectWo,close:closeChooser,use:useSelected};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(patch,700),{once:true});else setTimeout(patch,700);
-})();
-</script>
+</style>
+<script id="v951-main-sidebar-collapse-script">
+(function(){
+  'use strict';
+  function installMainSidebarCollapse(){
+    const sidebar=document.querySelector('.sidebar');
+    if(!sidebar || document.getElementById('mainSidebarCollapseBtn')) return;
 
+    const btn=document.createElement('button');
+    btn.id='mainSidebarCollapseBtn';
+    btn.type='button';
+    btn.title='收合左側分頁';
+    btn.setAttribute('aria-label','收合左側分頁');
+    btn.innerHTML='‹';
+    sidebar.appendChild(btn);
 
-<script id="aps-build01041-visible-label">
-(()=>{
-  const LABEL='Build 0104.1 IndexedDB Stable';
-  const apply=()=>{
-    document.title='SEAL KING Smart APS｜'+LABEL;
-    document.querySelectorAll('.header-time small,.version').forEach(el=>{
-      const t=String(el.textContent||'');
-      if(/Build\s*00\d+|Enterprise Preview|V9\d/i.test(t))el.textContent=LABEL;
+    let collapsed=false;
+    try{ collapsed=sessionStorage.getItem('APS_MAIN_SIDEBAR_COLLAPSED')==='1'; }catch(e){}
+    document.body.classList.toggle('main-sidebar-collapsed',collapsed);
+    btn.innerHTML=collapsed?'›':'‹';
+    btn.title=collapsed?'展開左側分頁':'收合左側分頁';
+
+    btn.addEventListener('click',function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      collapsed=!document.body.classList.contains('main-sidebar-collapsed');
+      document.body.classList.toggle('main-sidebar-collapsed',collapsed);
+      btn.innerHTML=collapsed?'›':'‹';
+      btn.title=collapsed?'展開左側分頁':'收合左側分頁';
+      btn.setAttribute('aria-label',btn.title);
+      try{sessionStorage.setItem('APS_MAIN_SIDEBAR_COLLAPSED',collapsed?'1':'0');}catch(err){}
+      setTimeout(function(){window.dispatchEvent(new Event('resize'));},240);
     });
-  };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
-  setTimeout(apply,1200);
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installMainSidebarCollapse);
+  }else{
+    installMainSidebarCollapse();
+  }
+  setTimeout(installMainSidebarCollapse,1200);
 })();
 </script>
+
 </body> 前或 </html> 前。
 不覆蓋既有 Build 0079；以附加模組方式運作。
 ========================================================= -->
@@ -10263,10 +10295,10 @@ Build 0102.1｜V90.0 AI 多機台決策面板
 
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
-    core:'V92',
-    build:'0085',
-    engine:'Core Phase 1',
-    date:'2026-07-16'
+    core:'V95.1',
+    build:'0104.1',
+    engine:'IndexedDB Stable',
+    date:'2026-07-23'
   });
   window.APS_VERSION_INFO=VERSION;
   window.APS_BUILD_LOCK=VERSION.build;
@@ -10384,7 +10416,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V92.2',build:'0086',engine:'Shared Lookup Phase 2'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0104.1',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
@@ -11060,84 +11092,45 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 
-<style id="urgent-management-v120-style">
-#urgentManagementV120{margin-top:14px}
-.uv120-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
-.uv120-toolbar input,.uv120-toolbar select{background:#0b151d;color:#eef5f8;border:1px solid #35505e;border-radius:8px;padding:9px 10px}
-.uv120-toolbar input{flex:1;min-width:230px}
-.uv120-card{border:1px solid #354452;border-left:5px solid #d71920;border-radius:11px;padding:12px;margin:9px 0;background:#0d171f}
-.uv120-card.completed{border-left-color:#22c55e;opacity:.82}.uv120-card.cancelled{border-left-color:#64748b;opacity:.68}
-.uv120-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.uv120-title{font-size:16px;font-weight:900}.uv120-meta{font-size:11px;color:#9fb0bb}
-.uv120-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
-.uv120-grid div{background:#0a1219;border:1px solid #263845;border-radius:8px;padding:8px}
-.uv120-grid small{display:block;color:#8fa0ad}.uv120-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap;margin-top:10px}
-.uv120-actions button{border:0;border-radius:8px;padding:8px 10px;font-weight:800;cursor:pointer}
-.uv120-edit{background:#2563eb;color:#fff}.uv120-history{background:#334155;color:#fff}.uv120-complete{background:#16835f;color:#fff}.uv120-cancel{background:#9e3040;color:#fff}
-.uv120-modal{display:none;position:fixed;inset:0;z-index:50000;background:#000b;align-items:center;justify-content:center;padding:16px}.uv120-modal.show{display:flex}
-.uv120-dialog{width:min(780px,96vw);max-height:92vh;overflow:auto;background:#111b24;border:1px solid #465767;border-radius:14px;padding:16px;box-shadow:0 25px 70px #000}
-.uv120-form{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.uv120-form label{display:block;color:#aebbc5;font-size:12px;margin-bottom:4px}.uv120-form input,.uv120-form select,.uv120-form textarea{width:100%;background:#07111a;color:#fff;border:1px solid #365061;border-radius:8px;padding:9px}.uv120-span2{grid-column:span 2}
-.uv120-diff{border-left:4px solid #f59e0b;background:#2b210d;padding:9px;border-radius:7px;margin:7px 0;font-size:12px}
-@media(max-width:760px){.uv120-grid{grid-template-columns:1fr 1fr}.uv120-form{grid-template-columns:1fr}.uv120-span2{grid-column:span 1}}
-</style>
-<script id="urgent-management-v120-script">
-(function(){
-'use strict';
-const U={rows:[],filter:'active',editing:null};
-const $u=id=>document.getElementById(id);
-const escU=v=>String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-async function uapi(action,p){if(typeof window.apsGlobalJsonp!=='function')throw new Error('APS API 尚未載入');return window.apsGlobalJsonp(action,p||{},30000)}
-function operatorNo(){return String($u('urgentPublisherEmp')?.value||'').trim()}
-function statusText(s){s=String(s||'published').toLowerCase();return s==='completed'?'已完成':s==='cancelled'?'已取消':s==='closed'?'已結案':'進行中'}
-function inject(){
- const sec=$u('urgent'); if(!sec||$u('urgentManagementV120'))return;
- const box=document.createElement('div');box.id='urgentManagementV120';box.className='card col12';
- box.innerHTML='<div class="section-kicker">URGENT ORDER CONTROL</div><div class="page-toolbar"><div><h2>已發布急件管理 V2.0</h2><div class="sub">可修改、取消、完成與查看版本紀錄；修改後預設重置已讀。</div></div><button class="btn ghost" onclick="UrgentV120.load()">重新整理</button></div><div class="uv120-toolbar"><input id="uv120Search" placeholder="搜尋急件編號、工單、客戶、料號、機台" oninput="UrgentV120.render()"><select id="uv120Filter" onchange="UrgentV120.render()"><option value="active">進行中</option><option value="all">全部</option><option value="completed">已完成</option><option value="cancelled">已取消</option></select></div><div id="uv120List" class="empty">讀取中…</div>';
- sec.querySelector('.grid')?.appendChild(box);
- const modal=document.createElement('div');modal.id='uv120Modal';modal.className='uv120-modal';modal.innerHTML='<div class="uv120-dialog"><div id="uv120ModalBody"></div></div>';document.body.appendChild(modal);
- load();
-}
-async function load(){const list=$u('uv120List');try{if(list)list.innerHTML='<div class="empty">正在讀取已發布急件…</div>';const r=await uapi('urgentorders',{include_closed:'1',_:Date.now()});U.rows=Array.isArray(r.rows)?r.rows:[];render()}catch(e){if(list)list.innerHTML='<div class="empty" style="color:#ff8088">讀取失敗：'+escU(e.message||e)+'</div>'}}
-function render(){
- const list=$u('uv120List');if(!list)return;
- const q=String($u('uv120Search')?.value||'').toLowerCase().trim(),f=String($u('uv120Filter')?.value||'active');
- let rows=U.rows.filter(r=>!q||Object.values(r).join(' ').toLowerCase().includes(q));
- rows=rows.filter(r=>{const s=String(r.status||'published').toLowerCase();if(f==='all')return true;if(f==='active')return !/completed|cancelled|closed/.test(s);return s===f});
- rows.sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));
- if(!rows.length){list.innerHTML='<div class="empty">沒有符合條件的急件。</div>';return}
- list.innerHTML=rows.map(r=>{const s=String(r.status||'published').toLowerCase(),locked=/completed|cancelled|closed/.test(s);return `<div class="uv120-card ${escU(s)}"><div class="uv120-head"><div><div class="uv120-title">${escU(r.work_order_no||'—')}｜${escU(r.process||'—')} <span class="tag ${s==='completed'?'green':s==='cancelled'?'gray':'red'}">${statusText(s)}</span> <span class="tag blue">V${Number(r.version||1)}</span></div><div class="uv120-meta">${escU(r.urgent_id)}｜發布：${escU(r.publisher_name||'')}｜更新：${escU(r.updated_at||r.created_at||'')}</div></div><div class="uv120-meta">${escU(r.last_change_summary||'')}</div></div><div class="uv120-grid"><div><small>客戶</small>${escU(r.customer||'—')}</div><div><small>料號</small>${escU(r.part_no||'—')}</div><div><small>數量</small>${escU(r.qty||0)} ${escU(r.unit||'')}</div><div><small>機台</small>${escU(r.machine||'自動')}</div><div><small>原交期</small>${escU(r.original_due||'—')}</div><div><small>最新交期</small>${escU(r.new_due||'—')}</div><div><small>原因</small>${escU(r.reason||'—')}</div><div><small>急件備註</small>${escU(r.management_note||'—')}</div><div><small>最後修改人</small>${escU(r.last_modified_by_name||r.publisher_name||'—')}</div></div><div class="uv120-actions"><button class="uv120-history" onclick="UrgentV120.history('${escU(r.urgent_id)}')">修改紀錄</button>${locked?'':`<button class="uv120-edit" onclick="UrgentV120.edit('${escU(r.urgent_id)}')">修改急件</button><button class="uv120-complete" onclick="UrgentV120.complete('${escU(r.urgent_id)}')">完成</button><button class="uv120-cancel" onclick="UrgentV120.cancel('${escU(r.urgent_id)}')">取消急件</button>`}</div></div>`}).join('');
-}
-function closeModal(){$u('uv120Modal')?.classList.remove('show')}
-function showModal(html){$u('uv120ModalBody').innerHTML=html;$u('uv120Modal').classList.add('show')}
-function edit(id){
- const r=U.rows.find(x=>String(x.urgent_id)===String(id));if(!r)return;
- U.editing=r;
- showModal(`<h2>修改急件｜${escU(id)}｜V${Number(r.version||1)}</h2><div class="uv120-form">
- <div><label>工單 *</label><input id="ueWo" value="${escU(r.work_order_no||'')}"></div><div><label>客戶 *</label><input id="ueCustomer" value="${escU(r.customer||'')}"></div>
- <div><label>料號 *</label><input id="uePart" value="${escU(r.part_no||'')}"></div><div><label>製程 *</label><input id="ueProcess" value="${escU(r.process||'')}"></div>
- <div><label>數量 *</label><input id="ueQty" type="number" value="${escU(r.qty||0)}"></div><div><label>單位 *</label><select id="ueUnit"><option>R</option><option>M</option><option>M2</option><option>PCS</option></select></div>
- <div><label>原交期 *</label><input id="ueOriginalDue" value="${escU(r.original_due||'')}"></div><div><label>最新交期 *</label><input id="ueNewDue" value="${escU(r.new_due||'')}"></div>
- <div><label>指定機台</label><input id="ueMachine" value="${escU(r.machine||'')}"></div><div><label>前製程狀態 *</label><input id="uePreprocess" value="${escU(r.preprocess_status||'')}"></div>
- <div class="uv120-span2"><label>原因 *</label><textarea id="ueReason">${escU(r.reason||'')}</textarea></div>
- <div class="uv120-span2"><label>產品資訊（唯讀，不會被修改）</label><textarea id="ueProductInfo" readonly style="opacity:.78;cursor:not-allowed">${escU(r.note||'')}</textarea></div>
- <div class="uv120-span2"><label>急件備註（可修改）</label><textarea id="ueManagementNote" placeholder="例如：夜班優先安排、等待材料到廠">${escU(r.management_note||'')}</textarea></div>
- <div class="uv120-span2"><label>本次修改原因</label><input id="ueChangeReason" placeholder="例如：新增現場備註、客戶交期變更、數量修正"></div>
- <div class="uv120-span2"><label><input id="ueResetRead" type="checkbox" checked style="width:auto"> 修改後重新要求所有人確認已讀</label></div></div>
- <div class="actions" style="justify-content:flex-end"><button class="btn ghost" onclick="UrgentV120.close()">取消</button><button class="btn green" onclick="UrgentV120.save()">儲存修改</button></div>`);
- $u('ueUnit').value=String(r.unit||'R').replace('㎡','M2');
-}
-async function save(){
- const r=U.editing,no=operatorNo();if(!no){alert('請先在急件發布人選擇操作人工號');return}
- const payload={urgent_id:r.urgent_id,operator_emp_no:no,work_order_no:$u('ueWo').value,customer:$u('ueCustomer').value,part_no:$u('uePart').value,process:$u('ueProcess').value,qty:$u('ueQty').value,unit:$u('ueUnit').value,original_due:$u('ueOriginalDue').value,new_due:$u('ueNewDue').value,machine:$u('ueMachine').value,preprocess_status:$u('uePreprocess').value,reason:$u('ueReason').value,management_note:$u('ueManagementNote').value,change_reason:$u('ueChangeReason').value,reset_read:$u('ueResetRead').checked?'1':'0'};
- if(!confirm('確認儲存修改？版本將加 1'+(payload.reset_read==='1'?'，並重置已讀紀錄。':'。')))return;
- try{await uapi('urgentupdate',payload);closeModal();await load();alert('急件已修改並保留版本紀錄。')}catch(e){const msg=String(e.message||e);alert(msg.includes('沒有任何欄位變更')?'沒有偵測到修改。請在「急件備註（可修改）」或其他欄位輸入新內容後再儲存。':'修改失敗：'+msg)}
-}
-async function cancelUrgent(id){const no=operatorNo();if(!no)return alert('請先選擇操作人工號');const reason=prompt('請輸入取消原因：');if(!reason)return;try{await uapi('urgentcancel',{urgent_id:id,operator_emp_no:no,cancel_reason:reason});await load();alert('急件已取消，歷史紀錄仍保留。')}catch(e){alert('取消失敗：'+(e.message||e))}}
-async function complete(id){const no=operatorNo();if(!no)return alert('請先選擇操作人工號');const note=prompt('完成備註（可空白）：')||'';if(!confirm('確認將此急件標示為完成？'))return;try{await uapi('urgentcomplete',{urgent_id:id,operator_emp_no:no,completed_note:note});await load();alert('急件已完成。')}catch(e){alert('完成失敗：'+(e.message||e))}}
-async function history(id){try{const r=await uapi('urgenthistory',{urgent_id:id,_:Date.now()});const rows=Array.isArray(r.rows)?r.rows:[];showModal(`<h2>修改紀錄｜${escU(id)}</h2>${rows.length?rows.map(x=>{const c=x.changed_fields||{};const dif=Object.keys(c).map(k=>`<div class="uv120-diff"><b>${escU(k)}</b><br>${escU(c[k].before)} → ${escU(c[k].after)}</div>`).join('');return `<div class="uv120-card"><div class="uv120-head"><b>V${escU(x.version)}｜${escU(x.action)}</b><span class="uv120-meta">${escU(x.changed_at)}</span></div><div class="uv120-meta">${escU(x.operator_emp_no)} ${escU(x.operator_name)}｜${escU(x.change_reason||'')}</div>${dif}</div>`}).join(''):'<div class="empty">尚無修改紀錄</div>'}<div class="actions" style="justify-content:flex-end"><button class="btn ghost" onclick="UrgentV120.close()">關閉</button></div>`)}catch(e){alert('紀錄讀取失敗：'+(e.message||e))}}
-window.UrgentV120={load,render,edit,save,cancel:cancelUrgent,complete,history,close:closeModal};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(inject,500),{once:true});else setTimeout(inject,500);
+<!-- Build0013.2｜三天排程收合按鈕強制修復 -->
+<script id="aps3d-collapse-force-fix">
+(()=>{
+  'use strict';
+  if(window.__APS3D_COLLAPSE_FORCE_FIX__) return;
+  window.__APS3D_COLLAPSE_FORCE_FIX__=true;
+  const byId=id=>document.getElementById(id);
+  function layout(){return document.querySelector('#schedule3d .aps3d-layout')}
+  function sync(){
+    const el=layout(); if(!el) return;
+    const left=el.classList.contains('left-collapsed');
+    const right=el.classList.contains('right-collapsed');
+    const a=byId('aps3dToggleLeft'), b=byId('aps3dToggleRight');
+    const c=byId('aps3dLeftClose'), d=byId('aps3dRightClose');
+    if(a) a.textContent=left?'展開篩選':'收合篩選';
+    if(b) b.textContent=right?'展開驗證':'收合驗證';
+    if(c){c.textContent=left?'›':'‹';c.title=left?'展開機台篩選':'收合機台篩選'}
+    if(d){d.textContent=right?'‹':'›';d.title=right?'展開排程驗證':'收合排程驗證'}
+  }
+  function toggle(side){
+    const el=layout(); if(!el) return;
+    if(side==='left'){
+      el.classList.toggle('left-collapsed');
+      el.classList.add('user-left-open');
+    }else{
+      el.classList.toggle('right-collapsed');
+      el.classList.add('user-right-open');
+    }
+    sync();
+  }
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest('#aps3dToggleLeft,#aps3dLeftClose,#aps3dToggleRight,#aps3dRightClose');
+    if(!btn) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    toggle((btn.id==='aps3dToggleLeft'||btn.id==='aps3dLeftClose')?'left':'right');
+  },true);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',sync,{once:true});
+  else sync();
 })();
 </script>
-
 </body></html>
