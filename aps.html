@@ -64,7 +64,7 @@
 </script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.1</title>
+<title>SEAL KING Smart APS｜V95.1 Enterprise｜Build 0104.2</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2e;--panel2:#10243b;--line:#223c5d;--text:#edf6ff;--muted:#9db0c8;--blue:#4da3ff;--cyan:#35d4d4;--green:#38d996;--yellow:#ffc857;--red:#ff6b78;--purple:#9c7cff;--shadow:0 15px 45px #0007}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#102b4d 0,#07111f 34%,#050a13 100%);color:var(--text);font-family:"Microsoft JhengHei",Arial,sans-serif;min-height:100vh}
@@ -9618,29 +9618,50 @@ if(document.readyState==='loading'){
 (()=>{
 'use strict';
 if(window.__APS_BUILD0013_SAFE_3DAY__)return;window.__APS_BUILD0013_SAFE_3DAY__=true;
-const $=id=>document.getElementById(id),DAY=86400000,MIN=60000;let selectedMachine='',lastIssues=[];
+const $=id=>document.getElementById(id),DAY=86400000,MIN=60000;let selectedMachine='',lastIssues=[],autoDate=true;
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const dt=v=>{if(v instanceof Date)return isNaN(v)?null:v;const d=new Date(v);return isNaN(d)?null:d};
 const fmtDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 const startOfProductionDay=value=>{const d=value?new Date(value+'T08:30:00'):new Date();if(!value){d.setHours(8,30,0,0);if(new Date()<d)d.setDate(d.getDate()-1)}return d};
-const rows=()=>Array.isArray(window.S?.schedule)?window.S.schedule:[];
-function normalize(x,i){const start=dt(x.start||x.start_time||x.begin),end=dt(x.end||x.end_time||x.finish);return{raw:x,i,uid:String(x.uid||x.id||`${x.wo||x.work_order_no||'ROW'}-${i}`),wo:String(x.wo||x.work_order_no||x.order_no||''),machine:String(x.machine||x.machine_code||''),start,end,customer:String(x.customer||x.customer_name||''),spec:String(x.spec||x.product_spec||x.name||x.part||''),due:dt(x.due||x.due_date||x.delivery_date),reason:String(x.reason||''),status:String(x.status||'normal').toLowerCase(),dept:String(x.dept||x.department||'')};}
+function rows(){
+ const candidates=[window.S?.schedule,window.schedulePool,window.APS_SCHEDULE,window.__APS_SCHEDULE__];
+ for(const a of candidates)if(Array.isArray(a)&&a.length)return a;
+ return Array.isArray(window.S?.schedule)?window.S.schedule:[];
+}
+function normalize(x,i){
+ const dateBase=x.date||x.production_date||x.schedule_date;
+ let start=dt(x.start||x.start_time||x.begin),end=dt(x.end||x.end_time||x.finish);
+ if(!start&&dateBase&&x.start_minute!=null){start=dt(dateBase);if(start)start=new Date(start.getTime()+Number(x.start_minute)*MIN)}
+ if(!end&&start&&x.minutes!=null)end=new Date(start.getTime()+Number(x.minutes)*MIN);
+ return{raw:x,i,uid:String(x.uid||x.id||`${x.wo||x.work_order_no||'ROW'}-${i}`),wo:String(x.wo||x.work_order_no||x.order_no||''),machine:String(x.machine||x.machine_code||''),start,end,customer:String(x.customer||x.customer_name||''),spec:String(x.spec||x.product_spec||x.name||x.part||''),due:dt(x.due||x.due_date||x.delivery_date),reason:String(x.reason||''),status:String(x.status||'normal').toLowerCase(),dept:String(x.dept||x.department||'')};
+}
+function earliestScheduleDate(){
+ const starts=rows().map(normalize).map(j=>j.start).filter(Boolean).sort((a,b)=>a-b);
+ if(!starts.length)return null;
+ const d=new Date(starts[0]);d.setHours(8,30,0,0);if(starts[0]<d)d.setDate(d.getDate()-1);return d;
+}
+function syncAutoDate(){
+ const input=$('aps3dDate');if(!input||!autoDate)return;
+ const dashboard=$('dashboardDate')?.value,start=$('startDate')?.value;
+ const preferred=dashboard||start||(earliestScheduleDate()?fmtDate(earliestScheduleDate()):'');
+ if(preferred&&input.value!==preferred)input.value=preferred;
+}
 function deptOf(machine){const m=String(machine).toUpperCase();if(['1B02','1B08','1B10','1B19','1S02','1S18'].includes(m))return'工業';if(['1S03','1S12','1S16','1S19','1S07'].includes(m))return'保密';if(['1B22','1V09','1V01','1V02','1C18'].includes(m))return'文具';return'其他'}
 function statusOf(j){if(j.status.includes('maint')||j.reason.includes('保養'))return'maint';if(j.status.includes('urgent')||j.reason.includes('急'))return'urgent';if(j.status.includes('wait')||j.reason.includes('待料'))return'wait';if(j.status.includes('manual'))return'manual';if(j.due&&j.end&&j.end>j.due)return'delay';return'normal'}
 function data(){const base=startOfProductionDay($('aps3dDate')?.value),end=new Date(base.getTime()+3*DAY);return{base,end,jobs:rows().map(normalize).filter(j=>j.start&&j.end&&j.end>base&&j.start<end)}}
 function validate(jobs){const issues=[],bad=new Set();jobs.forEach(j=>{if(!j.wo){issues.push({type:'error',title:'缺少工單號',text:`${j.machine||'未指定機台'}｜${j.start?fmtDate(j.start)+' '+fmtTime(j.start):'時間不明'}`,uids:[j.uid]});bad.add(j.uid)}if(!j.machine){issues.push({type:'error',title:'缺少機台',text:`${j.wo||'未命名工單'}`,uids:[j.uid]});bad.add(j.uid)}if(!j.start||!j.end||j.end<=j.start){issues.push({type:'error',title:'排程時間異常',text:`${j.wo||j.uid}`,uids:[j.uid]});bad.add(j.uid)}if(j.due&&j.end&&j.end>j.due)issues.push({type:'warn',title:'完工晚於預交日',text:`${j.wo}｜完工 ${fmtDate(j.end)} ${fmtTime(j.end)}`,uids:[j.uid]})});const by={};jobs.filter(j=>j.machine&&j.start&&j.end).forEach(j=>(by[j.machine]??=[]).push(j));Object.entries(by).forEach(([m,a])=>{a.sort((x,y)=>x.start-y.start);for(let i=1;i<a.length;i++){if(a[i].start<a[i-1].end){issues.push({type:'error',title:'同機時間重疊',text:`${m}｜${a[i-1].wo} 與 ${a[i].wo}`,uids:[a[i-1].uid,a[i].uid]});bad.add(a[i-1].uid);bad.add(a[i].uid)}}});return{issues,bad,conflicts:issues.filter(x=>x.title==='同機時間重疊').length,warnings:issues.filter(x=>x.type==='warn').length}}
-function render(){const {base,end,jobs}=data(),q=String($('aps3dSearch')?.value||'').toLowerCase(),dept=$('aps3dDept')?.value||'',zoom=Number($('aps3dZoom')?.value||70),totalW=72*zoom;const vr=validate(jobs);lastIssues=vr.issues;const machines=[...new Set(jobs.map(j=>j.machine).filter(Boolean))].sort();const filteredMachines=machines.filter(m=>{const list=jobs.filter(j=>j.machine===m),hay=[m,...list.flatMap(j=>[j.wo,j.customer,j.spec])].join(' ').toLowerCase();return(!dept||deptOf(m)===dept)&&(!q||hay.includes(q))&&(!selectedMachine||m===selectedMachine)});$('aps3dJobs').textContent=new Set(jobs.map(j=>j.wo||j.uid)).size;$('aps3dMachines').textContent=machines.length;$('aps3dConflicts').textContent=vr.conflicts;$('aps3dWarnings').textContent=vr.warnings;$('aps3dStatus').textContent=`${fmtDate(base)} 08:30 ～ ${fmtDate(new Date(end-DAY))} 08:30｜${jobs.length} 個排程區段｜${filteredMachines.length} 台機台`;$('aps3dMachineList').innerHTML=machines.map(m=>{const list=jobs.filter(j=>j.machine===m);return`<div class="aps3d-machine-card ${selectedMachine===m?'active':''}" data-machine="${esc(m)}"><b>${esc(m)}<span>${list.length}</span></b><small>${deptOf(m)}｜${list.reduce((s,j)=>s+(j.end-j.start)/3600000,0).toFixed(1)} hr</small></div>`}).join('')||'<div class="aps3d-empty">三天內沒有排程機台</div>';if(!filteredMachines.length){$('aps3dGanttWrap').innerHTML='<div class="aps3d-empty">沒有符合條件的三天排程</div>';return}let html=`<div class="aps3d-canvas" style="width:${150+totalW}px"><div class="aps3d-head"><div class="aps3d-corner">機台／72 小時</div><div class="aps3d-axis" style="width:${totalW}px">`;for(let d=0;d<3;d++){const dd=new Date(base.getTime()+d*DAY);html+=`<div class="aps3d-day-label" style="left:${d*24*zoom}px;width:${24*zoom}px">${fmtDate(dd)}</div>`}for(let h=0;h<72;h+=2){const dd=new Date(base.getTime()+h*3600000);html+=`<div class="aps3d-hour-label" style="left:${h*zoom}px;width:${2*zoom}px">${fmtTime(dd)}</div>`}html+='</div></div>';filteredMachines.forEach(m=>{html+=`<div class="aps3d-row"><div class="aps3d-row-label"><b>${esc(m)}</b><small>${deptOf(m)}</small></div><div class="aps3d-track" style="width:${totalW}px">`;for(let h=0;h<=72;h+=2)html+=`<i class="aps3d-gridline" style="left:${h*zoom}px"></i>`;for(let d=0;d<3;d++)html+=`<i class="aps3d-night" style="left:${(d*24+12)*zoom}px;width:${12*zoom}px"></i>`;jobs.filter(j=>j.machine===m).forEach(j=>{const s=Math.max(0,(j.start-base)/3600000),e=Math.min(72,(j.end-base)/3600000),w=Math.max(3,(e-s)*zoom),cls=statusOf(j)+(vr.bad.has(j.uid)?' conflict':'');html+=`<div class="aps3d-job ${cls}" style="left:${s*zoom}px;width:${w}px" title="${esc(j.wo)}｜${fmtDate(j.start)} ${fmtTime(j.start)}～${fmtDate(j.end)} ${fmtTime(j.end)}｜${esc(j.customer)}"><strong>${esc(j.wo||'未命名')}</strong><span>${esc(j.spec||j.customer||'')}｜${fmtTime(j.start)}-${fmtTime(j.end)}</span></div>`});html+='</div></div>'});html+='</div>';$('aps3dGanttWrap').innerHTML=html}
+function render(){syncAutoDate();const {base,end,jobs}=data(),q=String($('aps3dSearch')?.value||'').toLowerCase(),dept=$('aps3dDept')?.value||'',zoom=Number($('aps3dZoom')?.value||70),totalW=72*zoom;const vr=validate(jobs);lastIssues=vr.issues;const machines=[...new Set(jobs.map(j=>j.machine).filter(Boolean))].sort();const filteredMachines=machines.filter(m=>{const list=jobs.filter(j=>j.machine===m),hay=[m,...list.flatMap(j=>[j.wo,j.customer,j.spec])].join(' ').toLowerCase();return(!dept||deptOf(m)===dept)&&(!q||hay.includes(q))&&(!selectedMachine||m===selectedMachine)});$('aps3dJobs').textContent=new Set(jobs.map(j=>j.wo||j.uid)).size;$('aps3dMachines').textContent=machines.length;$('aps3dConflicts').textContent=vr.conflicts;$('aps3dWarnings').textContent=vr.warnings;$('aps3dStatus').textContent=`${fmtDate(base)} 08:30 ～ ${fmtDate(new Date(end-DAY))} 08:30｜${jobs.length} 個排程區段｜${filteredMachines.length} 台機台`;$('aps3dMachineList').innerHTML=machines.map(m=>{const list=jobs.filter(j=>j.machine===m);return`<div class="aps3d-machine-card ${selectedMachine===m?'active':''}" data-machine="${esc(m)}"><b>${esc(m)}<span>${list.length}</span></b><small>${deptOf(m)}｜${list.reduce((s,j)=>s+(j.end-j.start)/3600000,0).toFixed(1)} hr</small></div>`}).join('')||'<div class="aps3d-empty">三天內沒有排程機台</div>';if(!filteredMachines.length){$('aps3dGanttWrap').innerHTML='<div class="aps3d-empty">沒有符合條件的三天排程</div>';return}let html=`<div class="aps3d-canvas" style="width:${150+totalW}px"><div class="aps3d-head"><div class="aps3d-corner">機台／72 小時</div><div class="aps3d-axis" style="width:${totalW}px">`;for(let d=0;d<3;d++){const dd=new Date(base.getTime()+d*DAY);html+=`<div class="aps3d-day-label" style="left:${d*24*zoom}px;width:${24*zoom}px">${fmtDate(dd)}</div>`}for(let h=0;h<72;h+=2){const dd=new Date(base.getTime()+h*3600000);html+=`<div class="aps3d-hour-label" style="left:${h*zoom}px;width:${2*zoom}px">${fmtTime(dd)}</div>`}html+='</div></div>';filteredMachines.forEach(m=>{html+=`<div class="aps3d-row"><div class="aps3d-row-label"><b>${esc(m)}</b><small>${deptOf(m)}</small></div><div class="aps3d-track" style="width:${totalW}px">`;for(let h=0;h<=72;h+=2)html+=`<i class="aps3d-gridline" style="left:${h*zoom}px"></i>`;for(let d=0;d<3;d++)html+=`<i class="aps3d-night" style="left:${(d*24+12)*zoom}px;width:${12*zoom}px"></i>`;jobs.filter(j=>j.machine===m).forEach(j=>{const s=Math.max(0,(j.start-base)/3600000),e=Math.min(72,(j.end-base)/3600000),w=Math.max(3,(e-s)*zoom),cls=statusOf(j)+(vr.bad.has(j.uid)?' conflict':'');html+=`<div class="aps3d-job ${cls}" style="left:${s*zoom}px;width:${w}px" title="${esc(j.wo)}｜${fmtDate(j.start)} ${fmtTime(j.start)}～${fmtDate(j.end)} ${fmtTime(j.end)}｜${esc(j.customer)}"><strong>${esc(j.wo||'未命名')}</strong><span>${esc(j.spec||j.customer||'')}｜${fmtTime(j.start)}-${fmtTime(j.end)}</span></div>`});html+='</div></div>'});html+='</div>';$('aps3dGanttWrap').innerHTML=html}
 function renderChecks(){const {jobs}=data(),v=validate(jobs);lastIssues=v.issues;$('aps3dConflicts').textContent=v.conflicts;$('aps3dWarnings').textContent=v.warnings;$('aps3dCheckList').innerHTML=!v.issues.length?'<div class="aps3d-check-item ok"><b>驗證通過</b><span>目前三天排程未發現重疊、時間或交期問題。</span></div>':v.issues.map(x=>`<div class="aps3d-check-item ${x.type==='error'?'error':''}"><b>${x.type==='error'?'⛔':'⚠'} ${esc(x.title)}</b><span>${esc(x.text)}</span></div>`).join('');render()}
-function today(){const d=startOfProductionDay();$('aps3dDate').value=fmtDate(d);render()}
-function install(){if(!$('schedule3d'))return;if(!$('aps3dDate').value)$('aps3dDate').value=fmtDate(startOfProductionDay());
+function today(){autoDate=false;const d=startOfProductionDay();$('aps3dDate').value=fmtDate(d);render()}
+function install(){if(!$('schedule3d'))return;syncAutoDate();if(!$('aps3dDate').value)$('aps3dDate').value=fmtDate(startOfProductionDay());
 const layout=$('schedule3d')?.querySelector('.aps3d-layout');
 const syncPanelButtons=()=>{if(!layout)return;const l=layout.classList.contains('left-collapsed'),r=layout.classList.contains('right-collapsed');const bl=$('aps3dToggleLeft'),br=$('aps3dToggleRight'),il=$('aps3dLeftClose'),ir=$('aps3dRightClose');if(bl)bl.textContent=l?'展開篩選':'收合篩選';if(br)br.textContent=r?'展開驗證':'收合驗證';if(il)il.textContent=l?'›':'‹';if(ir)ir.textContent=r?'‹':'›'};
 const toggleLeft=()=>{if(!layout)return;layout.classList.toggle('left-collapsed');layout.classList.add('user-left-open');syncPanelButtons()};
 const toggleRight=()=>{if(!layout)return;layout.classList.toggle('right-collapsed');layout.classList.add('user-right-open');syncPanelButtons()};
 $('aps3dToggleLeft')?.addEventListener('click',toggleLeft);$('aps3dLeftClose')?.addEventListener('click',toggleLeft);$('aps3dToggleRight')?.addEventListener('click',toggleRight);$('aps3dRightClose')?.addEventListener('click',toggleRight);
 if(layout&&window.innerWidth<=1450)layout.classList.add('right-collapsed');if(layout&&window.innerWidth<=1180)layout.classList.add('left-collapsed');syncPanelButtons();
-$('aps3dRefresh')?.addEventListener('click',render);$('aps3dValidate')?.addEventListener('click',renderChecks);$('aps3dToday')?.addEventListener('click',today);$('aps3dDate')?.addEventListener('change',render);$('aps3dZoom')?.addEventListener('change',render);$('aps3dSearch')?.addEventListener('input',render);$('aps3dDept')?.addEventListener('change',render);$('aps3dMachineList')?.addEventListener('click',e=>{const c=e.target.closest('[data-machine]');if(!c)return;selectedMachine=selectedMachine===c.dataset.machine?'':c.dataset.machine;render()});document.querySelectorAll('[data-page="schedule3d"]').forEach(b=>b.addEventListener('click',()=>setTimeout(render,0)));const old=window.renderSchedule;if(typeof old==='function'&&!old.__aps3dWrapped){const wrapped=function(){const r=old.apply(this,arguments);try{if($('schedule3d')?.classList.contains('active'))render()}catch(e){console.warn('APS3D refresh failed',e)}return r};wrapped.__aps3dWrapped=true;window.renderSchedule=wrapped}render()}
+$('aps3dRefresh')?.addEventListener('click',()=>{syncAutoDate();render()});$('aps3dValidate')?.addEventListener('click',renderChecks);$('aps3dToday')?.addEventListener('click',today);$('aps3dDate')?.addEventListener('change',()=>{autoDate=false;render()});$('aps3dZoom')?.addEventListener('change',render);$('aps3dSearch')?.addEventListener('input',render);$('aps3dDept')?.addEventListener('change',render);$('aps3dMachineList')?.addEventListener('click',e=>{const c=e.target.closest('[data-machine]');if(!c)return;selectedMachine=selectedMachine===c.dataset.machine?'':c.dataset.machine;render()});document.querySelectorAll('[data-page="schedule3d"]').forEach(b=>b.addEventListener('click',()=>setTimeout(render,0)));const old=window.renderSchedule;if(typeof old==='function'&&!old.__aps3dWrapped){const wrapped=function(){const r=old.apply(this,arguments);try{if($('schedule3d')?.classList.contains('active'))render()}catch(e){console.warn('APS3D refresh failed',e)}return r};wrapped.__aps3dWrapped=true;window.renderSchedule=wrapped}render()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 let __aps3dLastCount=-1;
 setInterval(()=>{
@@ -10296,7 +10317,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   const VERSION=Object.freeze({
     product:'SEAL KING Smart APS',
     core:'V95.1',
-    build:'0104.1',
+    build:'0104.2',
     engine:'IndexedDB Stable',
     date:'2026-07-23'
   });
@@ -10416,7 +10437,7 @@ Build 0102.1｜V90.0 AI 多機台決策面板
   if(window.__APS_BUILD_0086_INSTALLED__) return;
   window.__APS_BUILD_0086_INSTALLED__=true;
 
-  const VERSION=Object.freeze({core:'V95.1',build:'0104.1',engine:'IndexedDB Stable'});
+  const VERSION=Object.freeze({core:'V95.1',build:'0104.2',engine:'IndexedDB Stable'});
   const API_URL=window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
   const CACHE_TTL=5*60*1000;
   const DEBOUNCE_MS=320;
