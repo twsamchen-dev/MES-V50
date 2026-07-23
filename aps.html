@@ -10774,4 +10774,83 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<style id="urgent-management-v120-style">
+#urgentManagementV120{margin-top:14px}
+.uv120-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.uv120-toolbar input,.uv120-toolbar select{background:#0b151d;color:#eef5f8;border:1px solid #35505e;border-radius:8px;padding:9px 10px}
+.uv120-toolbar input{flex:1;min-width:230px}
+.uv120-card{border:1px solid #354452;border-left:5px solid #d71920;border-radius:11px;padding:12px;margin:9px 0;background:#0d171f}
+.uv120-card.completed{border-left-color:#22c55e;opacity:.82}.uv120-card.cancelled{border-left-color:#64748b;opacity:.68}
+.uv120-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.uv120-title{font-size:16px;font-weight:900}.uv120-meta{font-size:11px;color:#9fb0bb}
+.uv120-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.uv120-grid div{background:#0a1219;border:1px solid #263845;border-radius:8px;padding:8px}
+.uv120-grid small{display:block;color:#8fa0ad}.uv120-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap;margin-top:10px}
+.uv120-actions button{border:0;border-radius:8px;padding:8px 10px;font-weight:800;cursor:pointer}
+.uv120-edit{background:#2563eb;color:#fff}.uv120-history{background:#334155;color:#fff}.uv120-complete{background:#16835f;color:#fff}.uv120-cancel{background:#9e3040;color:#fff}
+.uv120-modal{display:none;position:fixed;inset:0;z-index:50000;background:#000b;align-items:center;justify-content:center;padding:16px}.uv120-modal.show{display:flex}
+.uv120-dialog{width:min(780px,96vw);max-height:92vh;overflow:auto;background:#111b24;border:1px solid #465767;border-radius:14px;padding:16px;box-shadow:0 25px 70px #000}
+.uv120-form{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.uv120-form label{display:block;color:#aebbc5;font-size:12px;margin-bottom:4px}.uv120-form input,.uv120-form select,.uv120-form textarea{width:100%;background:#07111a;color:#fff;border:1px solid #365061;border-radius:8px;padding:9px}.uv120-span2{grid-column:span 2}
+.uv120-diff{border-left:4px solid #f59e0b;background:#2b210d;padding:9px;border-radius:7px;margin:7px 0;font-size:12px}
+@media(max-width:760px){.uv120-grid{grid-template-columns:1fr 1fr}.uv120-form{grid-template-columns:1fr}.uv120-span2{grid-column:span 1}}
+</style>
+<script id="urgent-management-v120-script">
+(function(){
+'use strict';
+const U={rows:[],filter:'active',editing:null};
+const $u=id=>document.getElementById(id);
+const escU=v=>String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+async function uapi(action,p){if(typeof window.apsGlobalJsonp!=='function')throw new Error('APS API 尚未載入');return window.apsGlobalJsonp(action,p||{},30000)}
+function operatorNo(){return String($u('urgentPublisherEmp')?.value||'').trim()}
+function statusText(s){s=String(s||'published').toLowerCase();return s==='completed'?'已完成':s==='cancelled'?'已取消':s==='closed'?'已結案':'進行中'}
+function inject(){
+ const sec=$u('urgent'); if(!sec||$u('urgentManagementV120'))return;
+ const box=document.createElement('div');box.id='urgentManagementV120';box.className='card col12';
+ box.innerHTML='<div class="section-kicker">URGENT ORDER CONTROL</div><div class="page-toolbar"><div><h2>已發布急件管理 V2.0</h2><div class="sub">可修改、取消、完成與查看版本紀錄；修改後預設重置已讀。</div></div><button class="btn ghost" onclick="UrgentV120.load()">重新整理</button></div><div class="uv120-toolbar"><input id="uv120Search" placeholder="搜尋急件編號、工單、客戶、料號、機台" oninput="UrgentV120.render()"><select id="uv120Filter" onchange="UrgentV120.render()"><option value="active">進行中</option><option value="all">全部</option><option value="completed">已完成</option><option value="cancelled">已取消</option></select></div><div id="uv120List" class="empty">讀取中…</div>';
+ sec.querySelector('.grid')?.appendChild(box);
+ const modal=document.createElement('div');modal.id='uv120Modal';modal.className='uv120-modal';modal.innerHTML='<div class="uv120-dialog"><div id="uv120ModalBody"></div></div>';document.body.appendChild(modal);
+ load();
+}
+async function load(){const list=$u('uv120List');try{if(list)list.innerHTML='<div class="empty">正在讀取已發布急件…</div>';const r=await uapi('urgentorders',{include_closed:'1',_:Date.now()});U.rows=Array.isArray(r.rows)?r.rows:[];render()}catch(e){if(list)list.innerHTML='<div class="empty" style="color:#ff8088">讀取失敗：'+escU(e.message||e)+'</div>'}}
+function render(){
+ const list=$u('uv120List');if(!list)return;
+ const q=String($u('uv120Search')?.value||'').toLowerCase().trim(),f=String($u('uv120Filter')?.value||'active');
+ let rows=U.rows.filter(r=>!q||Object.values(r).join(' ').toLowerCase().includes(q));
+ rows=rows.filter(r=>{const s=String(r.status||'published').toLowerCase();if(f==='all')return true;if(f==='active')return !/completed|cancelled|closed/.test(s);return s===f});
+ rows.sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));
+ if(!rows.length){list.innerHTML='<div class="empty">沒有符合條件的急件。</div>';return}
+ list.innerHTML=rows.map(r=>{const s=String(r.status||'published').toLowerCase(),locked=/completed|cancelled|closed/.test(s);return `<div class="uv120-card ${escU(s)}"><div class="uv120-head"><div><div class="uv120-title">${escU(r.work_order_no||'—')}｜${escU(r.process||'—')} <span class="tag ${s==='completed'?'green':s==='cancelled'?'gray':'red'}">${statusText(s)}</span> <span class="tag blue">V${Number(r.version||1)}</span></div><div class="uv120-meta">${escU(r.urgent_id)}｜發布：${escU(r.publisher_name||'')}｜更新：${escU(r.updated_at||r.created_at||'')}</div></div><div class="uv120-meta">${escU(r.last_change_summary||'')}</div></div><div class="uv120-grid"><div><small>客戶</small>${escU(r.customer||'—')}</div><div><small>料號</small>${escU(r.part_no||'—')}</div><div><small>數量</small>${escU(r.qty||0)} ${escU(r.unit||'')}</div><div><small>機台</small>${escU(r.machine||'自動')}</div><div><small>原交期</small>${escU(r.original_due||'—')}</div><div><small>最新交期</small>${escU(r.new_due||'—')}</div><div><small>原因</small>${escU(r.reason||'—')}</div><div><small>最後修改人</small>${escU(r.last_modified_by_name||r.publisher_name||'—')}</div></div><div class="uv120-actions"><button class="uv120-history" onclick="UrgentV120.history('${escU(r.urgent_id)}')">修改紀錄</button>${locked?'':`<button class="uv120-edit" onclick="UrgentV120.edit('${escU(r.urgent_id)}')">修改急件</button><button class="uv120-complete" onclick="UrgentV120.complete('${escU(r.urgent_id)}')">完成</button><button class="uv120-cancel" onclick="UrgentV120.cancel('${escU(r.urgent_id)}')">取消急件</button>`}</div></div>`}).join('');
+}
+function closeModal(){$u('uv120Modal')?.classList.remove('show')}
+function showModal(html){$u('uv120ModalBody').innerHTML=html;$u('uv120Modal').classList.add('show')}
+function edit(id){
+ const r=U.rows.find(x=>String(x.urgent_id)===String(id));if(!r)return;
+ U.editing=r;
+ showModal(`<h2>修改急件｜${escU(id)}｜V${Number(r.version||1)}</h2><div class="uv120-form">
+ <div><label>工單 *</label><input id="ueWo" value="${escU(r.work_order_no||'')}"></div><div><label>客戶 *</label><input id="ueCustomer" value="${escU(r.customer||'')}"></div>
+ <div><label>料號 *</label><input id="uePart" value="${escU(r.part_no||'')}"></div><div><label>製程 *</label><input id="ueProcess" value="${escU(r.process||'')}"></div>
+ <div><label>數量 *</label><input id="ueQty" type="number" value="${escU(r.qty||0)}"></div><div><label>單位 *</label><select id="ueUnit"><option>R</option><option>M</option><option>M2</option><option>PCS</option></select></div>
+ <div><label>原交期 *</label><input id="ueOriginalDue" value="${escU(r.original_due||'')}"></div><div><label>最新交期 *</label><input id="ueNewDue" value="${escU(r.new_due||'')}"></div>
+ <div><label>指定機台</label><input id="ueMachine" value="${escU(r.machine||'')}"></div><div><label>前製程狀態 *</label><input id="uePreprocess" value="${escU(r.preprocess_status||'')}"></div>
+ <div class="uv120-span2"><label>原因 *</label><textarea id="ueReason">${escU(r.reason||'')}</textarea></div><div class="uv120-span2"><label>備註</label><textarea id="ueNote">${escU(r.note||'')}</textarea></div>
+ <div class="uv120-span2"><label>修改原因</label><input id="ueChangeReason" placeholder="例如：客戶交期變更、數量修正"></div>
+ <div class="uv120-span2"><label><input id="ueResetRead" type="checkbox" checked style="width:auto"> 修改後重新要求所有人確認已讀</label></div></div>
+ <div class="actions" style="justify-content:flex-end"><button class="btn ghost" onclick="UrgentV120.close()">取消</button><button class="btn green" onclick="UrgentV120.save()">儲存修改</button></div>`);
+ $u('ueUnit').value=String(r.unit||'R').replace('㎡','M2');
+}
+async function save(){
+ const r=U.editing,no=operatorNo();if(!no){alert('請先在急件發布人選擇操作人工號');return}
+ const payload={urgent_id:r.urgent_id,operator_emp_no:no,work_order_no:$u('ueWo').value,customer:$u('ueCustomer').value,part_no:$u('uePart').value,process:$u('ueProcess').value,qty:$u('ueQty').value,unit:$u('ueUnit').value,original_due:$u('ueOriginalDue').value,new_due:$u('ueNewDue').value,machine:$u('ueMachine').value,preprocess_status:$u('uePreprocess').value,reason:$u('ueReason').value,note:$u('ueNote').value,change_reason:$u('ueChangeReason').value,reset_read:$u('ueResetRead').checked?'1':'0'};
+ if(!confirm('確認儲存修改？版本將加 1'+(payload.reset_read==='1'?'，並重置已讀紀錄。':'。')))return;
+ try{await uapi('urgentupdate',payload);closeModal();await load();alert('急件已修改並保留版本紀錄。')}catch(e){alert('修改失敗：'+(e.message||e))}
+}
+async function cancelUrgent(id){const no=operatorNo();if(!no)return alert('請先選擇操作人工號');const reason=prompt('請輸入取消原因：');if(!reason)return;try{await uapi('urgentcancel',{urgent_id:id,operator_emp_no:no,cancel_reason:reason});await load();alert('急件已取消，歷史紀錄仍保留。')}catch(e){alert('取消失敗：'+(e.message||e))}}
+async function complete(id){const no=operatorNo();if(!no)return alert('請先選擇操作人工號');const note=prompt('完成備註（可空白）：')||'';if(!confirm('確認將此急件標示為完成？'))return;try{await uapi('urgentcomplete',{urgent_id:id,operator_emp_no:no,completed_note:note});await load();alert('急件已完成。')}catch(e){alert('完成失敗：'+(e.message||e))}}
+async function history(id){try{const r=await uapi('urgenthistory',{urgent_id:id,_:Date.now()});const rows=Array.isArray(r.rows)?r.rows:[];showModal(`<h2>修改紀錄｜${escU(id)}</h2>${rows.length?rows.map(x=>{const c=x.changed_fields||{};const dif=Object.keys(c).map(k=>`<div class="uv120-diff"><b>${escU(k)}</b><br>${escU(c[k].before)} → ${escU(c[k].after)}</div>`).join('');return `<div class="uv120-card"><div class="uv120-head"><b>V${escU(x.version)}｜${escU(x.action)}</b><span class="uv120-meta">${escU(x.changed_at)}</span></div><div class="uv120-meta">${escU(x.operator_emp_no)} ${escU(x.operator_name)}｜${escU(x.change_reason||'')}</div>${dif}</div>`}).join(''):'<div class="empty">尚無修改紀錄</div>'}<div class="actions" style="justify-content:flex-end"><button class="btn ghost" onclick="UrgentV120.close()">關閉</button></div>`)}catch(e){alert('紀錄讀取失敗：'+(e.message||e))}}
+window.UrgentV120={load,render,edit,save,cancel:cancelUrgent,complete,history,close:closeModal};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(inject,500),{once:true});else setTimeout(inject,500);
+})();
+</script>
+
 </body></html>
