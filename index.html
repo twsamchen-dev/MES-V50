@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V119.5 MES 生產 Key In｜API Login Cache Safe｜Build 0118</title>
+<title>V119.6 MES 生產 Key In｜Mobile Submit Recovery Safe｜Build 0119</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.5 Mobile Submit Recovery｜Build 0118</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Mobile Submit Recovery Safe｜Build 0119</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V119.5 Build 0118：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
+// V119.5 Build 0119：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -730,7 +730,7 @@ function setButtonState(id,state,loadingText,doneText){
 async function getApi(action,params){if(window.MES&&typeof MES.get==='function')return MES.get(action,[],params||{});throw new Error('MES API 未載入')}
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
 
-// Build 0118：手機送出保護。
+// Build 0119：手機送出保護。
 // 部分手機網路中斷或 Apps Script 請求沒有結束時，原 Promise 會永久等待，按鈕便一直停在「送出中」。
 function withSubmitTimeout_(promise,ms=35000){
   let timer;
@@ -740,7 +740,21 @@ function withSubmitTimeout_(promise,ms=35000){
   return Promise.race([Promise.resolve(promise),timeout]).finally(()=>clearTimeout(timer));
 }
 
+let __keyinSubmitWatchdog=null;
+function startKeyinSubmitWatchdog_(){
+  clearTimeout(__keyinSubmitWatchdog);
+  __keyinSubmitWatchdog=setTimeout(()=>{
+    resetKeyinSubmitUI_();
+    updateDraftState_('pending','送出等待過久，按鈕已自動恢復；資料仍保留 / ใช้เวลานาน ปุ่มถูกคืนค่าและข้อมูลยังอยู่');
+  },40000);
+}
+function stopKeyinSubmitWatchdog_(){
+  clearTimeout(__keyinSubmitWatchdog);
+  __keyinSubmitWatchdog=null;
+}
+
 function resetKeyinSubmitUI_(){
+  stopKeyinSubmitWatchdog_();
   App.savingNext=false;
   const submit=qs('submitBtn');
   if(submit){
@@ -1467,7 +1481,35 @@ function showMyPlans(){renderPlansHint();if(window.MES)MES.toast('已顯示'+ran
 function mobilePendingPlans_(){const actualMap=buildActualMap_();return currentPlans().filter(p=>{const st=matchStatus(p,actualMap);return !(st.label==='作業完成'||st.label==='已超目標')})}
 function nextOrder(){const all=currentPlans(),pending=mobilePendingPlans_(),now=wo(safeGet('work_order_no'));let list=pending.filter(p=>personalTaskWo_(p)!==now);if(!list.length)list=pending;if(!list.length){App.currentTaskWo='';clearCurrentInput();setMobileStep_(5);renderPersonalWorkPanel();if(window.MES)MES.toast('今日任務已完成 / งานวันนี้เสร็จแล้ว');return}const next=list[0],w=personalTaskWo_(next);App.idx=all.findIndex(p=>personalTaskWo_(p)===w);pickPersonalTask_(w)}
 function skipMobileTask_(){const w=wo(safeGet('work_order_no'));if(!w){const list=mobilePendingPlans_();if(list.length)pickPersonalTask_(personalTaskWo_(list[0]));else setMobileStep_(5);return}const reason=prompt('跳過原因 / เหตุผลที่ข้าม\n1 等料  2 換機  3 維修  4 插單  5 其他','等料');if(reason===null)return;const key='MES_KEYIN_SKIPPED_'+isoDate()+'_'+currentLoginEmpNo_();let rows=[];try{rows=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}rows.push({work_order_no:w,reason:String(reason||'未說明'),time:new Date().toISOString()});try{localStorage.setItem(key,JSON.stringify(rows.slice(-100)))}catch(e){}if(window.MES)MES.toast('已跳過：'+w+'｜'+String(reason||'未說明'));nextOrder()}
-async function saveAndNextOrder(btn){if(App.savingNext)return;App.savingNext=true;const old=btn&&btn.textContent,mask=qs('mobileSavingMask');if(mask)mask.classList.add('show');if(btn){btn.disabled=true;btn.textContent='儲存中... / กำลังบันทึก...'}try{const ok=await submitKeyin({forceNext:true});if(!ok&&btn){btn.classList.add('is-error');setTimeout(()=>btn.classList.remove('is-error'),500)}}finally{App.savingNext=false;if(mask)mask.classList.remove('show');if(btn){btn.disabled=false;btn.textContent=old}}}
+async function saveAndNextOrder(btn){
+  if(App.savingNext){
+    resetKeyinSubmitUI_();
+    return false;
+  }
+  App.savingNext=true;
+  const old=btn&&btn.textContent;
+  const mask=qs('mobileSavingMask');
+  if(mask)mask.classList.add('show');
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='儲存中... / กำลังบันทึก...';
+  }
+  try{
+    const ok=await submitKeyin({forceNext:true});
+    if(!ok&&btn){
+      btn.classList.add('is-error');
+      setTimeout(()=>btn.classList.remove('is-error'),500);
+    }
+    return !!ok;
+  }catch(e){
+    alert('送出發生未預期錯誤：'+String(e&&e.message||e));
+    return false;
+  }finally{
+    resetKeyinSubmitUI_();
+    if(btn&&old)btn.textContent=old;
+    updateSubmitAvailability_();
+  }
+}
 
 function isOptionalSpeedSite_(){return ['包裝','入庫'].includes(safeGet('site'))}
 function speedFieldsComplete_(){return Number(safeGet('speed_qty_round'))>0&&Number(safeGet('speed_minutes_round'))>0}
@@ -1565,6 +1607,7 @@ async function submitKeyin(opts={}){
     btn.disabled=true;
     btn.textContent='送出中...';
   }
+  startKeyinSubmitWatchdog_();
 
   const matched=App.source.find(x=>sourceMatch(x,w))||{};
   const submitWO=wo(matched.command_no||matched.work_order_no||w);
@@ -1616,7 +1659,7 @@ async function submitKeyin(opts={}){
     resetKeyinSubmitUI_();
     updateSubmitAvailability_();
   }
-});
+}
 
 document.addEventListener('DOMContentLoaded',()=>{
   resetKeyinSubmitUI_();
