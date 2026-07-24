@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V119.6 MES 生產 Key In｜Mobile Submit Recovery Safe｜Build 0122</title>
+<title>V119.7 MES 生產 Key In｜KeyIn Read Recovery｜Build 0123</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Today Locked + Draft Date Safe｜Build 0122</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.7 KeyIn Read Recovery｜Build 0123</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -1041,14 +1041,123 @@ async function loadAll(){
     setButtonState('loadOrdersBtn','error');
   }
 }
+// V119.7 Build 0123：Key In 回報讀取多重備援＋欄位格式統一。
+function keyinRowsOf_(response){
+  if(Array.isArray(response))return response;
+  const candidates=[
+    response&&response.rows,
+    response&&response.data,
+    response&&response.list,
+    response&&response.items,
+    response&&response.records,
+    response&&response.result,
+    response&&response.payload,
+    response&&response.result&&response.result.rows,
+    response&&response.result&&response.result.data,
+    response&&response.data&&response.data.rows,
+    response&&response.data&&response.data.items
+  ];
+  for(const rows of candidates){if(Array.isArray(rows))return rows}
+  return [];
+}
+function keyinResponseHasArray_(response){
+  if(Array.isArray(response))return true;
+  return [
+    response&&response.rows,
+    response&&response.data,
+    response&&response.list,
+    response&&response.items,
+    response&&response.records,
+    response&&response.result,
+    response&&response.payload,
+    response&&response.result&&response.result.rows,
+    response&&response.result&&response.result.data,
+    response&&response.data&&response.data.rows,
+    response&&response.data&&response.data.items
+  ].some(Array.isArray);
+}
+function normalizeKeyinRow_(row){
+  row=row||{};
+  const actualOutput=firstNonEmpty(
+    row.actual_output,row.output_qty,row.actual_qty,row.qty,row.quantity,
+    row['實際產量'],row['產量'],row['生產量'],row['完成數量']
+  );
+  return Object.assign({},row,{
+    created_at:firstNonEmpty(row.created_at,row.timestamp,row.createdTime,row.time,row['建立時間'],row['時間']),
+    report_date:firstNonEmpty(row.report_date,row.date,row.work_date,row.production_date,row['回報日期'],row['日期'],row['生產日期']),
+    week:firstNonEmpty(row.week,row.week_no,row.week_number,row['周別'],row['週別']),
+    site:firstNonEmpty(row.site,row.process,row.process_site,row.station,row['站點'],row['製程'],row['製程站點']),
+    work_order_no:firstNonEmpty(row.work_order_no,row.command_no,row.order_no,row.wo,row['工單'],row['工單號'],row['命令單號'],row['單號']),
+    command_no:firstNonEmpty(row.command_no,row.work_order_no,row['命令單號'],row['工單號']),
+    batch_no:firstNonEmpty(row.batch_no,row.lot_no,row.production_lot,row.output_lot_no,row.input_lot_no,row['批號'],row['生產批號'],row['產出製號'],row['投入製號']),
+    machine_code:firstNonEmpty(row.machine_code,row.machine,row.machine_no,row.equipment,row['機台'],row['機台代碼'],row['設備']),
+    emp_no:firstNonEmpty(row.emp_no,row.employee_no,row.operator_emp_no,row.worker_emp_no,row['工號'],row['人員工號']),
+    emp_name:firstNonEmpty(row.emp_name,row.employee_name,row.operator_name,row.worker_name,row['姓名'],row['人員姓名']),
+    actual_output:actualOutput,
+    unit:firstNonEmpty(row.unit,row.output_unit,row.qty_unit,row['單位'],row['產量單位']),
+    process_note:firstNonEmpty(row.process_note,row.note,row.remark,row.memo,row['備註'],row['說明'])
+  });
+}
 async function loadKeyin(show=true){
-  if(show){setButtonState('loadReportsBtn','loading','讀取回報中... / กำลังโหลดรายงาน...');setLoadStatus('讀取回報資料中… / กำลังโหลดรายงาน','loading')}
+  if(show){
+    setButtonState('loadReportsBtn','loading','讀取回報中... / กำลังโหลดรายงาน...');
+    setLoadStatus('讀取回報資料中… / กำลังโหลดรายงาน','loading');
+  }
+
+  const actions=['listKeyin','listKeyins','keyinList','getKeyin','keyin'];
+  let lastError=null;
+  let firstValidEmpty=null;
+  let success=null;
+
   try{
-    const r=await getApi('listKeyin');App.keyin=rowsOf(r);renderKeyin();renderPlansHint();renderPersonalWorkPanel();
-    if(show){setButtonState('loadReportsBtn','success','', '✓ 讀取完成 / โหลดสำเร็จ');setLoadStatus('已讀取 '+App.keyin.length+' 筆回報 / โหลดรายงานแล้ว '+App.keyin.length+' รายการ','success');if(window.MES)MES.toast('已讀取回報資料')}
+    for(const action of actions){
+      try{
+        console.log('[Key In] 嘗試讀取：',action);
+        const response=await getApi(action,{limit:5000,_:Date.now()});
+        const hasArray=keyinResponseHasArray_(response);
+        const rows=keyinRowsOf_(response);
+        console.log('[Key In] API 回傳：',action,{hasArray:hasArray,count:rows.length,response:response});
+
+        if(rows.length){
+          success={action:action,rows:rows};
+          break;
+        }
+        if(hasArray&&!firstValidEmpty)firstValidEmpty={action:action,rows:[]};
+      }catch(error){
+        lastError=error;
+        console.warn('[Key In] 讀取失敗：',action,error);
+      }
+    }
+
+    if(!success)success=firstValidEmpty;
+    if(!success)throw lastError||new Error('後端未提供可用的 Key In 回報讀取指令');
+
+    App.keyin=success.rows.map(normalizeKeyinRow_).filter(row=>{
+      return !!(
+        String(row.work_order_no||'').trim()||
+        String(row.report_date||'').trim()||
+        String(row.created_at||'').trim()||
+        String(row.actual_output??'').trim()
+      );
+    });
+
+    console.log('[Key In] 讀取完成',{action:success.action,count:App.keyin.length,sample:App.keyin.slice(0,3)});
+    renderKeyin();
+    renderPlansHint();
+    renderPersonalWorkPanel();
+
+    if(show){
+      setButtonState('loadReportsBtn','success','', '✓ 讀取完成 / โหลดสำเร็จ');
+      setLoadStatus('已讀取 '+App.keyin.length+' 筆回報｜來源：'+success.action+' / โหลดแล้ว '+App.keyin.length+' รายการ','success');
+      if(window.MES)MES.toast('已讀取 '+App.keyin.length+' 筆回報資料');
+    }
   }catch(e){
-    if(show){setButtonState('loadReportsBtn','error');setLoadStatus('回報資料讀取失敗 / โหลดรายงานไม่สำเร็จ','error')}
-    if(window.MES)MES.toast('讀取回報失敗：'+e.message)
+    console.error('[Key In] 全部讀取方式均失敗：',e);
+    if(show){
+      setButtonState('loadReportsBtn','error');
+      setLoadStatus('回報資料讀取失敗：'+String(e&&e.message||e),'error');
+    }
+    if(window.MES)MES.toast('讀取回報失敗：'+String(e&&e.message||e));
   }
 }
 function onReportDateChange(){App.idx=-1;renderPlansHint();renderKeyin()}
