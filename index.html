@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V119.6 MES 生產 Key In｜Mobile Submit Recovery Safe｜Build 0121</title>
+<title>V119.6 MES 生產 Key In｜Mobile Submit Recovery Safe｜Build 0122</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Today Date Fixed + Mobile Safe｜Build 0121</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Today Locked + Draft Date Safe｜Build 0122</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V119.5 Build 0121：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
+// V119.5 Build 0122：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -665,7 +665,10 @@ function resolveRangeObj_(mode,rows,dateFn){
 function planRowDate_(r){
   return dk(r.report_date||r['日期']||r['工單日期']||r.plan_date||r.planned_finish||r.due_date||r['預交日']);
 }
-function rangeObj(){return resolveRangeObj_(App.range,App.plans,planRowDate_)}
+function rangeObj(){
+  // Build 0122：幹部目標「今日／一周／本月」固定依裝置目前日期。
+  return rawRangeObj_(App.range,isoDate());
+}
 function inRange(v){const d=dk(v);if(!d)return false;const r=rangeObj();return d>=r.start&&d<=r.end}
 function rowDate(r){return planRowDate_(r)}
 function firstNonEmpty(...vals){for(const v of vals){if(String(v??'').trim()!=='')return v}return ''}
@@ -730,7 +733,7 @@ function setButtonState(id,state,loadingText,doneText){
 async function getApi(action,params){if(window.MES&&typeof MES.get==='function')return MES.get(action,[],params||{});throw new Error('MES API 未載入')}
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
 
-// Build 0121：手機送出保護。
+// Build 0122：手機送出保護。
 // 部分手機網路中斷或 Apps Script 請求沒有結束時，原 Promise 會永久等待，按鈕便一直停在「送出中」。
 function withSubmitTimeout_(promise,ms=35000){
   let timer;
@@ -1051,10 +1054,9 @@ async function loadKeyin(show=true){
 function onReportDateChange(){App.idx=-1;renderPlansHint();renderKeyin()}
 function setPlanRange(mode){App.range=mode;App.idx=-1;['today','week','month'].forEach(m=>{const b=qs('range_'+m);if(b)b.classList.toggle('active',m===mode)});renderPlansHint()}
 function keyinRangeObj(){
-  // Build 0121：Key In 回報日期固定依目前表單日期／今天計算。
-  // 不再因為今天沒有資料，就自動跳到資料庫最後有資料的日期。
-  const selected=dk(safeGet('report_date'))||isoDate();
-  return rawRangeObj_(App.keyinRange,selected);
+  // Build 0122：Key In 回報「今日／一周／本月」固定依裝置目前日期。
+  // 不受舊草稿日期影響，也不再跳到最後有資料的日期。
+  return rawRangeObj_(App.keyinRange,isoDate());
 }
 function keyinInRange(v){const d=dk(v);if(!d)return false;const r=keyinRangeObj();return d>=r.start&&d<=r.end}
 function setKeyinRange(mode){App.keyinRange=mode;['today','week','month'].forEach(m=>{const b=qs('keyin_range_'+m);if(b)b.classList.toggle('active',m===mode)});renderKeyin()}
@@ -1556,7 +1558,29 @@ function updateDraftState_(kind,text){const e=qs('draftState');if(!e)return;e.cl
 function saveDraftNow_(){if(!safeGet('work_order_no')&&!safeGet('actual_output')&&!safeGet('process_note'))return;try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draftData_()));updateDraftState_('saved','草稿已自動保存於本機 / บันทึกฉบับร่างอัตโนมัติแล้ว')}catch(e){}}
 function scheduleDraft_(){updateDraftState_('pending','輸入中，稍後自動保存 / กำลังบันทึกฉบับร่าง...');clearTimeout(draftTimer);draftTimer=setTimeout(saveDraftNow_,500)}
 function clearDraft_(){try{localStorage.removeItem(DRAFT_KEY)}catch(e){}updateDraftState_('','目前無未送出草稿 / ไม่มีฉบับร่างที่ยังไม่ได้ส่ง')}
-function restoreDraft_(){let d=null;try{d=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null')}catch(e){}if(!d||!d.work_order_no||Date.now()-Number(d.saved_at||0)>24*60*60*1000)return;applyQuickData(d,true);safeSet('speed_qty_round',d.speed_qty_round||'');safeSet('speed_unit',d.speed_unit||'R');safeSet('speed_minutes_round',d.speed_minutes_round||'');App.collaborators=Array.isArray(d.collaborators)?d.collaborators:[];if(qs('teamWorkEnabled'))qs('teamWorkEnabled').checked=!!d.team_work_enabled;toggleTeamWork_();App.currentTaskWo=wo(d.work_order_no);updateDraftState_('saved','已恢復上次未送出草稿 / กู้คืนฉบับร่างล่าสุดแล้ว');if(window.MES)MES.toast('已恢復未送出草稿')}
+function restoreDraft_(){
+  let d=null;
+  try{d=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null')}catch(e){}
+  if(!d||!d.work_order_no||Date.now()-Number(d.saved_at||0)>24*60*60*1000)return;
+
+  // 草稿只恢復工單與輸入內容，不恢復舊日期。
+  const todayDate=isoDate();
+  d=Object.assign({},d,{report_date:todayDate});
+  applyQuickData(d,true);
+  safeSet('report_date',todayDate);
+  safeSet('speed_qty_round',d.speed_qty_round||'');
+  safeSet('speed_unit',d.speed_unit||'R');
+  safeSet('speed_minutes_round',d.speed_minutes_round||'');
+  App.collaborators=Array.isArray(d.collaborators)?d.collaborators:[];
+  if(qs('teamWorkEnabled'))qs('teamWorkEnabled').checked=!!d.team_work_enabled;
+  toggleTeamWork_();
+  App.currentTaskWo=wo(d.work_order_no);
+  App.idx=-1;
+  renderPlansHint();
+  renderKeyin();
+  updateDraftState_('saved','已恢復草稿；日期已自動改為今天 / กู้คืนฉบับร่างและตั้งวันที่เป็นวันนี้แล้ว');
+  if(window.MES)MES.toast('已恢復草稿，日期已改為今天');
+}
 function setupDraftProtection_(){['site','other_process','report_date','work_order_no','machine_code','actual_output','unit','process_note','speed_qty_round','speed_unit','speed_minutes_round','teamWorkEnabled'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',scheduleDraft_);e.addEventListener('change',scheduleDraft_)}});window.addEventListener('beforeunload',saveDraftNow_);setTimeout(restoreDraft_,600)}
 function quickDataFromForm(){return{site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:wo(safeGet('work_order_no')),batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),process_note:safeGet('process_note')}}
 function applyQuickData(d,keepOutput=false){if(!d)return;safeSet('site',d.site||safeGet('site'));safeSet('other_process',d.other_process||'');onSiteChange();safeSet('report_date',dk(d.report_date)||safeGet('report_date')||isoDate());safeSet('work_order_no',wo(d.work_order_no||''));safeSet('batch_no',d.batch_no||'');safeSet('machine_code',d.machine_code||'');safeSet('unit',d.unit||safeGet('unit'));if(keepOutput){safeSet('actual_output',d.actual_output||'');safeSet('process_note',d.process_note||'')}lookupWO();setTimeout(()=>{const a=qs('actual_output');if(a)a.focus()},80)}
@@ -1756,13 +1780,30 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadStartup();
   setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);
   setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V119.6 Build 0121 | Mobile submit + report restore ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V119.6 Build 0122 | Mobile submit + report restore ready',KeyInSharedLookupStatus());
 });
 
 // iPhone Safari / Android Chrome 從背景回來或上一頁快取恢復時，強制解除殘留的送出狀態。
-window.addEventListener('pageshow',()=>setTimeout(resetKeyinSubmitUI_,50));
+function restoreTodayDateUI_(){
+  const todayDate=isoDate();
+  safeSet('report_date',todayDate);
+  App.idx=-1;
+  renderPlansHint();
+  renderKeyin();
+}
+window.addEventListener('pageshow',()=>{
+  setTimeout(()=>{
+    resetKeyinSubmitUI_();
+    restoreTodayDateUI_();
+  },50);
+});
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible')setTimeout(resetKeyinSubmitUI_,50);
+  if(document.visibilityState==='visible'){
+    setTimeout(()=>{
+      resetKeyinSubmitUI_();
+      restoreTodayDateUI_();
+    },50);
+  }
 });
 </script>
 </body>
