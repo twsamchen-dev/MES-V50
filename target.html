@@ -1199,9 +1199,9 @@ async function saveTarget(){
     data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();
     await apiPost('savetargetplan',data);
     $('saveMsg').textContent='✅ 已送出至雲端';
+    await loadBootstrap();
     clearForm();
     showSaveResult_('工單 '+(data.work_order_no||'')+' 已送出至雲端，下一筆輸入欄位已清空。');
-    setTimeout(loadBootstrap,300);
   }catch(e){
     $('saveMsg').textContent='❌ 儲存失敗：'+e.message;
     alert('儲存失敗：'+e.message+'\n\n輸入欄位已保留，請不要重複輸入。');
