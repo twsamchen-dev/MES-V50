@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V99 MES Target｜Ultra Match Stable｜Build 0107.1</title>
+<title>V99 MES Target｜Ultra Match Stable｜Build 0107.2</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.listitem.active{background:#dbeafe;outline:2px solid #2563eb;outline-offset:-2px}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}.targetListHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}.targetListHead h2{margin:0}.targetRangeBtns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.targetRangeBtn{border:1px solid #bfdbfe;background:#eef4ff;color:#1e3a8a;border-radius:10px;padding:8px 13px;font-weight:900;cursor:pointer}.targetRangeBtn:hover{background:#dbeafe}.targetRangeBtn.active{background:#2563eb;border-color:#2563eb;color:#fff}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
@@ -22,12 +22,12 @@
 .requiredMark{color:#dc2626;font-weight:900}.fieldInvalid{border:2px solid #dc2626!important;background:#fff7f7!important}.targetUnitBox{border:1px solid #bfdbfe;background:#f8fbff;border-radius:12px;padding:10px}.targetUnitBox label{margin-top:0}.targetQtyHidden{display:none!important}.saveGuardHint{display:block;margin:8px 2px 0;color:#b91c1c;font-weight:800;font-size:13px}
 .targetFilters{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:8px;margin:12px 0 9px;padding:11px;background:#f8fafc;border:1px solid var(--line);border-radius:12px}.targetFilters input,.targetFilters select{min-height:38px;padding:7px 9px;font-size:13px}.filterActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}.filterCheck{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#991b1b}.filterCheck input{width:auto;min-height:0}.filterCount{font-weight:900;color:#1d4ed8}.clearFilterBtn{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 11px;font-weight:900;cursor:pointer}@media(max-width:1200px){.targetFilters{grid-template-columns:repeat(4,1fr)}}@media(max-width:700px){.targetFilters{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.targetFilters{grid-template-columns:1fr}}
 
-/* Build 0107.1：班別獨立配對＋等待班別回報＋全天完成率 */
+/* Build 0107.2：班別獨立配對＋等待班別回報＋全天完成率 */
 .saveResultOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:12000;align-items:center;justify-content:center;padding:18px}.saveResultOverlay.show{display:flex}.saveResultPanel{width:min(520px,94vw);background:#fff;border-radius:22px;padding:28px 24px;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.38);border:4px solid #22c55e}.saveResultIcon{font-size:58px;line-height:1}.saveResultTitle{font-size:27px;font-weight:900;color:#15803d;margin-top:8px}.saveResultText{font-size:16px;color:#334155;line-height:1.7;margin-top:10px}.saveResultBar{height:10px;background:#dcfce7;border-radius:99px;overflow:hidden;margin-top:18px}.saveResultBar>div{height:100%;width:100%;background:#22c55e;animation:saveResultCountdown 1.8s linear forwards}.saveResultClose{margin-top:18px;border:0;border-radius:12px;background:#16a34a;color:#fff;padding:11px 22px;font-weight:900;font-size:16px;cursor:pointer}@keyframes saveResultCountdown{from{width:100%}to{width:0}}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0107.1</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0107.2</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -191,7 +191,36 @@ function isoWeek(d){let x=new Date(dateKey(d)+'T00:00:00');if(isNaN(x))return ''
 function apiGet(action,params={}){return new Promise((resolve,reject)=>{const cb='MES_V732_CB_'+Date.now()+'_'+Math.floor(Math.random()*999999);const qs=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},params)).toString();const s=document.createElement('script');let done=false;const timeout=(action==='targetorderlist'?45000:(action==='targetkeyinactual'||action==='keyinsource'?120000:(action==='targetmatchlist'?90000:60000)));
       const timer=setTimeout(()=>{cleanup();reject(new Error('API 讀取逾時：'+action))},timeout);function cleanup(){if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=res=>{cleanup();if(res&&res.ok===false)reject(new Error(res.message||res.error||'API error'));else resolve(res||{})};s.onerror=()=>{cleanup();reject(new Error('API 連線失敗：'+action))};s.src=API_URL+'?'+qs;document.head.appendChild(s)})}
 async function apiGetRetry(action,params={},retry=2){let lastErr=null;for(let i=0;i<=retry;i++){try{return await apiGet(action,params)}catch(e){lastErr=e;if(i<retry){$('loadMsg').textContent='API暫時失敗，重試 '+(i+1)+'/'+retry+'：'+action;await new Promise(r=>setTimeout(r,900+i*700));}}}throw lastErr}
-async function apiPost(action,body){await fetch(API_URL+'?action='+encodeURIComponent(action)+'&_='+Date.now(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body||{})});return {ok:true}}
+async function apiPost(action,body){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),30000);
+  try{
+    await fetch(API_URL+'?action='+encodeURIComponent(action)+'&_='+Date.now(),{
+      method:'POST',mode:'no-cors',signal:controller.signal,
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(body||{})
+    });
+    return {ok:true,submitted:true};
+  }catch(e){
+    if(e&&e.name==='AbortError')throw new Error('雲端送出逾時（30秒）');
+    throw new Error('雲端送出失敗：'+(e&&e.message?e.message:e));
+  }finally{clearTimeout(timer)}
+}
+async function verifyTargetSaved_(targetPlanId,retry=7){
+  const id=String(targetPlanId||'').trim();
+  if(!id)throw new Error('缺少 target_plan_id，無法驗證');
+  let lastErr=null;
+  for(let i=0;i<retry;i++){
+    if(i>0)await new Promise(r=>setTimeout(r,700+i*250));
+    try{
+      const res=await apiGet('listtargetplans',{target_plan_id:id,force:'1',_v:Date.now()});
+      const rows=(res.targets||res.rows||res.data||res.list||[]);
+      const found=rows.some(r=>String((r||{}).target_plan_id||'').trim()===id);
+      if(found)return true;
+    }catch(e){lastErr=e}
+  }
+  throw new Error('雲端未找到剛儲存的目標'+(lastErr?'｜'+lastErr.message:''));
+}
 function setRangeMode(mode,updateDates=true){currentRange=mode;let d=today();if(updateDates){if(mode==='today'){$('rangeStart').value=d;$('rangeEnd').value=d}else if(mode==='week'){$('rangeStart').value=d;$('rangeEnd').value=addDays(d,6)}else if(mode==='month'){$('rangeStart').value=firstMonth(d);$('rangeEnd').value=lastMonth(d)}}['Today','Week','Month','Custom'].forEach(x=>{$('btn'+x).className='btn ghost'});const map={today:'Today',week:'Week',month:'Month',custom:'Custom'};$('btn'+map[mode]).className='btn active';['Today','Week','Month'].forEach(x=>{const b=$('listBtn'+x);if(b)b.className='targetRangeBtn'});if(mode!=='custom'){const lb=$('listBtn'+map[mode]);if(lb)lb.className='targetRangeBtn active'}applyRange();if(!ALL_TARGETS.length)loadBootstrap()}
 function inRangeDate(v){const d=dateKey(v);return d&&d>=dateKey($('rangeStart').value)&&d<=dateKey($('rangeEnd').value)}
 function rangeName(){return currentRange==='today'?'今日':currentRange==='week'?'一周':currentRange==='month'?'本月':'自訂區間'}
@@ -1122,21 +1151,29 @@ function prepareMultiRows(base){
  return dates.map((d,i)=>{const r=Object.assign({},base);r.report_date=d;r.week_no=isoWeek(d);r.planned_finish=d;r.target_plan_id='TP-'+d.replace(/-/g,'')+'-'+Date.now()+'-'+String(i+1).padStart(3,'0');if(alloc==='total'){r.target_roll=(totalRoll/dates.length).toFixed(3);r.target_m2=(totalM2/dates.length).toFixed(3)}return r});
 }
 function showMultiPreview(rows){PENDING_MULTI_ROWS=rows;$('saveOverlay').className='saveOverlay show';$('saveOverlayTitle').textContent='建立多日目標 / สร้างเป้าหมายหลายวัน';$('saveOverlayText').textContent='將建立 '+rows.length+' 筆目標，確認日期、單位與數量後再寫入雲端。';$('savePreviewList').innerHTML=rows.map(r=>{const u=normalizeTargetUnit_(r.target_unit),q=u==='M2'?r.target_m2:r.target_roll;return '<div class="previewRow"><b>'+esc(r.report_date)+'</b><span>'+esc(q)+' '+esc(u==='M2'?'M²':'R')+'｜'+esc(r.machine_code||'未指定機台')+'</span></div>'}).join('');$('saveProgressBar').style.width='0%';$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('confirmSaveBtn').textContent='確認建立 / ยืนยัน'}
-async function confirmMultiSave(){if(!PENDING_MULTI_ROWS.length)return;const rows=PENDING_MULTI_ROWS.slice();$('confirmSaveBtn').disabled=true;$('cancelSaveBtn').disabled=true;try{for(let i=0;i<rows.length;i++){$('saveOverlayText').textContent='正在建立第 '+(i+1)+' / '+rows.length+' 筆… / กำลังบันทึก';$('saveProgressBar').style.width=Math.round((i/rows.length)*100)+'%';await apiPost('savetargetplan',rows[i]);await new Promise(r=>setTimeout(r,120))}$('saveProgressBar').style.width='100%';$('saveOverlayTitle').textContent='✅ 建立成功';$('saveOverlayText').textContent='已建立 '+rows.length+' 筆多日目標並同步至雲端。';$('confirmSaveBtn').textContent='完成';setTimeout(()=>{$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[];clearEntryAfterSave_();showSaveResult_('已建立 '+rows.length+' 筆多日目標並同步至雲端，輸入欄位已清空。');loadBootstrap()},900)}catch(e){$('saveOverlayText').textContent='建立失敗：'+e.message;$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false}}
-function clearEntryAfterSave_(){
-  // 保留目標日期、班別及幹部身分，清空下一筆工單會變動的所有欄位。
-  if($('operator_emp_no'))$('operator_emp_no').value='';
-  if($('operator_name'))$('operator_name').value='';
-  fillOperatorName_();
-  clearOrderFields();
-  if($('note'))$('note').value='';
-  if($('status'))$('status').selectedIndex=0;
-  LAST_LOOKUP=null;
-  clearTargetValidation_();
-  renderSearchIdle();
-  setScheduleMode('single');
-  if($('saveMsg'))$('saveMsg').textContent='';
-  setTimeout(()=>{if($('work_order_no'))$('work_order_no').focus()},120);
+async function confirmMultiSave(){
+  if(!PENDING_MULTI_ROWS.length)return;
+  const rows=PENDING_MULTI_ROWS.slice();
+  $('confirmSaveBtn').disabled=true;$('cancelSaveBtn').disabled=true;
+  try{
+    for(let i=0;i<rows.length;i++){
+      $('saveOverlayText').textContent='正在建立第 '+(i+1)+' / '+rows.length+' 筆… / กำลังบันทึก';
+      $('saveProgressBar').style.width=Math.round((i/rows.length)*100)+'%';
+      await apiPost('savetargetplan',rows[i]);
+      $('saveOverlayText').textContent='正在確認第 '+(i+1)+' / '+rows.length+' 筆已寫入 Target_Plan…';
+      await verifyTargetSaved_(rows[i].target_plan_id,7);
+    }
+    $('saveProgressBar').style.width='100%';
+    $('saveOverlayTitle').textContent='✅ 建立成功';
+    $('saveOverlayText').textContent='已確認 '+rows.length+' 筆目標寫入 Target_Plan。';
+    $('confirmSaveBtn').textContent='完成';
+    setTimeout(()=>{$('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;$('saveOverlay').className='saveOverlay';PENDING_MULTI_ROWS=[];clearEntryAfterSave_();showSaveResult_('已確認 '+rows.length+' 筆多日目標寫入 Target_Plan，輸入欄位已清空。');loadBootstrap()},900)
+  }catch(e){
+    $('saveOverlayTitle').textContent='❌ 建立失敗';
+    $('saveOverlayText').textContent='未確認寫入：'+e.message;
+    $('confirmSaveBtn').disabled=false;$('cancelSaveBtn').disabled=false;
+    alert('多日目標儲存失敗：'+e.message);
+  }
 }
 function showSaveResult_(text){
   const box=$('saveResultOverlay'),msg=$('saveResultText');
@@ -1164,8 +1201,24 @@ async function saveTarget(){
     try{const rows=prepareMultiRows(data);showMultiPreview(rows)}catch(e){toast(e.message)}
     return;
   }
-  const btn=$('saveTargetBtn');btn.disabled=true;btn.textContent='儲存中… / กำลังบันทึก';$('saveMsg').textContent='正在同步雲端…';
-  try{data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();await apiPost('savetargetplan',data);$('saveMsg').textContent='✅ 上傳完成｜已同步雲端';clearEntryAfterSave_();showSaveResult_('工單 '+(data.work_order_no||'')+' 已成功同步至雲端，下一筆輸入欄位已清空。');setTimeout(loadBootstrap,500)}catch(e){$('saveMsg').textContent='❌ 上傳失敗：'+e.message;alert('儲存失敗：'+e.message)}finally{btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย'}
+  const btn=$('saveTargetBtn');
+  btn.disabled=true;btn.textContent='儲存中… / กำลังบันทึก';
+  $('saveMsg').textContent='正在送出雲端…';
+  try{
+    data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();
+    await apiPost('savetargetplan',data);
+    $('saveMsg').textContent='正在確認 Target_Plan 已寫入…';
+    await verifyTargetSaved_(data.target_plan_id,7);
+    $('saveMsg').textContent='✅ 已確認寫入 Target_Plan';
+    clearEntryAfterSave_();
+    showSaveResult_('工單 '+(data.work_order_no||'')+' 已確認寫入 Target_Plan，下一筆輸入欄位已清空。');
+    setTimeout(loadBootstrap,300);
+  }catch(e){
+    $('saveMsg').textContent='❌ 未確認寫入：'+e.message;
+    alert('儲存失敗：'+e.message+'\n\n輸入欄位已保留，請不要重複輸入。');
+  }finally{
+    btn.disabled=false;btn.textContent='儲存目標 / บันทึกเป้าหมาย';
+  }
 }
 async function consumeTargetPrefill_(){
   const q=new URLSearchParams(location.search),wo=q.get('prefill_wo')||'',date=dateKey(q.get('prefill_date')||''),machine=q.get('prefill_machine')||'',unit=normalizeTargetUnit_(q.get('prefill_unit')||'R');
