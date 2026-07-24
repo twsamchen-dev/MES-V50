@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V119.6 MES 生產 Key In｜Mobile Submit Recovery Safe｜Build 0119</title>
+<title>V119.6 MES 生產 Key In｜Mobile Submit Recovery Safe｜Build 0120</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Mobile Submit Recovery Safe｜Build 0119</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Mobile Submit + Report Restore Safe｜Build 0120</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V119.5 Build 0119：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
+// V119.5 Build 0120：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -730,7 +730,7 @@ function setButtonState(id,state,loadingText,doneText){
 async function getApi(action,params){if(window.MES&&typeof MES.get==='function')return MES.get(action,[],params||{});throw new Error('MES API 未載入')}
 async function postApi(action,data){if(window.MES&&typeof MES.post==='function')return MES.post(action,data);throw new Error('MES API 未載入')}
 
-// Build 0119：手機送出保護。
+// Build 0120：手機送出保護。
 // 部分手機網路中斷或 Apps Script 請求沒有結束時，原 Promise 會永久等待，按鈕便一直停在「送出中」。
 function withSubmitTimeout_(promise,ms=35000){
   let timer;
@@ -1661,9 +1661,97 @@ async function submitKeyin(opts={}){
   }
 }
 
+
+function syncKeyinCollapseUI_(){
+  const body=qs('keyinReportBody'),btn=qs('keyinCollapseBtn');
+  if(body)body.classList.toggle('collapsed',!!App.keyinReportCollapsed);
+  if(btn)btn.textContent=App.keyinReportCollapsed?'展開 / ขยาย':'收合 / ย่อ';
+}
+function toggleKeyinReport(){
+  App.keyinReportCollapsed=!App.keyinReportCollapsed;
+  syncKeyinCollapseUI_();
+}
+function renderKeyin(){
+  const r0=keyinRangeObj();
+  const titleMap={
+    today:'今日回報 / รายงานวันนี้',
+    week:'一周回報 / รายงาน 1 สัปดาห์',
+    month:'本月回報 / รายงานเดือนนี้'
+  };
+  if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';
+  if(qs('keyinRangeText'))qs('keyinRangeText').textContent=(r0.fallback?'最新資料｜':'')+r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');
+  const q=nrm(safeGet('search'));
+  const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));
+  const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();
+  App.viewKeyin=rows;
+  if(qs('count'))qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';
+  if(qs('rows'))qs('rows').innerHTML=rows.map((r,i)=>
+    '<tr>'+
+    '<td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td>'+
+    '<td>'+html(r.created_at)+'</td>'+
+    '<td>'+html(r.report_date)+'</td>'+
+    '<td>'+html(isoWeek(r.report_date))+'</td>'+
+    '<td>'+html(r.site)+'</td>'+
+    '<td><b>'+html(r.work_order_no)+'</b></td>'+
+    '<td>'+html(r.batch_no)+'</td>'+
+    '<td>'+html(r.machine_code)+'</td>'+
+    '<td>'+html(r.emp_no)+'</td>'+
+    '<td>'+html(r.emp_name)+'</td>'+
+    '<td>'+html(r.actual_output)+'</td>'+
+    '<td>'+html(r.unit)+'</td>'+
+    '<td>'+html(r.process_note)+'</td>'+
+    '</tr>'
+  ).join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>';
+}
+function copyKeyinRow(i){
+  const r=App.viewKeyin[i];
+  if(!r)return;
+  applyQuickData({
+    site:r.site,
+    report_date:r.report_date,
+    work_order_no:r.work_order_no,
+    batch_no:r.batch_no,
+    machine_code:r.machine_code,
+    actual_output:r.actual_output,
+    unit:r.unit,
+    process_note:r.process_note
+  },true);
+}
+function exportCSV(){
+  const headers=['created_at','report_date','week_no','site','work_order_no','batch_no','machine_code','emp_no','emp_name','actual_output','unit','process_note'];
+  const csv=[headers.join(',')].concat(App.keyin.map(r=>headers.map(h=>'"'+String(h==='week_no'?isoWeek(r.report_date):(r[h]||'')).replaceAll('"','""')+'"').join(','))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));
+  a.download='keyin_v119_6.csv';
+  a.click();
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   resetKeyinSubmitUI_();
+  cacheUI_();
+  App.planCollapsed=false;
+  App.keyinReportCollapsed=false;
+  syncPlanCollapseUI_();
+  syncKeyinCollapseUI_();
+  keyInCacheLoad_();
+  safeSet('report_date',isoDate());
+  loadQuickProfile();
+  renderCollaboratorChoices_();
+  onSiteChange();
+  setupFastInputKeys();
+  setMobileStep_(1);
+  ['speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{
+    const e=qs(id);
+    if(e){
+      e.addEventListener('input',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});
+      e.addEventListener('change',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});
+    }
+  });
   setupDraftProtection_();
+  loadStartup();
+  setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);
+  setInterval(sendEmployeeHeartbeat,300000);
+  console.log('SEAL KING Smart Key In V119.6 Build 0120 | Mobile submit + report restore ready',KeyInSharedLookupStatus());
 });
 
 // iPhone Safari / Android Chrome 從背景回來或上一頁快取恢復時，強制解除殘留的送出狀態。
