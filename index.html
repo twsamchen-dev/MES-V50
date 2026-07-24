@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V119.5 MES 生產 Key In｜API Login Cache Safe｜Build 0117</title>
+<title>V119.6 MES 生產 Key In｜Submit Timeout + KeyIn Data Safe｜Build 0118</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.5 API Login Cache Safe｜Build 0117</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V119.6 Submit Timeout + KeyIn Data Safe｜Build 0118</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V119.5 Build 0117：登入統一使用 api.js 正式 URL；Ultra Cache 容量自動縮減。
+// V119.6 Build 0118：送出逾時自動解除；Key In 回報排除標題列與無效日期。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -633,7 +633,37 @@ function dk(v){
   const d=new Date(s);
   return isNaN(d)?s.slice(0,10):localYMD(d);
 }
-function isoWeek(v){const dstr=dk(v)||isoDate();const d=new Date(dstr+'T00:00:00');d.setHours(0,0,0,0);d.setDate(d.getDate()+3-((d.getDay()+6)%7));const w1=new Date(d.getFullYear(),0,4);const week=1+Math.round(((d-w1)/86400000-3+((w1.getDay()+6)%7))/7);return d.getFullYear()+'-W'+String(week).padStart(2,'0')}
+function validYMD_(v){
+  const s=dk(v);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return '';
+  const d=new Date(s+'T00:00:00');
+  return isNaN(d.getTime())?'':s;
+}
+function isoWeek(v){
+  const dstr=validYMD_(v);
+  if(!dstr)return '';
+  const d=new Date(dstr+'T00:00:00');
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+3-((d.getDay()+6)%7));
+  const w1=new Date(d.getFullYear(),0,4);
+  const week=1+Math.round(((d-w1)/86400000-3+((w1.getDay()+6)%7))/7);
+  return d.getFullYear()+'-W'+String(week).padStart(2,'0');
+}
+function isKeyinHeaderRow_(r){
+  r=r||{};
+  const vals=['report_date','site','work_order_no','machine_code','emp_no','emp_name','actual_output','unit'];
+  let hits=0;
+  vals.forEach(k=>{if(nrm(r[k])===nrm(k))hits++});
+  return hits>=2 || (nrm(r.report_date)==='REPORT_DATE' && nrm(r.site)==='SITE');
+}
+function normalizeKeyinRows_(rows){
+  return (Array.isArray(rows)?rows:[]).filter(r=>{
+    if(!r||typeof r!=='object'||Array.isArray(r)||isKeyinHeaderRow_(r))return false;
+    const date=validYMD_(r.report_date||r.created_at);
+    const hasPayload=!!(nrm(r.work_order_no)||nrm(r.emp_no)||nrm(r.machine_code)||String(r.actual_output??'').trim());
+    return !!date && hasPayload;
+  }).map(r=>Object.assign({},r,{report_date:validYMD_(r.report_date)||validYMD_(r.created_at)}));
+}
 function empDisplay(r){return r.leader_name||r.emp_name||r['幹部姓名']||r['姓名']||''}
 function roleDisplay(r){return r.leader_role||r.role||r['幹部角色']||r['職務']||''}
 function html(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -1001,7 +1031,7 @@ async function loadAll(){
 async function loadKeyin(show=true){
   if(show){setButtonState('loadReportsBtn','loading','讀取回報中... / กำลังโหลดรายงาน...');setLoadStatus('讀取回報資料中… / กำลังโหลดรายงาน','loading')}
   try{
-    const r=await getApi('listKeyin');App.keyin=rowsOf(r);renderKeyin();renderPlansHint();renderPersonalWorkPanel();
+    const r=await getApi('listKeyin');App.keyin=normalizeKeyinRows_(rowsOf(r));renderKeyin();renderPlansHint();renderPersonalWorkPanel();
     if(show){setButtonState('loadReportsBtn','success','', '✓ 讀取完成 / โหลดสำเร็จ');setLoadStatus('已讀取 '+App.keyin.length+' 筆回報 / โหลดรายงานแล้ว '+App.keyin.length+' รายการ','success');if(window.MES)MES.toast('已讀取回報資料')}
   }catch(e){
     if(show){setButtonState('loadReportsBtn','error');setLoadStatus('回報資料讀取失敗 / โหลดรายงานไม่สำเร็จ','error')}
@@ -1500,7 +1530,7 @@ function afterSubmitClear(forceNext=false){clearDraft_();App.collaborators=[];if
 function setupFastInputKeys(){['work_order_no','actual_output','speed_qty_round','speed_minutes_round'].forEach(id=>{const el=qs(id);if(!el)return;el.addEventListener('focus',()=>{if(id==='actual_output')setMobileStep_(2);else if(id==='speed_qty_round')setMobileStep_(3);else if(id==='speed_minutes_round')setMobileStep_(4)});el.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;ev.preventDefault();if(id==='work_order_no'){lookupWO();mobileFocus_('actual_output',2)}else if(id==='actual_output'){if(isOptionalSpeedSite_()){const b=qs('mobileNextBtn')||document.querySelector('.saveNextBtn');if(b&&!b.disabled)saveAndNextOrder(b)}else mobileFocus_('speed_qty_round',3)}else if(id==='speed_qty_round'){mobileFocus_('speed_minutes_round',4)}else if(id==='speed_minutes_round'){const b=qs('mobileNextBtn')||document.querySelector('.saveNextBtn');if(b&&!b.disabled)saveAndNextOrder(b)}})})}
 async function submitKeyin(opts={}){const btn=qs('submitBtn');if(!NOTICE_AUTH.employee||!NOTICE_AUTH.token){if(window.MES)MES.toast('請先登入 / กรุณาเข้าสู่ระบบ');const m=qs('pinLoginModal');if(m)m.classList.remove('hide');return false}const w=wo(safeGet('work_order_no'));if(!w){if(window.MES)MES.toast('請輸入工單號');return false}if(!safeGet('actual_output')){if(window.MES)MES.toast('請輸入實際產量');return false}if(safeGet('site')==='其他'&&!safeGet('other_process').trim()){const input=qs('other_process');if(window.MES)MES.toast('請填寫其他製程名稱 / กรุณาระบุกระบวนการอื่น');if(input){input.focus();input.reportValidity()}return false}if(!isOptionalSpeedSite_()&&!speedFieldsComplete_()){if(window.MES)MES.toast('請完成現場實測產速後再儲存 / กรุณากรอกข้อมูลความเร็วให้ครบ');const target=Number(safeGet('speed_qty_round'))>0?qs('speed_minutes_round'):qs('speed_qty_round');if(target){target.focus();target.reportValidity()}return false}btn.disabled=true;btn.textContent='送出中...';const matched=App.source.find(x=>sourceMatch(x,w))||{};
 const submitWO=wo(matched.command_no||matched.work_order_no||w);
-const team=teamWorkerData_();if(team.enabled&&!team.collabs.length){if(window.MES)MES.toast('已勾選多人共同作業，請至少選擇一位協同人員');renderCollaboratorChoices_();return false}const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:team.emp_no,emp_name:team.emp_name,main_emp_no:team.main.emp_no,main_emp_name:team.main.emp_name,collaborator_emp_nos:team.collabs.map(x=>x.emp_no).join(','),collaborator_emp_names:team.collabs.map(x=>x.emp_name).join('、'),worker_count:team.all.length,team_work:team.enabled?'Y':'N',production_count_mode:'SINGLE',process_note:teamWorkNote_(otherProcessNote_(),team),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v1191_cloud_employee_safe'};try{await postApi('saveKeyin',data);const localSaved={...data,created_at:new Date().toISOString()};App.keyin.push(localSaved);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear(!!opts.forceNext);renderPersonalWorkPanel();setTimeout(()=>loadKeyin(false),1200);return true}catch(e){alert('回報失敗：'+e.message);updateDraftState_('pending','儲存失敗，資料仍保留在畫面與草稿中');return false}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
+const team=teamWorkerData_();if(team.enabled&&!team.collabs.length){if(window.MES)MES.toast('已勾選多人共同作業，請至少選擇一位協同人員');renderCollaboratorChoices_();return false}const data={site:safeGet('site'),other_process:safeGet('other_process'),report_date:safeGet('report_date'),work_order_no:submitWO,order_no:matched.order_no||w,part_no:matched.part_no||'',product_spec:matched.product_spec||'',batch_no:safeGet('batch_no'),machine_code:safeGet('machine_code'),actual_output:safeGet('actual_output'),unit:safeGet('unit'),emp_no:team.emp_no,emp_name:team.emp_name,main_emp_no:team.main.emp_no,main_emp_name:team.main.emp_name,collaborator_emp_nos:team.collabs.map(x=>x.emp_no).join(','),collaborator_emp_names:team.collabs.map(x=>x.emp_name).join('、'),worker_count:team.all.length,team_work:team.enabled?'Y':'N',production_count_mode:'SINGLE',process_note:teamWorkNote_(otherProcessNote_(),team),speed_qty_round:safeGet('speed_qty_round'),speed_unit:safeGet('speed_unit'),speed_minutes_round:safeGet('speed_minutes_round'),input_source:'github_v1191_cloud_employee_safe'};try{await managedTimeout_(postApi('saveKeyin',data),30000,'saveKeyin');const localSaved={...data,created_at:new Date().toISOString()};App.keyin.push(localSaved);App.lastSubmit={...data};addRecent(data);saveQuickProfile();if(window.MES)MES.toast('已送出回報 / ส่งรายงาน');afterSubmitClear(!!opts.forceNext);renderPersonalWorkPanel();setTimeout(()=>loadKeyin(false),1200);return true}catch(e){alert('回報失敗：'+e.message);updateDraftState_('pending','儲存失敗，資料仍保留在畫面與草稿中');return false}finally{btn.disabled=false;btn.textContent='送出回報 / ส่งรายงาน'}}
 function syncKeyinCollapseUI_(){const body=qs('keyinReportBody'),btn=qs('keyinCollapseBtn');if(body)body.classList.toggle('collapsed',!!App.keyinReportCollapsed);if(btn)btn.textContent=App.keyinReportCollapsed?'展開 / ขยาย':'收合 / ย่อ'}
 function toggleKeyinReport(){App.keyinReportCollapsed=!App.keyinReportCollapsed;syncKeyinCollapseUI_()}
 function renderKeyin(){const r0=keyinRangeObj();const titleMap={today:'今日回報 / รายงานวันนี้',week:'一周回報 / รายงาน 1 สัปดาห์',month:'本月回報 / รายงานเดือนนี้'};if(qs('keyinRangeTitle'))qs('keyinRangeTitle').textContent=titleMap[App.keyinRange]||'回報資料';if(qs('keyinRangeText'))qs('keyinRangeText').textContent=(r0.fallback?'最新資料｜':'')+r0.label+' '+r0.start+(r0.start!==r0.end?' ~ '+r0.end:'');const q=nrm(safeGet('search'));const base=App.keyin.filter(r=>keyinInRange(r.report_date||r.created_at));const rows=base.filter(r=>!q||nrm(Object.values(r).join(' ')).includes(q)).slice(-300).reverse();App.viewKeyin=rows;qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';qs('rows').innerHTML=rows.map((r,i)=>'<tr><td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td><td>'+html(r.created_at)+'</td><td>'+html(r.report_date)+'</td><td>'+html(isoWeek(r.report_date))+'</td><td>'+html(r.site)+'</td><td><b>'+html(r.work_order_no)+'</b></td><td>'+html(r.batch_no)+'</td><td>'+html(r.machine_code)+'</td><td>'+html(r.emp_no)+'</td><td>'+html(r.emp_name)+'</td><td>'+html(r.actual_output)+'</td><td>'+html(r.unit)+'</td><td>'+html(r.process_note)+'</td></tr>').join('')||'<tr><td colspan="13" class="hint">尚無資料</td></tr>'}
@@ -1513,7 +1543,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   syncPlanCollapseUI_();syncKeyinCollapseUI_();
   keyInCacheLoad_();
   safeSet('report_date',isoDate());loadQuickProfile();renderCollaboratorChoices_();onSiteChange();setupFastInputKeys();setMobileStep_(1);['speed_qty_round','speed_minutes_round','speed_unit'].forEach(id=>{const e=qs(id);if(e){e.addEventListener('input',()=>{updateSpeedCalculated_();updateSubmitAvailability_()});e.addEventListener('change',()=>{updateSpeedCalculated_();updateSubmitAvailability_()})}});loadStartup();setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V119.4 Login Restore + Target Sync Build 0116 | Fast Shared Index ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V119.6 Submit Timeout + KeyIn Data Safe Build 0118 | Fast Shared Index ready',KeyInSharedLookupStatus());
   console.log('V94.3 Urgent Notification self-check',{standalone_async:false,dom_cache:true,ultra_cache:true});
 });
 
