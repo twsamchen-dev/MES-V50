@@ -1,23 +1,38 @@
-/**************************************************** * MES API
-Bridge｜V70.2 Key In Cloud Verified Save * GitHub 前端 → Apps Script Web
-App 修正： * 1. Key In 讀取 action=keyinsource * 2. rows / data / list
-統一回傳 * 3. today() 固定回傳 yyyy-MM-dd * 4. Key In 送出後回讀 keyin
-工作表 * 5. 找到相同 keyin_id 才判定儲存成功 * 6. 雲端驗證縮短至 35
-秒內完成 * 7. 後端未寫入時不再顯示假成功
-****************************************************/
+/****************************************************
+ * MES API Bridge｜V120 Key In JSONP Save
+ * GitHub 前端 → Apps Script Web App
+ *
+ * 修正：
+ * 1. Key In 讀取 action=keyinsource
+ * 2. rows / data / list 統一回傳
+ * 3. today() 固定回傳 yyyy-MM-dd
+ * 4. Key In 送出後回讀 keyin 工作表
+ * 5. 找到相同 keyin_id 才判定儲存成功
+ * 6. 雲端驗證縮短至 35 秒內完成
+ * 7. 後端未寫入時不再顯示假成功
+ ****************************************************/
 
 const MES_API_URL =
-“https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec”;
+  "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
 
-window.MES = { get, post, toast, getKeyinSource, rowsOf };
+window.MES = {
+  get,
+  post,
+  toast,
+  getKeyinSource,
+  rowsOf
+};
 
-/**************************************************** * URL
-****************************************************/
+/****************************************************
+ * URL
+ ****************************************************/
 
-function buildUrl(action, params = {}) { const url = new
-URL(MES_API_URL); url.searchParams.set(“action”, action);
+function buildUrl(action, params = {}) {
+  const url = new URL(MES_API_URL);
+  url.searchParams.set("action", action);
 
-Object.keys(params || {}).forEach(key => { const value = params[key];
+  Object.keys(params || {}).forEach(key => {
+    const value = params[key];
 
     if (
       value !== undefined &&
@@ -26,42 +41,55 @@ Object.keys(params || {}).forEach(key => { const value = params[key];
     ) {
       url.searchParams.set(key, value);
     }
+  });
 
-});
-
-return url.toString(); }
-
-/**************************************************** * Action 相容
-****************************************************/
-
-function normalizeAction(action) { const value = String(action ||
-““).toLowerCase();
-
-if ( value === “source” || value === “getsourcedata” || value ===
-“listworkorders” || value === “workorders” || value === “latestorders”
-|| value === “keyinsource” || value === “getkeyinsource” ) { return
-“keyinsource”; }
-
-return action; }
-
-/**************************************************** * 回傳陣列解析
-****************************************************/
-
-function rowsOf(data) { if (Array.isArray(data)) return data; if
-(Array.isArray(data?.rows)) return data.rows; if
-(Array.isArray(data?.data)) return data.data; if
-(Array.isArray(data?.list)) return data.list; if
-(Array.isArray(data?.items)) return data.items; if
-(Array.isArray(data?.result?.rows)) return data.result.rows; if
-(Array.isArray(data?.result?.data)) return data.result.data; return [];
+  return url.toString();
 }
 
-/**************************************************** * GET / JSONP
-****************************************************/
+/****************************************************
+ * Action 相容
+ ****************************************************/
 
-function get(action, args = [], params = {}) { return new
-Promise((resolve, reject) => { const realAction =
-normalizeAction(action);
+function normalizeAction(action) {
+  const value = String(action || "").toLowerCase();
+
+  if (
+    value === "source" ||
+    value === "getsourcedata" ||
+    value === "listworkorders" ||
+    value === "workorders" ||
+    value === "latestorders" ||
+    value === "keyinsource" ||
+    value === "getkeyinsource"
+  ) {
+    return "keyinsource";
+  }
+
+  return action;
+}
+
+/****************************************************
+ * 回傳陣列解析
+ ****************************************************/
+
+function rowsOf(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.rows)) return data.rows;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.list)) return data.list;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.result?.rows)) return data.result.rows;
+  if (Array.isArray(data?.result?.data)) return data.result.data;
+  return [];
+}
+
+/****************************************************
+ * GET / JSONP
+ ****************************************************/
+
+function get(action, args = [], params = {}) {
+  return new Promise((resolve, reject) => {
+    const realAction = normalizeAction(action);
 
     const callbackName =
       "__mes_cb_" +
@@ -137,97 +165,166 @@ normalizeAction(action);
     };
 
     document.body.appendChild(script);
-
-}); }
-
-/**************************************************** * 限時執行
-****************************************************/
-
-function apiTimeout_(promise, timeoutMs, message) { let timer = null;
-
-const timeout = new Promise((resolve, reject) => { timer = setTimeout(()
-=> { reject(new Error(message || “API 回應逾時”)); }, timeoutMs); });
-
-return Promise.race([ Promise.resolve(promise), timeout ]).finally(() =>
-{ clearTimeout(timer); }); }
-
-/**************************************************** * Key In 工單來源
-****************************************************/
-
-function getKeyinSource(params = {}) { return get(“keyinsource”, [],
-params); }
-
-/**************************************************** * Key In
-唯一識別碼 ****************************************************/
-
-function makeKeyinId_() { if ( window.crypto && typeof
-window.crypto.randomUUID === “function” ) { return “KI-” +
-window.crypto.randomUUID(); }
-
-return ( “KI-” + Date.now() + “-” + Math.random().toString(36).slice(2,
-12) ); }
-
-/**************************************************** * 等待
-****************************************************/
-
-function sleep_(milliseconds) { return new Promise(resolve => {
-setTimeout(resolve, milliseconds); }); }
-
-/**************************************************** * Key In 驗證工具
-****************************************************/
-
-function verifyText_(value) { return String(value ?? ““) .trim()
-.toUpperCase(); }
-
-function verifyNumber_(value) { const number = Number(value); return
-Number.isFinite(number) ? number : null; }
-
-function keyinRowMatches_(row, payload) { row = row || {}; payload =
-payload || {};
-
-const expectedId = verifyText_(payload.keyin_id); const actualId =
-verifyText_(row.keyin_id);
-
-if ( expectedId && actualId && expectedId === actualId ) { return true;
+  });
 }
 
-const expectedWorkOrder = verifyText_( payload.work_order_no ||
-payload.order_no );
+/****************************************************
+ * 限時執行
+ ****************************************************/
 
-const actualWorkOrder = verifyText_( row.work_order_no || row.order_no
-);
+function apiTimeout_(promise, timeoutMs, message) {
+  let timer = null;
 
-const expectedEmployee = verifyText_(payload.emp_no); const
-actualEmployee = verifyText_(row.emp_no);
+  const timeout = new Promise((resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(message || "API 回應逾時"));
+    }, timeoutMs);
+  });
 
-const expectedMachine = verifyText_( payload.machine_code ||
-payload.machine );
+  return Promise.race([
+    Promise.resolve(promise),
+    timeout
+  ]).finally(() => {
+    clearTimeout(timer);
+  });
+}
 
-const actualMachine = verifyText_( row.machine_code || row.machine );
+/****************************************************
+ * Key In 工單來源
+ ****************************************************/
 
-const expectedDate = verifyText_(payload.report_date); const actualDate
-= verifyText_(row.report_date);
+function getKeyinSource(params = {}) {
+  return get("keyinsource", [], params);
+}
 
-const expectedQuantity = verifyNumber_(payload.actual_output); const
-actualQuantity = verifyNumber_(row.actual_output);
+/****************************************************
+ * Key In 唯一識別碼
+ ****************************************************/
 
-const sameQuantity = expectedQuantity !== null && actualQuantity !==
-null && Math.abs(expectedQuantity - actualQuantity) < 0.000001;
+function makeKeyinId_() {
+  if (
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function"
+  ) {
+    return "KI-" + window.crypto.randomUUID();
+  }
 
-const sameDate = !expectedDate || expectedDate === actualDate;
+  return (
+    "KI-" +
+    Date.now() +
+    "-" +
+    Math.random().toString(36).slice(2, 12)
+  );
+}
 
-return ( expectedWorkOrder && expectedWorkOrder === actualWorkOrder &&
-expectedEmployee === actualEmployee && expectedMachine === actualMachine
-&& sameQuantity && sameDate ); }
+/****************************************************
+ * 等待
+ ****************************************************/
 
-/**************************************************** * 回讀 keyin
-工作表確認 ****************************************************/
+function sleep_(milliseconds) {
+  return new Promise(resolve => {
+    setTimeout(resolve, milliseconds);
+  });
+}
 
-async function verifyKeyinSaved_( payload, attempts = 4, intervalMs =
-1200 ) { let lastError = null; let lastTotal = 0;
+/****************************************************
+ * Key In 驗證工具
+ ****************************************************/
 
-for ( let attempt = 1; attempt <= attempts; attempt++ ) { if
-(attempt > 1) { await sleep_(intervalMs); }
+function verifyText_(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+function verifyNumber_(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function keyinRowMatches_(row, payload) {
+  row = row || {};
+  payload = payload || {};
+
+  const expectedId = verifyText_(payload.keyin_id);
+  const actualId = verifyText_(row.keyin_id);
+
+  if (
+    expectedId &&
+    actualId &&
+    expectedId === actualId
+  ) {
+    return true;
+  }
+
+  const expectedWorkOrder = verifyText_(
+    payload.work_order_no ||
+    payload.order_no
+  );
+
+  const actualWorkOrder = verifyText_(
+    row.work_order_no ||
+    row.order_no
+  );
+
+  const expectedEmployee = verifyText_(payload.emp_no);
+  const actualEmployee = verifyText_(row.emp_no);
+
+  const expectedMachine = verifyText_(
+    payload.machine_code ||
+    payload.machine
+  );
+
+  const actualMachine = verifyText_(
+    row.machine_code ||
+    row.machine
+  );
+
+  const expectedDate = verifyText_(payload.report_date);
+  const actualDate = verifyText_(row.report_date);
+
+  const expectedQuantity = verifyNumber_(payload.actual_output);
+  const actualQuantity = verifyNumber_(row.actual_output);
+
+  const sameQuantity =
+    expectedQuantity !== null &&
+    actualQuantity !== null &&
+    Math.abs(expectedQuantity - actualQuantity) < 0.000001;
+
+  const sameDate =
+    !expectedDate ||
+    expectedDate === actualDate;
+
+  return (
+    expectedWorkOrder &&
+    expectedWorkOrder === actualWorkOrder &&
+    expectedEmployee === actualEmployee &&
+    expectedMachine === actualMachine &&
+    sameQuantity &&
+    sameDate
+  );
+}
+
+/****************************************************
+ * 回讀 keyin 工作表確認
+ ****************************************************/
+
+async function verifyKeyinSaved_(
+  payload,
+  attempts = 4,
+  intervalMs = 1200
+) {
+  let lastError = null;
+  let lastTotal = 0;
+
+  for (
+    let attempt = 1;
+    attempt <= attempts;
+    attempt++
+  ) {
+    if (attempt > 1) {
+      await sleep_(intervalMs);
+    }
 
     try {
       const response = await apiTimeout_(
@@ -271,38 +368,90 @@ for ( let attempt = 1; attempt <= attempts; attempt++ ) { if
         error
       );
     }
+  }
 
+  const reason = lastError
+    ? String(lastError.message || lastError)
+    : (
+        "回讀到 " +
+        lastTotal +
+        " 筆資料，但找不到本次送出的資料"
+      );
+
+  throw new Error(
+    "Key In 尚未確認寫入雲端：" +
+    reason +
+    "。畫面資料已保留，請先查看 Google Sheet。"
+  );
 }
 
-const reason = lastError ? String(lastError.message || lastError) : (
-“回讀到” + lastTotal + ” 筆資料，但找不到本次送出的資料” );
+/****************************************************
+ * POST
+ ****************************************************/
 
-throw new Error( “Key In 尚未確認寫入雲端：” + reason +
-“。畫面資料已保留，請先查看 Google Sheet。” ); }
+async function post(action, data = {}) {
+  const normalizedAction = String(action || "").toLowerCase().trim();
+  const isKeyin =
+    normalizedAction === "savekeyin" ||
+    normalizedAction === "keyin";
 
-/**************************************************** * POST
-****************************************************/
+  const payload = {
+    ...data,
+    action
+  };
 
-async function post(action, data = {}) { const normalizedAction =
-String(action || ““) .toLowerCase() .trim();
+  if (isKeyin && !payload.keyin_id) {
+    payload.keyin_id = makeKeyinId_();
+  }
 
-const isKeyin = normalizedAction === “savekeyin” || normalizedAction ===
-“keyin”;
+  /*
+   * V120：
+   * Key In 改用 GET/JSONP 呼叫 Apps Script。
+   * 這樣前端能直接取得後端真實回傳，不再使用 no-cors 假成功。
+   */
+  if (isKeyin) {
+    const result = await apiTimeout_(
+      get("savekeyin", [], {
+        ...payload,
+        _: Date.now()
+      }),
+      30000,
+      "Key In 雲端儲存逾時"
+    );
 
-const payload = { …data, action };
-
-if ( isKeyin && !payload.keyin_id ) { payload.keyin_id = makeKeyinId_();
-}
-
-const url = buildUrl(action);
-
-try { await apiTimeout_( fetch(url, { method: “POST”, mode: “no-cors”,
-headers: { “Content-Type”: “text/plain;charset=utf-8” }, body:
-JSON.stringify(payload) }), 12000, “POST 傳送逾時” );
-
-    if (isKeyin) {
-      return await verifyKeyinSaved_(payload);
+    if (
+      result?.ok === false ||
+      result?.success === false
+    ) {
+      throw new Error(
+        result?.message ||
+        "Key In 雲端儲存失敗"
+      );
     }
+
+    return {
+      ...result,
+      ok: true,
+      success: true,
+      verified: true
+    };
+  }
+
+  const url = buildUrl(action);
+
+  try {
+    await apiTimeout_(
+      fetch(url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+      }),
+      12000,
+      "POST 傳送逾時"
+    );
 
     return {
       ok: true,
@@ -311,48 +460,88 @@ JSON.stringify(payload) }), 12000, “POST 傳送逾時” );
       action,
       message: "POST 已送出：" + action
     };
+  } catch (error) {
+    throw new Error(
+      "POST 失敗：" +
+      String(error?.message || error)
+    );
+  }
+}
 
-} catch (error) { throw new Error( “POST 失敗：” + String(error?.message
-|| error) ); } }
+/****************************************************
+ * Toast
+ ****************************************************/
 
-/**************************************************** * Toast
-****************************************************/
+function toast(message) {
+  let box = document.getElementById("toast");
 
-function toast(message) { let box = document.getElementById(“toast”);
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "toast";
+    box.className = "toast";
+    document.body.appendChild(box);
+  }
 
-if (!box) { box = document.createElement(“div”); box.id = “toast”;
-box.className = “toast”; document.body.appendChild(box); }
+  box.textContent = String(message || "");
+  box.classList.add("show");
 
-box.textContent = String(message || ““); box.classList.add(”show”);
+  setTimeout(() => {
+    box.classList.remove("show");
+  }, 1800);
+}
 
-setTimeout(() => { box.classList.remove(“show”); }, 1800); }
+/****************************************************
+ * 共用小工具
+ ****************************************************/
 
-/**************************************************** * 共用小工具
-****************************************************/
+function getVal(id) {
+  const element = document.getElementById(id);
 
-function getVal(id) { const element = document.getElementById(id);
+  return element
+    ? String(element.value || "").trim()
+    : "";
+}
 
-return element ? String(element.value || ““).trim() :”“; }
+function setVal(id, value) {
+  const element = document.getElementById(id);
 
-function setVal(id, value) { const element =
-document.getElementById(id);
+  if (element) {
+    element.value = value == null ? "" : value;
+  }
+}
 
-if (element) { element.value = value == null ? “” : value; } }
+function norm(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
 
-function norm(value) { return String(value || ““) .toLowerCase()
-.replace(/+/g,”“); }
+function esc(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[character])
+  );
+}
 
-function esc(value) { return String(value ?? ““).replace( /[&<>”’]/g,
-character => ({”&“:”&“,”<“:”<“,”>“:”>“, ’”‘: “"“,”’“:”'” }[character])
-); }
+function wo12(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .slice(0, 12);
+}
 
-function wo12(value) { return String(value || ““) .trim() .toUpperCase()
-.slice(0, 12); }
+function today() {
+  const date = new Date();
 
-function today() { const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-const year = date.getFullYear(); const month = String(date.getMonth() +
-1).padStart(2, “0”); const day = String(date.getDate()).padStart(2,
-“0”);
-
-return year + “-” + month + “-” + day; }
+  return year + "-" + month + "-" + day;
+}
