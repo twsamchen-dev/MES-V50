@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V112 SEAL KING MES Enterprise｜加工課損耗第一階段｜Build 0106</title>
+<title>V112 SEAL KING MES Enterprise｜人員統計版｜Build 0106</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -133,19 +133,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
   filter:none!important;
 }
 </style>
-
-<style id="loss_phase1_0106">
-.loss106-hero{background:linear-gradient(135deg,#0f172a,#7f1d1d);color:#fff;border-radius:22px;padding:20px;box-shadow:0 12px 28px rgba(15,23,42,.16)}
-.loss106-hero h2{color:#fff;margin:0 0 6px}.loss106-hero .hint{color:#fecaca}
-.loss106-upload{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-top:14px}.loss106-upload label{color:#fff}.loss106-upload input{background:#fff;color:#111827}
-.loss106-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.loss106-kpi{border-radius:18px;padding:15px;color:#fff;box-shadow:0 8px 20px rgba(15,23,42,.12)}.loss106-kpi .name{font-size:13px;font-weight:900;opacity:.9}.loss106-kpi .num{font-size:32px;font-weight:950;margin-top:5px}.loss106-kpi .sub{color:#fff;opacity:.82}
-.loss106-blue{background:linear-gradient(135deg,#2563eb,#1e3a8a)}.loss106-green{background:linear-gradient(135deg,#16a34a,#14532d)}.loss106-orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.loss106-red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}
-.loss106-toolbar{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:9px;margin-top:12px}.loss106-toolbar input,.loss106-toolbar select{font-size:14px;padding:9px}
-.loss106-machineGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.loss106-machine{border:1px solid var(--line);border-radius:17px;padding:15px;background:#fff}.loss106-machine .machine{font-size:23px;font-weight:950}.loss106-machine .rate{font-size:32px;font-weight:950;margin-top:8px}.loss106-ok{color:#16a34a}.loss106-warn{color:#d97706}.loss106-bad{color:#dc2626}.loss106-muted{color:#64748b}.loss106-source{border-left:5px solid #2563eb;background:#eff6ff;border-radius:14px;padding:12px;line-height:1.65}.loss106-status{margin-top:9px;font-weight:900}.loss106-scroll{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:12px}.loss106-scroll table{min-width:1050px}.loss106-empty{padding:28px;text-align:center;color:#64748b}
-@media(max-width:900px){.loss106-upload{grid-template-columns:1fr}.loss106-kpis{grid-template-columns:repeat(2,1fr)}.loss106-toolbar{grid-template-columns:1fr 1fr}.loss106-machineGrid{grid-template-columns:1fr}}
-@media(max-width:520px){.loss106-kpis,.loss106-toolbar{grid-template-columns:1fr}}
-</style>
-
 </head>
 <body>
 <header class="skMainHeader"><div class="skHeaderBrand"><img src="data:image/png;base64,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" alt="SEAL KING Logo"><div><h1>SEAL KING｜MES Enterprise V87.3</h1><p>PRODUCTION COMMAND CENTER｜品質至上・服務為先｜加工課即時生產戰情中心</p></div></div></header>
@@ -154,7 +141,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
   <button class="tab active" data-view="dashboard"><span class="ico">🏠</span><span class="txt"><span class="main">主管首頁</span><span class="subtxt">Dashboard</span></span></button>
   <button class="tab" data-view="command"><span class="ico">📺</span><span class="txt"><span class="main">廠長戰情室</span><span class="subtxt">Command</span></span></button>
   <button class="tab" data-view="datacenter"><span class="ico">🧠</span><span class="txt"><span class="main">資料中心</span><span class="subtxt">Data Center</span></span></button>
-  <button class="tab" data-view="loss106"><span class="ico">📉</span><span class="txt"><span class="main">加工課損耗</span><span class="subtxt">Loss Analysis</span></span></button>
   <button class="tab" data-view="workorder"><span class="ico">🔎</span><span class="txt"><span class="main">工單搜尋</span><span class="subtxt">Work Order</span></span></button>
   <button class="tab" data-view="keyin"><span class="ico">②</span><span class="txt"><span class="main">手機 Key In</span><span class="subtxt">บันทึกผลงาน</span></span></button>
   <button class="tab" data-view="overview"><span class="ico">③</span><span class="txt"><span class="main">生產總覽</span><span class="subtxt">Overview</span></span></button>
@@ -172,39 +158,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <section id="dashboard" class="view active"><div class="grid" id="dashboardGrid"></div></section>
 <section id="command" class="view"><div class="grid" id="commandGrid"></div></section>
 <section id="datacenter" class="view"><div class="grid"><div class="card col12"><h2>Data Center 資料中心</h2><div class="sub">所有分頁共用同一份整合資料；此頁用來確認資料來源、筆數、更新時間與整合狀態。</div></div><div class="grid col12" id="dataCenterGrid"></div><div class="card col12"><h2>資料來源明細</h2><div id="dataCenterTableBox"></div></div></div></section>
-
-<section id="loss106" class="view">
-  <div class="grid">
-    <div class="card col12 loss106-hero">
-      <h2>📉 加工課損耗分析｜第一階段</h2>
-      <div class="hint">單位編碼 1027｜限定機台 S03、S16、S19｜投入＝9-3 折合用量㎡；產出＝9-1 折合產量㎡。</div>
-      <div class="loss106-upload">
-        <div><label>選擇 9-3（投入）</label><input type="file" id="loss106File93" accept=".xlsx,.xls,.xlsm"></div>
-        <div><label>選擇 9-1（產出）</label><input type="file" id="loss106File91" accept=".xlsx,.xls,.xlsm"></div>
-        <button class="btn ok" id="loss106CalcBtn" type="button">開始計算</button>
-      </div>
-      <div id="loss106Status" class="loss106-status">尚未載入 9-3、9-1。</div>
-    </div>
-    <div class="card col3 loss106-kpi loss106-blue"><div class="name">投入</div><div class="num" id="loss106Input">0.00</div><div class="sub">㎡｜9-3</div></div>
-    <div class="card col3 loss106-kpi loss106-green"><div class="name">產出</div><div class="num" id="loss106Output">0.00</div><div class="sub">㎡｜9-1</div></div>
-    <div class="card col3 loss106-kpi loss106-orange"><div class="name">損耗量</div><div class="num" id="loss106Loss">0.00</div><div class="sub">㎡｜投入－產出</div></div>
-    <div class="card col3 loss106-kpi loss106-red"><div class="name">損耗率</div><div class="num" id="loss106Rate">0.00%</div><div class="sub">損耗 ÷ 投入</div></div>
-    <div class="card col12">
-      <div class="loss106-source"><b>計算規則：</b>9-3 同一生產批次可能同時列出膠水、助劑、基材等多筆耗料；本頁只取單位為「㎡」的材料，並以「日期＋班別＋命令單＋機台＋產品」為一批，取該批最大的折合用量㎡，避免同一批多種材料重複累加。9-1 則將同批折合產量㎡加總。</div>
-      <div class="loss106-toolbar">
-        <select id="loss106Machine"><option value="">全部機台</option><option>S03</option><option>S16</option><option>S19</option></select>
-        <input id="loss106Part" placeholder="料號，例如 SK-7750-Z">
-        <input id="loss106Order" placeholder="命令單號">
-        <input id="loss106Start" type="date">
-        <input id="loss106End" type="date">
-      </div>
-      <div class="row" style="margin-top:9px"><button class="btn ghost" type="button" id="loss106FilterBtn">套用篩選</button><button class="btn ghost" type="button" id="loss106ClearBtn">清除篩選</button><button class="btn ghost" type="button" id="loss106ExportBtn">匯出 CSV</button></div>
-    </div>
-    <div class="card col12"><h2>三台機台比較</h2><div id="loss106Machines" class="loss106-machineGrid"><div class="loss106-empty">載入資料後顯示。</div></div></div>
-    <div class="card col12"><h2>工單／料號明細</h2><div id="loss106Table" class="loss106-scroll"><div class="loss106-empty">請先選擇 9-3 與 9-1。</div></div></div>
-  </div>
-</section>
-
 <section id="workorder" class="view"><div class="grid"><div class="card col12"><h2>工單搜尋中心</h2><div class="row"><input id="woSearchInput" placeholder="輸入工單、訂單、命令單、日報、批號、料號、客戶、規格、機台"><button class="btn ok" id="woSearchBtn">搜尋</button><button class="btn ghost" id="woClearBtn">清除</button></div><div class="sub">可快速查詢：工單、訂單、命令單、日報號、生產批號、投入／產出料號、客戶、規格、機台與來源。</div></div><div class="card col12"><div id="woSearchResult"></div></div></div></section>
 
 <section id="setup" class="view">
@@ -3898,17 +3851,17 @@ table tbody tr:hover td{background:#fff2f3!important}
     let total = 0;
 
     do {
-      const res = await jsonp("datahubworkorders", {
+      const res = await jsonp("datahubv2workorders", {
         q,
         page,
-        pageSize: 500
+        pageSize: 100
       });
       const rows = Array.isArray(res.rows) ? res.rows : [];
       total = Number(res.total || rows.length || 0);
       all.push(...rows);
       page += 1;
       if (!rows.length) break;
-    } while (all.length < total && page <= 20);
+    } while (all.length < total && page <= (q ? 5 : 2));
 
     return all;
   }
@@ -4115,37 +4068,145 @@ table tbody tr:hover td{background:#fff2f3!important}
 })();
 </script>
 
-<script id="loss_phase1_0106_script">
+<!-- DataHub V2 Stable Loader｜Build 0106 -->
+<script id="datahub-v2-stable-loader">
 (function(){
-  var S={all:[],filtered:[]};
-  function E(id){return document.getElementById(id)}
-  function N(v){var n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(n)?0:n}
-  function H(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function norm(v){return String(v==null?'':v).trim().replace(/\s+/g,'').toUpperCase()}
-  function mc(v){var x=norm(v),m=x.match(/S\d{2}/);return m?m[0]:x}
-  function dk(v){if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);var x=String(v||'').trim().replace(/\//g,'-'),m=x.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):x.slice(0,10)}
-  function col(row,names){for(var i=0;i<names.length;i++){if(row[names[i]]!==undefined&&String(row[names[i]]).trim()!=='')return row[names[i]]}return ''}
-  function read(file){return file.arrayBuffer().then(function(buf){var wb=XLSX.read(buf,{type:'array',cellDates:true});var out=[];wb.SheetNames.forEach(function(n){out=out.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}))});return out})}
-  function key(r){return [r.date,r.shift,r.order,r.machine,r.part].join('|')}
-  function build(r93,r91){
-    var ins={},outs={},meta={};
-    r93.forEach(function(r){var machine=mc(col(r,['機器','機台','機台編號']));if(['S03','S16','S19'].indexOf(machine)<0)return;var unit=norm(col(r,['單位','使用單位']));if(unit!=='㎡'&&unit!=='M2'&&unit!=='平方公尺')return;var x={date:dk(col(r,['日期','生產日期'])),shift:col(r,['班別']),order:norm(col(r,['命令單號','命令單','製令單號'])),machine:machine,part:norm(col(r,['產品代號','產品料號','料號'])),name:col(r,['品名','產品名稱']),input:N(col(r,['折合用量㎡','折合用量M2','折合用量']))};if(!x.order&&!x.part)return;var k=key(x);ins[k]=Math.max(ins[k]||0,x.input);meta[k]=Object.assign(meta[k]||{},x)});
-    r91.forEach(function(r){var machine=mc(col(r,['機器','機台','機台編號']));if(['S03','S16','S19'].indexOf(machine)<0)return;var x={date:dk(col(r,['日期','生產日期'])),shift:col(r,['班別']),order:norm(col(r,['命令單號','命令單','製令單號'])),machine:machine,part:norm(col(r,['產品料號','產品代號','料號'])),name:col(r,['品名','產品名稱']),output:N(col(r,['折合產量㎡','折合產量M2','折合產量']))};if(!x.order&&!x.part)return;var k=key(x);outs[k]=(outs[k]||0)+x.output;meta[k]=Object.assign(meta[k]||{},x)});
-    var keys={};Object.keys(ins).concat(Object.keys(outs)).forEach(function(k){keys[k]=1});
-    S.all=Object.keys(keys).map(function(k){var m=meta[k]||{},input=ins[k]||0,output=outs[k]||0,loss=input-output,rate=input?loss/input*100:0;return {date:m.date||'',shift:m.shift||'',order:m.order||'',machine:m.machine||'',part:m.part||'',name:m.name||'',input:input,output:output,loss:loss,rate:rate,status:!input?'僅產出':!output?'僅投入':loss<0?'負損耗':'正常'}}).sort(function(a,b){return b.loss-a.loss});
-    apply();
+  "use strict";
+  var API = window.API_URL || window.MES_API_URL || "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
+  var VERSION = "DataHub V2.0 Stable";
+  var running = false;
+  var datasets = [
+    {label:"SL31A", key:"sl"},
+    {label:"4-3", key:"d43"},
+    {label:"PD11B", key:"pd"},
+    {label:"5-C", key:"prod5c"},
+    {label:"5-3", key:"prod53"}
+  ];
+
+  function dhv2Jsonp(action, params, timeoutMs){
+    params=params||{};
+    timeoutMs=timeoutMs||90000;
+    return new Promise(function(resolve,reject){
+      var cb="DHV2_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
+      var script=document.createElement("script");
+      var settled=false;
+      var timer=setTimeout(function(){
+        if(settled)return;
+        settled=true;
+        // callback 保留為 no-op，避免逾時後伺服器晚到造成 is not defined。
+        window[cb]=function(){};
+        if(script.parentNode)script.parentNode.removeChild(script);
+        setTimeout(function(){try{delete window[cb]}catch(e){}},300000);
+        reject(new Error("DataHub V2 讀取逾時："+action));
+      },timeoutMs);
+      window[cb]=function(res){
+        if(settled)return;
+        settled=true;clearTimeout(timer);
+        if(script.parentNode)script.parentNode.removeChild(script);
+        setTimeout(function(){try{delete window[cb]}catch(e){}},1000);
+        if(res&&res.ok===false)reject(new Error(res.message||res.error||"API error"));
+        else resolve(res||{});
+      };
+      script.onerror=function(){
+        if(settled)return;
+        settled=true;clearTimeout(timer);
+        window[cb]=function(){};
+        if(script.parentNode)script.parentNode.removeChild(script);
+        setTimeout(function(){try{delete window[cb]}catch(e){}},300000);
+        reject(new Error("DataHub V2 連線失敗："+action));
+      };
+      var q=["action="+encodeURIComponent(action),"callback="+encodeURIComponent(cb),"_="+Date.now()];
+      Object.keys(params).forEach(function(k){
+        if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(params[k]));
+      });
+      script.src=API+"?"+q.join("&");
+      document.head.appendChild(script);
+    });
   }
-  function filtered(){var machine=E('loss106Machine').value,part=norm(E('loss106Part').value),order=norm(E('loss106Order').value),start=E('loss106Start').value,end=E('loss106End').value;return S.all.filter(function(r){return (!machine||r.machine===machine)&&(!part||(r.part+' '+r.name).toUpperCase().indexOf(part)>=0)&&(!order||r.order.indexOf(order)>=0)&&(!start||r.date>=start)&&(!end||r.date<=end)})}
-  function rateClass(v){return v>5?'loss106-bad':v>3?'loss106-warn':'loss106-ok'}
-  function fmt(v){return N(v).toLocaleString('zh-TW',{minimumFractionDigits:2,maximumFractionDigits:2})}
-  function summary(rows){return rows.reduce(function(a,r){a.input+=r.input;a.output+=r.output;return a},{input:0,output:0})}
-  function apply(){S.filtered=filtered();var t=summary(S.filtered),loss=t.input-t.output,rate=t.input?loss/t.input*100:0;E('loss106Input').textContent=fmt(t.input);E('loss106Output').textContent=fmt(t.output);E('loss106Loss').textContent=fmt(loss);E('loss106Rate').textContent=fmt(rate)+'%';
-    E('loss106Machines').innerHTML=['S03','S16','S19'].map(function(m){var x=summary(S.filtered.filter(function(r){return r.machine===m})),l=x.input-x.output,rr=x.input?l/x.input*100:0;return '<div class="loss106-machine"><div class="machine">'+m+'</div><div class="loss106-muted">投入 '+fmt(x.input)+'㎡｜產出 '+fmt(x.output)+'㎡</div><div class="rate '+rateClass(rr)+'">'+fmt(rr)+'%</div><div class="loss106-muted">損耗 '+fmt(l)+'㎡</div></div>'}).join('');
-    var rows=S.filtered.slice().sort(function(a,b){return b.loss-a.loss});E('loss106Table').innerHTML=rows.length?'<table><thead><tr><th>日期</th><th>班別</th><th>機台</th><th>命令單</th><th>料號</th><th>品名</th><th>投入㎡</th><th>產出㎡</th><th>損耗㎡</th><th>損耗率</th><th>狀態</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+H(r.date)+'</td><td>'+H(r.shift)+'</td><td><b>'+H(r.machine)+'</b></td><td>'+H(r.order)+'</td><td>'+H(r.part)+'</td><td>'+H(r.name)+'</td><td>'+fmt(r.input)+'</td><td>'+fmt(r.output)+'</td><td>'+fmt(r.loss)+'</td><td class="'+rateClass(r.rate)+'"><b>'+fmt(r.rate)+'%</b></td><td>'+H(r.status)+'</td></tr>'}).join('')+'</tbody></table>':'<div class="loss106-empty">目前篩選條件沒有資料。</div>';
+
+  function cacheKey(label,fingerprint){return "MES_DHV2_"+label+"_"+String(fingerprint||"");}
+  function saveCache(label,fingerprint,rows){
+    try{localStorage.setItem(cacheKey(label,fingerprint),JSON.stringify({saved:Date.now(),rows:rows}));}catch(e){}
   }
-  function csv(){if(!S.filtered.length)return alert('目前沒有可匯出的資料');var h=['日期','班別','機台','命令單','料號','品名','投入㎡','產出㎡','損耗㎡','損耗率','狀態'],lines=[h].concat(S.filtered.map(function(r){return [r.date,r.shift,r.machine,r.order,r.part,r.name,r.input,r.output,r.loss,r.rate.toFixed(2)+'%',r.status]}));var text='\ufeff'+lines.map(function(row){return row.map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}).join(',')}).join('\r\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download='加工課損耗分析_'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
-  function init(){var b=E('loss106CalcBtn');if(!b)return;b.onclick=async function(){var f93=E('loss106File93').files[0],f91=E('loss106File91').files[0];if(!f93||!f91)return alert('請同時選擇 9-3 與 9-1');b.disabled=true;E('loss106Status').textContent='正在讀取與計算，請稍候…';try{var x=await Promise.all([read(f93),read(f91)]);build(x[0],x[1]);E('loss106Status').textContent='計算完成：9-3 '+x[0].length.toLocaleString()+' 筆、9-1 '+x[1].length.toLocaleString()+' 筆；有效配對群組 '+S.all.length.toLocaleString()+' 組。'}catch(e){console.error(e);E('loss106Status').textContent='計算失敗：'+(e.message||e)}finally{b.disabled=false}};E('loss106FilterBtn').onclick=apply;E('loss106ClearBtn').onclick=function(){['loss106Machine','loss106Part','loss106Order','loss106Start','loss106End'].forEach(function(id){E(id).value=''});apply()};E('loss106ExportBtn').onclick=csv}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  function loadCache(label,fingerprint){
+    try{
+      var x=JSON.parse(localStorage.getItem(cacheKey(label,fingerprint))||"null");
+      return x&&Array.isArray(x.rows)?x.rows:null;
+    }catch(e){return null;}
+  }
+
+  async function loadSheet(label, meta, force){
+    var fp=meta&&meta.fingerprint||"";
+    if(!force){
+      var cached=loadCache(label,fp);
+      if(cached)return cached;
+    }
+    var rows=[], offset=0, guard=0;
+    do{
+      var res=await dhv2Jsonp("datahubv2sheet",{sheet:label,offset:offset,limit:250},90000);
+      var part=Array.isArray(res.rows)?res.rows:[];
+      rows=rows.concat(part);
+      offset=Number(res.next_offset||rows.length);
+      guard++;
+      if(res.done||!part.length)break;
+      await new Promise(function(r){setTimeout(r,120);});
+    }while(guard<80);
+    saveCache(label,fp,rows);
+    return rows;
+  }
+
+  function applyDataset(label, rows){
+    window.AppState=window.AppState||{};
+    if(label==="SL31A")AppState.sl=rows;
+    else if(label==="4-3")AppState.d43=rows;
+    else if(label==="PD11B")AppState.pd=rows;
+    else if(label==="5-C"){AppState.prod5cRaw=rows;AppState.prod5c=rows;}
+    else if(label==="5-3"){AppState.prod53Raw=rows;AppState.prod53=rows;}
+  }
+
+  function refreshExistingUI(){
+    var fns=["buildSource","buildIndex","renderAll","renderDashboard","renderDataCenter","v541RenderHub","v456RenderDashboard"];
+    fns.forEach(function(n){try{if(typeof window[n]==="function")window[n]();}catch(e){console.warn("DHV2 render",n,e);}});
+  }
+
+  function status(msg,bad,loading){
+    try{
+      if(typeof window.mesV696Status==="function"){
+        window.mesV696Status('<div>'+msg+'</div>',!!bad,{loading:!!loading});
+      }else console.log(VERSION,msg);
+    }catch(e){}
+  }
+
+  async function reload(force){
+    if(running)return;
+    running=true;
+    status("正在讀取統一狀態…",false,true);
+    try{
+      var boot=await dhv2Jsonp("datahubv2bootstrap",{force:force?1:0},60000);
+      var sheets=boot.sheets||{};
+      for(var i=0;i<datasets.length;i++){
+        var d=datasets[i], meta=sheets[d.label]||{};
+        status("正在同步 "+d.label+"（"+Number(meta.rows||0).toLocaleString()+" 筆）…",false,true);
+        var rows=await loadSheet(d.label,meta,!!force);
+        applyDataset(d.label,rows);
+        refreshExistingUI();
+      }
+      refreshExistingUI();
+      status("DataHub V2 同步完成｜SL31A、4-3、PD11B、5-C、5-3 已依序載入",false,false);
+      console.log(VERSION,"OK",boot);
+    }catch(err){
+      console.error(VERSION,"FAILED",err);
+      status("DataHub V2 同步失敗："+err.message,true,false);
+    }finally{running=false;}
+  }
+
+  // 取代舊版「重新讀取五份資料」入口；保留其他既有功能。
+  window.v541ReloadAll=function(){return reload(true);};
+  window.DataHubV2={reload:reload,version:VERSION};
+
+  document.addEventListener("DOMContentLoaded",function(){
+    setTimeout(function(){reload(false);},800);
+  });
 })();
 </script>
 
