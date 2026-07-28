@@ -3934,8 +3934,7 @@ table tbody tr:hover td{background:#fff2f3!important}
   }
 
   function install() {
-    loadDataHubWorkOrders(false);
-
+    // DataHub V2.1 Fast：首頁不再預先下載工單；進入工單搜尋或實際搜尋時才載入。
     const btn = document.getElementById("woSearchBtn");
     if (btn && !btn.dataset.dh0050) {
       btn.dataset.dh0050 = "1";
@@ -3959,7 +3958,14 @@ table tbody tr:hover td{background:#fff2f3!important}
     }
   }
 
-  document.addEventListener("DOMContentLoaded", install);
+  document.addEventListener("DOMContentLoaded", function(){
+    install();
+    document.querySelectorAll('[data-view="workorder"]').forEach(function(tab){
+      if(tab.dataset.dhLazy)return;
+      tab.dataset.dhLazy="1";
+      tab.addEventListener("click",function(){loadDataHubWorkOrders(false);});
+    });
+  });
   setTimeout(install, 1500);
 
   window.Build0050DashboardDataHub = {
@@ -4177,27 +4183,66 @@ table tbody tr:hover td{background:#fff2f3!important}
     }catch(e){}
   }
 
+  function idleRun(fn,delay){
+    delay=Number(delay||0);
+    setTimeout(function(){
+      if("requestIdleCallback" in window) requestIdleCallback(fn,{timeout:2500});
+      else fn();
+    },delay);
+  }
+
+  async function syncOne(d,meta,force){
+    status("背景同步 "+d.label+"（"+Number(meta.rows||0).toLocaleString()+" 筆）…",false,true);
+    var rows=await loadSheet(d.label,meta,!!force);
+    applyDataset(d.label,rows);
+    return rows.length;
+  }
+
+  async function backgroundSync(boot,force){
+    var sheets=boot.sheets||{}, changed=0;
+    for(var i=0;i<datasets.length;i++){
+      var d=datasets[i],meta=sheets[d.label]||{};
+      var cached=!force?loadCache(d.label,meta.fingerprint||""):null;
+      if(cached){applyDataset(d.label,cached);continue;}
+      try{await syncOne(d,meta,force);changed++;}
+      catch(err){console.warn(VERSION,"background sheet failed",d.label,err);}
+      await new Promise(function(r){setTimeout(r,180);});
+    }
+    refreshExistingUI();
+    status("DataHub V2.1 Fast 完成｜"+(changed?"背景更新 "+changed+" 份資料":"已使用最新快取"),false,false);
+  }
+
   async function reload(force){
     if(running)return;
     running=true;
-    status("正在讀取統一狀態…",false,true);
+    status(force?"正在強制更新五份 ERP…":"正在讀取 DataHub 摘要…",false,true);
     try{
-      var boot=await dhv2Jsonp("datahubv2bootstrap",{force:force?1:0},60000);
-      var sheets=boot.sheets||{};
-      for(var i=0;i<datasets.length;i++){
-        var d=datasets[i], meta=sheets[d.label]||{};
-        status("正在同步 "+d.label+"（"+Number(meta.rows||0).toLocaleString()+" 筆）…",false,true);
-        var rows=await loadSheet(d.label,meta,!!force);
-        applyDataset(d.label,rows);
-        refreshExistingUI();
-      }
+      var boot=await dhv2Jsonp("datahubv2bootstrap",{force:force?1:0},30000);
+      var sheets=boot.sheets||{},cacheHits=0;
+
+      // 首屏只套用既有快取，不等待 2 萬多筆完整下載。
+      datasets.forEach(function(d){
+        var meta=sheets[d.label]||{};
+        var cached=!force?loadCache(d.label,meta.fingerprint||""):null;
+        if(cached){applyDataset(d.label,cached);cacheHits++;}
+      });
       refreshExistingUI();
-      status("DataHub V2 同步完成｜SL31A、4-3、PD11B、5-C、5-3 已依序載入",false,false);
-      console.log(VERSION,"OK",boot);
+
+      if(!force){
+        status("首頁已可使用｜快取 "+cacheHits+"/"+datasets.length+"，其餘資料背景更新",false,false);
+        idleRun(function(){backgroundSync(boot,false).finally(function(){running=false;});},1200);
+        console.log("DataHub V2.1 Fast ready",{cache_hits:cacheHits,boot:boot});
+        return;
+      }
+
+      await backgroundSync(boot,true);
+      console.log("DataHub V2.1 Fast force refresh OK",boot);
     }catch(err){
-      console.error(VERSION,"FAILED",err);
-      status("DataHub V2 同步失敗："+err.message,true,false);
-    }finally{running=false;}
+      console.error("DataHub V2.1 Fast FAILED",err);
+      status("DataHub 摘要讀取失敗，已保留上次畫面資料："+err.message,true,false);
+    }finally{
+      if(force)running=false;
+    }
   }
 
   // 取代舊版「重新讀取五份資料」入口；保留其他既有功能。
