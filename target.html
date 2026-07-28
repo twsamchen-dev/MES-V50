@@ -30,10 +30,14 @@
 
 /* Build 0108.1.5：幹部目標輸入錯誤修改功能 */
 .editTargetBtn{border:0;border-radius:9px;padding:7px 10px;background:#f59e0b;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}.editTargetBtn:hover{filter:brightness(.96)}.editModeBar{display:none;margin:10px 0;padding:11px 12px;border:2px solid #f59e0b;background:#fffbeb;border-radius:12px;color:#92400e;font-weight:900}.editModeBar.show{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cancelEditBtn{border:0;border-radius:9px;padding:8px 12px;background:#64748b;color:#fff;font-weight:900;cursor:pointer}.rowEditing{background:#fff7ed!important;outline:2px solid #f59e0b;outline-offset:-2px}
+
+/* Build 0108.1.6：Target 清單新增 Key In／修改 Key In */
+.keyinAddBtn,.keyinEditBtn,.keyinViewBtn{border:0;border-radius:9px;padding:7px 10px;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap;margin:2px}.keyinAddBtn{background:#16a34a}.keyinEditBtn{background:#2563eb}.keyinViewBtn{background:#64748b}.keyinAddBtn:hover,.keyinEditBtn:hover,.keyinViewBtn:hover{filter:brightness(.95)}
+.keyinModal{position:fixed;inset:0;z-index:999999;background:rgba(15,23,42,.68);display:none;align-items:center;justify-content:center;padding:16px}.keyinModal.show{display:flex}.keyinPanel{width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)}.keyinPanelHead{display:flex;justify-content:space-between;align-items:center;gap:12px}.keyinPanelHead h3{margin:0}.keyinClose{border:0;border-radius:10px;background:#e2e8f0;padding:8px 12px;font-weight:900;cursor:pointer}.keyinFormGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.keyinFormGrid .full{grid-column:1/-1}@media(max-width:700px){.keyinFormGrid{grid-template-columns:1fr}}.keyinRecordList{display:flex;flex-direction:column;gap:8px;margin:10px 0}.keyinRecord{border:1px solid #cbd5e1;border-radius:12px;padding:10px;cursor:pointer;background:#f8fafc}.keyinRecord:hover,.keyinRecord.active{border-color:#2563eb;background:#eff6ff}.actionCell{min-width:150px}
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0108.1.4</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0108.1.6</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -141,6 +145,24 @@
       <div id="targetTable"></div></div>
   </div>
 </div>
+
+<div id="keyinEditModal" class="keyinModal" aria-hidden="true"><div class="keyinPanel">
+  <div class="keyinPanelHead"><div><h3 id="keyinModalTitle">＋ 新增 Key In</h3><div id="keyinModalHint" class="muted"></div></div><button type="button" class="keyinClose" onclick="closeKeyinModal()">關閉</button></div>
+  <div id="keyinRecordList" class="keyinRecordList"></div>
+  <div class="keyinFormGrid">
+    <div><label>回報日期</label><input id="ki_report_date" type="date"></div>
+    <div><label>班別</label><input id="ki_shift" readonly></div>
+    <div><label>工單</label><input id="ki_work_order_no" readonly></div>
+    <div><label>機台</label><input id="ki_machine_code"></div>
+    <div><label>站點</label><input id="ki_site"></div>
+    <div><label>工號</label><input id="ki_emp_no"></div>
+    <div><label>姓名</label><input id="ki_emp_name"></div>
+    <div><label>實際產量</label><input id="ki_actual_output" type="number" step="0.001"></div>
+    <div><label>單位</label><select id="ki_unit"><option value="R">R</option><option value="M">M</option><option value="M2">M2</option><option value="PCS">PCS</option></select></div>
+    <div class="full"><label>備註</label><textarea id="ki_process_note" rows="3"></textarea></div>
+  </div>
+  <div class="toolbar" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn ghost" onclick="closeKeyinModal()">取消</button><button id="keyinSaveBtn" type="button" class="btn ok" onclick="saveKeyinFromTarget()">儲存 Key In</button></div>
+</div></div>
 <div id="toast" class="toast"></div>
 <div id="saveOverlay" class="saveOverlay"><div class="savePanel">
   <h3 id="saveOverlayTitle">建立多日目標 / สร้างเป้าหมายหลายวัน</h3>
@@ -1124,10 +1146,10 @@ function renderTargets(){
   if(!baseRows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前篩選條件查無資料，請清除或調整篩選。</div>';updateDataHubHealth_();return}
   const heads=[
-    ['__actions','操作<br>แก้ไข'],['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['__actions','操作<br>新增／修改'],['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr class="'+(EDITING_TARGET_ID&&String(r.target_plan_id||'')===EDITING_TARGET_ID?'rowEditing':'')+'">'+heads.map(h=>{
-    if(h[0]==='__actions')return '<td><button type="button" class="editTargetBtn" onclick="startTargetEditById(\''+esc(String(r.target_plan_id||''))+'\')">✏ 修改</button></td>';
+    if(h[0]==='__actions'){const id=esc(String(r.target_plan_id||''));const hasKi=num(r.keyin_qty)>0||String(r.file_match_status||'').includes('已配對');const done=num(r.completion_rate)>=100;return '<td class="actionCell"><button type="button" class="keyinAddBtn" onclick="openAddKeyin(\''+id+'\')">＋ 新增</button><button type="button" class="'+(done?'keyinViewBtn':'keyinEditBtn')+'" onclick="openEditKeyin(\''+id+'\')">'+(done?'👁 檢視':'✏ 修改')+'</button></td>'; }
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):((r[h[0]]===undefined||r[h[0]]===null)?'':r[h[0]]);
     if(h[0]==='report_date')v=dateKey(v);
     if(h[0]==='target_m2'&&!num(v))v=derivedTargetM2_(r);
@@ -1243,6 +1265,77 @@ function showSaveResult_(text){
   window.__saveResultTimer=setTimeout(hideSaveResult_,1800);
 }
 function hideSaveResult_(){const box=$('saveResultOverlay');if(box)box.classList.remove('show')}
+
+let KEYIN_MODAL_MODE='add',KEYIN_MODAL_TARGET=null,KEYIN_MODAL_RECORD=null;
+function keyinRowsForTarget_(t){
+  if(!t)return [];
+  const wo=primaryWorkOrder_(t),mk=machineKey_(t),dk=dateKey(t.report_date),sk=shiftKey_(t);
+  return (KEYIN_ROWS||[]).filter(k=>{
+    if(primaryWorkOrder_(k)!==wo)return false;
+    if(mk&&machineKey_(k)&&machineKey_(k)!==mk)return false;
+    if(dk&&dateKey(k.report_date)&&dateKey(k.report_date)!==dk)return false;
+    const ks=shiftKey_(k);if(sk&&ks&&sk!==ks)return false;
+    return true;
+  }).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
+}
+function fillKeyinForm_(k,t){
+  k=k||{};t=t||{};
+  $('ki_report_date').value=dateKey(k.report_date||t.report_date)||today();
+  $('ki_shift').value=shiftKey_(k)||shiftKey_(t)||'';
+  $('ki_work_order_no').value=primaryWorkOrder_(k)||primaryWorkOrder_(t)||'';
+  $('ki_machine_code').value=k.machine_code||k.machine||t.machine_code||'';
+  $('ki_site').value=k.site||k.process_site||k.process||t.process_site||'';
+  $('ki_emp_no').value=k.emp_no||t.operator_emp_no||t.emp_no||'';
+  $('ki_emp_name').value=k.emp_name||t.operator_name||t.leader_name||'';
+  $('ki_actual_output').value=k.actual_output||k.actual_qty||'';
+  $('ki_unit').value=String(k.unit||t.target_unit||'R').toUpperCase()==='M²'?'M2':String(k.unit||t.target_unit||'R').toUpperCase();
+  $('ki_process_note').value=k.process_note||k.note||'';
+}
+function openAddKeyin(id){
+  const t=findTargetById_(id);if(!t){toast('找不到這筆目標，請先重新讀取');return}
+  KEYIN_MODAL_MODE='add';KEYIN_MODAL_TARGET=t;KEYIN_MODAL_RECORD=null;
+  $('keyinModalTitle').textContent='＋ 新增 Key In';
+  $('keyinModalHint').textContent=(t.work_order_no||'')+'｜'+(t.machine_code||'')+'｜目標 '+(t.target_roll||t.target_m2||'')+' '+(t.target_unit||'R');
+  $('keyinRecordList').innerHTML='';fillKeyinForm_({},t);
+  $('keyinSaveBtn').style.display='';$('keyinSaveBtn').textContent='儲存 Key In';
+  $('keyinEditModal').classList.add('show');$('keyinEditModal').setAttribute('aria-hidden','false');
+  setTimeout(()=>$('ki_actual_output').focus(),120);
+}
+function openEditKeyin(id){
+  const t=findTargetById_(id);if(!t){toast('找不到這筆目標，請先重新讀取');return}
+  const rows=keyinRowsForTarget_(t);
+  if(!rows.length){toast('尚未建立 Key In，請先按【＋ 新增】');return}
+  KEYIN_MODAL_MODE='edit';KEYIN_MODAL_TARGET=t;KEYIN_MODAL_RECORD=rows[0];
+  $('keyinModalTitle').textContent=num(t.completion_rate)>=100?'👁 檢視／修正 Key In':'✏ 修改 Key In';
+  $('keyinModalHint').textContent='共找到 '+rows.length+' 筆回報；請先選擇要修改的紀錄。修改後會重新計算完成率。';
+  $('keyinRecordList').innerHTML=rows.map((k,i)=>'<div class="keyinRecord '+(i===0?'active':'')+'" onclick="selectKeyinRecord('+i+')"><b>'+(esc(k.actual_output||k.actual_qty||0))+' '+esc(k.unit||'')+'</b>｜'+esc(k.emp_no||'')+' '+esc(k.emp_name||'')+'<br><span class="muted">'+esc(k.report_date||'')+'｜'+esc(k.machine_code||'')+'｜'+esc(k.created_at||'')+'｜ID '+esc(k.keyin_id||'未建立ID')+'</span></div>').join('');
+  window.__targetKeyinEditRows=rows;fillKeyinForm_(rows[0],t);
+  $('keyinSaveBtn').style.display='';$('keyinSaveBtn').textContent='確認修改';
+  $('keyinEditModal').classList.add('show');$('keyinEditModal').setAttribute('aria-hidden','false');
+}
+function selectKeyinRecord(i){
+  const rows=window.__targetKeyinEditRows||[],k=rows[i];if(!k)return;
+  KEYIN_MODAL_RECORD=k;document.querySelectorAll('.keyinRecord').forEach((x,n)=>x.classList.toggle('active',n===i));fillKeyinForm_(k,KEYIN_MODAL_TARGET);
+}
+function closeKeyinModal(){const m=$('keyinEditModal');if(m){m.classList.remove('show');m.setAttribute('aria-hidden','true')}KEYIN_MODAL_RECORD=null;window.__targetKeyinEditRows=[]}
+async function saveKeyinFromTarget(){
+  const t=KEYIN_MODAL_TARGET||{},actual=num($('ki_actual_output').value),wo=wo12($('ki_work_order_no').value);
+  if(!wo){toast('缺少工單，無法儲存');return}if(actual<=0){toast('請輸入正確的實際產量');$('ki_actual_output').focus();return}
+  const payload={
+    keyin_id:KEYIN_MODAL_RECORD&&KEYIN_MODAL_RECORD.keyin_id||'',report_date:$('ki_report_date').value,shift:$('ki_shift').value,
+    site:$('ki_site').value,work_order_no:wo,order_no:t.order_no||'',part_no:t.part_no||'',batch_no:t.batch_no||'',machine_code:$('ki_machine_code').value,
+    product_spec:t.product_spec||'',target_qty:t.target_roll||t.target_m2||'',actual_output:actual,unit:$('ki_unit').value,convert_m2:KEYIN_MODAL_RECORD&&KEYIN_MODAL_RECORD.convert_m2||'',
+    emp_no:$('ki_emp_no').value,emp_name:$('ki_emp_name').value,process_note:$('ki_process_note').value,achievement_rate:'',input_source:KEYIN_MODAL_MODE==='edit'?'target_keyin_edit':'target_keyin_add'
+  };
+  const b=$('keyinSaveBtn');b.disabled=true;b.textContent='儲存中…';
+  try{
+    const action=KEYIN_MODAL_MODE==='edit'?'updatekeyin':'savekeyin';
+    const res=await apiGet(action,payload);if(!res||res.ok!==true)throw new Error((res&&res.message)||'後端未確認成功');
+    closeKeyinModal();KEYIN_ROWS=[];KEYIN_INDEX=null;KEYIN_INDEX_READY=false;KEYIN_CACHE_AT=0;
+    await loadKeyInForRange(true);await recalculateMatches(true);toast(KEYIN_MODAL_MODE==='edit'?'Key In 修改成功':'Key In 新增成功');
+  }catch(e){alert('Key In 儲存失敗：'+e.message)}finally{b.disabled=false;b.textContent=KEYIN_MODAL_MODE==='edit'?'確認修改':'儲存 Key In'}
+}
+
 function findTargetById_(id){
   const key=String(id||'').trim();
   if(!key)return null;
