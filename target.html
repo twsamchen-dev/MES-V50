@@ -27,6 +27,9 @@
 
 /* Build 0108.1.4：自行輸入機台，外觀沿用既有欄位格式 */
 .customMachineBox{display:none;margin-top:8px}.customMachineBox.show{display:block}.customMachineBox input{width:100%}.customMachineHint{margin-top:4px;color:#64748b;font-size:12px}
+
+/* Build 0108.1.5：幹部目標輸入錯誤修改功能 */
+.editTargetBtn{border:0;border-radius:9px;padding:7px 10px;background:#f59e0b;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}.editTargetBtn:hover{filter:brightness(.96)}.editModeBar{display:none;margin:10px 0;padding:11px 12px;border:2px solid #f59e0b;background:#fffbeb;border-radius:12px;color:#92400e;font-weight:900}.editModeBar.show{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cancelEditBtn{border:0;border-radius:9px;padding:8px 12px;background:#64748b;color:#fff;font-weight:900;cursor:pointer}.rowEditing{background:#fff7ed!important;outline:2px solid #f59e0b;outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -120,7 +123,7 @@
       <div class="col3"><label>預計完成 / วันที่คาดว่าจะเสร็จ</label><input id="planned_finish" type="date"></div>
       <div class="col3"><label>狀態 / สถานะ</label><select id="status"><option>未完成 / ยังไม่เสร็จ</option><option>進行中 / กำลังทำ</option><option>已完成 / เสร็จแล้ว</option></select></div>
       <div class="col12"><label>備註 / หมายเหตุ</label><textarea id="note" rows="3"></textarea></div>
-    </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。</div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span><span class="saveGuardHint">＊日期、工號、姓名、工單、機台、目標單位及目標數量未完整時無法儲存。</span></div>
+    </div><div id="lookupBox" class="found">輸入工單、訂單、命令單、日報號、批號、料號或 Key In 工單後自動查資料。</div><div id="editModeBar" class="editModeBar"><span id="editModeText">✏ 正在修改既有目標</span><button type="button" class="cancelEditBtn" onclick="cancelTargetEdit()">取消修改 / ยกเลิก</button></div><button id="saveTargetBtn" class="btn ok" onclick="saveTarget()">儲存目標 / บันทึกเป้าหมาย</button><span id="saveMsg" class="muted"></span><span class="saveGuardHint">＊日期、工號、姓名、工單、機台、目標單位及目標數量未完整時無法儲存。</span></div>
 
     <div class="card col4"><h2><span id="quickTitle">五份資料工單</span> / เลือกใบงานเร็ว</h2><input id="search" placeholder="搜尋工單／訂單／命令單／日報／批號／投入產出料號製號／客戶／規格／機台" oninput="debouncedOrderList()" onkeydown="handleQuickSearchKey_(event)"><div id="quickList" class="found" style="max-height:620px;overflow:auto">讀取後顯示</div></div>
     <div class="card col12"><div class="targetListHead"><h2><span id="targetTitle">今日目標清單 / 配對狀況</span> / รายการเป้าหมาย</h2><div class="targetRangeBtns" aria-label="目標清單顯示區間"><button type="button" class="targetRangeBtn active" id="listBtnToday" onclick="setRangeMode('today')">今天 / วันนี้</button><button type="button" class="targetRangeBtn" id="listBtnWeek" onclick="setRangeMode('week')">周別 / สัปดาห์</button><button type="button" class="targetRangeBtn" id="listBtnMonth" onclick="setRangeMode('month')">月份 / เดือน</button></div></div><div class="muted">依工單／命令單／日報號／批號跨日累積 Key In；優先依同班別、同機台、同製程精準配對。R 為完成率基準，切換日期不重新呼叫配對 API。</div>
@@ -1121,9 +1124,10 @@ function renderTargets(){
   if(!baseRows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前篩選條件查無資料，請清除或調整篩選。</div>';updateDataHubHealth_();return}
   const heads=[
-    ['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['__actions','操作<br>แก้ไข'],['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
-  $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+heads.map(h=>{
+  $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr class="'+(EDITING_TARGET_ID&&String(r.target_plan_id||'')===EDITING_TARGET_ID?'rowEditing':'')+'">'+heads.map(h=>{
+    if(h[0]==='__actions')return '<td><button type="button" class="editTargetBtn" onclick="startTargetEditById(\''+esc(String(r.target_plan_id||''))+'\')">✏ 修改</button></td>';
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):((r[h[0]]===undefined||r[h[0]]===null)?'':r[h[0]]);
     if(h[0]==='report_date')v=dateKey(v);
     if(h[0]==='target_m2'&&!num(v))v=derivedTargetM2_(r);
@@ -1178,8 +1182,10 @@ function updateKpi(){
   updateDataHubHealth_();
 }
 
+let EDITING_TARGET_ID='',EDITING_TARGET_ROW=null;
 let SCHEDULE_MODE='single',PENDING_MULTI_ROWS=[];
 function setScheduleMode(mode){
+  if(EDITING_TARGET_ID&&mode==='multi'){toast('修改既有目標時只能使用單日模式');mode='single'}
   SCHEDULE_MODE=mode==='multi'?'multi':'single';
   $('modeSingle').className='modeBtn'+(SCHEDULE_MODE==='single'?' active':'');
   $('modeMulti').className='modeBtn'+(SCHEDULE_MODE==='multi'?' active':'');
@@ -1237,6 +1243,50 @@ function showSaveResult_(text){
   window.__saveResultTimer=setTimeout(hideSaveResult_,1800);
 }
 function hideSaveResult_(){const box=$('saveResultOverlay');if(box)box.classList.remove('show')}
+function findTargetById_(id){
+  const key=String(id||'').trim();
+  if(!key)return null;
+  return ([...(MATCH_ROWS||[]),...(TARGETS||[])]).find(r=>String(r.target_plan_id||'').trim()===key)||null;
+}
+function startTargetEditById(id){
+  const row=findTargetById_(id);
+  if(!row){toast('找不到這筆目標，請先重新讀取');return}
+  startTargetEdit(row);
+}
+function startTargetEdit(row){
+  row=normalizeTargetRow(row||{});
+  if(!row.target_plan_id){toast('這筆資料沒有 Target Plan ID，無法安全修改');return}
+  EDITING_TARGET_ID=row.target_plan_id;EDITING_TARGET_ROW=Object.assign({},row);
+  setScheduleMode('single');
+  $('report_date').value=dateKey(row.report_date)||today();syncPlannedDate();
+  if($('shift'))$('shift').value=row.shift||$('shift').value;
+  $('emp_no').value=row.emp_no||row.leader_emp_no||'';$('leader_name').value=row.leader_name||'';
+  if($('leader_role')&&row.leader_role)$('leader_role').value=row.leader_role;
+  if($('operator_emp_no')){$('operator_emp_no').value=row.operator_emp_no||'';fillOperatorName_();}
+  if($('operator_name'))$('operator_name').value=row.operator_name||'';
+  $('work_order_no').value=row.work_order_no||'';$('order_no').value=row.order_no||'';
+  $('command_no').value=row.command_no||'';$('report_no').value=row.report_no||'';$('daily_report_no').value=row.daily_report_no||'';
+  $('part_no').value=row.part_no||'';$('input_part_no').value=row.input_part_no||'';$('output_part_no').value=row.output_part_no||'';
+  $('batch_no').value=row.batch_no||'';$('input_lot_no').value=row.input_lot_no||'';$('output_lot_no').value=row.output_lot_no||'';
+  if($('process_site')&&row.process_site)$('process_site').value=row.process_site;
+  setMachineSelectValue_(row.machine_code||'');
+  $('customer').value=row.customer||'';$('product_spec').value=row.product_spec||'';
+  const unit=normalizeTargetUnit_(row.target_unit)||(num(row.target_m2)>0?'M2':'R');setTargetUnit(unit,true);
+  $('target_roll').value=num(row.target_roll)>0?row.target_roll:'';$('target_m2').value=num(row.target_m2)>0?row.target_m2:'';
+  $('planned_finish').value=dateKey(row.planned_finish)||dateKey(row.report_date)||today();
+  if($('status')&&row.status)$('status').value=row.status;$('note').value=row.note||'';
+  const bar=$('editModeBar');if(bar)bar.classList.add('show');
+  if($('editModeText'))$('editModeText').textContent='✏ 正在修改：'+(row.work_order_no||'未填工單')+'｜ID '+row.target_plan_id;
+  const btn=$('saveTargetBtn');if(btn)btn.textContent='確認修改 / ยืนยันการแก้ไข';
+  $('saveMsg').textContent='請修正錯誤欄位後按「確認修改」。原資料 ID 會保留，不會新增另一筆。';
+  renderTargets();window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>$('report_date').focus(),350);
+}
+function cancelTargetEdit(){
+  EDITING_TARGET_ID='';EDITING_TARGET_ROW=null;
+  const bar=$('editModeBar');if(bar)bar.classList.remove('show');
+  const btn=$('saveTargetBtn');if(btn)btn.textContent='儲存目標 / บันทึกเป้าหมาย';
+  $('saveMsg').textContent='';clearForm();renderTargets();toast('已取消修改');
+}
 function clearForm(){['emp_no','leader_name','operator_name','note'].forEach(id=>{if($(id))$(id).value=''});$('operator_emp_no').value='';fillOperatorName_();clearOrderFields();$('empStatus').className='empStatus';$('empStatus').textContent='輸入工號後自動帶入姓名與角色 / กรอกรหัสเพื่อดึงชื่อและตำแหน่ง';renderSearchIdle();setScheduleMode('single')}
 function clearTargetValidation_(){['report_date','emp_no','leader_name','operator_emp_no','work_order_no','machine_code','custom_machine_code','target_unit','target_roll','target_m2','note'].forEach(id=>{if($(id))$(id).classList.remove('fieldInvalid')})}
 function validateTargetBeforeSave_(data){
@@ -1259,13 +1309,16 @@ async function saveTarget(){
   btn.disabled=true;btn.textContent='儲存中… / กำลังบันทึก';
   $('saveMsg').textContent='正在送出雲端…';
   try{
-    data.target_plan_id='TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now();
+    const isEdit=!!EDITING_TARGET_ID;
+    data.target_plan_id=isEdit?EDITING_TARGET_ID:('TP-'+data.report_date.replace(/-/g,'')+'-'+Date.now());
+    data.update_existing=isEdit;data.edit_mode=isEdit?'update':'create';
     const saved=await apiPost('savetargetplan',data);
-    $('saveMsg').textContent='✅ 已寫入 Target_Plan 第 '+(saved.written_row||'-')+' 列';
+    $('saveMsg').textContent=isEdit?'✅ 修改成功並保留原 Target Plan ID':'✅ 已寫入 Target_Plan 第 '+(saved.written_row||'-')+' 列';
     await loadBootstrap();
     await recalculateMatches(true);
+    const wasEdit=!!EDITING_TARGET_ID;EDITING_TARGET_ID='';EDITING_TARGET_ROW=null;const editBar=$('editModeBar');if(editBar)editBar.classList.remove('show');
     clearForm();
-    showSaveResult_('工單 '+(saved.work_order_no||data.work_order_no||'')+' 已真正寫入雲端並完成回讀驗證。');
+    showSaveResult_('工單 '+(saved.work_order_no||data.work_order_no||'')+(wasEdit?' 已完成修改並回讀驗證。':' 已真正寫入雲端並完成回讀驗證。'));
   }catch(e){
     $('saveMsg').textContent='❌ 儲存失敗：'+e.message;
     alert('儲存失敗：'+e.message+'\n\n輸入欄位已保留，請不要重複輸入。');
