@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V120.2 MES 生產 Key In｜Target Task Sync｜Build 0126</title>
+<title>V120.3 MES 生產 Key In｜Machine List Sync｜Build 0127</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.2 Target Task Sync｜Build 0126</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.3 Machine List Sync｜Build 0127</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -193,7 +193,7 @@
   <div class="card col6">
     <div id="mobileStepBar" class="mobileStepBar"><b id="mobileStepTitle">步驟 1：選擇今日任務</b><span id="mobileStepHint">點選上方任務後，系統會直接帶入並跳到實際產量。</span></div>
     <h2>人員與產出 / พนักงานและผลผลิต</h2>
-    <label>機台 / เครื่องจักร</label><input id="machine_code" placeholder="例如 1S03 / 1B02" oninput="applyHistoricalSpeed()">
+    <label>機台 / เครื่องจักร</label><input id="machine_code" list="machine_code_list" placeholder="例如 1S03 / 1B02，也可自行輸入" oninput="this.value=this.value.toUpperCase().replace(/\s+/g,'');applyHistoricalSpeed()"><datalist id="machine_code_list"><option value="1B02"><option value="1B08"><option value="1B10"><option value="1B12"><option value="1B14"><option value="1B19"><option value="1S02"><option value="1S03"><option value="1S07"><option value="1S12"><option value="1S16"><option value="1S18"><option value="1S19"><option value="1B22"><option value="1C01"><option value="1C04"><option value="1C18"><option value="1V01"><option value="1V02"><option value="1V09"><option value="包裝"></datalist><div class="miniText">可從清單選擇，也可直接輸入新機台 / เลือกจากรายการหรือกรอกรหัสเครื่องใหม่ได้</div>
     <div class="teamWorkBox" id="teamWorkBox">
       <div class="teamWorkHead"><label class="teamWorkToggle"><input id="teamWorkEnabled" type="checkbox" onchange="toggleTeamWork_()"> 多人共同作業（產量只算一筆） / ทำงานร่วมกันหลายคน</label><span class="smallPill">主操作員負責送出</span></div>
       <div class="teamWorkBody">
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V120.2 Build 0126：指定人員目標即時刷新；登入與重新整理都重新讀取 Target_Plan。
+// V120.3 Build 0127：機台建議新增 1C01、1C04；仍可直接自行輸入其他機台。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
