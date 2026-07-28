@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V112 SEAL KING MES Enterprise｜人員統計版｜Build 0106</title>
+<title>V112 SEAL KING MES Enterprise｜人員統計版｜Build 0110</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--cyan:#0891b2;--violet:#7c3aed}
@@ -3851,17 +3851,17 @@ table tbody tr:hover td{background:#fff2f3!important}
     let total = 0;
 
     do {
-      const res = await jsonp("datahubv2workorders", {
+      const res = await jsonp("datahubworkorders", {
         q,
         page,
-        pageSize: 100
+        pageSize: 500
       });
       const rows = Array.isArray(res.rows) ? res.rows : [];
       total = Number(res.total || rows.length || 0);
       all.push(...rows);
       page += 1;
       if (!rows.length) break;
-    } while (all.length < total && page <= (q ? 5 : 2));
+    } while (all.length < total && page <= 20);
 
     return all;
   }
@@ -3934,7 +3934,8 @@ table tbody tr:hover td{background:#fff2f3!important}
   }
 
   function install() {
-    // DataHub V2.1 Fast：首頁不再預先下載工單；進入工單搜尋或實際搜尋時才載入。
+    loadDataHubWorkOrders(false);
+
     const btn = document.getElementById("woSearchBtn");
     if (btn && !btn.dataset.dh0050) {
       btn.dataset.dh0050 = "1";
@@ -3958,14 +3959,7 @@ table tbody tr:hover td{background:#fff2f3!important}
     }
   }
 
-  document.addEventListener("DOMContentLoaded", function(){
-    install();
-    document.querySelectorAll('[data-view="workorder"]').forEach(function(tab){
-      if(tab.dataset.dhLazy)return;
-      tab.dataset.dhLazy="1";
-      tab.addEventListener("click",function(){loadDataHubWorkOrders(false);});
-    });
-  });
+  document.addEventListener("DOMContentLoaded", install);
   setTimeout(install, 1500);
 
   window.Build0050DashboardDataHub = {
@@ -4018,12 +4012,47 @@ table tbody tr:hover td{background:#fff2f3!important}
 <style id="urgent_read_dashboard_110">
 .urg110-card{grid-column:span 12;border:1px solid #fecaca;border-left:7px solid #dc2626;background:linear-gradient(135deg,#fff,#fff7f7);border-radius:20px;padding:17px 18px;box-shadow:0 12px 30px rgba(127,29,29,.10)}.urg110-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.urg110-head h2{margin:0;color:#7f1d1d}.urg110-meta{margin-top:4px;color:#64748b;font-size:13px}.urg110-refresh{border:0;border-radius:11px;background:#fee2e2;color:#991b1b;padding:9px 12px;font-weight:900;cursor:pointer}.urg110-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:13px}.urg110-kpi{border:1px solid #e2e8f0;background:#fff;border-radius:14px;padding:11px}.urg110-kpi span{display:block;color:#64748b;font-size:12px;font-weight:900}.urg110-kpi b{display:block;margin-top:4px;color:#0f172a;font-size:27px}.urg110-kpi.bad b{color:#dc2626}.urg110-progress{height:10px;background:#fee2e2;border-radius:999px;overflow:hidden;margin-top:12px}.urg110-progress i{display:block;height:100%;background:linear-gradient(90deg,#f97316,#22c55e);border-radius:999px}.urg110-list{margin-top:12px;display:grid;gap:7px}.urg110-row{display:grid;grid-template-columns:145px minmax(150px,1fr) 90px 90px 90px 100px 90px minmax(150px,1fr);gap:8px;align-items:center;border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:10px;font-size:13px}.urg110-track{display:flex;flex-direction:column;gap:2px}.urg110-track b{font-size:12px}.urg110-track small{color:#64748b;font-size:10px}.urg110-ok{color:#166534}.urg110-warn{color:#b45309}.urg110-bad{color:#b91c1c}.urg110-rate{font-weight:950;color:#1d4ed8}.urg110-rateBar{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:3px}.urg110-rateBar i{display:block;height:100%;background:#2563eb;border-radius:999px}.urg110-row.unread{border-color:#fecaca;background:#fff7f7}.urg110-badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;background:#dcfce7;color:#166534}.urg110-badge.unread{background:#fee2e2;color:#b91c1c}.urg110-toggle{border:0;background:transparent;color:#1d4ed8;font-weight:900;cursor:pointer;text-align:left}.urg110-readerDetail{display:none;grid-column:1/-1;padding:8px 10px;border-radius:10px;background:#f8fafc;color:#334155}.urg110-readerDetail.show{display:block}@media(max-width:900px){.urg110-kpis{grid-template-columns:repeat(2,1fr)}.urg110-row{grid-template-columns:1fr 1fr}.urg110-readerDetail{grid-column:1/-1}}@media(max-width:560px){.urg110-kpis,.urg110-row{grid-template-columns:1fr}}
 </style>
+
+<!-- DataHub V3 Phase 1｜Unified API Client｜Build 0110 -->
+<script id="datahub_v3_client">
+(function(){
+  if(window.DataHubV3) return;
+  var BASE=window.API_URL||window.MES_API_URL||"https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
+  var mem=new Map(), inflight=new Map();
+  function key(action,params){var p=Object.keys(params||{}).sort().map(function(k){return k+'='+String(params[k])}).join('&');return action+'?'+p}
+  function cacheGet(k,ttl){var x=mem.get(k);if(x&&Date.now()-x.at<ttl)return x.data;try{var raw=localStorage.getItem('DHV3_'+k);if(raw){var o=JSON.parse(raw);if(Date.now()-o.at<ttl){mem.set(k,o);return o.data}}}catch(e){}return null}
+  function cachePut(k,data){var o={at:Date.now(),data:data};mem.set(k,o);try{var t=JSON.stringify(o);if(t.length<700000)localStorage.setItem('DHV3_'+k,t)}catch(e){}}
+  function request(action,params,opt){
+    opt=opt||{};params=params||{};var k=key(action,params),ttl=Number(opt.ttl||0),cached=ttl&&!opt.force?cacheGet(k,ttl):null;if(cached)return Promise.resolve(Object.assign({},cached,{cache_hit:true}));
+    if(inflight.has(k))return inflight.get(k);
+    var promise=new Promise(function(resolve,reject){
+      var cb='DHV3_'+Date.now()+'_'+Math.floor(Math.random()*1000000),u=new URL(BASE),tag=document.createElement('script'),finished=false;
+      var timeout=Math.max(15000,Number(opt.timeout||60000));
+      var timer=setTimeout(function(){
+        if(finished)return;finished=true;
+        // 保留空 callback 一段時間，避免 Apps Script 晚到回應造成 ReferenceError。
+        window[cb]=function(){};
+        if(tag.parentNode)tag.parentNode.removeChild(tag);
+        setTimeout(function(){try{delete window[cb]}catch(e){window[cb]=function(){}}},180000);
+        reject(new Error(action+' 讀取逾時'));
+      },timeout);
+      function finish(){clearTimeout(timer);if(tag.parentNode)tag.parentNode.removeChild(tag);setTimeout(function(){try{delete window[cb]}catch(e){window[cb]=function(){}}},5000)}
+      window[cb]=function(res){if(finished)return;finished=true;finish();res=res||{};if(res.ok===false){reject(new Error(res.message||res.error||action+' 讀取失敗'));return}cachePut(k,res);resolve(res)};
+      tag.onerror=function(){if(finished)return;finished=true;finish();reject(new Error(action+' 連線失敗'))};
+      u.searchParams.set('action',action);u.searchParams.set('callback',cb);u.searchParams.set('_',Date.now());Object.keys(params).forEach(function(n){if(params[n]!==undefined&&params[n]!==null&&params[n]!=="")u.searchParams.set(n,params[n])});tag.src=u.toString();document.head.appendChild(tag);
+    }).finally(function(){inflight.delete(k)});
+    inflight.set(k,promise);return promise;
+  }
+  window.DataHubV3={version:'V3.0.0-PHASE1',request:request,clear:function(){mem.clear();try{Object.keys(localStorage).filter(function(k){return k.indexOf('DHV3_')===0}).forEach(function(k){localStorage.removeItem(k)})}catch(e){}}};
+  console.log('DataHub V3 Phase 1 Ready',window.DataHubV3.version);
+})();
+</script>
 <script id="urgent_read_dashboard_110_script">
 (function(){
   var state={rows:[],loading:false,last:''};
   function E(id){return document.getElementById(id)}
   function H(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function api(action,params){return new Promise(function(resolve,reject){var cb='URG110_'+Date.now()+'_'+Math.floor(Math.random()*99999),base=window.API_URL||window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec',url=new URL(base),tag=document.createElement('script'),timer=setTimeout(function(){done();reject(new Error('讀取逾時'))},45000);function done(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}window[cb]=function(r){done();resolve(r||{})};tag.onerror=function(){done();reject(new Error('連線失敗'))};url.searchParams.set('action',action);url.searchParams.set('callback',cb);url.searchParams.set('_',Date.now());Object.keys(params||{}).forEach(function(k){url.searchParams.set(k,params[k])});tag.src=url.toString();document.body.appendChild(tag)})}
+  function api(action,params){return window.DataHubV3.request(action,params||{},{ttl:15000,timeout:60000})}
   function ensure(){var grid=E('dashboardGrid');if(!grid)return null;var card=E('urg110Card');if(!card){card=document.createElement('div');card.id='urg110Card';card.className='urg110-card';grid.insertBefore(card,grid.firstChild)}else if(card.parentNode!==grid)grid.insertBefore(card,grid.firstChild);return card}
   function readers(r){var list=Array.isArray(r.readers)?r.readers:[];if(!list.length)return '<span style="color:#b91c1c;font-weight:900">尚無人確認</span>';return list.map(function(x){return '<span style="display:inline-block;margin:3px 10px 3px 0"><b>'+H(x.reader_emp_no)+' '+H(x.reader_name)+'</b>｜'+H(x.read_at||'')+'</span>'}).join('')}
   function N(v){var n=Number(v||0);return isFinite(n)?n:0}
@@ -4062,7 +4091,7 @@ table tbody tr:hover td{background:#fff2f3!important}
 (function(){
  var state={rows:[],collapsed:false,filters:{q:'',login:'all',task:'all',urgent:'all'}};
  function E(id){return document.getElementById(id)} function H(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
- function api(){return new Promise(function(resolve,reject){var cb='PS112_'+Date.now()+'_'+Math.floor(Math.random()*99999),base=window.API_URL||window.MES_API_URL||'https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec',u=new URL(base),s=document.createElement('script'),t=setTimeout(function(){done();reject(new Error('讀取逾時'))},45000);function done(){clearTimeout(t);try{delete window[cb]}catch(e){}if(s.parentNode)s.parentNode.removeChild(s)}window[cb]=function(r){done();r&&r.ok===false?reject(new Error(r.message||'讀取失敗')):resolve(r||{})};s.onerror=function(){done();reject(new Error('連線失敗'))};u.searchParams.set('action','personnelstats');u.searchParams.set('callback',cb);u.searchParams.set('_',Date.now());s.src=u.toString();document.body.appendChild(s)})}
+ function api(){return window.DataHubV3.request('personnelstats',{}, {ttl:15000,timeout:60000})}
  function ensure(){var g=E('dashboardGrid');if(!g)return null;var c=E('ps112Card');if(!c){c=document.createElement('div');c.id='ps112Card';c.className='ps112-card';g.insertBefore(c,g.firstChild)}return c}
  function row(r){var online=r.online_30m,st=online?'目前在線':'今日曾登入',wo=(r.work_orders||[]).join('、')||'-',mc=(r.machines||[]).join('、')||'-',last=r.last_report||'尚未回報',warn=r.unread_count?'<span class="ps112-warn">未讀 '+r.unread_count+'</span>':'已全部閱讀';return '<tr><td><b>'+H(r.emp_no)+' '+H(r.emp_name)+'</b><br><small>'+H(r.role||'')+'</small></td><td><span class="ps112-online '+(online?'':'ps112-offline')+'">'+st+'</span><br><small>'+H(r.last_login||'')+'</small></td><td>'+r.task_count+'</td><td>'+H(wo)+'</td><td>'+H(mc)+'</td><td>'+r.keyin_count+'</td><td>'+Number(r.actual_qty||0).toLocaleString()+'</td><td>'+Number(r.completion_rate||0)+'%</td><td>'+H(last)+'</td><td>'+warn+'</td></tr>'}
  function filtered(){var f=state.filters,q=String(f.q||'').toLowerCase();return state.rows.filter(function(r){if(q&&[r.emp_no,r.emp_name,r.role,(r.work_orders||[]).join(' '),(r.machines||[]).join(' ')].join(' ').toLowerCase().indexOf(q)<0)return false;if(f.login==='online'&&!r.online_30m)return false;if(f.login==='today'&&r.online_30m)return false;if(f.task==='assigned'&&!(Number(r.task_count)>0))return false;if(f.task==='none'&&Number(r.task_count)>0)return false;if(f.urgent==='unread'&&!(Number(r.unread_count)>0))return false;if(f.urgent==='read'&&Number(r.unread_count)>0)return false;return true})}
@@ -4073,187 +4102,5 @@ table tbody tr:hover td{background:#fff2f3!important}
  function start(){ensure();ps112Load();setInterval(ps112Load,30000);setInterval(function(){if(!E('ps112Card'))ps112Load()},3000)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
-
-<!-- DataHub V2 Stable Loader｜Build 0106 -->
-<script id="datahub-v2-stable-loader">
-(function(){
-  "use strict";
-  var API = window.API_URL || window.MES_API_URL || "https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec";
-  var VERSION = "DataHub V2.0 Stable";
-  var running = false;
-  var datasets = [
-    {label:"SL31A", key:"sl"},
-    {label:"4-3", key:"d43"},
-    {label:"PD11B", key:"pd"},
-    {label:"5-C", key:"prod5c"},
-    {label:"5-3", key:"prod53"}
-  ];
-
-  function dhv2Jsonp(action, params, timeoutMs){
-    params=params||{};
-    timeoutMs=timeoutMs||90000;
-    return new Promise(function(resolve,reject){
-      var cb="DHV2_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
-      var script=document.createElement("script");
-      var settled=false;
-      var timer=setTimeout(function(){
-        if(settled)return;
-        settled=true;
-        // callback 保留為 no-op，避免逾時後伺服器晚到造成 is not defined。
-        window[cb]=function(){};
-        if(script.parentNode)script.parentNode.removeChild(script);
-        setTimeout(function(){try{delete window[cb]}catch(e){}},300000);
-        reject(new Error("DataHub V2 讀取逾時："+action));
-      },timeoutMs);
-      window[cb]=function(res){
-        if(settled)return;
-        settled=true;clearTimeout(timer);
-        if(script.parentNode)script.parentNode.removeChild(script);
-        setTimeout(function(){try{delete window[cb]}catch(e){}},1000);
-        if(res&&res.ok===false)reject(new Error(res.message||res.error||"API error"));
-        else resolve(res||{});
-      };
-      script.onerror=function(){
-        if(settled)return;
-        settled=true;clearTimeout(timer);
-        window[cb]=function(){};
-        if(script.parentNode)script.parentNode.removeChild(script);
-        setTimeout(function(){try{delete window[cb]}catch(e){}},300000);
-        reject(new Error("DataHub V2 連線失敗："+action));
-      };
-      var q=["action="+encodeURIComponent(action),"callback="+encodeURIComponent(cb),"_="+Date.now()];
-      Object.keys(params).forEach(function(k){
-        if(params[k]!==undefined&&params[k]!==null&&params[k]!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(params[k]));
-      });
-      script.src=API+"?"+q.join("&");
-      document.head.appendChild(script);
-    });
-  }
-
-  function cacheKey(label,fingerprint){return "MES_DHV2_"+label+"_"+String(fingerprint||"");}
-  function saveCache(label,fingerprint,rows){
-    try{localStorage.setItem(cacheKey(label,fingerprint),JSON.stringify({saved:Date.now(),rows:rows}));}catch(e){}
-  }
-  function loadCache(label,fingerprint){
-    try{
-      var x=JSON.parse(localStorage.getItem(cacheKey(label,fingerprint))||"null");
-      return x&&Array.isArray(x.rows)?x.rows:null;
-    }catch(e){return null;}
-  }
-
-  async function loadSheet(label, meta, force){
-    var fp=meta&&meta.fingerprint||"";
-    if(!force){
-      var cached=loadCache(label,fp);
-      if(cached)return cached;
-    }
-    var rows=[], offset=0, guard=0;
-    do{
-      var res=await dhv2Jsonp("datahubv2sheet",{sheet:label,offset:offset,limit:250},90000);
-      var part=Array.isArray(res.rows)?res.rows:[];
-      rows=rows.concat(part);
-      offset=Number(res.next_offset||rows.length);
-      guard++;
-      if(res.done||!part.length)break;
-      await new Promise(function(r){setTimeout(r,120);});
-    }while(guard<80);
-    saveCache(label,fp,rows);
-    return rows;
-  }
-
-  function applyDataset(label, rows){
-    window.AppState=window.AppState||{};
-    if(label==="SL31A")AppState.sl=rows;
-    else if(label==="4-3")AppState.d43=rows;
-    else if(label==="PD11B")AppState.pd=rows;
-    else if(label==="5-C"){AppState.prod5cRaw=rows;AppState.prod5c=rows;}
-    else if(label==="5-3"){AppState.prod53Raw=rows;AppState.prod53=rows;}
-  }
-
-  function refreshExistingUI(){
-    var fns=["buildSource","buildIndex","renderAll","renderDashboard","renderDataCenter","v541RenderHub","v456RenderDashboard"];
-    fns.forEach(function(n){try{if(typeof window[n]==="function")window[n]();}catch(e){console.warn("DHV2 render",n,e);}});
-  }
-
-  function status(msg,bad,loading){
-    try{
-      if(typeof window.mesV696Status==="function"){
-        window.mesV696Status('<div>'+msg+'</div>',!!bad,{loading:!!loading});
-      }else console.log(VERSION,msg);
-    }catch(e){}
-  }
-
-  function idleRun(fn,delay){
-    delay=Number(delay||0);
-    setTimeout(function(){
-      if("requestIdleCallback" in window) requestIdleCallback(fn,{timeout:2500});
-      else fn();
-    },delay);
-  }
-
-  async function syncOne(d,meta,force){
-    status("背景同步 "+d.label+"（"+Number(meta.rows||0).toLocaleString()+" 筆）…",false,true);
-    var rows=await loadSheet(d.label,meta,!!force);
-    applyDataset(d.label,rows);
-    return rows.length;
-  }
-
-  async function backgroundSync(boot,force){
-    var sheets=boot.sheets||{}, changed=0;
-    for(var i=0;i<datasets.length;i++){
-      var d=datasets[i],meta=sheets[d.label]||{};
-      var cached=!force?loadCache(d.label,meta.fingerprint||""):null;
-      if(cached){applyDataset(d.label,cached);continue;}
-      try{await syncOne(d,meta,force);changed++;}
-      catch(err){console.warn(VERSION,"background sheet failed",d.label,err);}
-      await new Promise(function(r){setTimeout(r,180);});
-    }
-    refreshExistingUI();
-    status("DataHub V2.1 Fast 完成｜"+(changed?"背景更新 "+changed+" 份資料":"已使用最新快取"),false,false);
-  }
-
-  async function reload(force){
-    if(running)return;
-    running=true;
-    status(force?"正在強制更新五份 ERP…":"正在讀取 DataHub 摘要…",false,true);
-    try{
-      var boot=await dhv2Jsonp("datahubv2bootstrap",{force:force?1:0},30000);
-      var sheets=boot.sheets||{},cacheHits=0;
-
-      // 首屏只套用既有快取，不等待 2 萬多筆完整下載。
-      datasets.forEach(function(d){
-        var meta=sheets[d.label]||{};
-        var cached=!force?loadCache(d.label,meta.fingerprint||""):null;
-        if(cached){applyDataset(d.label,cached);cacheHits++;}
-      });
-      refreshExistingUI();
-
-      if(!force){
-        status("首頁已可使用｜快取 "+cacheHits+"/"+datasets.length+"，其餘資料背景更新",false,false);
-        idleRun(function(){backgroundSync(boot,false).finally(function(){running=false;});},1200);
-        console.log("DataHub V2.1 Fast ready",{cache_hits:cacheHits,boot:boot});
-        return;
-      }
-
-      await backgroundSync(boot,true);
-      console.log("DataHub V2.1 Fast force refresh OK",boot);
-    }catch(err){
-      console.error("DataHub V2.1 Fast FAILED",err);
-      status("DataHub 摘要讀取失敗，已保留上次畫面資料："+err.message,true,false);
-    }finally{
-      if(force)running=false;
-    }
-  }
-
-  // 取代舊版「重新讀取五份資料」入口；保留其他既有功能。
-  window.v541ReloadAll=function(){return reload(true);};
-  window.DataHubV2={reload:reload,version:VERSION};
-
-  document.addEventListener("DOMContentLoaded",function(){
-    setTimeout(function(){reload(false);},800);
-  });
-})();
-</script>
-
 </body>
 </html>
