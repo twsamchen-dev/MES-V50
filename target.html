@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V99 MES Target｜Ultra Match Stable｜Build 0108.1.8</title>
+<title>V99 MES Target｜Ultra Match Stable｜Build 0109</title>
 <style>
 :root{--bg:#f4f7fb;--ink:#10213c;--muted:#64748b;--line:#dbe4f0;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--soft:#eef6ff;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Microsoft JhengHei",Arial,sans-serif;color:var(--ink)}header{padding:16px 24px;background:linear-gradient(135deg,#1d4ed8,#0f172a);color:white}h1{margin:0;font-size:26px;line-height:1.2}h2{margin:0 0 12px;font-size:22px}header p{margin:6px 0 0;color:#dbeafe;font-size:14px}.wrap{max-width:1700px;margin:auto;padding:12px}.nav{display:none!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.col12{grid-column:span 12}.col8{grid-column:span 8}.col6{grid-column:span 6}.col4{grid-column:span 4}.col3{grid-column:span 3}@media(max-width:1050px){.col8,.col6,.col4,.col3{grid-column:span 12}}label{display:block;margin:7px 0 4px;font-weight:900;font-size:14px}input,select,textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white;min-height:40px}textarea{min-height:74px}.btn{border:0;border-radius:11px;padding:10px 15px;font-weight:900;cursor:pointer;background:var(--brand);color:white;margin:2px}.btn.ok{background:var(--ok)}.btn.ghost{background:#e8f0ff;color:#1e3a8a}.btn.danger{background:var(--bad)}.btn.active{background:#1d4ed8;color:#fff}.muted{color:var(--muted);font-size:13px}.kpirow{grid-column:span 12;display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}.kpi{color:white;border-radius:16px;padding:14px;min-height:96px}.blue{background:linear-gradient(135deg,#2563eb,#172554)}.green{background:linear-gradient(135deg,#16a34a,#14532d)}.orange{background:linear-gradient(135deg,#f59e0b,#78350f)}.red{background:linear-gradient(135deg,#dc2626,#7f1d1d)}.kpi .label{font-size:13px;opacity:.92;margin:0}.kpi .num{font-size:34px;font-weight:900;margin-top:8px;line-height:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc}.toast{position:fixed;right:16px;bottom:16px;background:#020617;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:9999}.toast.show{display:block}.found{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px;margin-top:10px}.warn{background:#fffbeb;border-left:6px solid var(--warn)}.listitem{padding:9px;border-bottom:1px solid #dbe4f0;cursor:pointer}.listitem:hover{background:#f8fafc}.listitem.active{background:#dbeafe;outline:2px solid #2563eb;outline-offset:-2px}.pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px}.status-ok{color:#15803d;font-weight:900}.status-run{color:#b45309;font-weight:900}.status-wait{color:#991b1b;font-weight:900}.rangebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rangebar input{max-width:170px}.compact-card{padding:12px 14px}.section-note{font-size:13px;color:#64748b;margin-top:-4px;margin-bottom:8px}.targetListHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}.targetListHead h2{margin:0}.targetRangeBtns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.targetRangeBtn{border:1px solid #bfdbfe;background:#eef4ff;color:#1e3a8a;border-radius:10px;padding:8px 13px;font-weight:900;cursor:pointer}.targetRangeBtn:hover{background:#dbeafe}.targetRangeBtn.active{background:#2563eb;border-color:#2563eb;color:#fff}@media(max-width:1050px){.kpirow{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.kpirow{grid-template-columns:1fr}.wrap{padding:8px}header{padding:14px 16px}h1{font-size:22px}}
 
@@ -34,10 +34,26 @@
 /* Build 0108.1.6：Target 清單新增 Key In／修改 Key In */
 .keyinAddBtn,.keyinEditBtn,.keyinDeleteBtn,.keyinViewBtn{border:0;border-radius:9px;padding:7px 10px;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap;margin:2px}.keyinAddBtn{background:#16a34a}.keyinEditBtn{background:#2563eb}.keyinDeleteBtn{background:#dc2626}.keyinViewBtn{background:#64748b}.keyinAddBtn:hover,.keyinEditBtn:hover,.keyinDeleteBtn:hover,.keyinViewBtn:hover{filter:brightness(.95)}
 .keyinModal{position:fixed;inset:0;z-index:999999;background:rgba(15,23,42,.68);display:none;align-items:center;justify-content:center;padding:16px}.keyinModal.show{display:flex}.keyinPanel{width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)}.keyinPanelHead{display:flex;justify-content:space-between;align-items:center;gap:12px}.keyinPanelHead h3{margin:0}.keyinClose{border:0;border-radius:10px;background:#e2e8f0;padding:8px 12px;font-weight:900;cursor:pointer}.keyinFormGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.keyinFormGrid .full{grid-column:1/-1}@media(max-width:700px){.keyinFormGrid{grid-template-columns:1fr}}.keyinRecordList{display:flex;flex-direction:column;gap:8px;margin:10px 0}.keyinRecord{border:1px solid #cbd5e1;border-radius:12px;padding:10px;cursor:pointer;background:#f8fafc}.keyinRecord:hover,.keyinRecord.active{border-color:#2563eb;background:#eff6ff}.actionCell{min-width:150px}
+
+.keyinRecord{position:relative;padding-right:118px}
+.keyinRecordActions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:5px}
+.keyinRecordDeleteBtn{border:0;border-radius:8px;padding:7px 9px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}
+.keyinRecordDeleteBtn:hover{filter:brightness(.95)}
+.targetDeleteModal{position:fixed;inset:0;z-index:1000000;background:rgba(15,23,42,.70);display:none;align-items:center;justify-content:center;padding:16px}
+.targetDeleteModal.show{display:flex}
+.targetDeletePanel{width:min(560px,96vw);background:#fff;border-radius:20px;padding:20px;box-shadow:0 26px 80px rgba(0,0,0,.38);border-top:7px solid #dc2626}
+.targetDeletePanel h3{margin:0 0 10px;color:#991b1b;font-size:23px}
+.targetDeleteDetail{background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:12px;line-height:1.8;margin:12px 0}
+.targetDeleteChoice{display:flex;flex-direction:column;gap:9px;margin:12px 0}
+.targetDeleteChoice label{display:flex;align-items:flex-start;gap:8px;margin:0;padding:10px;border:1px solid #dbe4f0;border-radius:11px;cursor:pointer}
+.targetDeleteChoice input{width:auto;min-height:0;margin-top:3px}
+.targetDeleteWarn{color:#b91c1c;font-weight:900;font-size:13px}
+@media(max-width:560px){.keyinRecord{padding-right:10px}.keyinRecordActions{position:static;transform:none;margin-top:8px}}
+
 </style>
 </head>
 <body>
-<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0108.1.8</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
+<header><h1>今日幹部目標設定中心｜V99 Ultra Match Stable｜Build 0109</h1><p>Target Plan / แผนเป้าหมายหัวหน้างาน。支援工號自動帶入、角色與部門分離、統一訂單索引＋Key In 工單搜尋、自動帶入資料、單日／連續多日目標；不影響 Key In / Dashboard。</p></header>
 <div class="wrap">
   <div class="grid">
     <div class="card col12 compact-card toolbar">
@@ -163,6 +179,23 @@
   </div>
   <div class="toolbar" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn ghost" onclick="closeKeyinModal()">取消</button><button id="keyinDeleteConfirmBtn" type="button" class="btn danger" style="display:none" onclick="deleteSelectedKeyin()">🗑 確認刪除</button><button id="keyinSaveBtn" type="button" class="btn ok" onclick="saveKeyinFromTarget()">儲存 Key In</button></div>
 </div></div>
+
+<div id="targetDeleteModal" class="targetDeleteModal" aria-hidden="true">
+  <div class="targetDeletePanel">
+    <h3>🗑 刪除目標 / ลบเป้าหมาย</h3>
+    <div class="muted">請確認要刪除的 Target_Plan 資料。刪除後無法復原。</div>
+    <div id="targetDeleteDetail" class="targetDeleteDetail"></div>
+    <div class="targetDeleteChoice">
+      <label><input type="radio" name="targetDeleteMode" value="target_only" checked><span><b>只刪除目標 Target</b><br><span class="muted">保留現場 Key In 實績，不影響原始回報。</span></span></label>
+      <label><input type="radio" name="targetDeleteMode" value="target_and_keyin"><span><b>刪除目標 + 此目標配對的 Key In</b><br><span class="targetDeleteWarn">⚠ Key In 實績也會永久刪除，請謹慎使用。</span></span></label>
+    </div>
+    <div class="toolbar" style="justify-content:flex-end">
+      <button type="button" class="btn ghost" onclick="closeDeleteTarget()">取消</button>
+      <button id="confirmDeleteTargetBtn" type="button" class="btn danger" onclick="confirmDeleteTarget()">確認刪除</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 <div id="saveOverlay" class="saveOverlay"><div class="savePanel">
   <h3 id="saveOverlayTitle">建立多日目標 / สร้างเป้าหมายหลายวัน</h3>
@@ -1146,10 +1179,10 @@ function renderTargets(){
   if(!baseRows.length){$('targetTable').innerHTML='<div class="muted">目前區間無目標 / ไม่มีเป้าหมายในช่วงนี้</div>';updateDataHubHealth_();return}
   if(!rows.length){$('targetTable').innerHTML='<div class="muted">目前篩選條件查無資料，請清除或調整篩選。</div>';updateDataHubHealth_();return}
   const heads=[
-    ['__actions','操作<br>新增／修改／刪除'],['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
+    ['__actions','操作<br>新增／修改／刪除目標'],['report_date','日期<br>วันที่'],['shift','班別<br>กะ'],['week_no','周別<br>สัปดาห์'],['emp_no','工號<br>รหัส'],['leader_name','姓名<br>ชื่อ'],['leader_role','角色<br>ตำแหน่ง'],['work_order_no','工單<br>ใบงาน'],['customer','客戶<br>ลูกค้า'],['process_site','站點<br>จุด'],['machine_code','機台<br>เครื่อง'],['target_roll','目標R<br>เป้าม้วน'],['keyin_qty','採用實績<br>ผลงานที่ใช้'],['file_match_status','Key In／實績配對狀態<br>สถานะจับคู่ Key In / ผลงานจริง'],['work_status','作業狀態<br>สถานะงาน'],['completion_rate','班別完成率<br>% กะ'],['full_day_completion_text','全天完成率<br>% ทั้งวัน'],['variance_text','差異<br>ส่วนต่าง'],['target_m2','目標㎡<br>ตร.ม.'],['note','備註<br>หมายเหตุ']
   ];
   $('targetTable').innerHTML='<div class="scroll"><table><thead><tr>'+heads.map(h=>'<th>'+h[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr class="'+(EDITING_TARGET_ID&&String(r.target_plan_id||'')===EDITING_TARGET_ID?'rowEditing':'')+'">'+heads.map(h=>{
-    if(h[0]==='__actions'){const id=esc(String(r.target_plan_id||''));const done=num(r.completion_rate)>=100;return '<td class="actionCell"><button type="button" class="keyinAddBtn" onclick="openAddKeyin(\''+id+'\')">＋ 新增</button><button type="button" class="'+(done?'keyinViewBtn':'keyinEditBtn')+'" onclick="openEditKeyin(\''+id+'\')">'+(done?'👁 檢視':'✏ 修改')+'</button><button type="button" class="keyinDeleteBtn" onclick="openDeleteKeyin(\''+id+'\')">🗑 刪除</button></td>'; }
+    if(h[0]==='__actions'){const id=esc(String(r.target_plan_id||''));const done=num(r.completion_rate)>=100;return '<td class="actionCell"><button type="button" class="keyinAddBtn" onclick="openAddKeyin(\''+id+'\')">＋ 新增</button><button type="button" class="'+(done?'keyinViewBtn':'keyinEditBtn')+'" onclick="openEditKeyin(\''+id+'\')">'+(done?'👁 檢視':'✏ 修改')+'</button><button type="button" class="keyinDeleteBtn" onclick="openDeleteTarget(\''+id+'\')">🗑 刪除目標</button></td>'; }
     let v=h[0]==='week_no'?(r.week_no||isoWeek(r.report_date)):((r[h[0]]===undefined||r[h[0]]===null)?'':r[h[0]]);
     if(h[0]==='report_date')v=dateKey(v);
     if(h[0]==='target_m2'&&!num(v))v=derivedTargetM2_(r);
@@ -1307,8 +1340,8 @@ function openEditKeyin(id){
   if(!rows.length){toast('尚未建立 Key In，請先按【＋ 新增】');return}
   KEYIN_MODAL_MODE='edit';KEYIN_MODAL_TARGET=t;KEYIN_MODAL_RECORD=rows[0];
   $('keyinModalTitle').textContent=num(t.completion_rate)>=100?'👁 檢視／修正 Key In':'✏ 修改 Key In';
-  $('keyinModalHint').textContent='共找到 '+rows.length+' 筆回報；請先選擇要修改的紀錄。修改後會重新計算完成率。';
-  $('keyinRecordList').innerHTML=rows.map((k,i)=>'<div class="keyinRecord '+(i===0?'active':'')+'" onclick="selectKeyinRecord('+i+')"><b>'+(esc(k.actual_output||k.actual_qty||0))+' '+esc(k.unit||'')+'</b>｜'+esc(k.emp_no||'')+' '+esc(k.emp_name||'')+'<br><span class="muted">'+esc(k.report_date||'')+'｜'+esc(k.machine_code||'')+'｜'+esc(k.created_at||'')+'｜ID '+esc(k.keyin_id||'未建立ID')+'</span></div>').join('');
+  $('keyinModalHint').textContent='共找到 '+rows.length+' 筆回報；可選擇紀錄修改，或按右側【刪除此筆】。修改或刪除後會重新計算完成率。';
+  $('keyinRecordList').innerHTML=rows.map((k,i)=>'<div class="keyinRecord '+(i===0?'active':'')+'" onclick="selectKeyinRecord('+i+')"><b>'+(esc(k.actual_output||k.actual_qty||0))+' '+esc(k.unit||'')+'</b>｜'+esc(k.emp_no||'')+' '+esc(k.emp_name||'')+'<br><span class="muted">'+esc(k.report_date||'')+'｜'+esc(k.machine_code||'')+'｜'+esc(k.created_at||'')+'｜ID '+esc(k.keyin_id||'未建立ID')+'</span><div class="keyinRecordActions"><button type="button" class="keyinRecordDeleteBtn" onclick="event.stopPropagation();deleteKeyinRecordByIndex('+i+')">🗑 刪除此筆</button></div></div>').join('');
   window.__targetKeyinEditRows=rows;fillKeyinForm_(rows[0],t);
   $('keyinDeleteConfirmBtn').style.display='none';$('keyinSaveBtn').style.display='';$('keyinSaveBtn').textContent='確認修改';
   $('keyinEditModal').classList.add('show');$('keyinEditModal').setAttribute('aria-hidden','false');
@@ -1317,6 +1350,63 @@ function selectKeyinRecord(i){
   const rows=window.__targetKeyinEditRows||[],k=rows[i];if(!k)return;
   KEYIN_MODAL_RECORD=k;document.querySelectorAll('.keyinRecord').forEach((x,n)=>x.classList.toggle('active',n===i));fillKeyinForm_(k,KEYIN_MODAL_TARGET);
 }
+
+let TARGET_DELETE_ROW=null;
+function openDeleteTarget(id){
+  const t=findTargetById_(id);
+  if(!t){toast('找不到這筆目標，請先重新讀取');return}
+  TARGET_DELETE_ROW=t;
+  const qty=num(t.target_roll)>0?Number(num(t.target_roll).toFixed(3)).toLocaleString()+' R':Number(num(t.target_m2).toFixed(3)).toLocaleString()+' M²';
+  $('targetDeleteDetail').innerHTML=
+    '<b>日期：</b>'+esc(dateKey(t.report_date)||'-')+'<br>'+
+    '<b>班別：</b>'+esc(t.shift||'-')+'<br>'+
+    '<b>工單：</b>'+esc(primaryWorkOrder_(t)||'-')+'<br>'+
+    '<b>機台：</b>'+esc(t.machine_code||'-')+'<br>'+
+    '<b>站點：</b>'+esc(t.process_site||'-')+'<br>'+
+    '<b>目標：</b>'+esc(qty)+'<br>'+
+    '<b>作業人員：</b>'+esc((t.operator_emp_no||'')+' '+(t.operator_name||''));
+  const first=document.querySelector('input[name="targetDeleteMode"][value="target_only"]');if(first)first.checked=true;
+  $('targetDeleteModal').classList.add('show');$('targetDeleteModal').setAttribute('aria-hidden','false');
+}
+function closeDeleteTarget(){
+  const m=$('targetDeleteModal');if(m){m.classList.remove('show');m.setAttribute('aria-hidden','true')}
+  TARGET_DELETE_ROW=null;
+}
+async function confirmDeleteTarget(){
+  const t=TARGET_DELETE_ROW;if(!t)return;
+  const mode=(document.querySelector('input[name="targetDeleteMode"]:checked')||{}).value||'target_only';
+  const withKeyin=mode==='target_and_keyin';
+  const msg='最後確認：確定刪除此筆目標'+(withKeyin?'，並一起刪除配對的 Key In？':'？')+'\n\n工單：'+(primaryWorkOrder_(t)||'')+'\n日期：'+dateKey(t.report_date)+'\n機台：'+(t.machine_code||'')+'\n\n此動作無法復原。';
+  if(!confirm(msg))return;
+  const b=$('confirmDeleteTargetBtn');b.disabled=true;b.textContent='刪除中…';
+  try{
+    const payload={
+      target_plan_id:String(t.target_plan_id||''),
+      delete_keyin:withKeyin?'1':'0',
+      report_date:dateKey(t.report_date),
+      shift:t.shift||'',
+      work_order_no:primaryWorkOrder_(t)||'',
+      machine_code:t.machine_code||'',
+      process_site:t.process_site||'',
+      emp_no:t.emp_no||t.leader_emp_no||''
+    };
+    const res=await apiGet('deletetargetplan',payload);
+    if(!res||res.ok!==true)throw new Error((res&&res.message)||'後端未確認刪除成功');
+    closeDeleteTarget();
+    ALL_TARGETS=ALL_TARGETS.filter(x=>String(x.target_plan_id||'')!==String(t.target_plan_id||''));
+    KEYIN_ROWS=[];KEYIN_INDEX=null;KEYIN_INDEX_READY=false;KEYIN_CACHE_AT=0;MATCH_ROWS=[];
+    applyRange();
+    await loadBootstrap();
+    if(withKeyin){await loadKeyInForRange(true);await recalculateMatches(true)}
+    toast(withKeyin?'目標與配對 Key In 已刪除':'目標已刪除，Key In 已保留');
+  }catch(e){alert('刪除目標失敗：'+e.message)}
+  finally{b.disabled=false;b.textContent='確認刪除'}
+}
+function deleteKeyinRecordByIndex(i){
+  const rows=window.__targetKeyinEditRows||[],k=rows[i];if(!k)return;
+  KEYIN_MODAL_RECORD=k;selectKeyinRecord(i);deleteSelectedKeyin();
+}
+
 function openDeleteKeyin(id){
   const t=findTargetById_(id);if(!t){toast('找不到這筆目標，請先重新讀取');return}
   const rows=keyinRowsForTarget_(t);
@@ -1324,7 +1414,7 @@ function openDeleteKeyin(id){
   KEYIN_MODAL_MODE='delete';KEYIN_MODAL_TARGET=t;KEYIN_MODAL_RECORD=rows[0];
   $('keyinModalTitle').textContent='🗑 刪除 Key In';
   $('keyinModalHint').textContent='共找到 '+rows.length+' 筆回報。請先選擇要刪除的紀錄，再按【確認刪除】。此動作無法復原。';
-  $('keyinRecordList').innerHTML=rows.map((k,i)=>'<div class="keyinRecord '+(i===0?'active':'')+'" onclick="selectKeyinRecord('+i+')"><b>'+esc(k.actual_output||k.actual_qty||0)+' '+esc(k.unit||'')+'</b>｜'+esc(k.emp_no||'')+' '+esc(k.emp_name||'')+'<br><span class="muted">'+esc(k.report_date||'')+'｜'+esc(k.machine_code||'')+'｜'+esc(k.created_at||'')+'｜ID '+esc(k.keyin_id||'未建立ID')+'</span></div>').join('');
+  $('keyinRecordList').innerHTML=rows.map((k,i)=>'<div class="keyinRecord '+(i===0?'active':'')+'" onclick="selectKeyinRecord('+i+')"><b>'+esc(k.actual_output||k.actual_qty||0)+' '+esc(k.unit||'')+'</b>｜'+esc(k.emp_no||'')+' '+esc(k.emp_name||'')+'<br><span class="muted">'+esc(k.report_date||'')+'｜'+esc(k.machine_code||'')+'｜'+esc(k.created_at||'')+'｜ID '+esc(k.keyin_id||'未建立ID')+'</span><div class="keyinRecordActions"><button type="button" class="keyinRecordDeleteBtn" onclick="event.stopPropagation();deleteKeyinRecordByIndex('+i+')">🗑 刪除此筆</button></div></div>').join('');
   window.__targetKeyinEditRows=rows;fillKeyinForm_(rows[0],t);
   $('keyinSaveBtn').style.display='none';$('keyinDeleteConfirmBtn').style.display='';
   $('keyinEditModal').classList.add('show');$('keyinEditModal').setAttribute('aria-hidden','false');
