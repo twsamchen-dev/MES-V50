@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V120.4 MES 生產 Key In｜PIN Login Stable｜Build 0128</title>
+<title>V120.5 MES 生產 Key In｜API URL Bridge｜Build 0129</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.4 PIN Login Stable｜Build 0128</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.5 API URL Bridge｜Build 0129</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,7 +256,8 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V120.4 Build 0128：修正 PIN 登入 JSONP 逾時後 callback 被刪除造成 ReferenceError；保留原有機台清單與全部功能。
+// V120.5 Build 0129：修正 api.js 已載入但 MES_API_URL 未掛到 window，導致 PIN 登入誤判 API 未載入。
+const PIN_API_BASE_URL='https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -776,7 +777,7 @@ async function pinApi(action,params){
   // V120.4 Build 0128：PIN 登入改用獨立穩定 JSONP。
   // 不再透過 MES.get，避免 api.js 在逾時後刪除 mes_cb_*，造成晚到回應 ReferenceError。
   return new Promise((resolve,reject)=>{
-    const base=String(window.MES_API_URL||'').trim();
+    const base=String(window.MES_API_URL||PIN_API_BASE_URL||'').trim();
     if(!base){
       reject(new Error('MES API 未載入，請確認 api.js 與部署網址 / MES API ยังไม่พร้อมใช้งาน'));
       return;
