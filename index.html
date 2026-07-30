@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V120.3 MES 生產 Key In｜Machine List Sync｜Build 0127</title>
+<title>V120.4 MES 生產 Key In｜PIN Login Stable｜Build 0128</title>
 <link rel="stylesheet" href="style.css">
 <script src="api.js">
 </script>
@@ -106,7 +106,7 @@
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.3 Machine List Sync｜Build 0127</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.4 PIN Login Stable｜Build 0128</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -256,7 +256,7 @@
 <div id="mobileSavingMask" class="mobileSavingMask"><div class="mobileSavingCard">正在儲存，完成後自動下一張…<br><small>กำลังบันทึก แล้วไปงานถัดไปอัตโนมัติ</small></div></div>
 <div id="toast" class="toast"></div>
 <script>
-// V120.3 Build 0127：機台建議新增 1C01、1C04；仍可直接自行輸入其他機台。
+// V120.4 Build 0128：修正 PIN 登入 JSONP 逾時後 callback 被刪除造成 ReferenceError；保留原有機台清單與全部功能。
 const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
@@ -773,30 +773,75 @@ function resetKeyinSubmitUI_(){
   if(mask)mask.classList.remove('show');
 }
 async function pinApi(action,params){
-  // V119.5：登入與一般查詢共用 api.js 的正式 MES API URL，避免硬編碼舊部署網址。
-  if(window.MES&&typeof MES.get==='function'){
-    try{
-      const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('登入服務逾時 / บริการเข้าสู่ระบบหมดเวลา')),25000));
-      const r=await Promise.race([MES.get(action,[],params||{}),timeout]);
-      if(r&&r.ok===false)throw new Error(r.message||r.error||'API error');
-      return r||{};
-    }catch(err){
-      throw new Error(String(err&&err.message||err));
-    }
-  }
+  // V120.4 Build 0128：PIN 登入改用獨立穩定 JSONP。
+  // 不再透過 MES.get，避免 api.js 在逾時後刪除 mes_cb_*，造成晚到回應 ReferenceError。
   return new Promise((resolve,reject)=>{
-    const cb='PIN1195_'+Date.now()+'_'+Math.floor(Math.random()*999999);
     const base=String(window.MES_API_URL||'').trim();
-    if(!base){reject(new Error('MES API 未載入，請確認 api.js 與部署網址 / MES API ยังไม่พร้อมใช้งาน'));return}
-    const url=new URL(base),tag=document.createElement('script');let done=false;
-    const timer=setTimeout(()=>finish(new Error('登入服務逾時 / บริการเข้าสู่ระบบหมดเวลา')),25000);
-    function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}
-    function finish(err,data){if(done)return;done=true;cleanup();err?reject(err):resolve(data)}
-    window[cb]=r=>{if(r&&r.ok===false)finish(new Error(r.message||r.error||'API error'));else finish(null,r||{})};
-    tag.onerror=()=>finish(new Error('登入服務連線失敗 / ไม่สามารถเชื่อมต่อบริการเข้าสู่ระบบ'));
-    url.searchParams.set('action',action);url.searchParams.set('callback',cb);url.searchParams.set('_',Date.now());
-    Object.entries(params||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,v)});
-    tag.src=url.toString();document.head.appendChild(tag);
+    if(!base){
+      reject(new Error('MES API 未載入，請確認 api.js 與部署網址 / MES API ยังไม่พร้อมใช้งาน'));
+      return;
+    }
+
+    const cb='MES_PIN_CB_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+    const url=new URL(base,window.location.href);
+    const tag=document.createElement('script');
+    const timeoutMs=60000;
+    let settled=false;
+    let timer=null;
+    let lateCleanupTimer=null;
+
+    function removeTag_(){
+      try{if(tag.parentNode)tag.parentNode.removeChild(tag)}catch(_e){}
+    }
+
+    function installLateResponseGuard_(){
+      // Apps Script 冷啟動時可能超過前端逾時；保留空回呼吸收晚到的 JSONP。
+      window[cb]=function latePinResponse_(){
+        try{delete window[cb]}catch(_e){window[cb]=null}
+      };
+      clearTimeout(lateCleanupTimer);
+      lateCleanupTimer=setTimeout(()=>{
+        try{delete window[cb]}catch(_e){window[cb]=null}
+      },120000);
+    }
+
+    function finish_(err,data){
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      removeTag_();
+
+      if(err){
+        installLateResponseGuard_();
+        reject(err);
+        return;
+      }
+
+      try{delete window[cb]}catch(_e){window[cb]=null}
+      if(data&&data.ok===false){
+        reject(new Error(data.message||data.error||'API error'));
+        return;
+      }
+      resolve(data||{});
+    }
+
+    window[cb]=response=>finish_(null,response);
+    tag.async=true;
+    tag.onerror=()=>finish_(new Error('登入服務連線失敗，請確認網路後重試 / ไม่สามารถเชื่อมต่อบริการเข้าสู่ระบบ'));
+
+    url.searchParams.set('action',String(action||''));
+    url.searchParams.set('callback',cb);
+    url.searchParams.set('_',String(Date.now()));
+    Object.entries(params||{}).forEach(([k,v])=>{
+      if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,String(v));
+    });
+
+    timer=setTimeout(()=>{
+      finish_(new Error('登入服務回應超過 60 秒，請再按一次登入；資料不會遺失 / บริการเข้าสู่ระบบใช้เวลาเกิน 60 วินาที กรุณาลองอีกครั้ง'));
+    },timeoutMs);
+
+    tag.src=url.toString();
+    document.head.appendChild(tag);
   });
 }
 
