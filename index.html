@@ -107,11 +107,12 @@
 .requiredAlert{display:none;margin:0 0 14px;padding:13px 14px;border:2px solid #ef4444;border-left-width:7px;border-radius:14px;background:#fef2f2;color:#991b1b;box-shadow:0 8px 22px rgba(185,28,28,.12)}
 .requiredAlert.show{display:block;animation:requiredShake .38s ease}.requiredAlertTitle{font-size:16px;font-weight:950}.requiredAlertList{margin:7px 0 0;padding-left:20px;font-weight:850;line-height:1.6}.fieldMissing{border:2px solid #ef4444!important;background:#fff1f2!important;box-shadow:0 0 0 4px rgba(239,68,68,.12)!important}.fieldMissingPulse{animation:requiredPulse .7s ease 2}.saveNextBtn.hasMissing,#submitBtn.hasMissing{box-shadow:0 0 0 3px rgba(239,68,68,.18)}
 @keyframes requiredShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}@keyframes requiredPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+.editModeBar{display:none;margin:0 0 12px;padding:12px 14px;border:2px solid #f59e0b;border-left-width:7px;border-radius:14px;background:#fffbeb;color:#92400e;font-weight:900;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.editModeBar.show{display:flex}.editModeBar button{border:0;border-radius:10px;padding:8px 12px;background:#e2e8f0;color:#334155;font-weight:900;cursor:pointer}.opBtn.edit{background:#f59e0b;color:#fff}.opBtn.copy{background:#e0e7ff;color:#1e40af}.editingRow{background:#fffbeb!important;outline:2px solid #f59e0b}.btn.ok.editing{background:#f59e0b!important}
 </style>
 </head>
 <body>
 <header>
-  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.6 必填提示穩定版｜Build 0130</h1>
+  <h1>生產 Key In / บันทึกผลงานผลิต｜V120.7 Key In 修改版｜Build 0131</h1>
   <p>加工課戰情中心 · Key In · GitHub + Apps Script 正式版</p>
   <div class="nav"><a href="index.html">Key In</a><a href="target.html">幹部目標</a><a href="dashboard.html">戰情室</a></div>
 </header>
@@ -197,6 +198,7 @@
 
   <div class="card col6">
     <div id="requiredAlert" class="requiredAlert" role="alert" aria-live="assertive"><div class="requiredAlertTitle">⚠ 尚有必填資料未完成 / กรุณากรอกข้อมูลให้ครบ</div><ul id="requiredAlertList" class="requiredAlertList"></ul></div>
+    <div id="editModeBar" class="editModeBar"><span id="editModeText">✏️ 修改 Key In 紀錄 / แก้ไขรายการ Key In</span><button type="button" onclick="cancelKeyinEdit()">取消修改 / ยกเลิก</button></div>
     <div id="mobileStepBar" class="mobileStepBar"><b id="mobileStepTitle">步驟 1：選擇今日任務</b><span id="mobileStepHint">點選上方任務後，系統會直接帶入並跳到實際產量。</span></div>
     <h2>人員與產出 / พนักงานและผลผลิต</h2>
     <label>機台 / เครื่องจักร</label><input id="machine_code" list="machine_code_list" placeholder="例如 1S03 / 1B02，也可自行輸入" oninput="this.value=this.value.toUpperCase().replace(/\s+/g,'');applyHistoricalSpeed()"><datalist id="machine_code_list"><option value="1B02"><option value="1B08"><option value="1B10"><option value="1B12"><option value="1B14"><option value="1B19"><option value="1S02"><option value="1S03"><option value="1S07"><option value="1S12"><option value="1S16"><option value="1S18"><option value="1S19"><option value="1B22"><option value="1C01"><option value="1C04"><option value="1C18"><option value="1V01"><option value="1V02"><option value="1V09"><option value="包裝"></datalist><div class="miniText">可從清單選擇，也可直接輸入新機台 / เลือกจากรายการหรือกรอกรหัสเครื่องใหม่ได้</div>
@@ -264,7 +266,7 @@
 <script>
 // V120.5 Build 0129：修正 api.js 已載入但 MES_API_URL 未掛到 window，導致 PIN 登入誤判 API 未載入。
 const PIN_API_BASE_URL='https://script.google.com/macros/s/AKfycbzME9YeY4SvIeIB1tszQr9TuiR-DKew4E8l9hy0Es5pS_uNWO-X_gOXJbkZ0wXC381Q/exec';
-const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
+const App={source:[],employees:[],keyin:[],plans:[],speedFeedback:[],urgentOrders:[],idx:-1,range:'today',keyinRange:'today',lastSubmit:null,viewKeyin:[],planView:[],planCollapsed:false,planStatusFilter:'all',keyinReportCollapsed:false,currentTaskWo:'',savingNext:false,editingKeyin:null,collaborators:[],manualCollaborators:[],employeesLoaded:false,employeesLoading:false};
 // V98：Target 顯示日期與 Key In 累積配對完全分離；四層識別碼索引避免同日限制與逐筆重掃。
 // V98 Build 0101｜Key In Stable + Smart Notification Center + Cumulative Match Engine
 const KEYIN_SHARED_LOOKUP={
@@ -769,7 +771,8 @@ function resetKeyinSubmitUI_(){
   const submit=qs('submitBtn');
   if(submit){
     submit.disabled=false;
-    submit.textContent='送出回報 / ส่งรายงาน';
+    submit.textContent=App.editingKeyin?'確認修改 / ยืนยันการแก้ไข':'送出回報 / ส่งรายงาน';
+    submit.classList.toggle('editing',!!App.editingKeyin);
   }
   document.querySelectorAll('.saveNextBtn').forEach(btn=>{
     btn.disabled=false;
@@ -1157,6 +1160,7 @@ function normalizeKeyinRow_(row){
     row['實際產量'],row['產量'],row['生產量'],row['完成數量']
   );
   return Object.assign({},row,{
+    keyin_id:firstNonEmpty(row.keyin_id,row.id,row.record_id,row.keyinId,row['KeyIn ID'],row['ID']),
     created_at:firstNonEmpty(row.created_at,row.timestamp,row.createdTime,row.time,row['建立時間'],row['時間']),
     report_date:firstNonEmpty(row.report_date,row.date,row.work_date,row.production_date,row['回報日期'],row['日期'],row['生產日期']),
     week:firstNonEmpty(row.week,row.week_no,row.week_number,row['周別'],row['週別']),
@@ -1850,6 +1854,7 @@ async function submitKeyin(opts={}){
 
   const matched=App.source.find(x=>sourceMatch(x,w))||{};
   const submitWO=wo(matched.command_no||matched.work_order_no||w);
+  const editing=App.editingKeyin;
   const data={
     site:safeGet('site'),
     other_process:safeGet('other_process'),
@@ -1875,11 +1880,13 @@ async function submitKeyin(opts={}){
     speed_qty_round:safeGet('speed_qty_round'),
     speed_unit:safeGet('speed_unit'),
     speed_minutes_round:safeGet('speed_minutes_round'),
-    input_source:'github_v1195_mobile_submit_recovery'
+    input_source:editing?'github_v1207_keyin_edit':'github_v1195_mobile_submit_recovery'
   };
 
+  if(editing){data.keyin_id=editing.keyin_id||'';data.id=editing.keyin_id||editing.id||'';data.original_created_at=editing.created_at||'';data.original_report_date=editing.report_date||'';data.original_work_order_no=editing.work_order_no||'';data.operation='update';data.auth_token=NOTICE_AUTH.token}
+
   try{
-    const result=await withSubmitTimeout_(postApi('saveKeyin',data),30000);
+    const result=editing?await withSubmitTimeout_(updateKeyinCloud_(data),30000):await withSubmitTimeout_(postApi('saveKeyin',data),30000);
 
     if(result&&(result.ok===false||result.success===false)){
       throw new Error(result.message||'雲端儲存失敗');
@@ -1893,7 +1900,7 @@ async function submitKeyin(opts={}){
       created_at:savedRow.created_at||new Date().toISOString()
     };
 
-    App.keyin.push(localSaved);
+    if(editing){const pos=App.keyin.findIndex(x=>sameKeyinRecord_(x,editing));if(pos>=0)App.keyin[pos]=normalizeKeyinRow_(localSaved);else App.keyin.push(normalizeKeyinRow_(localSaved))}else App.keyin.push(localSaved);
     App.lastSubmit={...data};
     addRecent(data);
     saveQuickProfile();
@@ -1906,9 +1913,10 @@ async function submitKeyin(opts={}){
     updateSubmitAvailability_();
 
     if(window.MES){
-      MES.toast('已成功寫入雲端 / บันทึกลงคลาวด์สำเร็จ');
+      MES.toast(editing?'修改完成 / แก้ไขสำเร็จ':'已成功寫入雲端 / บันทึกลงคลาวด์สำเร็จ');
     }
 
+    if(editing)exitKeyinEditMode_();
     afterSubmitClear(!!opts.forceNext);
     updateDraftState_('saved','已成功寫入雲端 / บันทึกลงคลาวด์สำเร็จ');
     renderPersonalWorkPanel();
@@ -1938,6 +1946,12 @@ async function submitKeyin(opts={}){
   }
 }
 
+function sameKeyinRecord_(a,b){const aid=String((a&&a.keyin_id)||(a&&a.id)||'').trim(),bid=String((b&&b.keyin_id)||(b&&b.id)||'').trim();if(aid&&bid)return aid===bid;return String(a&&a.created_at||'')===String(b&&b.created_at||'')&&wo(a&&a.work_order_no)===wo(b&&b.work_order_no)}
+async function updateKeyinCloud_(data){const actions=['updateKeyin','editKeyin'];let lastError=null;for(const action of actions){try{const result=await postApi(action,data);if(result&&(result.ok===false||result.success===false))throw new Error(result.message||'修改失敗');return result}catch(e){lastError=e;const msg=String(e&&e.message||e);if(!/unknown post action|unknown action|未知 post action|未知 action|unsupported|未提供此 action|invalid action/i.test(msg))throw e}}throw lastError||new Error('後端尚未提供 Key In 修改功能')}
+function exitKeyinEditMode_(){App.editingKeyin=null;const bar=qs('editModeBar'),btn=qs('submitBtn');if(bar)bar.classList.remove('show');if(btn){btn.classList.remove('editing');btn.textContent='送出回報 / ส่งรายงาน'}renderKeyin()}
+function cancelKeyinEdit(){exitKeyinEditMode_();clearCurrentInput();clearDraft_();if(window.MES)MES.toast('已取消修改 / ยกเลิกการแก้ไขแล้ว')}
+function editKeyinRow(i){const r=App.viewKeyin[i];if(!r)return;App.editingKeyin={...r};applyQuickData({site:r.site,report_date:r.report_date,work_order_no:r.work_order_no,batch_no:r.batch_no,machine_code:r.machine_code,actual_output:r.actual_output,unit:r.unit,process_note:r.process_note},true);safeSet('speed_qty_round',r.speed_qty_round||'');safeSet('speed_unit',r.speed_unit||'R');safeSet('speed_minutes_round',r.speed_minutes_round||'');const bar=qs('editModeBar'),text=qs('editModeText'),btn=qs('submitBtn');if(bar)bar.classList.add('show');if(text)text.textContent='✏️ 正在修改：'+(r.work_order_no||'')+'｜'+(r.actual_output||'')+' '+(r.unit||'');if(btn){btn.classList.add('editing');btn.textContent='確認修改 / ยืนยันการแก้ไข'}renderKeyin();if(bar)bar.scrollIntoView({behavior:'smooth',block:'center'})}
+
 
 function syncKeyinCollapseUI_(){
   const body=qs('keyinReportBody'),btn=qs('keyinCollapseBtn');
@@ -1963,8 +1977,8 @@ function renderKeyin(){
   App.viewKeyin=rows;
   if(qs('count'))qs('count').textContent='顯示 '+rows.length+' / '+base.length+' 筆';
   if(qs('rows'))qs('rows').innerHTML=rows.map((r,i)=>
-    '<tr>'+
-    '<td><button class="opBtn" onclick="copyKeyinRow('+i+')">複製</button></td>'+
+    '<tr class="'+(App.editingKeyin&&sameKeyinRecord_(r,App.editingKeyin)?'editingRow':'')+'">'+
+    '<td><button class="opBtn edit" onclick="editKeyinRow('+i+')">修改</button> <button class="opBtn copy" onclick="copyKeyinRow('+i+')">複製</button></td>'+
     '<td>'+html(r.created_at)+'</td>'+
     '<td>'+html(r.report_date)+'</td>'+
     '<td>'+html(isoWeek(r.report_date))+'</td>'+
@@ -2028,7 +2042,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadStartup();
   setInterval(()=>{if(document.visibilityState==='visible'&&NOTICE_AUTH.token)loadUrgentNotices()},NOTICE_UI.refreshMs);
   setInterval(sendEmployeeHeartbeat,300000);
-  console.log('SEAL KING Smart Key In V119.6 Build 0122 | Mobile submit + report restore ready',KeyInSharedLookupStatus());
+  console.log('SEAL KING Smart Key In V120.7 Build 0131 | Key In edit ready',KeyInSharedLookupStatus());
 });
 
 // iPhone Safari / Android Chrome 從背景回來或上一頁快取恢復時，強制解除殘留的送出狀態。
