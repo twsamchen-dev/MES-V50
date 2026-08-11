@@ -5648,6 +5648,25 @@ window.SEAL_KING_SECURITY={
     };
   }
 
+  /* Build 0107.1｜缺產速中心僅統計加工課工單
+     DataHub 有些資料把「站別」放在 process；只有在來源確實帶有
+     加工課／加工部站別時才套用篩選，避免沒有站別欄位的舊資料被誤清空。 */
+  const PROCESSING_SCOPE = new Set(["加工課", "加工部"]);
+  function processingScope(row){
+    const fields = [
+      row?.station, row?.dept, row?.department, row?.work_station,
+      row?.workstation, row?.station_name, row?.process_group,
+      row?.process_site, row?.process
+    ];
+    return fields.map(text).find(v => PROCESSING_SCOPE.has(v)) || "";
+  }
+  function processingRows(rows){
+    const list = Array.isArray(rows) ? rows : [];
+    // 沒有任何站別訊號時，保留既有資料來源與流程。
+    if(!list.some(processingScope)) return list;
+    return list.filter(row => PROCESSING_SCOPE.has(processingScope(row)));
+  }
+
   function convert(rows){
     let speeds = [];
     try{
@@ -5659,7 +5678,7 @@ window.SEAL_KING_SECURITY={
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    return rows.map(r=>{
+    return processingRows(rows).map(r=>{
       const part = text(r.part_no);
       const originalProcess = text(r.process);
       const originalMachine = text(r.machine || r.machine_code);
