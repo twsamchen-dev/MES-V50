@@ -2097,7 +2097,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
    $('poolCount').textContent=`顯示 ${data.length} / ${S.pool.length} 筆`;
    $('poolTable').className='tablewrap';$('poolTable').innerHTML=`<table><thead><tr>${h.map((x,i)=>`<th data-sort-col="${i}">${x}</th>`).join('')}</tr></thead><tbody>${data.map(x=>`<tr class="${x.closed?'closed-row':''}"><td><span class="tag ${x.closed?'gray':x.urgent?'red':x.risk?'yellow':'blue'}">${x.closed?'已結案':x.urgent?'急單':x.risk?'風險':'一般'}</span></td><td>${esc(x.wo)}</td><td>${esc(x.customer)}</td><td>${esc(x.part)}</td><td>${esc(x.process)}</td><td>${esc(x.machine||'—')}</td><td>${fmtDate(x.due)}</td><td>${Number(x.remaining).toLocaleString('zh-TW',{maximumFractionDigits:2})}</td><td>${esc(x.unit)}</td><td>${x.cycles?Math.ceil(x.cycles).toLocaleString('zh-TW'):'—'}</td><td>${x.perRound?Number(x.perRound).toLocaleString('zh-TW',{maximumFractionDigits:2}):'—'}</td><td>${x.roundMinutes?Number(x.roundMinutes).toFixed(2)+' min':'—'}</td><td>${x.minutes?(x.minutes/60).toFixed(2)+' hr':'—'}</td><td><span class="tag ${x.match==='無產速'?'red':x.match==='現場回饋'?'purple':x.match==='精確'?'green':'yellow'}">${esc(x.match)}</span></td><td>${x.closed?'已結案':x.ready?'可排':'待補產速'}</td></tr>`).join('')}</tbody></table>`;
  };
- function missingJobs(){const m=new Map();S.pool.filter(x=>!x.closed&&!x.ready).forEach(x=>{const k=[x.part,x.process,x.sourceMachine||x.machine].join('|');if(!m.has(k))m.set(k,{part:x.part,name:x.name,process:x.process,machine:x.sourceMachine||x.machine,spec:x.spec,count:0,wos:[]});const a=m.get(k);a.count++;a.wos.push(x.wo)});return [...m.values()]}
+function missingJobs(){const rows=window.__APS_PROCESSING_SCOPE_ROWS__?.(S.pool)||S.pool;const m=new Map();rows.filter(x=>!x.closed&&!x.ready).forEach(x=>{const k=[x.part,x.process,x.sourceMachine||x.machine].join('|');if(!m.has(k))m.set(k,{part:x.part,name:x.name,process:x.process,machine:x.sourceMachine||x.machine,spec:x.spec,count:0,wos:[]});const a=m.get(k);a.count++;a.wos.push(x.wo)});return [...m.values()]}
  window.renderSpeedCenter=function(){
    const fb=loadFeedback(),missing=missingJobs(),open=S.pool.filter(x=>!x.closed),covered=open.filter(x=>x.ready).length,allSpeeds=window.buildSpeed();
    const set=(id,v)=>{const e=$(id);if(e)e.textContent=v};set('speedMasterCount',allSpeeds.length);set('speedMissingCount',missing.length);set('speedFeedbackCount',fb.length);set('speedCoverage',open.length?Math.round(covered/open.length*100)+'%':'0%');
@@ -2565,7 +2565,7 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
     table.parentElement.insertBefore(tools,table);
     ['missingSpeedSearch','missingSpeedMachine','missingSpeedDue'].forEach(id=>document.getElementById(id)?.addEventListener(id==='missingSpeedSearch'?'input':'change',renderDetail));
   }
-  function missingRows(){return (window.S?.pool||S.pool||[]).filter(x=>!x.closed&&!x.ready)}
+  function missingRows(){const rows=window.__APS_PROCESSING_SCOPE_ROWS__?.(window.S?.pool||S.pool||[])||(window.S?.pool||S.pool||[]);return rows.filter(x=>!x.closed&&!x.ready)}
   function fillForm(x){
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};
     set('sfEditIndex','');set('sfPart',x.part);set('sfName',x.name||x.spec);set('sfMachine',x.sourceMachine||x.machine);set('sfProcess',x.process);set('sfInW',x.inw||'');set('sfOutW',x.outw||'');set('sfLen',x.len||'');
@@ -10841,7 +10841,7 @@ const text=v=>String(v??'').trim();
 const norm=v=>text(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－]/g,'-');
 const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
-function pool(){return Array.isArray(window.S?.pool)?window.S.pool:[]}
+function pool(){const rows=Array.isArray(window.S?.pool)?window.S.pool:[];return window.__APS_PROCESSING_SCOPE_ROWS__?.(rows)||rows}
 function isCancelled(x){return /取消|作廢|VOID|CANCEL/i.test(text(x.status))}
 function isActionable(x){return !!text(x.wo)&&!x.closed&&!isCancelled(x)&&num(x.remaining)>0}
 function validRequirement(x){return isActionable(x)&&!!text(x.part)}
@@ -10914,7 +10914,8 @@ const T=v=>String(v??'').trim();
 const N=v=>T(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－_]/g,'-');
 const NUM=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
 function activePool(){
-  const rows=Array.isArray(window.S?.pool)?window.S.pool:[];
+  const source=Array.isArray(window.S?.pool)?window.S.pool:[];
+  const rows=window.__APS_PROCESSING_SCOPE_ROWS__?.(source)||source;
   return rows.filter(x=>T(x.wo)&&!x.closed&&!/取消|作廢|VOID|CANCEL/i.test(T(x.status))&&NUM(x.remaining)>0);
 }
 function usable(x){
@@ -11013,7 +11014,7 @@ function read(key){try{const v=JSON.parse(localStorage.getItem(key)||'[]');retur
 function key(x){return [norm(x.part),norm(x.machine),norm(x.process)].join('|')}
 function validSpeed(x){if(!x||!norm(x.part))return false;const mode=norm(x.mode||'ROUND');if(mode==='LENGTH')return num(x.speed||x.speedMpm)>0;if(mode==='FIXED')return num(x.total||x.run||x.fixedRunTime)>0;const per=num(x.qtyPerRound||x.qtyRound)||num(x.outw)/1000*num(x.len);const mins=num(x.total||x.minutesRound||x.run);return per>0&&mins>0}
 function uniqueValid(rows){const m=new Map();rows.filter(validSpeed).forEach(x=>m.set(key(x),x));return m}
-function activePool(){return (Array.isArray(window.S?.pool)?window.S.pool:[]).filter(x=>txt(x.wo)&&!x.closed&&!/取消|作廢|VOID|CANCEL/i.test(txt(x.status))&&num(x.remaining)>0)}
+function activePool(){const source=Array.isArray(window.S?.pool)?window.S.pool:[];const rows=window.__APS_PROCESSING_SCOPE_ROWS__?.(source)||source;return rows.filter(x=>txt(x.wo)&&!x.closed&&!/取消|作廢|VOID|CANCEL/i.test(txt(x.status))&&num(x.remaining)>0)}
 function groupsMissing(){const m=new Map();activePool().filter(x=>!(x.ready&&num(x.minutes)>0)&&norm(x.part)).forEach(x=>{const k=[norm(x.part),norm(x.sourceMachine||x.machine)||'未指定機台',norm(x.process)].join('|');if(!m.has(k))m.set(k,{part:txt(x.part),machine:txt(x.sourceMachine||x.machine),process:txt(x.process),name:txt(x.name||x.spec),jobs:[]});m.get(k).jobs.push(txt(x.wo))});return [...m.values()]}
 function stats(){
  const master=read(MASTER_KEY),fb=read(FB_KEY),um=uniqueValid(master),uf=uniqueValid(fb),merged=new Map(um);uf.forEach((v,k)=>merged.set(k,v));
@@ -11105,6 +11106,33 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   },true);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',sync,{once:true});
   else sync();
+})();
+</script>
+<script id="build0107-2-speed-center-scope-cache-safe">
+/* Build 0107.2｜缺產速中心範圍修正：只在統計／清單讀取時套用加工課／加工部，
+   不改動原始工單池或既有排程，並可處理已從快取還原的舊資料。 */
+(()=>{
+  'use strict';
+  const SCOPE=new Set(['加工課','加工部']);
+  const clean=v=>String(v??'').trim();
+  const inScope=v=>SCOPE.has(clean(v));
+  function sourceScope(row){
+    const fields=[row?.station,row?.dept,row?.department,row?.work_station,row?.workstation,row?.station_name,row?.process_group,row?.process_site];
+    return fields.map(clean).find(inScope)||'';
+  }
+  function displayScope(row){
+    const fields=[row?.process,row?.process_site];
+    return fields.map(clean).find(inScope)||'';
+  }
+  window.__APS_PROCESSING_SCOPE_ROWS__=function(rows){
+    const list=Array.isArray(rows)?rows:[];
+    // DataHub／快取若把站別放在製程欄，以畫面同一欄位為準，排除製三組等非加工課資料。
+    const byDisplay=list.filter(row=>inScope(displayScope(row)));
+    if(byDisplay.length)return byDisplay;
+    // 舊版資料沒有製程站別時，才退回其他來源欄位；完全沒有站別訊號則原樣保留。
+    const bySource=list.filter(row=>inScope(sourceScope(row)));
+    return bySource.length?bySource:list;
+  };
 })();
 </script>
 </body></html>
