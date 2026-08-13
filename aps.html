@@ -11509,7 +11509,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <!-- Build0019｜右側工單資訊欄位與新增手動工單一致：單欄完整顯示目標、客戶、前製程、換線緩衝、建立原因。 -->
 <!-- Build0025 Clean｜只做三天排程手動新增/修改/刪除 → 合併到正式排程；不修改 scheduler、機台 Master、enabled、hours。 -->
 
-<style id="build0026-cleanup-style">
+<style id="build0026-cleanup-style">#build0026CleanupBar{display:none!important}</style><style type="text/plain" id="build0026-cleanup-style-disabled">
 #build0026CleanupBar{
   margin:8px 0;padding:10px 12px;border:1px solid #315d76;border-radius:9px;
   background:#0e1d27;color:#d7eefc;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap
@@ -11522,7 +11522,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #build0026CleanupBar small{color:#9fc0d2;font-weight:500}
 </style>
 
-<script id="build0026-official-schedule-cleanup">
+<script type="application/x-disabled" id="build0026-official-schedule-cleanup">
 (()=>{
   'use strict';
   if(window.__APS_BUILD0026_CLEANUP__) return;
@@ -11728,4 +11728,78 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <!-- Build0026｜一次性正式排程清理：先備份，再清理明顯跨機台完整複製；支援還原。 -->
+
+<style id="build0027-restore-style">
+#build0027RestoreBar{margin:8px 0;padding:10px 12px;border:1px solid #2f8f65;border-radius:9px;background:#102a20;color:#9df1c2;font-weight:800}
+#build0027RestoreBar button{margin-left:10px;padding:7px 12px;border:1px solid #2f8f65;border-radius:7px;background:#176b49;color:white;font-weight:800;cursor:pointer}
+</style>
+<script id="build0027-force-restore">
+(async()=>{
+'use strict';
+if(window.__APS_BUILD0027__)return; window.__APS_BUILD0027__=true;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const valid=v=>Array.isArray(v)?v:(v&&Array.isArray(v.rows)?v.rows:[]);
+const machine=r=>String(r?.machine??r?.machine_no??r?.machineCode??r?.machine_code??r?.mc??'').trim().toUpperCase();
+const key=r=>[machine(r),r?.wo??r?.work_order_no??r?.order_no??r?.id??'',r?.start??r?.start_time??'',r?.end??r?.end_time??'',r?.date??r?.schedule_date??''].join('|');
+const uniq=rows=>[...new Map(valid(rows).filter(r=>r&&typeof r==='object').map(r=>[key(r),r])).values()];
+
+async function getCandidates(){
+  const arr=[];
+  arr.push({name:'目前 S.schedule',rows:uniq(window.S?.schedule)});
+  for(const k of ['SK_APS_FAST_SCHEDULE_V1107','SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1']){
+    try{arr.push({name:k,rows:uniq(await window.APSLargeStore?.hydrate?.(k,null))})}catch(_){}
+  }
+  for(const k of ['SK_APS_ACCEPTED_SCHEDULE_V872','SK_APS_MANUAL_SCHEDULE_V88','SK_APS_SCHEDULE_SNAPSHOT_V1']){
+    try{arr.push({name:k,rows:uniq(JSON.parse(localStorage.getItem(k)||'null'))})}catch(_){}
+  }
+  return arr.filter(x=>x.rows.length).sort((a,b)=>b.rows.length-a.rows.length);
+}
+function renderAll(){
+  try{window.renderSchedule?.()}catch(_){}
+  try{window.renderTimeline?.()}catch(_){}
+  try{window.renderGantt?.()}catch(_){}
+  try{window.updateKpi?.()}catch(_){}
+  try{window.updateDueKpi?.()}catch(_){}
+  try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+}
+async function restore(){
+  for(let i=0;i<30;i++){if(window.S&&window.APSLargeStore)break;await sleep(200)}
+  const c=await getCandidates();
+  if(!c.length){alert('找不到任何正式排程來源，未修改資料。');return}
+  // Prefer exactly 195 because the existing Build0018 banner has already verified that count.
+  const pick=c.find(x=>x.rows.length===195) || c[0];
+  if(!confirm(`找到「${pick.name}」${pick.rows.length} 筆正式排程。\n\n要重新掛回 APS 甘特圖嗎？\n\n這一步不重新排程、不刪資料、不改機台設定。`))return;
+
+  window.S=window.S||{};
+  window.S.schedule=pick.rows;
+  window.apsSchedule=pick.rows;
+  window.currentSchedule=pick.rows;
+  window.schedule=pick.rows;
+  try{ if(window.state) window.state.schedule=pick.rows }catch(_){}
+  try{ if(window.appState) window.appState.schedule=pick.rows }catch(_){}
+
+  renderAll();
+  setTimeout(renderAll,200);
+  setTimeout(renderAll,800);
+
+  alert(`已重新掛回正式排程 ${pick.rows.length} 筆。\n來源：${pick.name}\n\n請先看甘特圖是否恢復；不要按重新排程。`);
+}
+function mount(){
+  if(document.getElementById('build0027RestoreBar'))return;
+  const host=document.querySelector('#schedulePage .panel,#homeTimeline,main,.main-content');
+  if(!host)return;
+  const bar=document.createElement('div');
+  bar.id='build0027RestoreBar';
+  bar.innerHTML='Build0027｜只救回既有正式排程，不清理、不重新排程。<button id="build0027RestoreBtn">恢復既有 195 筆到甘特圖</button>';
+  host.prepend(bar);
+  document.getElementById('build0027RestoreBtn').onclick=()=>restore().catch(e=>alert('恢復失敗：'+(e?.message||e)));
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,500),{once:true});
+if(document.readyState!=='loading')setTimeout(mount,500);
+setTimeout(mount,1800);
+window.APSBuild0027={restore};
+console.info('APS Build0027｜Force Restore Existing Schedule ready');
+})();
+</script>
+
 </body></html>
