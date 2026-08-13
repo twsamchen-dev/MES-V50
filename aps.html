@@ -12418,4 +12418,140 @@ console.info('APS Build0029｜Read-only source audit ready');
 </script>
 <!-- Build0038｜修正發布成功但甘特仍顯示舊快取：發布後強制從 APS_Schedule 重新載入。 -->
 
+
+<script id="build0039-count-machine-sync">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD0039_SYNC__)return;
+  window.__APS_BUILD0039_SYNC__=true;
+
+  const T=v=>String(v??'').trim();
+  const machineOf=r=>T(r?.machine||r?.machine_no||r?.machineCode||r?.machine_code);
+
+  function collectMachines(){
+    const s=window.S||{};
+    const all=[];
+    const add=v=>{v=T(v); if(v) all.push(v)};
+    const addRows=rows=>{
+      if(!Array.isArray(rows))return;
+      rows.forEach(r=>add(typeof r==='string'?r:machineOf(r)));
+    };
+
+    // 正式排程
+    addRows(s.schedule);
+    // 工單池 / 產速 / ERP rows
+    addRows(s.pool);
+    addRows(s.rows?.speed);
+    Object.values(s.rows||{}).forEach(v=>addRows(v));
+    // 各種可能的機台 Master 結構
+    if(Array.isArray(s.machines)) addRows(s.machines);
+    else if(s.machines && typeof s.machines==='object') Object.keys(s.machines).forEach(add);
+
+    for(const key of ['machineMaster','machinesMaster','machine_master','APS_MACHINE_MASTER','MachineMaster']){
+      const v=window[key];
+      if(Array.isArray(v)) addRows(v);
+      else if(v && typeof v==='object') Object.keys(v).forEach(add);
+    }
+
+    return [...new Set(all)].sort((a,b)=>a.localeCompare(b,'zh-Hant',{numeric:true}));
+  }
+
+  function injectEmptyMachineRows(){
+    const machines=collectMachines();
+    if(!machines.length)return 0;
+    window.S=window.S||{};
+    window.S.machines=window.S.machines||{};
+    if(Array.isArray(window.S.machines)){
+      const cur=new Set(window.S.machines.map(x=>T(typeof x==='string'?x:machineOf(x))));
+      machines.forEach(m=>{if(!cur.has(m))window.S.machines.push({machine:m,name:m})});
+    }else{
+      machines.forEach(m=>{
+        if(!window.S.machines[m]) window.S.machines[m]={machine:m,name:m,enabled:true};
+      });
+    }
+    return machines.length;
+  }
+
+  function updateVisibleCount(count){
+    const nodes=[...document.querySelectorAll('body *')].filter(el=>{
+      if(el.children.length)return false;
+      const t=T(el.textContent);
+      return /APS\s*正式排程載入完成\s*[：:]\s*\d+\s*筆/.test(t);
+    });
+    nodes.forEach(el=>{
+      el.textContent=el.textContent.replace(
+        /APS\s*正式排程載入完成\s*[：:]\s*\d+\s*筆/,
+        `APS 正式排程載入完成：${count} 筆`
+      );
+    });
+  }
+
+  async function syncOfficial(showAlert=true){
+    const loader=window.APSBuild0038?.loadScheduleAll||window.APSBuild0037?.loadScheduleAll;
+    if(typeof loader!=='function')throw new Error('APS 雲端讀取模組尚未就緒');
+
+    const raw=await loader();
+    if(!Array.isArray(raw)||!raw.length)throw new Error('APS_Schedule 雲端目前為 0 筆');
+
+    // 交給 0038 的正式刷新器先處理日期與畫面狀態
+    if(typeof window.APSBuild0038?.refreshOfficial==='function'){
+      await window.APSBuild0038.refreshOfficial(false);
+    }else{
+      window.S=window.S||{};
+      window.S.schedule=raw;
+    }
+
+    const machineCount=injectEmptyMachineRows();
+    updateVisibleCount(raw.length);
+
+    // 重新畫一次，讓「無排程機台」也進入三天甘特
+    try{window.renderSchedule?.()}catch(_){}
+    try{window.renderTimeline?.('scheduleTimeline')}catch(_){}
+    setTimeout(()=>{
+      injectEmptyMachineRows();
+      updateVisibleCount(raw.length);
+      try{window.renderSchedule?.()}catch(_){}
+    },250);
+
+    if(showAlert){
+      alert(`APS 正式排程同步完成。\n正式排程：${raw.length} 筆\n可辨識機台：${machineCount} 台\n\n未排程機台也會保留在三天甘特清單。`);
+    }
+    return {rows:raw,count:raw.length,machineCount};
+  }
+
+  window.APSBuild0039={
+    syncOfficial,
+    collectMachines,
+    version:'Build0039'
+  };
+
+  function mount(){
+    const old=document.getElementById('build0038RefreshOfficialBtn');
+    if(old){
+      old.textContent='同步正式排程';
+      old.title='重新讀取 APS_Schedule、同步正式筆數並補齊完整機台清單';
+      const fresh=old.cloneNode(true);
+      old.parentNode.replaceChild(fresh,old);
+      fresh.addEventListener('click',async e=>{
+        e.preventDefault();e.stopPropagation();
+        const label=fresh.textContent;
+        fresh.disabled=true;fresh.textContent='同步中…';
+        try{await syncOfficial(true)}
+        catch(err){alert('同步失敗：'+(err?.message||err))}
+        finally{fresh.disabled=false;fresh.textContent=label}
+      });
+      return;
+    }
+  }
+
+  document.readyState==='loading'
+    ?document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,900),{once:true})
+    :setTimeout(mount,900);
+
+  [1800,3500].forEach(ms=>setTimeout(mount,ms));
+  console.info('APS Build0039｜official count + complete machine list sync ready');
+})();
+</script>
+<!-- Build0039｜正式筆數同步＋完整機台清單；不新增、不刪除、不覆蓋 APS_Schedule。 -->
+
 </body></html>
