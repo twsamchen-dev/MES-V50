@@ -12298,4 +12298,124 @@ console.info('APS Build0029｜Read-only source audit ready');
 </script>
 <!-- Build0037｜批次增量發布＋完整機台列：不覆蓋正式排程；甘特顯示 Master/工單池/產速/排程聯集機台。 -->
 
+
+<script id="build0038-official-schedule-refresh">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD0038_REFRESH__)return;
+  window.__APS_BUILD0038_REFRESH__=true;
+
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+  async function revive(rows){
+    if(typeof window.reviveSchedule==='function'){
+      try{return await window.reviveSchedule(rows)}catch(_){}
+    }
+    return (Array.isArray(rows)?rows:[]).map(r=>{
+      const x={...r};
+      const d=v=>{const z=new Date(v);return Number.isNaN(+z)?null:z};
+      x.machine=String(x.machine??x.machine_code??x.machine_no??'').trim();
+      x.wo=String(x.wo??x.work_order_no??x.work_order??x.order_no??'').trim();
+      x.start=d(x.start??x.start_time);
+      x.end=d(x.end??x.end_time);
+      x.date=d(x.date??x.start??x.start_time);
+      x.due=d(x.due??x.due_date);
+      x.minutes=Number(x.minutes)||(
+        x.start&&x.end?Math.max(0,(x.end-x.start)/60000):0
+      );
+      return x;
+    }).filter(x=>x.machine&&x.wo&&x.start&&x.end);
+  }
+
+  async function clearFastScheduleCache(){
+    try{await window.APSLargeStore?.remove?.('SK_APS_FAST_SCHEDULE_V1107')}catch(_){}
+    try{await window.APSLargeStore?.remove?.('SK_APS_FAST_META_V1107')}catch(_){}
+    for(const k of ['SK_APS_FAST_SCHEDULE_V1107','SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1','SK_APS_ACCEPTED_SCHEDULE_V872']){
+      try{localStorage.removeItem(k)}catch(_){}
+    }
+  }
+
+  async function refreshOfficial(showAlert=true){
+    if(!window.APSBuild0037?.loadScheduleAll)throw new Error('APS 雲端讀取模組尚未就緒');
+    await clearFastScheduleCache();
+
+    const raw=await window.APSBuild0037.loadScheduleAll();
+    if(!raw.length)throw new Error('APS_Schedule 雲端目前為 0 筆，未覆蓋目前畫面');
+
+    const rows=await revive(raw);
+    if(!rows.length)throw new Error('APS_Schedule 有資料，但日期/機台欄位無法解析');
+
+    window.S=window.S||{};
+    window.S.schedule=rows;
+    window.apsSchedule=rows;
+    window.currentSchedule=rows;
+    window.schedule=rows;
+    try{if(window.state)window.state.schedule=rows}catch(_){}
+    try{if(window.appState)window.appState.schedule=rows}catch(_){}
+
+    try{window.renderSchedule?.()}catch(_){}
+    try{window.renderTimeline?.('scheduleTimeline')}catch(_){}
+    try{window.renderTimeline?.('homeTimeline')}catch(_){}
+    try{window.updateKpi?.()}catch(_){}
+    try{window.updateDueKpi?.()}catch(_){}
+    setTimeout(()=>{try{window.renderSchedule?.()}catch(_){}},200);
+
+    if(showAlert)alert(`正式排程已重新載入：${rows.length} 筆。\n來源：Google Sheet APS_Schedule\n\n不是本機舊快取。`);
+    return rows;
+  }
+
+  // 包住 Build0037 發布器：成功後自動重新抓 APS_Schedule，
+  // 避免「發布成功但甘特仍停在舊快取」。
+  const basePublish=window.APSBuild0037?.publishAddedRows;
+  if(typeof basePublish==='function'){
+    const wrapped=async function(addedRows,onProgress){
+      const result=await basePublish(addedRows,onProgress);
+      onProgress?.('4/4 發布成功｜重新載入正式排程…');
+      try{
+        const rows=await refreshOfficial(false);
+        result.rows=rows;
+        result.cloudAfter=rows.length;
+        result.refreshed=true;
+      }catch(e){
+        result.refreshWarning=e?.message||String(e);
+      }
+      return result;
+    };
+    window.APSBuild0038={publishAddedRows:wrapped,loadScheduleAll:window.APSBuild0037.loadScheduleAll,refreshOfficial,version:'Build0038'};
+    window.APSBuild0037.publishAddedRows=wrapped;
+    window.APSBuild0036=window.APSBuild0037;
+    window.APSBuild0035=window.APSBuild0037;
+    window.APSBuild0034=window.APSBuild0037;
+  }
+
+  function mount(){
+    if(document.getElementById('build0038RefreshOfficialBtn'))return;
+    const anchors=[...document.querySelectorAll('button')];
+    const anchor=anchors.find(b=>/重新載入正式排程|批次發布手動新增|發布到\s*APS\s*正式排程/.test(String(b.textContent||'')));
+    if(!anchor)return;
+    const b=document.createElement('button');
+    b.id='build0038RefreshOfficialBtn';
+    b.type='button';
+    b.className=anchor.className||'btn ghost';
+    b.textContent='重新載入正式排程';
+    b.title='清除 APS 排程快取，直接從 Google Sheet APS_Schedule 重新載入';
+    b.addEventListener('click',async e=>{
+      e.preventDefault();e.stopPropagation();
+      const old=b.textContent;b.disabled=true;b.textContent='重新載入中…';
+      try{await refreshOfficial(true)}catch(err){alert('重新載入失敗：'+(err?.message||err))}
+      finally{b.disabled=false;b.textContent=old}
+    });
+    anchor.parentNode.insertBefore(b,anchor);
+  }
+
+  document.readyState==='loading'
+    ?document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,700),{once:true})
+    :setTimeout(mount,700);
+  [1800,3500].forEach(ms=>setTimeout(mount,ms));
+
+  console.info('APS Build0038｜Publish success -> force official schedule refresh ready');
+})();
+</script>
+<!-- Build0038｜修正發布成功但甘特仍顯示舊快取：發布後強制從 APS_Schedule 重新載入。 -->
+
 </body></html>
