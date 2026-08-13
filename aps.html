@@ -12419,188 +12419,90 @@ console.info('APS Build0029｜Read-only source audit ready');
 <!-- Build0038｜修正發布成功但甘特仍顯示舊快取：發布後強制從 APS_Schedule 重新載入。 -->
 
 
-<script id="build0040-official-sync-integrated">
+<script id="build0041-fixed-sync-button">
 (()=>{
   'use strict';
-  if(window.__APS_BUILD0040_SYNC__) return;
-  window.__APS_BUILD0040_SYNC__=true;
+  if(window.__APS_BUILD0041_FIXED_SYNC__) return;
+  window.__APS_BUILD0041_FIXED_SYNC__=true;
 
-  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const T=v=>String(v??'').trim();
 
-  async function clearScheduleCaches(){
-    const large=[
-      'SK_APS_FAST_SCHEDULE_V1107',
-      'SK_APS_FAST_META_V1107'
-    ];
-    for(const k of large){
-      try{ await window.APSLargeStore?.remove?.(k); }catch(_){}
+  async function doSync(btn){
+    if(!window.APSBuild0040?.syncOfficial){
+      alert('Build0041：同步模組尚未就緒，請 Ctrl+F5 後再試。');
+      return;
     }
-    const local=[
-      'SK_APS_FAST_SCHEDULE_V1107',
-      'SK_APS_FAST_META_V1107',
-      'SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1',
-      'SK_APS_ACCEPTED_SCHEDULE_V872'
-    ];
-    for(const k of local){
-      try{ localStorage.removeItem(k); }catch(_){}
-    }
-  }
-
-  function machineCount(){
-    const s=window.S||{};
-    const set=new Set();
-    const add=v=>{v=T(v);if(v)set.add(v)};
-    const addRows=rows=>{
-      if(!Array.isArray(rows)) return;
-      rows.forEach(r=>{
-        if(typeof r==='string') add(r);
-        else add(r?.machine||r?.machine_no||r?.machine_code||r?.sourceMachine||r?.source_machine);
-      });
-    };
-
-    if(Array.isArray(s.machines)) addRows(s.machines);
-    else Object.keys(s.machines||{}).forEach(add);
-
-    addRows(s.schedule);
-    addRows(s.pool);
-    addRows(s.rows?.speed);
-    Object.values(s.rows||{}).forEach(addRows);
-    return set.size;
-  }
-
-  function replaceCountText(count){
+    const old=btn.textContent;
+    btn.disabled=true;
+    btn.textContent='同步中…';
     try{
-      const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-      const nodes=[];
-      while(walker.nextNode()) nodes.push(walker.currentNode);
-      nodes.forEach(n=>{
-        const s=String(n.nodeValue||'');
-        if(/APS\s*正式排程載入完成\s*[：:]\s*\d+\s*筆/.test(s)){
-          n.nodeValue=s.replace(
-            /APS\s*正式排程載入完成\s*[：:]\s*\d+\s*筆/g,
-            `APS 正式排程載入完成：${count} 筆`
-          );
-        }
-      });
-    }catch(_){}
-  }
-
-  function repaint(){
-    try{window.renderSchedule?.()}catch(_){}
-    try{window.renderTimeline?.('scheduleTimeline')}catch(_){}
-    try{window.renderTimeline?.('homeTimeline')}catch(_){}
-    try{window.updateKpi?.()}catch(_){}
-    try{window.updateDueKpi?.()}catch(_){}
-    try{window.renderQuality?.()}catch(_){}
-  }
-
-  async function syncOfficial(showAlert=true){
-    await clearScheduleCaches();
-
-    // 1. 強制 APS DataCenter 重新抓：正式排程 + Machine Master + 產速等資料。
-    let boot=null;
-    if(window.APSCloudDataCenter?.bootstrap){
-      boot=await window.APSCloudDataCenter.bootstrap(true);
-      if(boot && boot.ok===false){
-        throw new Error(boot?.error?.message||boot?.error||'APS DataCenter 重新同步失敗');
-      }
+      await window.APSBuild0040.syncOfficial(true);
+    }catch(err){
+      alert('同步正式排程失敗：'+(err?.message||err));
+    }finally{
+      btn.disabled=false;
+      btn.textContent=old;
     }
-
-    // 2. 再以單獨 APS_Schedule 讀取器做最後權威確認，避免畫面仍吃舊快取。
-    let rows=[];
-    if(window.APSBuild0038?.refreshOfficial){
-      rows=await window.APSBuild0038.refreshOfficial(false);
-    }else if(window.APSBuild0037?.loadScheduleAll){
-      rows=await window.APSBuild0037.loadScheduleAll();
-      if(Array.isArray(rows)&&rows.length){
-        window.S=window.S||{};
-        window.S.schedule=rows;
-      }
-    }
-
-    rows=Array.isArray(rows)?rows:(Array.isArray(window.S?.schedule)?window.S.schedule:[]);
-    if(!rows.length) throw new Error('雲端 APS_Schedule 為 0 筆，已停止，不覆蓋目前畫面');
-
-    // renderTimeline 本版已使用：
-    // 排程 + S.machines + 工單池 + 產速資料 的機台聯集。
-    repaint();
-    replaceCountText(rows.length);
-    await sleep(250);
-    repaint();
-    replaceCountText(rows.length);
-
-    const mc=machineCount();
-    if(showAlert){
-      alert(
-        `同步正式排程完成。\n`+
-        `APS_Schedule：${rows.length} 筆\n`+
-        `目前可辨識機台：${mc} 台\n\n`+
-        `已重新載入 Machine Master／正式排程；沒有排程的機台也會保留在三天甘特。`
-      );
-    }
-    return {ok:true,count:rows.length,machineCount:mc,rows,boot};
-  }
-
-  function bindSyncButton(){
-    // 優先直接接管 Build0038 已建立的按鈕，不再另外藏一顆按鈕。
-    let btn=document.getElementById('build0038RefreshOfficialBtn');
-
-    // 若尚未建立，直接在三天排程上方工具列新增。
-    if(!btn){
-      const buttons=[...document.querySelectorAll('button')];
-      const anchor=buttons.find(b=>/發布到\s*APS\s*正式排程/.test(T(b.textContent)));
-      if(!anchor) return false;
-      btn=document.createElement('button');
-      btn.id='build0038RefreshOfficialBtn';
-      btn.type='button';
-      btn.className=anchor.className||'btn ghost';
-      anchor.parentNode.insertBefore(btn,anchor);
-    }
-
-    if(btn.dataset.build0040Bound==='1') return true;
-
-    // clone 移除 Build0038 舊 click handler，避免同一按鈕觸發兩套刷新。
-    const fresh=btn.cloneNode(true);
-    fresh.id='build0038RefreshOfficialBtn';
-    fresh.dataset.build0040Bound='1';
-    fresh.textContent='同步正式排程';
-    fresh.title='重新讀取 Google Sheet APS_Schedule + Machine Master，並更新三天甘特';
-    btn.parentNode.replaceChild(fresh,btn);
-
-    fresh.addEventListener('click',async e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      const old='同步正式排程';
-      fresh.disabled=true;
-      fresh.textContent='同步中…';
-      try{
-        await syncOfficial(true);
-      }catch(err){
-        alert('同步正式排程失敗：'+(err?.message||err));
-      }finally{
-        fresh.disabled=false;
-        fresh.textContent=old;
-      }
-    });
-    return true;
   }
 
   function mount(){
-    if(bindSyncButton()) return;
-    setTimeout(bindSyncButton,500);
+    if(document.getElementById('build0041FixedSyncBtn')) return true;
+
+    const buttons=[...document.querySelectorAll('button')];
+    let anchor=buttons.find(b=>/\+\s*手動工單/.test(T(b.textContent)));
+    if(!anchor) anchor=buttons.find(b=>/發布到\s*APS\s*正式排程/.test(T(b.textContent)));
+    if(!anchor) return false;
+
+    const btn=document.createElement('button');
+    btn.id='build0041FixedSyncBtn';
+    btn.type='button';
+    btn.className=anchor.className||'btn ghost';
+    btn.textContent='同步正式排程';
+    btn.title='Build0041：直接重新讀取 APS_Schedule + Machine Master';
+    btn.style.cssText='background:#2563eb;color:#fff;border:1px solid #60a5fa;font-weight:800;';
+    btn.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      doSync(btn);
+    });
+
+    anchor.parentNode.insertBefore(btn,anchor);
+    return true;
   }
 
-  window.APSBuild0040={syncOfficial,version:'Build0040'};
+  function stamp(){
+    document.querySelectorAll('body *').forEach(el=>{
+      if(el.children.length) return;
+      const t=T(el.textContent);
+      if(t==='Build0034') el.textContent='Build0041';
+      if(/三天甘特排程\s*\|\s*Build0034/.test(t)) {
+        el.textContent=t.replace(/Build0034/g,'Build0041');
+      }
+      if(/機台\s*\/?\s*篩選\s*\|\s*Build0034/.test(t)) {
+        el.textContent=t.replace(/Build0034/g,'Build0041');
+      }
+      if(/排程驗證\s*\|\s*Build0034/.test(t)) {
+        el.textContent=t.replace(/Build0034/g,'Build0041');
+      }
+    });
+  }
+
+  function boot(){
+    stamp();
+    if(!mount()) setTimeout(mount,500);
+    setTimeout(stamp,700);
+  }
+
+  window.APSBuild0041={version:'Build0041',mount,stamp};
 
   document.readyState==='loading'
-    ? document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,1000),{once:true})
-    : setTimeout(mount,1000);
+    ?document.addEventListener('DOMContentLoaded',boot,{once:true})
+    :boot();
 
-  [1800,3000,5000].forEach(ms=>setTimeout(bindSyncButton,ms));
-  console.info('APS Build0040｜Integrated official schedule + machine master sync ready');
+  [1200,2200,4000].forEach(ms=>setTimeout(()=>{stamp();mount();},ms));
+  console.info('APS Build0041｜fixed visible sync button + visible version stamp ready');
 })();
 </script>
-<!-- Build0040｜以目前實際 aps.html 為母版整合：同步正式排程 + Machine Master + 正式筆數。 -->
+<!-- Build0041｜固定顯示「同步正式排程」按鈕＋三天排程標題改為 Build0041。 -->
 
 </body></html>
