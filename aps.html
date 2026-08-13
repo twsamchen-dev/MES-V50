@@ -1739,7 +1739,13 @@ function schedule(){if(!S.pool.length){alert('請先建立工單池');return}doc
 S.schedule=out;renderSchedule();updateKpi();log(`排程完成：${out.length} 個排程區段，使用 ${selected.size} 台機台，人力上限 ${maxMachines} 台`);showPage('schedule')}
 function groupSchedule(){const g={};for(const x of S.schedule){if(!g[x.machine])g[x.machine]={jobs:[],minutes:0,cap:0,util:0};g[x.machine].jobs.push(x);g[x.machine].minutes+=x.minutes}const days=num($('days').value)||14;for(const [m,v] of Object.entries(g)){v.cap=(S.machines[m]?.hours||0)*60*days;v.util=v.cap?Math.min(100,v.minutes/v.cap*100):0}return g}
 function renderTimeline(target){
- const el=$(target),g=groupSchedule(),names=Object.keys(g).sort();
+ const el=$(target),g=groupSchedule(),
+ requiredMachines=['1B02','1B08','1B10','1B19','1S02','1S03','1S07','1S12','1S16','1S18','1S19','1B22','1V01','1V02','1V09','1C18'],
+ names=[...new Set([
+   ...Object.keys(g),
+   ...Object.keys(S.machines||{}),
+   ...requiredMachines
+ ].filter(Boolean))].sort();
  if(!names.length){el.innerHTML='<div class="empty">尚未產生排程</div>';return}
  const startDate=getStart(),days=Math.max(1,num($("days").value)||14),home=target==='homeTimeline',showDays=Math.min(days,home?1:14);
  const cfg=getShiftSettings(),dayStart=cfg.es,nightStart=cfg.ns,earlySpan=cfg.earlySpan,nightSpan=cfg.nightSpan;
@@ -11537,7 +11543,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         bar.style.cssText='margin:8px 0;padding:9px 12px;border:1px solid #2f8f65;border-radius:8px;background:#102a20;color:#8ff0bd;font-weight:800;z-index:30';
         host.prepend(bar);
       }
-      bar.textContent=`Build0020：正式排程已同步 ${count} 筆；戰情中心與 APS 排程中心已重新整理。`;
+      bar.textContent=`Build0021：正式排程已同步 ${count} 筆；戰情中心與 APS 排程中心已重新整理。`;
     }
   });
 
@@ -11546,4 +11552,163 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <!-- Build0020｜發布後三中心強制共用同一份正式排程；雲端回讀驗證與重試，避免 55 筆被 52 筆舊資料覆蓋。 -->
+
+<script id="build0021-s19-dashboard-guard">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD0021_S19_GUARD__) return;
+  window.__APS_BUILD0021_S19_GUARD__=true;
+
+  const KEY='SK_APS_BUILD0021_CANONICAL_SCHEDULE';
+  const REQUIRED='1S19';
+  let canonical=null;
+  let restoring=false;
+
+  const norm=v=>String(v||'').trim().toUpperCase();
+  const machineOf=r=>norm(r?.machine ?? r?.machine_no ?? r?.machineCode ?? r?.machine_code ?? r?.mc);
+  const rows=v=>Array.isArray(v)?v:[];
+  const hasMachine=(arr,m)=>rows(arr).some(r=>machineOf(r)===m);
+
+  function cloneSchedule(arr){
+    return rows(arr).map(r=>{
+      const x={...r};
+      ['start','end','date','due'].forEach(k=>{
+        if(r?.[k] instanceof Date) x[k]=new Date(r[k]);
+        else if(r?.[k]){
+          const d=new Date(r[k]);
+          if(!Number.isNaN(+d)) x[k]=d;
+        }
+      });
+      return x;
+    });
+  }
+
+  function saveCanonical(arr){
+    if(!Array.isArray(arr)||!arr.length) return;
+    canonical=cloneSchedule(arr);
+    try{
+      const serial=canonical.map(r=>{
+        const x={...r};
+        ['start','end','date','due'].forEach(k=>{
+          if(x[k] instanceof Date) x[k]=x[k].toISOString();
+        });
+        return x;
+      });
+      sessionStorage.setItem(KEY,JSON.stringify(serial));
+    }catch(_){}
+  }
+
+  function loadCanonical(){
+    if(canonical?.length) return canonical;
+    try{
+      const raw=sessionStorage.getItem(KEY);
+      if(!raw) return null;
+      const arr=JSON.parse(raw);
+      if(Array.isArray(arr)&&arr.length){
+        canonical=cloneSchedule(arr);
+        return canonical;
+      }
+    }catch(_){}
+    return null;
+  }
+
+  function refresh(){
+    try{window.renderSchedule?.()}catch(_){}
+    try{window.updateKpi?.()}catch(_){}
+    try{window.updateDueKpi?.()}catch(_){}
+    try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+  }
+
+  async function restoreIfStale(reason){
+    if(restoring) return;
+    const c=loadCanonical();
+    const live=rows(window.S?.schedule);
+    if(!c?.length) return;
+
+    const canonicalHasS19=hasMachine(c,REQUIRED);
+    const liveHasS19=hasMachine(live,REQUIRED);
+
+    // 只有明顯退回舊版本時才恢復：
+    // 1. 正式排程筆數變少；或
+    // 2. 發布版本含 1S19，但目前版本把 1S19 弄丟。
+    if(live.length>=c.length && (!canonicalHasS19 || liveHasS19)) return;
+
+    restoring=true;
+    try{
+      window.S=window.S||{};
+      window.S.schedule=cloneSchedule(c);
+      window.apsSchedule=window.S.schedule;
+      window.currentSchedule=window.S.schedule;
+
+      try{
+        await window.APSLargeStore?.set?.(
+          'SK_APS_FAST_SCHEDULE_V1107',
+          window.S.schedule,
+          {mirrorSmall:false}
+        );
+      }catch(e){console.warn('Build0021 canonical cache restore failed',e)}
+
+      refresh();
+
+      let bar=document.getElementById('build0021S19Banner');
+      const host=document.querySelector('#home .home-dashboard,#homeTimeline,#schedulePage .panel,main');
+      if(host){
+        if(!bar){
+          bar=document.createElement('div');
+          bar.id='build0021S19Banner';
+          bar.style.cssText='margin:8px 0;padding:9px 12px;border:1px solid #2f8f65;border-radius:8px;background:#102a20;color:#8ff0bd;font-weight:800';
+          host.prepend(bar);
+        }
+        bar.textContent=
+          `Build0021：偵測到舊正式排程回蓋（${reason}），已恢復 ${window.S.schedule.length} 筆`+
+          `${hasMachine(window.S.schedule,REQUIRED)?'；1S19 已保留。':''}`;
+      }
+    }finally{
+      restoring=false;
+    }
+  }
+
+  // 發布完成的瞬間，這份 merged 就是本次正式版本，立即鎖為 canonical。
+  window.addEventListener('aps-schedule-published',()=>{
+    const live=rows(window.S?.schedule);
+    if(live.length){
+      saveCanonical(live);
+      setTimeout(()=>restoreIfStale('發布後檢查'),250);
+      setTimeout(()=>restoreIfStale('雲端回讀檢查'),1400);
+      setTimeout(()=>restoreIfStale('延遲回蓋檢查'),3500);
+    }
+  });
+
+  // Build0020 可能在本頁載入前已留下較完整版本，優先接續。
+  setTimeout(()=>{
+    const live=rows(window.S?.schedule);
+    const old=loadCanonical();
+    if(!old?.length && live.length && hasMachine(live,REQUIRED)) saveCanonical(live);
+    restoreIfStale('頁面載入');
+  },1800);
+
+  // 防止 DataCenter 背景 bootstrap 完成後又把 68 筆縮回舊的 52 筆。
+  setInterval(()=>restoreIfStale('背景同步'),1200);
+
+  // 發布完成後自動關閉確認視窗。
+  window.addEventListener('aps-schedule-published',()=>{
+    try{
+      const frame=document.querySelector('#apsIntegrated3DayFrame');
+      const doc=frame?.contentDocument;
+      const modal=doc?.getElementById('publishModal');
+      if(modal) modal.style.display='none';
+    }catch(_){}
+  });
+
+  window.APSBuild0021={
+    saveCanonical:()=>saveCanonical(rows(window.S?.schedule)),
+    restore:()=>restoreIfStale('手動'),
+    has1S19:()=>hasMachine(rows(window.S?.schedule),REQUIRED)
+  };
+
+  console.info('APS Build0021｜S19 Dashboard Guard ready');
+})();
+</script>
+
+<!-- Build0021｜S19 戰情中心修復：發布後鎖定 canonical 正式排程；舊雲端回蓋時自動恢復；甘特固定納入 1S19 機台列。 -->
 </body></html>
