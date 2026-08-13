@@ -11308,7 +11308,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <!-- Build0017｜日期來源修復：dashboardDate 為唯一權威日期；禁止 7 月舊快取控制 8/13 甘特。 -->
 
-<script id="build0018-schedule-recovery">
+<script type="application/x-disabled" id="build0018-schedule-recovery-disabled">
 (async()=>{
   'use strict';
   if(window.__APS_BUILD0018_RECOVERY__) return;
@@ -11730,10 +11730,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <!-- Build0026｜一次性正式排程清理：先備份，再清理明顯跨機台完整複製；支援還原。 -->
 
 <style id="build0027-restore-style">
-#build0027RestoreBar{margin:8px 0;padding:10px 12px;border:1px solid #2f8f65;border-radius:9px;background:#102a20;color:#9df1c2;font-weight:800}
+#build0027RestoreBar{display:none!important;margin:8px 0;padding:10px 12px;border:1px solid #2f8f65;border-radius:9px;background:#102a20;color:#9df1c2;font-weight:800}
 #build0027RestoreBar button{margin-left:10px;padding:7px 12px;border:1px solid #2f8f65;border-radius:7px;background:#176b49;color:white;font-weight:800;cursor:pointer}
 </style>
-<script id="build0027-force-restore">
+<script type="application/x-disabled" id="build0027-force-restore-disabled">
 (async()=>{
 'use strict';
 if(window.__APS_BUILD0027__)return; window.__APS_BUILD0027__=true;
@@ -11802,4 +11802,72 @@ console.info('APS Build0027｜Force Restore Existing Schedule ready');
 })();
 </script>
 
+
+
+<!-- Build0028 Safe｜回到單純需求：三天排程人工新增/修改/刪除可發布；正式排程只從雲端重新載入，不再用 195 筆/備援筆數自動救援。 -->
+<style id="build0028-safe-style">
+#build0028SafeBar{margin:8px 0;padding:10px 12px;border:1px solid #315d76;border-radius:9px;background:#0e1d27;color:#d7eefc;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#build0028SafeBar button{border:1px solid #2f8f65;background:#176b49;color:#fff;border-radius:7px;padding:7px 11px;cursor:pointer;font-weight:800}
+#build0028SafeBar small{color:#9fc0d2;font-weight:500}
+</style>
+<script id="build0028-safe-official-reload">
+(()=>{
+'use strict';
+if(window.__APS_BUILD0028_SAFE__)return;window.__APS_BUILD0028_SAFE__=true;
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function renderAll(){
+  try{window.renderSchedule?.()}catch(_){}
+  try{window.renderTimeline?.()}catch(_){}
+  try{window.renderGantt?.()}catch(_){}
+  try{window.updateKpi?.()}catch(_){}
+  try{window.updateDueKpi?.()}catch(_){}
+  try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+}
+async function reloadOfficial(){
+  if(!confirm('這一步只會「重新下載雲端正式排程」並覆蓋本機錯誤快取。\n\n不會重新排程、不會修改機台設定、不會把目前錯誤畫面寫回雲端。\n\n確定繼續嗎？'))return;
+  const btn=$('build0028ReloadBtn');
+  if(btn){btn.disabled=true;btn.textContent='重新載入中…'}
+  try{
+    for(let i=0;i<40;i++){
+      if(window.APSLargeStore&&window.APSCloudDataCenter)break;
+      await sleep(150);
+    }
+    if(!window.APSLargeStore||!window.APSCloudDataCenter?.bootstrap)throw new Error('APS DataCenter 尚未就緒');
+
+    // Build0018 曾把錯誤備援寫入 FAST_SCHEDULE；先移除快取與版本摘要，強制下一步真的向雲端抓正式資料。
+    await window.APSLargeStore.remove?.('SK_APS_FAST_SCHEDULE_V1107');
+    await window.APSLargeStore.remove?.('SK_APS_FAST_META_V1107');
+
+    // 不清 S.schedule，避免下載失敗時畫面直接歸零；bootstrap(true) 成功後才會用雲端 schedule 取代。
+    const result=await window.APSCloudDataCenter.bootstrap(true);
+    if(!result?.ok)throw new Error(result?.error?.message||result?.error||'雲端正式排程讀取失敗');
+
+    renderAll();
+    setTimeout(renderAll,250);
+    const count=Array.isArray(window.S?.schedule)?window.S.schedule.length:0;
+    alert(`雲端正式排程已重新載入：${count} 筆。\n\n請先確認各機台工單是否正常。\n不要按「重新排程」。\n三天排程仍可用「+ 手動工單」新增後再發布到 APS 正式排程。`);
+  }catch(e){
+    alert('重新載入失敗：'+(e?.message||e)+'\n\n目前資料未主動寫回雲端。');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='重新載入雲端正式排程'}
+  }
+}
+function mount(){
+  if($('build0028SafeBar'))return;
+  const host=document.querySelector('#schedule .card,#homeTimeline,main,.main-content');
+  if(!host)return;
+  const bar=document.createElement('div');
+  bar.id='build0028SafeBar';
+  bar.innerHTML='<b>正式排程安全修復｜Build0028</b><button id="build0028ReloadBtn">重新載入雲端正式排程</button><small>只讀雲端正式排程；不清理、不重新排程、不改機台。三天排程手動發布功能保留。</small>';
+  host.prepend(bar);
+  $('build0028ReloadBtn').onclick=()=>reloadOfficial();
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,600),{once:true});
+if(document.readyState!=='loading')setTimeout(mount,600);
+setTimeout(mount,1800);
+window.APSBuild0028={reloadOfficial};
+console.info('APS Build0028｜Safe official schedule reload ready');
+})();
+</script>
 </body></html>
