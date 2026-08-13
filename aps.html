@@ -12805,4 +12805,133 @@ console.info('APS Build0029｜Read-only source audit ready');
 })();
 </script>
 
+
+<script id="aps-official-plus-manual-final-merge">
+(()=>{
+  'use strict';
+  if(window.__APS_OFFICIAL_PLUS_MANUAL_FINAL_MERGE__) return;
+  window.__APS_OFFICIAL_PLUS_MANUAL_FINAL_MERGE__=true;
+
+  const T=v=>String(v??'').trim();
+  const D=v=>{
+    if(v instanceof Date) return Number.isNaN(+v)?null:new Date(v);
+    const d=new Date(v);
+    return Number.isNaN(+d)?null:d;
+  };
+
+  function k(r){
+    const s=D(r?.start ?? r?.start_time);
+    return [
+      T(r?.wo ?? r?.work_order_no ?? r?.work_order ?? r?.order_no ?? r?.id).toUpperCase(),
+      T(r?.machine ?? r?.machine_code ?? r?.machine_no).toUpperCase(),
+      s ? s.getTime() : ''
+    ].join('|');
+  }
+
+  function manual(r){
+    const all=[
+      r?.status,r?.reason,r?.source,r?.name,r?.order,
+      r?.note,r?.remark
+    ].map(T).join('|');
+    return r?.manual===true || /人工新增排程|手動新增排程|人工新增|手動排程|manual/i.test(all);
+  }
+
+  function normalize(r){
+    const start=D(r?.start ?? r?.start_time);
+    const end=D(r?.end ?? r?.end_time);
+    const wo=T(r?.wo ?? r?.work_order_no ?? r?.work_order ?? r?.order_no ?? r?.id);
+    const machine=T(r?.machine ?? r?.machine_code ?? r?.machine_no);
+    if(!start || !end || !wo || !machine) return null;
+    return {
+      ...r,
+      wo, work_order_no:wo,
+      machine, machine_code:machine,
+      start,end,
+      date:new Date(start.getFullYear(),start.getMonth(),start.getDate()),
+      minutes:Number(r?.minutes)||Math.max(0,(end-start)/60000)
+    };
+  }
+
+  function repaint(){
+    try{window.renderSchedule?.()}catch(_){}
+    try{window.renderTimeline?.('scheduleTimeline')}catch(_){}
+    try{window.renderTimeline?.('homeTimeline')}catch(_){}
+    try{window.updateKpi?.()}catch(_){}
+    try{window.updateDueKpi?.()}catch(_){}
+    try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+  }
+
+  async function loadOfficialPlusManual(){
+    if(!window.APSBuild0037?.loadScheduleAll || !window.S) return false;
+
+    const cloud=await window.APSBuild0037.loadScheduleAll();
+    const cloudRows=(Array.isArray(cloud)?cloud:[]).map(normalize).filter(Boolean);
+
+    // 重要：不再把「同工單跨多機台」當污染直接整批拒絕。
+    // 只用唯一鍵去重，APS_Schedule 裡每一筆有效正式資料都保留。
+    const map=new Map();
+    for(const r of cloudRows) map.set(k(r),r);
+
+    // 若目前畫面已有人工新增但雲端回傳暫時漏掉，仍保留人工新增。
+    const current=(Array.isArray(window.S.schedule)?window.S.schedule:[])
+      .map(normalize).filter(Boolean);
+    for(const r of current){
+      if(manual(r) && !map.has(k(r))) map.set(k(r),r);
+    }
+
+    const merged=[...map.values()].sort((a,b)=>(a.start-b.start)||a.machine.localeCompare(b.machine));
+
+    window.S.schedule=merged;
+    window.apsSchedule=merged;
+    window.currentSchedule=merged;
+
+    // 更新「正式筆數」顯示，但不執行 scheduler。
+    try{
+      document.querySelectorAll('[data-official-count]').forEach(el=>el.textContent=String(merged.length));
+    }catch(_){}
+
+    repaint();
+    setTimeout(repaint,120);
+    setTimeout(repaint,450);
+
+    console.info(`APS FINAL MERGE｜APS_Schedule ${cloudRows.length} 筆；人工保留；合併後 ${merged.length} 筆`);
+    return merged;
+  }
+
+  // 停用上一版過度嚴格的「污染判定恢復」效果：
+  // 讓本版結果成為最後權威資料來源。
+  try{
+    if(window.APSOfficialSourceLock){
+      window.APSOfficialSourceLock.restore=()=>{};
+    }
+  }catch(_){}
+
+  async function boot(){
+    for(let i=0;i<40;i++){
+      if(window.S && window.APSBuild0037?.loadScheduleAll) break;
+      await new Promise(r=>setTimeout(r,250));
+    }
+    try{await loadOfficialPlusManual()}catch(e){console.warn('APS FINAL MERGE 初始化失敗',e)}
+  }
+
+  // 發布人工排程後，重新合併正式 + 人工。
+  window.addEventListener('message',e=>{
+    if(e?.data?.type==='APS_3DAY_MANUAL_PUBLISHED'){
+      setTimeout(()=>loadOfficialPlusManual().catch(()=>{}),250);
+      setTimeout(()=>loadOfficialPlusManual().catch(()=>{}),900);
+    }
+  });
+
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden) setTimeout(()=>loadOfficialPlusManual().catch(()=>{}),250);
+  });
+
+  window.APSFinalMerge={refresh:loadOfficialPlusManual};
+
+  document.readyState==='loading'
+    ? document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,2200),{once:true})
+    : setTimeout(boot,2200);
+})();
+</script>
+
 </body></html>
