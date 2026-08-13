@@ -12128,7 +12128,7 @@ console.info('APS Build0029｜Read-only source audit ready');
     const d=new Date(r?.start ?? r?.start_time ?? '');
     return Number.isNaN(+d)?'':`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
-  function deltaKey(r){ return [woOf(r),machineOf(r),dateOf(r),minuteOf(r)].join('|'); }
+  function deltaKey(r){ const rid=String(r?._aps_record_id||r?.record_id||'').trim(); return rid?('RID|'+rid):['WMD',woOf(r),machineOf(r),dateOf(r)].join('|'); }
 
   async function postScheduleOne(row){
     // Build0035：改用 GET/JSONP 單筆新增，取得 Apps Script 真正成功/失敗結果。
