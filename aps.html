@@ -1769,9 +1769,21 @@ function renderTimeline(target){
    const label=shiftName==='day'?'早班':'夜班',range=shiftName==='day'?`${cfg.earlyStart}～${cfg.earlyEnd}`:`${cfg.nightStart}～${cfg.nightEnd}`;
    return `<div class="shift-track ${shiftName}"><div class="shift-label"><b>${label}</b><small>${range}</small></div><div class="shift-lane" data-drop-machine="${esc(machineName)}" data-drop-day="${esc(dayKey)}" data-drop-shift="${shiftName}" data-shift-from="${shiftFrom}" data-shift-span="${shiftSpan}">${blocks}</div></div>`
  };
+ // Build0044｜戰情中心生產日判定修正
+ // 舊正式排程的 date 欄位可能與實際 start 不一致。
+ // 戰情中心一律依實際開始時間，並以 08:30 為生產日邊界。
+ const productionDayKey=j=>{
+   const x=new Date(j?.start||j?.date||'');
+   if(Number.isNaN(+x)) return '';
+   const boundary=new Date(x);
+   boundary.setHours(8,30,0,0);
+   if(x<boundary) x.setDate(x.getDate()-1);
+   return fmtDate(x);
+ };
+
  let content='';
  for(let d=0;d<showDays;d++){
-   const day=addDays(startDate,d),dayKey=fmtDate(day),dayJobs=S.schedule.filter(j=>fmtDate(j.date)===dayKey);
+   const day=addDays(startDate,d),dayKey=fmtDate(day),dayJobs=S.schedule.filter(j=>productionDayKey(j)===dayKey);
    const rows=names.map(m=>{const source=dayJobs.filter(j=>j.machine===m).sort((a,b)=>a.start-b.start),normalized=[];let cursor=0;for(const j of source){const raw=Math.max(0,Math.min(1440,offset24(j.start))),from=Math.max(cursor,raw),to=Math.min(1440,from+Math.max(0,Number(j.minutes)||0));if(to-from<.5)continue;normalized.push({...j,_from:from,_to:to,_duration:to-from});cursor=to}const cap=Math.min(1440,(num(S.machines[m]?.hours)||24)*60),dayTrack=renderShift(normalized,0,earlySpan,'day',earlySpan,m,dayKey),nightTrack=renderShift(normalized,earlySpan,1440,'night',nightSpan,m,dayKey);return `<div class="schedule-row"><div class="machine-label"><b>${esc(m)}</b><span class="machine-menu">☷</span><small>可用工時：${(cap/60).toFixed(1)}h</small></div><div class="dual-track">${dayTrack}${nightTrack}</div></div>`}).join('');
    const nextDay=addDays(day,1),today=new Date(),midnightOffset=(1440-nightStart)%1440,midnightLeft=midnightOffset/nightSpan*100;
    const axisHtml=`<div class="axis-date-band"><div class="axis-date-cell ${sameDay(day,today)?'today':''}">${dateText(day)}${sameDay(day,today)?'<span class="today-badge">TODAY</span>':''}</div><div class="axis-date-cell ${sameDay(nextDay,today)?'today':''}">${dateText(nextDay)}${sameDay(nextDay,today)?'<span class="today-badge">TODAY</span>':''}</div></div><div class="shift-axis day"><span class="shift-axis-label">早班</span><div class="shift-axis-lane">${makeTicks(dayStart,earlySpan)}</div></div><div class="shift-axis night"><span class="shift-axis-label">夜班</span><div class="shift-axis-lane">${makeTicks(nightStart,nightSpan)}<span class="shift-midnight" style="left:${midnightLeft}%"><b>00:00<br>${nextDay.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})}</b></span></div></div>`;
@@ -12576,6 +12588,20 @@ console.info('APS Build0029｜Read-only source audit ready');
         if(plan && !plan.value) plan.value=key;
       }
 
+      // Build0044：正式排程載入後，依 start 重建生產日 date。
+      try{
+        const schedule=Array.isArray(window.S?.schedule)?window.S.schedule:[];
+        schedule.forEach(r=>{
+          const s=new Date(r?.start||'');
+          if(Number.isNaN(+s)) return;
+          const d=new Date(s);
+          const boundary=new Date(s); boundary.setHours(8,30,0,0);
+          if(s<boundary) d.setDate(d.getDate()-1);
+          d.setHours(0,0,0,0);
+          r.date=d;
+        });
+      }catch(_){}
+
       repaint();
       setTimeout(repaint,120);
       setTimeout(repaint,500);
@@ -12600,6 +12626,18 @@ console.info('APS Build0029｜Read-only source audit ready');
 
   // 同一頁其他正式排程同步完成時，也補畫戰情中心。
   window.addEventListener('aps-official-schedule-synced',e=>{
+    try{
+      const rows=Array.isArray(window.S?.schedule)?window.S.schedule:[];
+      rows.forEach(r=>{
+        const s=new Date(r?.start||'');
+        if(Number.isNaN(+s)) return;
+        const d=new Date(s);
+        const boundary=new Date(s); boundary.setHours(8,30,0,0);
+        if(s<boundary) d.setDate(d.getDate()-1);
+        d.setHours(0,0,0,0);
+        r.date=d;
+      });
+    }catch(_){}
     repaint();
     setTimeout(repaint,250);
   });
