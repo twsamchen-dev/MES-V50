@@ -11307,4 +11307,203 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <!-- Build0017｜日期來源修復：dashboardDate 為唯一權威日期；禁止 7 月舊快取控制 8/13 甘特。 -->
+
+<script id="build0018-schedule-recovery">
+(async()=>{
+  'use strict';
+  if(window.__APS_BUILD0018_RECOVERY__) return;
+  window.__APS_BUILD0018_RECOVERY__ = true;
+
+  const BUILD='0018';
+  const LARGE_KEYS=[
+    'SK_APS_FAST_SCHEDULE_V1107',
+    'SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1'
+  ];
+  const LOCAL_KEYS=[
+    'SK_APS_ACCEPTED_SCHEDULE_V872',
+    'SK_APS_MANUAL_SCHEDULE_V88',
+    'SK_APS_SCHEDULE_SNAPSHOT_V1'
+  ];
+
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const validRows=v=>{
+    if(Array.isArray(v)) return v;
+    if(v && Array.isArray(v.rows)) return v.rows;
+    return [];
+  };
+  const normMachine=v=>String(v||'').trim().toUpperCase();
+  const machineOf=r=>normMachine(
+    r?.machine ?? r?.machine_no ?? r?.machineCode ?? r?.machine_code ?? r?.mc
+  );
+  const woOf=r=>String(
+    r?.wo ?? r?.work_order_no ?? r?.work_order ?? r?.order_no ?? r?.id ?? ''
+  ).trim();
+
+  function rowKey(r){
+    return [
+      machineOf(r),
+      woOf(r),
+      String(r?.start ?? r?.start_time ?? ''),
+      String(r?.end ?? r?.end_time ?? ''),
+      String(r?.date ?? r?.schedule_date ?? '')
+    ].join('|');
+  }
+
+  function uniqueRows(rows){
+    const map=new Map();
+    (Array.isArray(rows)?rows:[]).forEach(r=>{
+      if(!r || typeof r!=='object') return;
+      const k=rowKey(r);
+      if(!map.has(k)) map.set(k,r);
+    });
+    return [...map.values()];
+  }
+
+  function describe(name, rows){
+    const machines=[...new Set(rows.map(machineOf).filter(Boolean))];
+    return {
+      name,
+      rows: rows.length,
+      machines: machines.length,
+      has1S19: machines.includes('1S19'),
+      sampleMachines: machines.slice(0,12).join(', ')
+    };
+  }
+
+  async function readLarge(key){
+    try{
+      const v=await window.APSLargeStore?.hydrate?.(key,null);
+      return validRows(v);
+    }catch(_){ return []; }
+  }
+
+  function readLocal(key){
+    try{
+      const raw=localStorage.getItem(key);
+      if(!raw) return [];
+      return validRows(JSON.parse(raw));
+    }catch(_){ return []; }
+  }
+
+  function chooseBest(candidates){
+    const nonEmpty=candidates.filter(x=>x.rows.length);
+    if(!nonEmpty.length) return null;
+
+    // 優先保留包含 1S19 的較完整資料；若都沒有 1S19，單純取筆數最多者。
+    return nonEmpty.sort((a,b)=>{
+      const ah=a.rows.some(r=>machineOf(r)==='1S19')?1:0;
+      const bh=b.rows.some(r=>machineOf(r)==='1S19')?1:0;
+      if(ah!==bh) return bh-ah;
+      return b.rows.length-a.rows.length;
+    })[0];
+  }
+
+  function addBanner(text, type='warn'){
+    const host=document.querySelector('#schedulePage .panel, #homeTimeline, main, .main-content');
+    if(!host) return;
+    let el=document.getElementById('build0018RecoveryBanner');
+    if(!el){
+      el=document.createElement('div');
+      el.id='build0018RecoveryBanner';
+      el.style.cssText='margin:8px 0;padding:10px 13px;border-radius:8px;font-weight:800;line-height:1.5;position:relative;z-index:10';
+      host.prepend(el);
+    }
+    const colors=type==='ok'
+      ? 'background:#102a20;border:1px solid #2f8f65;color:#8ff0bd'
+      : 'background:#32240b;border:1px solid #a87822;color:#ffd36d';
+    el.style.cssText += ';'+colors;
+    el.textContent=text;
+  }
+
+  async function recover(){
+    // 等原本 APS DataCenter / IndexedDB bootstrap 完成，避免跟它搶初始化。
+    for(let i=0;i<30;i++){
+      if(window.S && window.APSLargeStore) break;
+      await sleep(200);
+    }
+    await sleep(900);
+
+    const candidates=[];
+
+    const live=uniqueRows(validRows(window.S?.schedule));
+    candidates.push({name:'目前 S.schedule',rows:live});
+
+    for(const key of LARGE_KEYS){
+      const rows=uniqueRows(await readLarge(key));
+      candidates.push({name:key,rows});
+    }
+
+    for(const key of LOCAL_KEYS){
+      const rows=uniqueRows(readLocal(key));
+      candidates.push({name:key,rows});
+    }
+
+    const info=candidates.map(x=>describe(x.name,x.rows));
+    console.table(info);
+    window.APSBuild0018Recovery={candidates:info};
+
+    const current=candidates[0];
+    const best=chooseBest(candidates);
+
+    if(!best){
+      addBanner('Build0018：找不到任何可用的正式排程備援資料，未自動修改。','warn');
+      return;
+    }
+
+    const currentHasS19=current.rows.some(r=>machineOf(r)==='1S19');
+    const bestHasS19=best.rows.some(r=>machineOf(r)==='1S19');
+
+    // 只有在備援明顯更完整，或目前缺 1S19 而備援有 1S19 時才恢復。
+    const shouldRecover =
+      best.rows.length > current.rows.length + 5 ||
+      (!currentHasS19 && bestHasS19);
+
+    if(!shouldRecover){
+      addBanner(
+        `Build0018：目前正式排程 ${current.rows.length} 筆；最佳備援 ${best.name} ${best.rows.length} 筆。未發現需要自動恢復的差異。`,
+        'ok'
+      );
+      return;
+    }
+
+    // 僅恢復「本機正式排程」與 V1107 快取，不自動回寫雲端。
+    // 先讓使用者確認 S19 與其他機台都回來，再由正式發布流程同步。
+    window.S.schedule = best.rows;
+    window.apsSchedule = best.rows;
+    window.currentSchedule = best.rows;
+
+    try{
+      await window.APSLargeStore?.set?.(
+        'SK_APS_FAST_SCHEDULE_V1107',
+        best.rows,
+        {mirrorSmall:false}
+      );
+    }catch(e){
+      console.warn('Build0018 V1107 recovery cache write failed',e);
+    }
+
+    try{ window.renderSchedule?.(); }catch(_){}
+    try{ window.updateKpi?.(); }catch(_){}
+    try{ window.updateDueKpi?.(); }catch(_){}
+
+    addBanner(
+      `Build0018 已從「${best.name}」恢復正式排程：${current.rows.length} → ${best.rows.length} 筆` +
+      `${bestHasS19?'；已找到 1S19。':'；此備援仍沒有 1S19。'}` +
+      ` 本次只恢復本機/IndexedDB，尚未自動覆蓋雲端。`,
+      bestHasS19?'ok':'warn'
+    );
+
+    window.APSBuild0018Recovery.restoredFrom=best.name;
+    window.APSBuild0018Recovery.restoredCount=best.rows.length;
+    window.APSBuild0018Recovery.has1S19=bestHasS19;
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(recover,0),{once:true});
+  if(document.readyState!=='loading') setTimeout(recover,0);
+
+  console.info('APS Build0018｜Schedule Recovery ready');
+})();
+</script>
+
+<!-- Build0018｜排程救援：比較 S.schedule / V1107 / 大型快照 / 舊正式排程，優先恢復含 1S19 的較完整來源；不自動回寫雲端。 -->
 </body></html>
