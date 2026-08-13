@@ -12691,4 +12691,118 @@ console.info('APS Build0029｜Read-only source audit ready');
 })();
 </script>
 
+
+<script id="aps-official-schedule-source-lock-clean">
+(()=>{
+  'use strict';
+  if(window.__APS_OFFICIAL_SOURCE_LOCK_CLEAN__) return;
+  window.__APS_OFFICIAL_SOURCE_LOCK_CLEAN__=true;
+
+  const txt=v=>String(v??'').trim();
+  const cloneRows=rows=>(Array.isArray(rows)?rows:[]).map(r=>({...r}));
+
+  // Keep a last-known-good official schedule snapshot in memory only.
+  let officialRows=[];
+  let officialReady=false;
+  let applying=false;
+
+  function looksLikePolluted(rows){
+    const list=Array.isArray(rows)?rows:[];
+    if(list.length<10) return false;
+
+    const byWo=new Map();
+    for(const r of list){
+      const wo=txt(r?.wo||r?.work_order_no||r?.order_no);
+      const machine=txt(r?.machine||r?.machine_code||r?.machine_no);
+      if(!wo||!machine) continue;
+      const s=byWo.get(wo)||new Set();
+      s.add(machine);
+      byWo.set(wo,s);
+    }
+
+    // A single work order appearing on too many machines is a strong pollution signal.
+    for(const s of byWo.values()){
+      if(s.size>=6) return true;
+    }
+    return false;
+  }
+
+  function applyOfficial(){
+    if(!officialReady || !officialRows.length || applying) return;
+    applying=true;
+    try{
+      window.S=window.S||{};
+      window.S.schedule=cloneRows(officialRows);
+      window.apsSchedule=window.S.schedule;
+      window.currentSchedule=window.S.schedule;
+      try{window.renderSchedule?.()}catch(_){}
+      try{window.renderTimeline?.('homeTimeline')}catch(_){}
+      try{window.updateKpi?.()}catch(_){}
+      try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+    }finally{
+      applying=false;
+    }
+  }
+
+  async function refreshOfficialSafe(){
+    if(!window.APSBuild0037?.loadScheduleAll) return false;
+    const rows=await window.APSBuild0037.loadScheduleAll();
+    if(!Array.isArray(rows) || !rows.length) return false;
+
+    // Do not accept an obviously polluted cloud read as "good".
+    if(looksLikePolluted(rows)){
+      console.warn('Official Source Lock：APS_Schedule 讀回結果疑似污染，未套用',rows.length);
+      return false;
+    }
+
+    officialRows=cloneRows(rows);
+    officialReady=true;
+    applyOfficial();
+    console.info('Official Source Lock：正式 APS_Schedule 已鎖定',officialRows.length);
+    return true;
+  }
+
+  // Capture valid official loads.
+  window.addEventListener('aps-official-schedule-synced',()=>{
+    const rows=Array.isArray(window.S?.schedule)?window.S.schedule:[];
+    if(rows.length && !looksLikePolluted(rows)){
+      officialRows=cloneRows(rows);
+      officialReady=true;
+    }
+    setTimeout(applyOfficial,50);
+  });
+
+  // Guard against later DataCenter / recovery modules replacing the schedule
+  // with a polluted or unrelated schedule.
+  const guard=()=>{
+    if(!officialReady || applying) return;
+    const current=Array.isArray(window.S?.schedule)?window.S.schedule:[];
+    if(!current.length || looksLikePolluted(current)){
+      console.warn('Official Source Lock：偵測到 schedule 被其他模組覆蓋，恢復正式 APS_Schedule');
+      applyOfficial();
+    }
+  };
+
+  setInterval(guard,1200);
+
+  async function boot(){
+    for(let i=0;i<40;i++){
+      if(window.APSBuild0037?.loadScheduleAll) break;
+      await new Promise(r=>setTimeout(r,250));
+    }
+    try{await refreshOfficialSafe()}catch(e){console.warn('Official Source Lock 初始化失敗',e)}
+  }
+
+  window.APSOfficialSourceLock={
+    refresh:refreshOfficialSafe,
+    restore:applyOfficial,
+    state:()=>({ready:officialReady,rows:officialRows.length})
+  };
+
+  document.readyState==='loading'
+    ? document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,1800),{once:true})
+    : setTimeout(boot,1800);
+})();
+</script>
+
 </body></html>
