@@ -916,6 +916,17 @@ body::after{
 @media(max-width:1180px){#schedule3d .aps3d-layout:not(.user-left-open){grid-template-columns:42px minmax(500px,1fr) 42px!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel{padding:7px 5px!important;overflow:hidden!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}}
 @media(max-width:1050px){#schedule3d .aps3d-layout,#schedule3d .aps3d-layout.left-collapsed,#schedule3d .aps3d-layout.right-collapsed,#schedule3d .aps3d-layout.left-collapsed.right-collapsed{grid-template-columns:42px minmax(680px,1fr) 42px!important;min-width:780px!important}#schedule3d .aps3d-machine-panel,#schedule3d .aps3d-check-panel{max-height:none!important;padding:7px 5px!important}#schedule3d .aps3d-machine-panel>*:not(.aps3d-panel-title),#schedule3d .aps3d-check-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-machine-panel .aps3d-panel-title span,#schedule3d .aps3d-check-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-machine-panel .aps3d-panel-title,#schedule3d .aps3d-check-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}#schedule3d{overflow:auto!important}}
 </style>
+
+<style id="build0045-manual-color">
+/* Build0045｜手動新增正式排程顏色：與三天排程「手動」圖例一致 */
+.schedule-block.manual{
+  background:linear-gradient(180deg,#1697a5,#0b7f8b)!important;
+  border-color:#55d9e5!important;
+  color:#fff!important;
+}
+.lg.manual,.legend-box.manual{background:#138f9c!important}
+</style>
+
 </head>
 <body>
 <script id="aps-build0094-direct-recovery">
@@ -1055,7 +1066,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <div class="dashboard-layout">
   <div class="schedule-panel">
     <div class="panel-toolbar">
-      <div><h2>本生產日機台排程總覽</h2><div class="mini-legend"><span class="lg normal"></span>正常工單 <span class="lg change"></span>換線／調機 <span class="lg wait"></span>待料／等待 <span class="lg idle"></span>閒置／空檔 <span class="lg urgent"></span>急單／保養</div></div>
+      <div><h2>本生產日機台排程總覽</h2><div class="mini-legend"><span class="lg normal"></span>正常工單 <span class="lg change"></span>換線／調機 <span class="lg wait"></span>待料／等待 <span class="lg idle"></span>閒置／空檔 <span class="lg urgent"></span>急單／保養 <span class="lg manual"></span>手動</div></div>
       <div class="toolbar-actions"><input id="dashboardDate" type="date"><button class="btn ghost" id="goToday">今天</button><button class="btn ghost" data-page-jump="schedule">查看甘特圖</button><button class="btn red-action" id="homeRunSchedule">產生排程</button></div>
     </div>
     <div id="homeTimeline"><div class="empty">尚未產生排程</div></div>
@@ -1765,7 +1776,11 @@ function renderTimeline(target){
    const segments=[];let cursor=shiftFrom;const addGap=(a,b)=>{if(b-a<1)return;const kind=classifyGap(b-a);segments.push({kind,from:a,to:b,label:gapLabel(kind)})};
    for(let i=0;i<clipped.length;i++){const j=clipped[i];addGap(cursor,j._clipFrom);if(j._clipDuration<45){const group=[j];let end=j._clipTo;while(i+1<clipped.length){const n=clipped[i+1];if(n._clipDuration>=45||n._clipFrom-end>3)break;group.push(n);end=n._clipTo;i++}segments.push({kind:'cluster',from:j._clipFrom,to:end,jobs:group,label:`短工單 ${group.length}筆`});cursor=end}else{segments.push({kind:'job',from:j._clipFrom,to:j._clipTo,job:j});cursor=j._clipTo}}
    addGap(cursor,shiftTo);
-   const blocks=segments.map(seg=>{const left=(seg.from-shiftFrom)/shiftSpan*100,width=Math.max(.08,(seg.to-seg.from)/shiftSpan*100),st=fmtMinute(dayStart+seg.from),et=fmtMinute(dayStart+seg.to);if(seg.kind==='job'){const j=seg.job,dueEnd=j.due?new Date(j.due):null;if(dueEnd)dueEnd.setHours(23,59,59,999);const delay=!!(dueEnd&&j.end>dueEnd),cls=delay?'delay':(j.urgent?'urgent':'normal'),density=width<2.5?' compact':width<6?' mini':'';return `<div class="schedule-block ${cls}${density}" data-schedule-wo="${esc(j.wo)}" data-schedule-machine="${esc(j.machine||'')}" data-schedule-start="${new Date(j.start).getTime()}" style="left:${left}%;width:${width}%" title="工單：${esc(j.wo)}\n客戶：${esc(j.customer||'—')}\n料號：${esc(j.part||'—')}\n開始：${dateTimeText(j.start)}\n完成：${dateTimeText(j.end)}\n工時：${Math.round((j.end-j.start)/60000)} 分鐘\n${esc(j.reason||'')}"><b>${esc(j.wo)}</b><small>${st}～${et}</small></div>`}if(seg.kind==='cluster'){const detail=seg.jobs.map(x=>`${x.wo} ${fmtMinute(dayStart+x._clipFrom)}～${fmtMinute(dayStart+x._clipTo)}`).join('\n'),density=width<3?' compact':width<7?' mini':'';return `<div class="schedule-block cluster${density}" style="left:${left}%;width:${width}%" title="${esc(detail)}"><b>${seg.label}</b><small>${st}～${et}</small></div>`}const density=width<2.5?' compact':width<6?' mini':'';return `<div class="schedule-block ${seg.kind}${density}" style="left:${left}%;width:${width}%" title="${seg.label}：${st}～${et}"><b>${seg.label}</b><small>${st}～${et}</small></div>`}).join('');
+   const blocks=segments.map(seg=>{const left=(seg.from-shiftFrom)/shiftSpan*100,width=Math.max(.08,(seg.to-seg.from)/shiftSpan*100),st=fmtMinute(dayStart+seg.from),et=fmtMinute(dayStart+seg.to);if(seg.kind==='job'){const j=seg.job,dueEnd=j.due?new Date(j.due):null;if(dueEnd)dueEnd.setHours(23,59,59,999);const delay=!!(dueEnd&&j.end>dueEnd),
+      manualText=String([j.reason,j.status,j.name,j.source,j.order].filter(Boolean).join('|')),
+      isManualSchedule=!!j.manual && !/急單|urgent/i.test(manualText),
+      cls=isManualSchedule?'manual':(delay?'delay':(j.urgent?'urgent':'normal')),
+      density=width<2.5?' compact':width<6?' mini':'';return `<div class="schedule-block ${cls}${density}" data-schedule-wo="${esc(j.wo)}" data-schedule-machine="${esc(j.machine||'')}" data-schedule-start="${new Date(j.start).getTime()}" style="left:${left}%;width:${width}%" title="工單：${esc(j.wo)}\n客戶：${esc(j.customer||'—')}\n料號：${esc(j.part||'—')}\n開始：${dateTimeText(j.start)}\n完成：${dateTimeText(j.end)}\n工時：${Math.round((j.end-j.start)/60000)} 分鐘\n${esc(j.reason||'')}"><b>${esc(j.wo)}</b><small>${st}～${et}</small></div>`}if(seg.kind==='cluster'){const detail=seg.jobs.map(x=>`${x.wo} ${fmtMinute(dayStart+x._clipFrom)}～${fmtMinute(dayStart+x._clipTo)}`).join('\n'),density=width<3?' compact':width<7?' mini':'';return `<div class="schedule-block cluster${density}" style="left:${left}%;width:${width}%" title="${esc(detail)}"><b>${seg.label}</b><small>${st}～${et}</small></div>`}const density=width<2.5?' compact':width<6?' mini':'';return `<div class="schedule-block ${seg.kind}${density}" style="left:${left}%;width:${width}%" title="${seg.label}：${st}～${et}"><b>${seg.label}</b><small>${st}～${et}</small></div>`}).join('');
    const label=shiftName==='day'?'早班':'夜班',range=shiftName==='day'?`${cfg.earlyStart}～${cfg.earlyEnd}`:`${cfg.nightStart}～${cfg.nightEnd}`;
    return `<div class="shift-track ${shiftName}"><div class="shift-label"><b>${label}</b><small>${range}</small></div><div class="shift-lane" data-drop-machine="${esc(machineName)}" data-drop-day="${esc(dayKey)}" data-drop-shift="${shiftName}" data-shift-from="${shiftFrom}" data-shift-span="${shiftSpan}">${blocks}</div></div>`
  };
