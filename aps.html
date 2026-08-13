@@ -11508,4 +11508,224 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <!-- Build0018｜排程救援：比較 S.schedule / V1107 / 大型快照 / 舊正式排程，優先恢復含 1S19 的較完整來源；不自動回寫雲端。 -->
 <!-- Build0019｜右側工單資訊欄位與新增手動工單一致：單欄完整顯示目標、客戶、前製程、換線緩衝、建立原因。 -->
 <!-- Build0025 Clean｜只做三天排程手動新增/修改/刪除 → 合併到正式排程；不修改 scheduler、機台 Master、enabled、hours。 -->
+
+<style id="build0026-cleanup-style">
+#build0026CleanupBar{
+  margin:8px 0;padding:10px 12px;border:1px solid #315d76;border-radius:9px;
+  background:#0e1d27;color:#d7eefc;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap
+}
+#build0026CleanupBar button{
+  border:1px solid #496677;background:#132a36;color:#fff;border-radius:7px;padding:7px 11px;cursor:pointer;font-weight:800
+}
+#build0026CleanupBar button.danger{background:#7d251f;border-color:#a9473e}
+#build0026CleanupBar button.restore{background:#334155}
+#build0026CleanupBar small{color:#9fc0d2;font-weight:500}
+</style>
+
+<script id="build0026-official-schedule-cleanup">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD0026_CLEANUP__) return;
+  window.__APS_BUILD0026_CLEANUP__=true;
+
+  const BACKUP_KEY='SK_APS_BEFORE_CLEANUP_0026';
+  const $=id=>document.getElementById(id);
+  const norm=v=>String(v??'').trim().toUpperCase();
+  const n=v=>Number(v)||0;
+  const cloneRows=rows=>(rows||[]).map(r=>({...r}));
+
+  function woOf(r){return norm(r?.wo||r?.work_order_no||r?.order_no||r?.id||'')}
+  function partOf(r){return norm(r?.part||r?.part_no||r?.spec||'')}
+  function machineOf(r){return norm(r?.machine||r?.machine_no||'')}
+  function dateKey(r){
+    const d=new Date(r?.date||r?.start||r?.start_time||'');
+    if(Number.isNaN(+d)) return '';
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function startMinute(r){
+    const d=new Date(r?.start||r?.start_time||'');
+    if(Number.isNaN(+d)) return -1;
+    return d.getHours()*60+d.getMinutes();
+  }
+  function duration(r){
+    if(n(r?.minutes)>0) return Math.round(n(r.minutes));
+    const s=new Date(r?.start||r?.start_time||'');
+    const e=new Date(r?.end||r?.end_time||'');
+    return (!Number.isNaN(+s)&&!Number.isNaN(+e))?Math.round((e-s)/60000):0;
+  }
+  function isManual(r){
+    return !!(
+      r?.manual ||
+      /人工新增|手動/.test(String(r?.reason||'')) ||
+      /MANUAL/.test(String(r?.order||r?.source||'').toUpperCase())
+    );
+  }
+  function preferredMachine(r){
+    return norm(r?.sourceMachine||r?.source_machine||r?.suggested_machine||'');
+  }
+
+  // 只認定「明顯是複製品」的群組：
+  // 同工單 + 同料號 + 同生產日 + 同開始分鐘 + 同工時，卻出現在 2 台以上不同機台。
+  // 不碰不同時間拆單、不碰人工新增、不碰真正分段。
+  function scan(rows){
+    const groups=new Map();
+    rows.forEach((r,i)=>{
+      const wo=woOf(r),part=partOf(r),dk=dateKey(r),sm=startMinute(r),dur=duration(r),m=machineOf(r);
+      if(!wo||sm<0||dur<=0||!m) return;
+      const key=[wo,part,dk,sm,dur].join('|');
+      if(!groups.has(key)) groups.set(key,[]);
+      groups.get(key).push({r,i,m});
+    });
+
+    const suspicious=[];
+    for(const [key,items] of groups){
+      const machines=[...new Set(items.map(x=>x.m))];
+      if(machines.length<2) continue;
+
+      // 人工新增排程不列入自動清理。
+      const autoItems=items.filter(x=>!isManual(x.r));
+      const autoMachines=[...new Set(autoItems.map(x=>x.m))];
+      if(autoMachines.length<2) continue;
+
+      suspicious.push({key,items:autoItems,machines:autoMachines});
+    }
+    return suspicious;
+  }
+
+  function chooseKeep(group){
+    // 優先保留 sourceMachine / 建議機台吻合者；其次保留第一筆。
+    const exact=group.items.find(x=>{
+      const pm=preferredMachine(x.r);
+      return pm && pm===x.m;
+    });
+    return exact||group.items[0];
+  }
+
+  function buildClean(rows,groups){
+    const remove=new Set();
+    const detail=[];
+    groups.forEach(g=>{
+      const keep=chooseKeep(g);
+      g.items.forEach(x=>{
+        if(x.i!==keep.i) remove.add(x.i);
+      });
+      detail.push({
+        wo:woOf(keep.r),
+        keep:keep.m,
+        remove:g.items.filter(x=>x.i!==keep.i).map(x=>x.m)
+      });
+    });
+    return {
+      cleaned:rows.filter((_,i)=>!remove.has(i)),
+      removed:remove.size,
+      detail
+    };
+  }
+
+  async function saveBackup(rows){
+    if(!window.APSLargeStore?.set) throw new Error('APSLargeStore 尚未就緒，不能安全建立備份');
+    await window.APSLargeStore.set(BACKUP_KEY, rows, {mirrorSmall:false});
+  }
+
+  async function persist(rows){
+    window.S=window.S||{};
+    window.S.schedule=rows;
+
+    if(window.APSLargeStore?.set){
+      await window.APSLargeStore.set('SK_APS_FAST_SCHEDULE_V1107', rows, {mirrorSmall:false});
+    }
+    if(window.APSCloudDataCenter?.saveDataset){
+      await window.APSCloudDataCenter.saveDataset('schedule', false);
+    }
+
+    try{window.renderSchedule?.()}catch(_){}
+    try{window.updateKpi?.()}catch(_){}
+    try{window.updateDueKpi?.()}catch(_){}
+    try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+  }
+
+  async function doScan(){
+    const rows=Array.isArray(window.S?.schedule)?window.S.schedule:[];
+    const groups=scan(rows);
+
+    if(!groups.length){
+      alert(`掃描完成：目前 ${rows.length} 筆正式排程，沒有找到「同工單、同日期、同時間、同工時卻複製到多台機台」的明顯重複資料。`);
+      return;
+    }
+
+    const result=buildClean(rows,groups);
+    const examples=result.detail.slice(0,8).map(x=>
+      `${x.wo}：保留 ${x.keep}；移除 ${x.remove.join('、')}`
+    ).join('\n');
+
+    const ok=confirm(
+      `找到 ${groups.length} 組明顯重複排程。\n`+
+      `目前 ${rows.length} 筆，預計移除 ${result.removed} 筆，清理後 ${result.cleaned.length} 筆。\n\n`+
+      `範例：\n${examples}\n\n`+
+      `只會清理「同工單＋同料號＋同生產日＋同開始時間＋同工時」卻複製到不同機台的資料。\n`+
+      `人工新增／手動排程不會自動刪除。\n\n`+
+      `要執行清理嗎？`
+    );
+    if(!ok) return;
+
+    await saveBackup(cloneRows(rows));
+    await persist(result.cleaned);
+
+    alert(
+      `正式排程清理完成。\n`+
+      `${rows.length} → ${result.cleaned.length} 筆\n`+
+      `移除 ${result.removed} 筆明顯重複排程。\n`+
+      `已建立清理前備份，可用「還原清理前」復原。`
+    );
+  }
+
+  async function restore(){
+    if(!window.APSLargeStore?.hydrate){
+      alert('APSLargeStore 尚未就緒，無法讀取清理前備份。');
+      return;
+    }
+    const backup=await window.APSLargeStore.hydrate(BACKUP_KEY,[]);
+    if(!Array.isArray(backup)||!backup.length){
+      alert('目前沒有 Build0026 清理前備份。');
+      return;
+    }
+    if(!confirm(`找到清理前備份 ${backup.length} 筆。確定要完整還原嗎？`)) return;
+    await persist(backup);
+    alert(`已還原清理前正式排程：${backup.length} 筆。`);
+  }
+
+  function mount(){
+    if($('build0026CleanupBar')) return;
+    const host=document.querySelector('#threeDayPage .panel,#schedulePage .panel,#homeTimeline,main,.main-content');
+    if(!host) return;
+
+    const bar=document.createElement('div');
+    bar.id='build0026CleanupBar';
+    bar.innerHTML=`
+      <b>正式排程資料清理｜Build0026</b>
+      <button class="danger" id="build0026ScanBtn">掃描並清理錯誤重複排程</button>
+      <button class="restore" id="build0026RestoreBtn">還原清理前</button>
+      <small>只清理明顯「完整複製到多台機台」的排程，不碰人工新增、不碰自動排程演算法。</small>
+    `;
+    host.prepend(bar);
+
+    $('build0026ScanBtn').onclick=()=>doScan().catch(e=>alert('清理失敗：'+(e?.message||e)));
+    $('build0026RestoreBtn').onclick=()=>restore().catch(e=>alert('還原失敗：'+(e?.message||e)));
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,500),{once:true});
+  if(document.readyState!=='loading')setTimeout(mount,500);
+  [1500,3500].forEach(ms=>setTimeout(mount,ms));
+
+  window.APSBuild0026={
+    scan:()=>scan(Array.isArray(window.S?.schedule)?window.S.schedule:[]),
+    cleanup:doScan,
+    restore
+  };
+
+  console.info('APS Build0026｜Official Schedule Cleanup ready');
+})();
+</script>
+
+<!-- Build0026｜一次性正式排程清理：先備份，再清理明顯跨機台完整複製；支援還原。 -->
 </body></html>
