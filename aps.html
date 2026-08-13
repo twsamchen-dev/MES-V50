@@ -1729,13 +1729,36 @@ function aliasesForRow(row,lookup){
 function buildOrders(){const sh=pickSheet('order',['3-9']);if(!sh)return new Map;const h=sh.rows[0],iOrder=findCol(h,['訂單單號']),iPart=findCol(h,['料號']),iDue=findCol(h,['預交日']),iUn=findCol(h,['未交量']),iCust=findCol(h,['客戶簡稱','客戶']),iName=findCol(h,['品名']),iSpec=findCol(h,['規格']);const map=new Map;for(const r of sh.rows.slice(1)){const key=`${r[iOrder]||''}|${r[iPart]||''}`;if(!map.has(key))map.set(key,{due:dateVal(r[iDue]),unfilled:num(r[iUn]),customer:r[iCust]||'',name:r[iName]||'',spec:r[iSpec]||''})}return map}
 function matchSpeed(part,process,machine,speeds){const p=norm(part),pr=norm(process),m=norm(machine);let a=speeds.filter(x=>norm(x.part)===p&&(!pr||norm(x.process)===pr)&&(!m||norm(x.machine)===m));if(a.length)return{row:a[0],level:'精確'};a=speeds.filter(x=>norm(x.part)===p&&(!pr||norm(x.process)===pr));if(a.length)return{row:a[0],level:'料號＋製程'};a=speeds.filter(x=>norm(x.part)===p);if(a.length)return{row:a[0],level:'僅料號'};return null}
 function buildPool(){const sh=pickSheet('workorder',['4-3']);if(!sh){alert('請先上傳 4-3 生產命令單');return}const speeds=buildSpeed(),orders=buildOrders(),h=sh.rows[0],idx={wo:findCol(h,['單號','命令單號']),part:findCol(h,['料品編號','產品料號']),dept:findCol(h,['站別']),cust:findCol(h,['客戶']),order:findCol(h,['訂單單號']),batch:findCol(h,['生產批號']),plan:findCol(h,['預計產量']),out:findCol(h,['產出量']),unit:findCol(h,['單位']),due:findCol(h,['預交日']),machineCode:findCol(h,['機台編號']),name:findCol(h,['品名']),spec:findCol(h,['規格']),process:findCol(h,['製程']),machine:findCol(h,['機台']),status:findCol(h,['狀態']),closed:findCol(h,['結案否'])};const today=new Date();today.setHours(0,0,0,0);const pool=[];for(const r of sh.rows.slice(1)){if(!['加工課','加工部'].includes(norm(r[idx.dept])))continue;const planned=num(r[idx.plan]),output=num(r[idx.out]),remaining=Math.max(0,planned-output);if(!r[idx.wo]||remaining<=0)continue;const o=orders.get(`${r[idx.order]||''}|${r[idx.part]||''}`);const due=dateVal(r[idx.due])||o?.due;const ms=matchSpeed(r[idx.part],r[idx.process],r[idx.machineCode]||r[idx.machine],speeds);let min=0,cycles=0,confidence='無產速';if(ms){const s=ms.row;let perCycle=1;if(String(r[idx.unit]||'').includes('㎡'))perCycle=(s.outw/1000)*s.len||1;else if(String(r[idx.unit]||'').toUpperCase().includes('M'))perCycle=s.len||1;cycles=remaining/perCycle;min=cycles*s.total;confidence=ms.level}const dd=due?dayDiff(due,today):999;pool.push({wo:r[idx.wo],order:r[idx.order]||'',part:r[idx.part]||'',name:r[idx.name]||o?.name||'',customer:r[idx.cust]||o?.customer||'',batch:r[idx.batch]||'',process:r[idx.process]||'',machine:(ms?.row.machine||r[idx.machineCode]||'').trim(),sourceMachine:(r[idx.machineCode]||r[idx.machine]||'').trim(),spec:r[idx.spec]||o?.spec||'',due,planned,output,remaining,unit:r[idx.unit]||'',minutes:min,cycles,match:confidence,urgent:dd<=num($('urgentDays').value),risk:dd<=num($('riskDays').value),ready:!!ms,status:r[idx.status]||'',preprocess:'待確認'})}pool.sort((a,b)=>(b.urgent-a.urgent)||((a.due?.getTime()||9e15)-(b.due?.getTime()||9e15))||(b.minutes-a.minutes));S.pool=pool;S.rows.speed=speeds;initMachines(speeds);renderPool();updateKpi();renderQuality();log(`工單池建立完成：加工課待排 ${pool.length} 張，可排 ${pool.filter(x=>x.ready).length} 張`);showPage('pool')}
-function initMachines(speeds){for(const s of speeds){if(s.machine&&!S.machines[s.machine])S.machines[s.machine]={hours:num($('defaultHours').value)||24,enabled:true}}renderMachineSettings()}
-function renderMachineSettings(){const names=Object.keys(S.machines).sort();if(!names.length){$('machineSettings').className='empty';$('machineSettings').textContent='尚無機台資料';return}$('machineSettings').className='tablewrap';$('machineSettings').innerHTML=`<table><thead><tr><th>啟用</th><th>機台</th><th>每日可用工時</th></tr></thead><tbody>${names.map(n=>`<tr><td><input type="checkbox" data-m-enable="${esc(n)}" ${S.machines[n].enabled?'checked':''}></td><td>${esc(n)}</td><td><input style="width:90px" type="number" min="0" max="24" step="0.5" data-m-hours="${esc(n)}" value="${S.machines[n].hours}"></td></tr>`).join('')}</tbody></table>`;document.querySelectorAll('[data-m-enable]').forEach(x=>x.onchange=()=>S.machines[x.dataset.mEnable].enabled=x.checked);document.querySelectorAll('[data-m-hours]').forEach(x=>x.onchange=()=>S.machines[x.dataset.mHours].hours=num(x.value))}
+function initMachines(speeds){
+  const defHours=num($('defaultHours').value)||24;
+  S.machines=S.machines||{};
+  for(const s of speeds){
+    const m=String(s.machine||'').trim();
+    if(!m)continue;
+    if(!S.machines[m])S.machines[m]={hours:defHours,enabled:true};
+    else{
+      if(S.machines[m].enabled==null)S.machines[m].enabled=true;
+      if(!(Number(S.machines[m].hours)>0))S.machines[m].hours=defHours;
+    }
+  }
+  // Build0022：正式排程中已存在的機台也必須進入機台 Master。
+  for(const r of (S.schedule||[])){
+    const m=String(r?.machine||'').trim();
+    if(!m)continue;
+    if(!S.machines[m])S.machines[m]={hours:defHours,enabled:true};
+    else{
+      if(S.machines[m].enabled==null)S.machines[m].enabled=true;
+      if(!(Number(S.machines[m].hours)>0))S.machines[m].hours=defHours;
+    }
+  }
+  renderMachineSettings()
+}
+function renderMachineSettings(){const names=Object.keys(S.machines).sort();if(!names.length){$('machineSettings').className='empty';$('machineSettings').textContent='尚無機台資料';return}$('machineSettings').className='tablewrap';$('machineSettings').innerHTML=`<table><thead><tr><th>啟用</th><th>機台</th><th>每日可用工時</th></tr></thead><tbody>${names.map(n=>`<tr><td><input type="checkbox" data-m-enable="${esc(n)}" ${S.machines[n].enabled!==false?'checked':''}></td><td>${esc(n)}</td><td><input style="width:90px" type="number" min="0" max="24" step="0.5" data-m-hours="${esc(n)}" value="${S.machines[n].hours}"></td></tr>`).join('')}</tbody></table>`;document.querySelectorAll('[data-m-enable]').forEach(x=>x.onchange=()=>S.machines[x.dataset.mEnable].enabled=x.checked);document.querySelectorAll('[data-m-hours]').forEach(x=>x.onchange=()=>S.machines[x.dataset.mHours].hours=num(x.value))}
 function renderPool(){if(!S.pool.length){$('poolTable').className='empty';$('poolTable').textContent='沒有待排工單';return}const h=['優先','工單','客戶','料號','製程','指定機台','預交日','剩餘量','單位','預估工時','產速匹配','前製程'];const rows=S.pool.map(x=>[x.urgent?'急單':x.risk?'風險':'一般',x.wo,x.customer,x.part,x.process,x.machine,fmtDate(x.due),x.remaining.toFixed(2),x.unit,x.minutes?`${(x.minutes/60).toFixed(2)} hr`:'—',x.match,x.preprocess]);$('poolTable').className='tablewrap';$('poolTable').innerHTML=tableHtml(h,rows,{0:v=>`<span class="tag ${v==='急單'?'red':v==='風險'?'yellow':'blue'}">${v}</span>`,10:v=>`<span class="tag ${v==='無產速'?'red':v==='精確'?'green':'yellow'}">${esc(v)}</span>`,11:v=>`<span class="tag yellow">${esc(v)}</span>`})}
 function updateKpi(){const p=S.pool;$('kpiAll').textContent=p.length;$('kpiReady').textContent=p.filter(x=>x.ready).length;$('kpiRisk').textContent=p.filter(x=>x.risk).length;let util=0,n=0;for(const m of Object.values(groupSchedule())){util+=m.util;n++}$('kpiUtil').textContent=n?`${Math.round(util/n)}%`:'0%'}
 function renderQuality(){if(!S.pool.length){$('qualityList').textContent='請先建立工單池。';return}const missing=S.pool.filter(x=>!x.ready).length,pre=S.pool.filter(x=>x.preprocess==='待確認').length;$('qualityList').innerHTML=`產速可匹配：<b>${S.pool.length-missing}</b> / ${S.pool.length}<br>缺少產速：<b style="color:var(--red)">${missing}</b><br>前製程待確認：<b style="color:var(--yellow)">${pre}</b><br>機台 Master：<b>${Object.keys(S.machines).length}</b> 台`}
 function getStart(){const v=$('startDate').value;return v?new Date(v+'T00:00:00'):new Date()}
-function schedule(){if(!S.pool.length){alert('請先建立工單池');return}document.querySelectorAll('[data-m-hours]').forEach(x=>S.machines[x.dataset.mHours].hours=num(x.value));const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n].enabled&&S.machines[n].hours>0);if(!enabled.length){alert('沒有啟用機台');return}const selected=new Set(enabled.slice(0,maxMachines||enabled.length));const calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of S.pool.filter(x=>x.ready)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>0.01){const score=d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),dayStart=$('dayStart').value||'08:30',parts=dayStart.split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,reason:`${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}
+function schedule(){if(!S.pool.length){alert('請先建立工單池');return}document.querySelectorAll('[data-m-hours]').forEach(x=>S.machines[x.dataset.mHours].hours=num(x.value));const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);if(!enabled.length){alert('沒有啟用機台');return}const selected=new Set(enabled.slice(0,maxMachines||enabled.length));const calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of S.pool.filter(x=>x.ready)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>0.01){const score=d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),dayStart=$('dayStart').value||'08:30',parts=dayStart.split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,reason:`${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}
 S.schedule=out;renderSchedule();updateKpi();log(`排程完成：${out.length} 個排程區段，使用 ${selected.size} 台機台，人力上限 ${maxMachines} 台`);showPage('schedule')}
 function groupSchedule(){const g={};for(const x of S.schedule){if(!g[x.machine])g[x.machine]={jobs:[],minutes:0,cap:0,util:0};g[x.machine].jobs.push(x);g[x.machine].minutes+=x.minutes}const days=num($('days').value)||14;for(const [m,v] of Object.entries(g)){v.cap=(S.machines[m]?.hours||0)*60*days;v.util=v.cap?Math.min(100,v.minutes/v.cap*100):0}return g}
 function renderTimeline(target){
@@ -1807,7 +1830,25 @@ renderPool=function(){if(!S.pool.length){$('poolTable').className='empty';$('poo
 updateKpi=function(){const p=S.pool.filter(x=>!x.closed);$('kpiAll').textContent=p.length;$('kpiReady').textContent=p.filter(x=>x.ready).length;$('kpiRisk').textContent=p.filter(x=>x.risk).length;let util=0,n=0;for(const m of Object.values(groupSchedule())){util+=m.util;n++}$('kpiUtil').textContent=n?`${Math.round(util/n)}%`:'0%'}
 renderQuality=function(){if(!S.pool.length){$('qualityList').textContent='請先建立工單池。';return}const open=S.pool.filter(x=>!x.closed),missing=open.filter(x=>!x.ready).length,pre=open.filter(x=>x.preprocess==='待確認').length,closed=S.pool.filter(x=>x.closed).length;$('qualityList').innerHTML=`未結案：<b>${open.length}</b><br>已結案：<b>${closed}</b><br>產速可匹配：<b>${open.length-missing}</b> / ${open.length}<br>缺少產速：<b style="color:var(--red)">${missing}</b><br>前製程待確認：<b style="color:var(--yellow)">${pre}</b><br>機台 Master：<b>${Object.keys(S.machines).length}</b> 台`}
 
-function runScheduler(pool){document.querySelectorAll('[data-m-hours]').forEach(x=>S.machines[x.dataset.mHours].hours=num(x.value));const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n].enabled&&S.machines[n].hours>0);if(!enabled.length)throw Error('沒有啟用機台');const selected=new Set(enabled.slice(0,maxMachines||enabled.length)),calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of pool.filter(x=>x.ready&&!x.closed)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>.01){const duePenalty=job.due?Math.max(0,(c.date-job.due)/86400000)*10000000:0,score=duePenalty+d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),parts=($('dayStart').value||'08:30').split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,manual:job.manual||false,reason:`${job.manual?'手動急單；':''}${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}return out}
+function runScheduler(pool){document.querySelectorAll('[data-m-hours]').forEach(x=>S.machines[x.dataset.mHours].hours=num(x.value));const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);
+if(!enabled.length){
+  // Build0022：若機台主檔是舊資料、沒有 enabled 欄位，先自動修復為啟用。
+  const defHours=num($('defaultHours').value)||24;
+  const fallback=[...new Set([
+    ...(S.schedule||[]).map(x=>String(x?.machine||'').trim()),
+    ...(S.rows?.speed||[]).map(x=>String(x?.machine||'').trim()),
+    ...(S.pool||[]).map(x=>String(x?.machine||'').trim())
+  ].filter(Boolean))];
+  fallback.forEach(m=>{
+    if(!S.machines[m])S.machines[m]={hours:defHours,enabled:true};
+    else{
+      if(S.machines[m].enabled==null)S.machines[m].enabled=true;
+      if(!(Number(S.machines[m].hours)>0))S.machines[m].hours=defHours;
+    }
+  });
+  enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);
+}
+if(!enabled.length)throw Error('沒有可用機台：請到「機台中心」確認是否有機台被明確設為停用');const selected=new Set(enabled.slice(0,maxMachines||enabled.length)),calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of pool.filter(x=>x.ready&&!x.closed)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>.01){const duePenalty=job.due?Math.max(0,(c.date-job.due)/86400000)*10000000:0,score=duePenalty+d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),parts=($('dayStart').value||'08:30').split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,manual:job.manual||false,reason:`${job.manual?'手動急單；':''}${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}return out}
 schedule=function(){if(!S.pool.length){alert('請先建立工單池');return}try{S.schedule=runScheduler(S.pool);renderSchedule();updateKpi();log(`排程完成：${S.schedule.length} 個排程區段`);showPage('schedule')}catch(e){alert(e.message)}}
 
 function completionMap(arr){const m={};for(const x of arr){if(!m[x.wo]||x.end>m[x.wo])m[x.wo]=x.end}return m}
@@ -11711,4 +11752,55 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <!-- Build0021｜S19 戰情中心修復：發布後鎖定 canonical 正式排程；舊雲端回蓋時自動恢復；甘特固定納入 1S19 機台列。 -->
+
+<script id="build0022-machine-enabled-fix">
+(()=>{
+  'use strict';
+  if(window.__APS_BUILD0022_MACHINE_FIX__)return;
+  window.__APS_BUILD0022_MACHINE_FIX__=true;
+
+  const REQUIRED=['1B02','1B08','1B10','1B19','1S02','1S03','1S07','1S12','1S16','1S18','1S19','1B22','1V01','1V02','1V09','1C18'];
+
+  function repair(){
+    if(!window.S)return;
+    S.machines=S.machines||{};
+    let changed=0;
+    const def=24;
+
+    const names=[...new Set([
+      ...REQUIRED,
+      ...(S.schedule||[]).map(x=>String(x?.machine||'').trim()),
+      ...(S.rows?.speed||[]).map(x=>String(x?.machine||'').trim()),
+      ...(S.pool||[]).map(x=>String(x?.machine||'').trim())
+    ].filter(Boolean))];
+
+    names.forEach(m=>{
+      if(!S.machines[m]){
+        S.machines[m]={hours:def,enabled:true};
+        changed++;
+      }else{
+        if(S.machines[m].enabled==null){
+          S.machines[m].enabled=true;
+          changed++;
+        }
+        if(!(Number(S.machines[m].hours)>0)){
+          S.machines[m].hours=def;
+          changed++;
+        }
+      }
+    });
+
+    try{window.renderMachineSettings?.()}catch(_){}
+    if(changed)console.info(`Build0022｜已修復機台啟用資料 ${changed} 項`);
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(repair,500),{once:true});
+  if(document.readyState!=='loading')setTimeout(repair,500);
+  [1500,3500].forEach(ms=>setTimeout(repair,ms));
+
+  window.APSBuild0022={repairMachines:repair};
+})();
+</script>
+
+<!-- Build0022｜機台啟用修復：未設定 enabled 的舊機台預設啟用；只有 enabled=false 才視為停用。 -->
 </body></html>
