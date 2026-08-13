@@ -12130,23 +12130,12 @@ console.info('APS Build0029｜Read-only source audit ready');
   }
   function deltaKey(r){ return [woOf(r),machineOf(r),dateOf(r),minuteOf(r)].join('|'); }
 
-  async function postSchedule(rows){
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),10000);
-    try{
-      await fetch(API+"?action=apssaveschedule&_="+Date.now(),{
-        method:"POST",
-        mode:"no-cors",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({rows}),
-        signal:controller.signal
-      });
-    }catch(e){
-      if(e?.name==='AbortError') throw new Error("雲端寫入逾時（10 秒），未確認成功，請勿重複發布");
-      throw e;
-    }finally{
-      clearTimeout(timer);
-    }
+  async function postScheduleOne(row){
+    // Build0035：改用 GET/JSONP 單筆新增，取得 Apps Script 真正成功/失敗結果。
+    // 不再用 no-cors，也不再把整張 APS_Schedule 重新覆寫。
+    const res=await jsonp("apsappendscheduleone",{row:JSON.stringify(row)},30000);
+    if(!res || res.ok===false) throw new Error(res?.message||res?.error||"單筆寫入失敗");
+    return res;
   }
 
   async function publishAddedRows(addedRows,onProgress){
@@ -12166,10 +12155,13 @@ console.info('APS Build0029｜Read-only source audit ready');
       return {ok:true,deltaCount:1,existed:true,cloudBefore:cloudBase.length,cloudAfter:cloudBase.length,rows:cloudBase,key:k};
     }
 
-    const merged=[...cloudBase,add];
-
-    onProgress?.(`2/4 寫入 APS_Schedule（${cloudBase.length} → ${merged.length}）…`);
-    await postSchedule(merged);
+    onProgress?.(`2/4 單筆寫入 APS_Schedule（目前 ${cloudBase.length} 筆）…`);
+    const writeResult=await postScheduleOne(add);
+    if(writeResult?.existed){
+      onProgress?.("4/4 此筆雲端已存在，完成");
+      const rows=await loadScheduleAll();
+      return {ok:true,deltaCount:1,existed:true,cloudBefore:cloudBase.length,cloudAfter:rows.length,rows,key:k};
+    }
 
     onProgress?.("3/4 驗證 Google Sheet…");
     let verifiedRows=[];
@@ -12188,8 +12180,9 @@ console.info('APS Build0029｜Read-only source audit ready');
     );
   }
 
-  window.APSBuild0034={publishAddedRows,loadScheduleAll,version:"Build0034"};
-  console.info("APS Build0034｜Single publish timeout + progress ready");
+  window.APSBuild0035={publishAddedRows,loadScheduleAll,version:"Build0035"};
+  window.APSBuild0034=window.APSBuild0035;
+  console.info("APS Build0035｜Single-row JSONP append + verify ready");
 })();
 </script>
 
@@ -12202,4 +12195,5 @@ console.info('APS Build0029｜Read-only source audit ready');
 <!-- Build0033｜單筆手動發布：只發布目前選取/最後建立的 1 筆手動工單；不掃描其餘 MAN-*。 -->
 
 <!-- Build0034｜單筆發布加入進度與硬逾時，避免視窗無限卡住。 -->
+<!-- Build0035｜改為 Apps Script GET/JSONP 單筆 append；不再 no-cors、不再整表覆蓋。 -->
 </body></html>
