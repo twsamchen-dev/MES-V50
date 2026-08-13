@@ -916,6 +916,32 @@ body::after{
 @media(max-width:1180px){#schedule3d .aps3d-layout:not(.user-left-open){grid-template-columns:42px minmax(500px,1fr) 42px!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel{padding:7px 5px!important;overflow:hidden!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-layout:not(.user-left-open) .aps3d-machine-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}}
 @media(max-width:1050px){#schedule3d .aps3d-layout,#schedule3d .aps3d-layout.left-collapsed,#schedule3d .aps3d-layout.right-collapsed,#schedule3d .aps3d-layout.left-collapsed.right-collapsed{grid-template-columns:42px minmax(680px,1fr) 42px!important;min-width:780px!important}#schedule3d .aps3d-machine-panel,#schedule3d .aps3d-check-panel{max-height:none!important;padding:7px 5px!important}#schedule3d .aps3d-machine-panel>*:not(.aps3d-panel-title),#schedule3d .aps3d-check-panel>*:not(.aps3d-panel-title){display:none!important}#schedule3d .aps3d-machine-panel .aps3d-panel-title span,#schedule3d .aps3d-check-panel .aps3d-panel-title span{display:none!important}#schedule3d .aps3d-machine-panel .aps3d-panel-title,#schedule3d .aps3d-check-panel .aps3d-panel-title{border:0!important;margin:0!important;padding:0!important;justify-content:center!important}#schedule3d{overflow:auto!important}}
 </style>
+
+<style id="build0046-manual-color-display-only">
+/* Build0046｜僅修正戰情中心「手動新增排程」顏色
+   完全不修改 S.schedule、正式排程同步、日期、發布、DataCenter。 */
+
+/* 三天排程手動新增在戰情中心的 title 會保留 reason，例如「人工新增排程」 */
+#homeTimeline .schedule-block[title*="人工新增排程"],
+#homeTimeline .schedule-block[title*="手動新增排程"],
+#homeTimeline .schedule-block[title*="人工新增"]{
+  background:linear-gradient(180deg,#1697a5,#0b7f8b)!important;
+  border-color:#55d9e5!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+
+/* 若 APS 排程中心也顯示同一筆，保持同色 */
+#scheduleTimeline .schedule-block[title*="人工新增排程"],
+#scheduleTimeline .schedule-block[title*="手動新增排程"],
+#scheduleTimeline .schedule-block[title*="人工新增"]{
+  background:linear-gradient(180deg,#1697a5,#0b7f8b)!important;
+  border-color:#55d9e5!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+</style>
+
 </head>
 <body>
 <script id="aps-build0094-direct-recovery">
