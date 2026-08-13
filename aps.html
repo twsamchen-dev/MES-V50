@@ -12128,7 +12128,12 @@ console.info('APS Build0029｜Read-only source audit ready');
     const d=new Date(r?.start ?? r?.start_time ?? '');
     return Number.isNaN(+d)?'':`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
-  function deltaKey(r){ const rid=String(r?._aps_record_id||r?.record_id||'').trim(); return rid?('RID|'+rid):['WMD',woOf(r),machineOf(r),dateOf(r)].join('|'); }
+  function deltaKey(r){ return ['WMD',woOf(r),machineOf(r),dateOf(r)].join('|'); }
+  function sameScheduleRow(a,b){
+    return woOf(a)===woOf(b) &&
+           machineOf(a)===machineOf(b) &&
+           dateOf(a)===dateOf(b);
+  }
 
   async function postScheduleOne(row){
     // Build0035：改用 GET/JSONP 單筆新增，取得 Apps Script 真正成功/失敗結果。
@@ -12149,7 +12154,7 @@ console.info('APS Build0029｜Read-only source audit ready');
     const add=delta[0], k=deltaKey(add);
     if(!woOf(add)||!machineOf(add)||!dateOf(add)) throw new Error("手動排程缺少工單／機台／日期");
 
-    const exists=cloudBase.some(r=>deltaKey(r)===k);
+    const exists=cloudBase.some(r=>sameScheduleRow(r,add));
     if(exists){
       onProgress?.("4/4 此筆已存在，完成");
       return {ok:true,deltaCount:1,existed:true,cloudBefore:cloudBase.length,cloudAfter:cloudBase.length,rows:cloudBase,key:k};
@@ -12168,7 +12173,7 @@ console.info('APS Build0029｜Read-only source audit ready');
     for(let attempt=1;attempt<=2;attempt++){
       await sleep(attempt===1?1600:1000);
       verifiedRows=await loadScheduleAll();
-      if(verifiedRows.some(r=>deltaKey(r)===k)){
+      if(verifiedRows.some(r=>sameScheduleRow(r,add))){
         onProgress?.("4/4 雲端確認成功");
         return {ok:true,deltaCount:1,existed:false,cloudBefore:cloudBase.length,cloudAfter:verifiedRows.length,rows:verifiedRows,key:k};
       }
@@ -12180,9 +12185,10 @@ console.info('APS Build0029｜Read-only source audit ready');
     );
   }
 
-  window.APSBuild0035={publishAddedRows,loadScheduleAll,version:"Build0035"};
-  window.APSBuild0034=window.APSBuild0035;
-  console.info("APS Build0035｜Single-row JSONP append + verify ready");
+  window.APSBuild0036={publishAddedRows,loadScheduleAll,version:"Build0036"};
+  window.APSBuild0035=window.APSBuild0036;
+  window.APSBuild0034=window.APSBuild0036;
+  console.info("APS Build0036｜Single-row append + WMD readback verify ready");
 })();
 </script>
 
@@ -12196,4 +12202,5 @@ console.info('APS Build0029｜Read-only source audit ready');
 
 <!-- Build0034｜單筆發布加入進度與硬逾時，避免視窗無限卡住。 -->
 <!-- Build0035｜改為 Apps Script GET/JSONP 單筆 append；不再 no-cors、不再整表覆蓋。 -->
+<!-- Build0036｜發布後驗證改用 工單+機台+日期；不再使用 _aps_record_id 判定。 -->
 </body></html>
