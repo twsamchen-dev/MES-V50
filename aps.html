@@ -11806,7 +11806,7 @@ console.info('APS Build0027｜Force Restore Existing Schedule ready');
 
 <!-- Build0028 Safe｜回到單純需求：三天排程人工新增/修改/刪除可發布；正式排程只從雲端重新載入，不再用 195 筆/備援筆數自動救援。 -->
 <style id="build0028-safe-style">
-#build0028SafeBar{margin:8px 0;padding:10px 12px;border:1px solid #315d76;border-radius:9px;background:#0e1d27;color:#d7eefc;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#build0028SafeBar{display:none!important;margin:8px 0;padding:10px 12px;border:1px solid #315d76;border-radius:9px;background:#0e1d27;color:#d7eefc;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #build0028SafeBar button{border:1px solid #2f8f65;background:#176b49;color:#fff;border-radius:7px;padding:7px 11px;cursor:pointer;font-weight:800}
 #build0028SafeBar small{color:#9fc0d2;font-weight:500}
 </style>
@@ -11870,4 +11870,210 @@ window.APSBuild0028={reloadOfficial};
 console.info('APS Build0028｜Safe official schedule reload ready');
 })();
 </script>
+
+<style id="build0029-audit-style">
+#build0029AuditBar{
+  margin:8px 0;padding:10px 12px;border:1px solid #315d76;border-radius:9px;
+  background:#0e1d27;color:#d7eefc;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap
+}
+#build0029AuditBar button{
+  border:1px solid #3b82f6;background:#174d78;color:#fff;border-radius:7px;padding:7px 11px;
+  cursor:pointer;font-weight:800
+}
+#build0029AuditBar small{color:#9fc0d2;font-weight:500}
+#build0029AuditPanel{
+  margin:8px 0;padding:12px;border:1px solid #2b4655;border-radius:9px;background:#07131b;color:#dbeafe;
+  overflow:auto;max-height:430px;font-size:12px
+}
+#build0029AuditPanel table{width:100%;border-collapse:collapse;white-space:nowrap}
+#build0029AuditPanel th,#build0029AuditPanel td{padding:7px 8px;border-bottom:1px solid #213744;text-align:left}
+#build0029AuditPanel th{position:sticky;top:0;background:#102533;z-index:1}
+#build0029AuditPanel .good{color:#86efac;font-weight:800}
+#build0029AuditPanel .warn{color:#fde68a;font-weight:800}
+#build0029AuditPanel .bad{color:#fca5a5;font-weight:800}
+</style>
+
+<script id="build0029-readonly-source-audit">
+(()=>{
+'use strict';
+if(window.__APS_BUILD0029_AUDIT__)return; window.__APS_BUILD0029_AUDIT__=true;
+
+const $=id=>document.getElementById(id);
+const valid=v=>Array.isArray(v)?v:(v&&Array.isArray(v.rows)?v.rows:[]);
+const norm=v=>String(v??'').trim().toUpperCase();
+
+function machineOf(r){
+  return norm(r?.machine??r?.machine_no??r?.machineCode??r?.machine_code??r?.mc);
+}
+function woOf(r){
+  return String(r?.wo??r?.work_order_no??r?.work_order??r?.order_no??r?.id??'').trim();
+}
+function startOf(r){
+  const d=new Date(r?.start??r?.start_time??r?.date??r?.schedule_date??'');
+  return Number.isNaN(+d)?null:d;
+}
+function isManual(r){
+  return !!(
+    r?.manual ||
+    /人工新增|手動/.test(String(r?.reason||'')) ||
+    /MANUAL/.test(String(r?.order||r?.source||'').toUpperCase())
+  );
+}
+function exactKey(r){
+  const s=startOf(r);
+  const e=new Date(r?.end??r?.end_time??'');
+  return [
+    machineOf(r),woOf(r),s?+s:'',Number.isNaN(+e)?'':+e,
+    String(r?.part??r?.part_no??r?.spec??'')
+  ].join('|');
+}
+function crossMachineKey(r){
+  const s=startOf(r);
+  const e=new Date(r?.end??r?.end_time??'');
+  return [
+    woOf(r),s?+s:'',Number.isNaN(+e)?'':+e,
+    String(r?.part??r?.part_no??r?.spec??'')
+  ].join('|');
+}
+function summarize(name,rows){
+  rows=valid(rows);
+  const dates=rows.map(startOf).filter(Boolean).sort((a,b)=>a-b);
+  const machines=[...new Set(rows.map(machineOf).filter(Boolean))];
+  const exactSeen=new Set(), exactDup=[];
+  const cross=new Map();
+
+  rows.forEach(r=>{
+    const ek=exactKey(r);
+    if(exactSeen.has(ek)) exactDup.push(r); else exactSeen.add(ek);
+
+    const ck=crossMachineKey(r);
+    if(!cross.has(ck)) cross.set(ck,new Set());
+    if(machineOf(r)) cross.get(ck).add(machineOf(r));
+  });
+
+  const crossMachineDup=[...cross.values()].filter(s=>s.size>1).length;
+  const s19=rows.filter(r=>machineOf(r)==='1S19').length;
+  const manual=rows.filter(isManual).length;
+
+  return {
+    name,
+    count:rows.length,
+    machines:machines.length,
+    min:dates[0]?dates[0].toLocaleDateString('zh-TW'):'—',
+    max:dates.length?dates[dates.length-1].toLocaleDateString('zh-TW'):'—',
+    s19,
+    manual,
+    exactDup:exactDup.length,
+    crossMachineDup
+  };
+}
+async function readSources(){
+  const out=[];
+  out.push({name:'目前 S.schedule（雲端載入後）',rows:valid(window.S?.schedule)});
+
+  if(window.APSLargeStore?.hydrate){
+    for(const key of [
+      'SK_APS_FAST_SCHEDULE_V1107',
+      'SK_APS_SCHEDULE_SNAPSHOT_LARGE_V1',
+      'SK_APS_BEFORE_CLEANUP_0026'
+    ]){
+      try{out.push({name:key,rows:valid(await window.APSLargeStore.hydrate(key,[]))})}
+      catch(e){out.push({name:key+'（讀取失敗）',rows:[]})}
+    }
+  }
+
+  for(const key of [
+    'SK_APS_ACCEPTED_SCHEDULE_V872',
+    'SK_APS_MANUAL_SCHEDULE_V88',
+    'SK_APS_SCHEDULE_SNAPSHOT_V1',
+    'aps_integrated_3day_published_v1'
+  ]){
+    try{out.push({name:key,rows:valid(JSON.parse(localStorage.getItem(key)||'null'))})}
+    catch(e){out.push({name:key+'（解析失敗）',rows:[]})}
+  }
+
+  return out;
+}
+function cls(x){
+  if(x.count===0)return 'bad';
+  if(x.crossMachineDup>0)return 'warn';
+  return 'good';
+}
+async function audit(){
+  const btn=$('build0029AuditBtn');
+  if(btn){btn.disabled=true;btn.textContent='盤點中…'}
+  try{
+    const sources=await readSources();
+    const rows=sources.map(x=>summarize(x.name,x.rows));
+
+    const panel=$('build0029AuditPanel');
+    panel.hidden=false;
+    panel.innerHTML=`
+      <div style="margin-bottom:8px;font-weight:800">
+        Build0029 只讀盤點完成｜沒有刪除、沒有重新排程、沒有寫回雲端
+      </div>
+      <table>
+        <thead><tr>
+          <th>來源</th><th>筆數</th><th>機台數</th><th>日期範圍</th>
+          <th>1S19</th><th>手動</th><th>完全重複</th><th>跨機台同工單同時間</th>
+        </tr></thead>
+        <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td>${r.name}</td>
+            <td class="${cls(r)}">${r.count}</td>
+            <td>${r.machines}</td>
+            <td>${r.min} ～ ${r.max}</td>
+            <td>${r.s19}</td>
+            <td>${r.manual}</td>
+            <td>${r.exactDup}</td>
+            <td class="${r.crossMachineDup?'warn':'good'}">${r.crossMachineDup}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:9px;color:#9fc0d2;line-height:1.5">
+        判讀方式：先找「筆數合理、日期涵蓋目前排程、跨機台同工單同時間重複為 0 或最低」的來源。
+        目前不會自動選任何一份，也不會恢復任何資料。
+      </div>
+    `;
+
+    window.APSBuild0029.lastAudit=rows;
+    console.table(rows);
+  }catch(e){
+    alert('盤點失敗：'+(e?.message||e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='盤點正式排程來源'}
+  }
+}
+function mount(){
+  if($('build0029AuditBar'))return;
+  const host=document.querySelector('#schedule .card,#homeTimeline,main,.main-content');
+  if(!host)return;
+
+  const bar=document.createElement('div');
+  bar.id='build0029AuditBar';
+  bar.innerHTML=`
+    <b>正式排程來源盤點｜Build0029</b>
+    <button id="build0029AuditBtn">盤點正式排程來源</button>
+    <small>只讀：不清快取、不重新排程、不改機台、不寫雲端。</small>
+  `;
+  host.prepend(bar);
+
+  const panel=document.createElement('div');
+  panel.id='build0029AuditPanel';
+  panel.hidden=true;
+  bar.after(panel);
+
+  $('build0029AuditBtn').onclick=()=>audit();
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,600),{once:true});
+if(document.readyState!=='loading')setTimeout(mount,600);
+setTimeout(mount,1800);
+
+window.APSBuild0029={audit,lastAudit:null};
+console.info('APS Build0029｜Read-only source audit ready');
+})();
+</script>
+
+<!-- Build0029｜只讀盤點正式排程來源；不做任何資料恢復或寫入。 -->
 </body></html>
