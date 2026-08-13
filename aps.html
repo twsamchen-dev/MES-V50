@@ -1753,12 +1753,40 @@ function initMachines(speeds){
   }
   renderMachineSettings()
 }
-function renderMachineSettings(){const names=Object.keys(S.machines).sort();if(!names.length){$('machineSettings').className='empty';$('machineSettings').textContent='尚無機台資料';return}$('machineSettings').className='tablewrap';$('machineSettings').innerHTML=`<table><thead><tr><th>啟用</th><th>機台</th><th>每日可用工時</th></tr></thead><tbody>${names.map(n=>`<tr><td><input type="checkbox" data-m-enable="${esc(n)}" ${S.machines[n].enabled!==false?'checked':''}></td><td>${esc(n)}</td><td><input style="width:90px" type="number" min="0" max="24" step="0.5" data-m-hours="${esc(n)}" value="${S.machines[n].hours}"></td></tr>`).join('')}</tbody></table>`;document.querySelectorAll('[data-m-enable]').forEach(x=>x.onchange=()=>S.machines[x.dataset.mEnable].enabled=x.checked);document.querySelectorAll('[data-m-hours]').forEach(x=>x.onchange=()=>S.machines[x.dataset.mHours].hours=num(x.value))}
+function renderMachineSettings(){const names=Object.keys(S.machines).sort();if(!names.length){$('machineSettings').className='empty';$('machineSettings').textContent='尚無機台資料';return}$('machineSettings').className='tablewrap';$('machineSettings').innerHTML=`<table><thead><tr><th>啟用</th><th>機台</th><th>每日可用工時</th></tr></thead><tbody>${names.map(n=>`<tr><td><input type="checkbox" data-m-enable="${esc(n)}" ${S.machines[n].enabled!==false?'checked':''}></td><td>${esc(n)}</td><td><input style="width:90px" type="number" min="0" max="24" step="0.5" data-m-hours="${esc(n)}" value="${S.machines[n].hours}"></td></tr>`).join('')}</tbody></table>`;document.querySelectorAll('[data-m-enable]').forEach(x=>x.onchange=()=>{
+  const m=String(x.dataset.mEnable||'').trim();
+  if(!m)return;
+  S.machines=S.machines||{};
+  if(!S.machines[m])S.machines[m]={hours:num($('defaultHours')?.value)||24,enabled:x.checked};
+  else S.machines[m].enabled=x.checked;
+});document.querySelectorAll('[data-m-hours]').forEach(x=>x.onchange=()=>{
+  const m=String(x.dataset.mHours||'').trim();
+  if(!m)return;
+  S.machines=S.machines||{};
+  if(!S.machines[m])S.machines[m]={hours:num(x.value)||24,enabled:true};
+  else S.machines[m].hours=num(x.value)||S.machines[m].hours||24;
+})}
 function renderPool(){if(!S.pool.length){$('poolTable').className='empty';$('poolTable').textContent='沒有待排工單';return}const h=['優先','工單','客戶','料號','製程','指定機台','預交日','剩餘量','單位','預估工時','產速匹配','前製程'];const rows=S.pool.map(x=>[x.urgent?'急單':x.risk?'風險':'一般',x.wo,x.customer,x.part,x.process,x.machine,fmtDate(x.due),x.remaining.toFixed(2),x.unit,x.minutes?`${(x.minutes/60).toFixed(2)} hr`:'—',x.match,x.preprocess]);$('poolTable').className='tablewrap';$('poolTable').innerHTML=tableHtml(h,rows,{0:v=>`<span class="tag ${v==='急單'?'red':v==='風險'?'yellow':'blue'}">${v}</span>`,10:v=>`<span class="tag ${v==='無產速'?'red':v==='精確'?'green':'yellow'}">${esc(v)}</span>`,11:v=>`<span class="tag yellow">${esc(v)}</span>`})}
 function updateKpi(){const p=S.pool;$('kpiAll').textContent=p.length;$('kpiReady').textContent=p.filter(x=>x.ready).length;$('kpiRisk').textContent=p.filter(x=>x.risk).length;let util=0,n=0;for(const m of Object.values(groupSchedule())){util+=m.util;n++}$('kpiUtil').textContent=n?`${Math.round(util/n)}%`:'0%'}
 function renderQuality(){if(!S.pool.length){$('qualityList').textContent='請先建立工單池。';return}const missing=S.pool.filter(x=>!x.ready).length,pre=S.pool.filter(x=>x.preprocess==='待確認').length;$('qualityList').innerHTML=`產速可匹配：<b>${S.pool.length-missing}</b> / ${S.pool.length}<br>缺少產速：<b style="color:var(--red)">${missing}</b><br>前製程待確認：<b style="color:var(--yellow)">${pre}</b><br>機台 Master：<b>${Object.keys(S.machines).length}</b> 台`}
 function getStart(){const v=$('startDate').value;return v?new Date(v+'T00:00:00'):new Date()}
-function schedule(){if(!S.pool.length){alert('請先建立工單池');return}document.querySelectorAll('[data-m-hours]').forEach(x=>S.machines[x.dataset.mHours].hours=num(x.value));const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);if(!enabled.length){alert('沒有啟用機台');return}const selected=new Set(enabled.slice(0,maxMachines||enabled.length));const calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of S.pool.filter(x=>x.ready)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>0.01){const score=d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),dayStart=$('dayStart').value||'08:30',parts=dayStart.split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,reason:`${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}
+function schedule(){if(!S.pool.length){alert('請先建立工單池');return}document.querySelectorAll('[data-m-hours]').forEach(x=>{
+  const m=String(x.dataset.mHours||'').trim();
+  if(!m)return;
+  S.machines=S.machines||{};
+  if(!S.machines[m])S.machines[m]={hours:num(x.value)||num($('defaultHours')?.value)||24,enabled:true};
+  else S.machines[m].hours=num(x.value)||S.machines[m].hours||num($('defaultHours')?.value)||24;
+});const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);if(!enabled.length){alert('沒有啟用機台');return}const selected=new Set(enabled.slice(0,maxMachines||enabled.length));const calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of S.pool.filter(x=>x.ready)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine)){
+  candidates=[job.machine];
+}else{
+  candidates=[...selected].filter(m=>
+    S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m))
+  );
+  if(!candidates.length)candidates=[...selected];
+  // Build0024：同一張工單最多允許拆到 2 台，不可完整複製到所有候選機台。
+  candidates=candidates.slice(0,2);
+}
+while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>0.01){const score=d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),dayStart=$('dayStart').value||'08:30',parts=dayStart.split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,reason:`${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}
 S.schedule=out;renderSchedule();updateKpi();log(`排程完成：${out.length} 個排程區段，使用 ${selected.size} 台機台，人力上限 ${maxMachines} 台`);showPage('schedule')}
 function groupSchedule(){const g={};for(const x of S.schedule){if(!g[x.machine])g[x.machine]={jobs:[],minutes:0,cap:0,util:0};g[x.machine].jobs.push(x);g[x.machine].minutes+=x.minutes}const days=num($('days').value)||14;for(const [m,v] of Object.entries(g)){v.cap=(S.machines[m]?.hours||0)*60*days;v.util=v.cap?Math.min(100,v.minutes/v.cap*100):0}return g}
 function renderTimeline(target){
@@ -1830,7 +1858,76 @@ renderPool=function(){if(!S.pool.length){$('poolTable').className='empty';$('poo
 updateKpi=function(){const p=S.pool.filter(x=>!x.closed);$('kpiAll').textContent=p.length;$('kpiReady').textContent=p.filter(x=>x.ready).length;$('kpiRisk').textContent=p.filter(x=>x.risk).length;let util=0,n=0;for(const m of Object.values(groupSchedule())){util+=m.util;n++}$('kpiUtil').textContent=n?`${Math.round(util/n)}%`:'0%'}
 renderQuality=function(){if(!S.pool.length){$('qualityList').textContent='請先建立工單池。';return}const open=S.pool.filter(x=>!x.closed),missing=open.filter(x=>!x.ready).length,pre=open.filter(x=>x.preprocess==='待確認').length,closed=S.pool.filter(x=>x.closed).length;$('qualityList').innerHTML=`未結案：<b>${open.length}</b><br>已結案：<b>${closed}</b><br>產速可匹配：<b>${open.length-missing}</b> / ${open.length}<br>缺少產速：<b style="color:var(--red)">${missing}</b><br>前製程待確認：<b style="color:var(--yellow)">${pre}</b><br>機台 Master：<b>${Object.keys(S.machines).length}</b> 台`}
 
-function runScheduler(pool){document.querySelectorAll('[data-m-hours]').forEach(x=>S.machines[x.dataset.mHours].hours=num(x.value));const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);
+
+/* Build0024｜排程輸入去重：避免同一工單因 ERP/alias 重複列被完整排到多台機台 */
+function dedupeSchedulerPool(pool){
+  const map=new Map();
+  const duplicates=[];
+  const keyOf=x=>[
+    norm(x?.wo||x?.work_order_no||x?.order_no||''),
+    norm(x?.part||x?.part_no||''),
+    norm(x?.process||'')
+  ].join('|');
+
+  for(const row of (Array.isArray(pool)?pool:[])){
+    if(!row || row.closed || !row.ready) continue;
+    const key=keyOf(row);
+    if(!key || key==='||') continue;
+
+    if(!map.has(key)){
+      map.set(key,{...row});
+      continue;
+    }
+
+    const old=map.get(key);
+    duplicates.push({
+      wo:row.wo,
+      part:row.part,
+      process:row.process,
+      oldMachine:old.machine||'',
+      dupMachine:row.machine||''
+    });
+
+    // 重複資料不累加工時，否則會把同一張工單放大 N 倍。
+    // 保留資訊較完整的一筆；工時採最大值，避免重複列造成倍增。
+    const oldScore=
+      Number(!!old.machine)+Number(!!old.customer)+Number(!!old.due)+Number(old.minutes>0);
+    const newScore=
+      Number(!!row.machine)+Number(!!row.customer)+Number(!!row.due)+Number(row.minutes>0);
+
+    const chosen=newScore>oldScore ? {...row} : old;
+    chosen.minutes=Math.max(Number(old.minutes)||0,Number(row.minutes)||0);
+    chosen.remaining=Math.max(Number(old.remaining)||0,Number(row.remaining)||0);
+    chosen.planned=Math.max(Number(old.planned)||0,Number(row.planned)||0);
+    chosen.urgent=!!(old.urgent||row.urgent);
+    chosen.risk=!!(old.risk||row.risk);
+    map.set(key,chosen);
+  }
+
+  window.__APS_BUILD0024_DUPLICATES__=duplicates;
+  return [...map.values()];
+}
+
+function validateWorkOrderMachineSpread(schedule){
+  const byWo=new Map();
+  for(const s of (schedule||[])){
+    const wo=norm(s?.wo||'');
+    if(!wo)continue;
+    if(!byWo.has(wo))byWo.set(wo,new Set());
+    byWo.get(wo).add(norm(s.machine||''));
+  }
+  return [...byWo.entries()]
+    .filter(([wo,machines])=>[...machines].filter(Boolean).length>2)
+    .map(([wo,machines])=>({wo,machines:[...machines].filter(Boolean)}));
+}
+
+function runScheduler(pool){document.querySelectorAll('[data-m-hours]').forEach(x=>{
+  const m=String(x.dataset.mHours||'').trim();
+  if(!m)return;
+  S.machines=S.machines||{};
+  if(!S.machines[m])S.machines[m]={hours:num(x.value)||num($('defaultHours')?.value)||24,enabled:true};
+  else S.machines[m].hours=num(x.value)||S.machines[m].hours||num($('defaultHours')?.value)||24;
+});const start=getStart(),days=Math.max(1,num($('days').value)||14),ops=num($('operators').value),mpo=Math.max(1,num($('machinesPerOperator').value)||2),maxMachines=Math.max(0,ops*mpo),enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);
 if(!enabled.length){
   // Build0022：若機台主檔是舊資料、沒有 enabled 欄位，先自動修復為啟用。
   const defHours=num($('defaultHours').value)||24;
@@ -1848,8 +1945,31 @@ if(!enabled.length){
   });
   enabled=Object.keys(S.machines).filter(n=>S.machines[n]&&S.machines[n].enabled!==false&&Number(S.machines[n].hours)>0);
 }
-if(!enabled.length)throw Error('沒有可用機台：請到「機台中心」確認是否有機台被明確設為停用');const selected=new Set(enabled.slice(0,maxMachines||enabled.length)),calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];for(const job of pool.filter(x=>x.ready&&!x.closed)){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>.01){const duePenalty=job.due?Math.max(0,(c.date-job.due)/86400000)*10000000:0,score=duePenalty+d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),parts=($('dayStart').value||'08:30').split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,manual:job.manual||false,reason:`${job.manual?'手動急單；':''}${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}return out}
-schedule=function(){if(!S.pool.length){alert('請先建立工單池');return}try{S.schedule=runScheduler(S.pool);renderSchedule();updateKpi();log(`排程完成：${S.schedule.length} 個排程區段`);showPage('schedule')}catch(e){alert(e.message)}}
+if(!enabled.length)throw Error('沒有可用機台：請到「機台中心」確認是否有機台被明確設為停用');const selected=new Set(enabled.slice(0,maxMachines||enabled.length)),calendars={};for(const m of selected)calendars[m]=Array.from({length:days},(_,d)=>({used:0,cap:S.machines[m].hours*60,date:addDays(start,d)}));const out=[];
+const schedulerPool=dedupeSchedulerPool(pool);
+for(const job of schedulerPool){let remaining=job.minutes;if(remaining<=0)continue;let candidates=[];if(job.machine&&selected.has(job.machine))candidates=[job.machine];else candidates=[...selected].filter(m=>S.rows.speed.some(s=>norm(s.part)===norm(job.part)&&norm(s.machine)===norm(m)));if(!candidates.length)candidates=[...selected];while(remaining>0.01){let best=null;for(const m of candidates){for(let d=0;d<days;d++){const c=calendars[m][d],free=c.cap-c.used;if(free>.01){const duePenalty=job.due?Math.max(0,(c.date-job.due)/86400000)*10000000:0,score=duePenalty+d*100000+c.used;if(!best||score<best.score)best={m,d,c,free,score}}}}if(!best)break;const take=Math.min(remaining,best.free),parts=($('dayStart').value||'08:30').split(':').map(Number),begin=new Date(best.c.date);begin.setHours(parts[0],parts[1]+best.c.used,0,0);const end=new Date(begin.getTime()+take*60000);out.push({machine:best.m,date:best.c.date,start:begin,end,minutes:take,wo:job.wo,part:job.part,customer:job.customer,process:job.process,due:job.due,urgent:job.urgent,manual:job.manual||false,reason:`${job.manual?'手動急單；':''}${job.urgent?'急單優先；':''}交期 ${fmtDate(job.due)||'未提供'}；${job.match}產速；${job.machine?'指定/建議機台 '+job.machine:'依可用產能'}`});best.c.used+=take;remaining-=take}}return out}
+schedule=function(){
+  if(!S.pool.length){alert('請先建立工單池');return}
+  try{
+    const next=runScheduler(S.pool);
+    const spread=validateWorkOrderMachineSpread(next);
+    if(spread.length){
+      throw Error(
+        '排程安全檢查失敗：同一工單被分配到超過 2 台機台。\n' +
+        spread.slice(0,8).map(x=>`${x.wo}：${x.machines.join('、')}`).join('\n')
+      );
+    }
+    S.schedule=next;
+    renderSchedule();
+    updateKpi();
+    const dup=(window.__APS_BUILD0024_DUPLICATES__||[]).length;
+    log(`排程完成：${S.schedule.length} 個排程區段；輸入重複列已排除 ${dup} 筆`);
+    if(dup){
+      console.warn('Build0024 已排除重複工單列',window.__APS_BUILD0024_DUPLICATES__);
+    }
+    showPage('schedule')
+  }catch(e){alert(e.message)}
+}
 
 function completionMap(arr){const m={};for(const x of arr){if(!m[x.wo]||x.end>m[x.wo])m[x.wo]=x.end}return m}
 function renderSimTimeline(arr){const original=S.schedule,old=EP.simulation;S.schedule=arr;renderTimeline('urgentTimeline');S.schedule=original;EP.simulation=old}
@@ -11803,4 +11923,23 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <!-- Build0022｜機台啟用修復：未設定 enabled 的舊機台預設啟用；只有 enabled=false 才視為停用。 -->
+<!-- Build0023｜修正 Cannot set properties of undefined (setting 'hours')：
+         機台工時/啟用狀態寫入前先建立 S.machines[m]，不更動正式排程資料。 -->
+
+<script id="build0024-duplicate-workorder-guard">
+(()=>{
+  if(window.__APS_BUILD0024_DUP_GUARD__)return;
+  window.__APS_BUILD0024_DUP_GUARD__=true;
+
+  window.APSBuild0024={
+    duplicateRows:()=>window.__APS_BUILD0024_DUPLICATES__||[],
+    check:()=>typeof validateWorkOrderMachineSpread==='function'
+      ?validateWorkOrderMachineSpread(window.S?.schedule||[]):[]
+  };
+
+  console.info('APS Build0024｜Duplicate Work Order Guard ready');
+})();
+</script>
+
+<!-- Build0024｜同工單重複排程修正：排程前去重；同一工單最多拆 2 台；>2 台直接阻擋。 -->
 </body></html>
