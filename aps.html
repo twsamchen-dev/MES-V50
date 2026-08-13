@@ -12428,16 +12428,41 @@ console.info('APS Build0029｜Read-only source audit ready');
   const T=v=>String(v??'').trim();
 
   async function doSync(btn){
-    if(!window.APSBuild0040?.syncOfficial){
-      alert('Build0041：同步模組尚未就緒，請 Ctrl+F5 後再試。');
-      return;
-    }
     const old=btn.textContent;
     btn.disabled=true;
     btn.textContent='同步中…';
     try{
-      await window.APSBuild0040.syncOfficial(true);
+      // Build0042：不再依賴不存在的 APSBuild0040。
+      // 優先使用 Build0038 的正式 APS_Schedule 讀取器；若尚未掛載，再退回 DataCenter 強制 bootstrap。
+      let rows=null;
+      if(typeof window.APSBuild0038?.refreshOfficial==='function'){
+        rows=await window.APSBuild0038.refreshOfficial(false);
+      }else if(typeof window.APSCloudDataCenter?.bootstrap==='function'){
+        const result=await window.APSCloudDataCenter.bootstrap(true);
+        if(result?.ok===false) throw new Error(result?.error?.message||result?.error||'APS DataCenter 同步失敗');
+        rows=Array.isArray(window.S?.schedule)?window.S.schedule:[];
+      }else{
+        throw new Error('正式排程讀取模組尚未就緒，請等待 2 秒後再試');
+      }
+
+      // 同步完成後統一重繪，避免資料已更新但三天甘特仍停在舊畫面。
+      try{window.renderSchedule?.()}catch(_){}
+      try{window.renderTimeline?.('scheduleTimeline')}catch(_){}
+      try{window.renderTimeline?.('homeTimeline')}catch(_){}
+      try{window.updateKpi?.()}catch(_){}
+      try{window.updateDueKpi?.()}catch(_){}
+      try{window.APSBuild0096?.refreshDashboard?.()}catch(_){}
+      try{window.APS3D?.render?.()}catch(_){}
+      window.dispatchEvent(new CustomEvent('aps-official-schedule-synced',{detail:{rows:Array.isArray(rows)?rows.length:(window.S?.schedule?.length||0),build:'Build0042'}}));
+      setTimeout(()=>{
+        try{window.renderSchedule?.()}catch(_){}
+        try{window.APS3D?.render?.()}catch(_){}
+      },250);
+
+      const count=Array.isArray(rows)?rows.length:(window.S?.schedule?.length||0);
+      alert(`Build0042：正式排程同步完成，共 ${count} 筆。\n來源：Google Sheet APS_Schedule\n三天甘特已要求重新繪製。`);
     }catch(err){
+      console.error('Build0042 sync official failed',err);
       alert('同步正式排程失敗：'+(err?.message||err));
     }finally{
       btn.disabled=false;
@@ -12458,7 +12483,7 @@ console.info('APS Build0029｜Read-only source audit ready');
     btn.type='button';
     btn.className=anchor.className||'btn ghost';
     btn.textContent='同步正式排程';
-    btn.title='Build0041：直接重新讀取 APS_Schedule + Machine Master';
+    btn.title='Build0042：直接重新讀取 Google Sheet APS_Schedule 並重繪三天甘特';
     btn.style.cssText='background:#2563eb;color:#fff;border:1px solid #60a5fa;font-weight:800;';
     btn.addEventListener('click',e=>{
       e.preventDefault();
@@ -12474,15 +12499,15 @@ console.info('APS Build0029｜Read-only source audit ready');
     document.querySelectorAll('body *').forEach(el=>{
       if(el.children.length) return;
       const t=T(el.textContent);
-      if(t==='Build0034') el.textContent='Build0041';
+      if(t==='Build0034'||t==='Build0041') el.textContent='Build0042';
       if(/三天甘特排程\s*\|\s*Build0034/.test(t)) {
-        el.textContent=t.replace(/Build0034/g,'Build0041');
+        el.textContent=t.replace(/Build0034|Build0041/g,'Build0042');
       }
       if(/機台\s*\/?\s*篩選\s*\|\s*Build0034/.test(t)) {
-        el.textContent=t.replace(/Build0034/g,'Build0041');
+        el.textContent=t.replace(/Build0034|Build0041/g,'Build0042');
       }
       if(/排程驗證\s*\|\s*Build0034/.test(t)) {
-        el.textContent=t.replace(/Build0034/g,'Build0041');
+        el.textContent=t.replace(/Build0034|Build0041/g,'Build0042');
       }
     });
   }
@@ -12493,16 +12518,17 @@ console.info('APS Build0029｜Read-only source audit ready');
     setTimeout(stamp,700);
   }
 
-  window.APSBuild0041={version:'Build0041',mount,stamp};
+  window.APSBuild0042={version:'Build0042',mount,stamp,doSync};
+  window.APSBuild0041=window.APSBuild0042;
 
   document.readyState==='loading'
     ?document.addEventListener('DOMContentLoaded',boot,{once:true})
     :boot();
 
   [1200,2200,4000].forEach(ms=>setTimeout(()=>{stamp();mount();},ms));
-  console.info('APS Build0041｜fixed visible sync button + visible version stamp ready');
+  console.info('APS Build0042｜official schedule sync fallback + gantt repaint ready');
 })();
 </script>
-<!-- Build0041｜固定顯示「同步正式排程」按鈕＋三天排程標題改為 Build0041。 -->
+<!-- Build0042｜修正同步按鈕錯誤依賴 APSBuild0040；改由 Build0038.refreshOfficial / APSCloudDataCenter.bootstrap 強制同步並重繪甘特。 -->
 
 </body></html>
