@@ -130,7 +130,7 @@
       <div class="col4"><label>料號 / รหัสสินค้า</label><input id="part_no" placeholder="由工單或 SL31A 帶入"></div>
       <div class="col4"><label>生產批號 / ล็อตผลิต</label><input id="batch_no" placeholder="可空白"></div>
       <div class="col4"><label>製程站點 / จุดกระบวนการ</label><select id="process_site">
-        <option>開料 / ตัดวัตถุดิบ</option><option>清洗 / ล้าง</option><option>退火 / อบอ่อน</option><option>軋延 / รีด</option><option>上膠 / เคลือบกาว</option><option>覆卷 / ม้วนซ้ำ</option><option>線軸覆卷機台 / เครื่องกรอม้วนแกน</option><option>分條 / ตัดแบ่งม้วน</option><option>複捲 / กรอกลับ</option><option>對貼 / ประกบ</option><option>裁切 / ตัดแผ่น</option><option>檢驗 / ตรวจสอบ</option><option>包裝 / บรรจุ</option><option>入庫 / เข้าคลัง</option><option>重工 / งานแก้ไข</option><option>其他 / อื่นๆ</option>
+        <option>開料 / ตัดวัตถุดิบ</option><option>清洗 / ล้าง</option><option>退火 / อบอ่อน</option><option>軋延 / รีด</option><option>上膠 / เคลือบกาว</option><option>覆卷 / ม้วนซ้ำ</option><option>線軸覆卷機台 / เครื่องกรอม้วนแกน</option><option>分條 / ตัดแบ่งม้วน</option><option>複捲 / กรอกลับ</option><option>打線 / ตีเส้น</option><option>對貼 / ประกบ</option><option>裁切 / ตัดแผ่น</option><option>檢驗 / ตรวจสอบ</option><option>包裝 / บรรจุ</option><option>入庫 / เข้าคลัง</option><option>重工 / งานแก้ไข</option><option>其他 / อื่นๆ</option>
       </select></div>
       <div class="col4 targetUnitBox"><label><span class="requiredMark">＊</span>目標單位 / หน่วยเป้าหมาย</label><select id="target_unit" onchange="setTargetUnit(this.value,true)"><option value="">請選擇 / กรุณาเลือก</option><option value="R">R（卷數／回數）</option><option value="M2">M²（平方公尺）</option></select><div id="targetUnitHint" class="muted">請先選擇 R 或 M²</div></div>
       <div class="col4" id="targetRollBox"><label><span class="requiredMark">＊</span>目標卷數 R / เป้าหมายม้วน</label><input id="target_roll" type="number" min="0.01" step="0.01" oninput="updateMultiSummary()"></div>
@@ -864,7 +864,7 @@ function normalizeClientOrder(r){
   }
 
   if(!r.part_no){const hit=parts.find(looksPartNo); if(hit)r.part_no=hit;}
-  if(!r.process){const hit=parts.find(x=>['分條','複捲','包裝','上膠','覆卷','開料','檢驗'].some(p=>String(x).includes(p))); if(hit)r.process=hit;}
+  if(!r.process){const hit=parts.find(x=>['分條','複捲','打線','包裝','上膠','覆卷','開料','檢驗'].some(p=>String(x).includes(p))); if(hit)r.process=hit;}
   if(!r.due_date){
     const hit=parts.find(x=>parseClientDate(x));
     if(hit)r.due_date=parseClientDate(hit);
@@ -985,7 +985,7 @@ async function loadKeyInForRange(force=false){
 }
 function primaryWorkOrder_(r){return wo12(r.work_order_no||r.command_no||r.order_no||r['工單']||r['工單號']||r['命令單號']||'')}
 function machineKey_(r){let s=norm(r.machine_code||r.machine||r['機台']||r['機台編號']||'');if(!s)return '';const m=s.match(/^1?([A-Z])(\d{2})/);return m?(m[1]+m[2]):s}
-function processKey_(r){let s=String(r.process_site||r.process||r['製程站點']||r['站點']||r['製程']||'').split('/')[0].trim();if(s.includes('線軸'))return '線軸';if(s.includes('複捲')||s.includes('覆卷'))return '複捲';if(s.includes('分條'))return '分條';if(s.includes('包裝'))return '包裝';if(s.includes('上膠'))return '上膠';if(s.includes('開料')||s.includes('裁切'))return '開料';return norm(s)}
+function processKey_(r){let s=String(r.process_site||r.process||r['製程站點']||r['站點']||r['製程']||'').split('/')[0].trim();if(s.includes('線軸'))return '線軸';if(s.includes('複捲')||s.includes('覆卷'))return '複捲';if(s.includes('分條'))return '分條';if(s.includes('打線'))return '打線';if(s.includes('包裝'))return '包裝';if(s.includes('上膠'))return '上膠';if(s.includes('開料')||s.includes('裁切'))return '開料';return norm(s)}
 function shiftKey_(r){
   const raw=String((r&&r.shift)||(r&&r['班別'])||(r&&r['班次'])||(r&&r.work_shift)||'').trim();
   if(raw){if(raw.includes('早')||raw.toLowerCase().includes('day'))return '早班';if(raw.includes('夜')||raw.includes('晚')||raw.toLowerCase().includes('night'))return '夜班';if(raw.includes('中'))return '中班';return raw.split('/')[0].trim()}
