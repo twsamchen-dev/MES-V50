@@ -12934,4 +12934,61 @@ console.info('APS Build0029｜Read-only source audit ready');
 })();
 </script>
 
+<!-- Build 0111｜Key In 產速回饋清單同步修正
+     問題：上方 KPI 已從 APSLargeStore 讀到雲端回饋，但舊清單在雲端資料到達前
+     只讀 localStorage 一次，因而永久維持「空白」。此層以同一資料來源重新繪製清單。 -->
+<script id="build0111-keyin-feedback-list-sync">
+(()=>{
+  'use strict';
+  const KEY='SK_APS_SPEED_FEEDBACK_V2';
+  const $=id=>document.getElementById(id);
+  const text=v=>String(v??'').trim();
+  const n=v=>text(v).toUpperCase().replace(/\s+/g,'').replace(/[‐‑‒–—－_]/g,'-');
+  const esc=v=>text(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+  const number=v=>{const x=Number(String(v??'').replace(/,/g,''));return Number.isFinite(x)?x:0};
+  let status='all';
+
+  function rows(){
+    const cached=window.APSLargeStore?.getSync?.(KEY,null);
+    if(Array.isArray(cached)&&cached.length)return cached;
+    try{const local=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(local)?local:[]}catch{return []}
+  }
+  function isApproved(x){return x?.is_standard===true||String(x?.is_standard)==='1'||String(x?.is_standard).toLowerCase()==='true'}
+  function uniqueCount(list){return new Set(list.map(x=>[n(x.part),n(x.machine),n(x.process)].join('|')).filter(x=>x!=='||')).size}
+  function abnormalIndexes(list){
+    const groups=new Map(),bad=new Set();
+    list.forEach((x,i)=>{const k=[n(x.part),n(x.machine),n(x.process)].join('|');if(!groups.has(k))groups.set(k,[]);groups.get(k).push({x,i})});
+    groups.forEach(g=>{const s=g.map(o=>({i:o.i,r:number(o.x.qtyRound)/number(o.x.minutesRound)})).filter(x=>x.r>0);if(s.length<3)return;const a=s.map(x=>x.r).sort((x,y)=>x-y),m=a.length%2?a[(a.length-1)/2]:(a[a.length/2-1]+a[a.length/2])/2;if(m>0)s.forEach(x=>{if(Math.abs(x.r-m)/m>.3)bad.add(x.i)})});
+    return bad;
+  }
+  function render(){
+    const host=$('speedFeedbackTable');if(!host)return;
+    const all=rows(),bad=abnormalIndexes(all);
+    const shown=all.map((x,i)=>({x,i})).filter(o=>status==='all'||(status==='learning'&&!isApproved(o.x))||(status==='approved'&&isApproved(o.x))||(status==='abnormal'&&bad.has(o.i)));
+    const note=host.closest('.card')?.querySelector('.sub');
+    if(note)note.textContent=`已同步雲端 Key In 回饋：歷史 ${all.length} 筆／有效料號＋機台＋製程 ${uniqueCount(all)} 組。現場回填後會自動更新，不需在此頁另行匯入。`;
+    if(!shown.length){host.className='empty';host.textContent=all.length?'目前沒有符合此狀態的產速紀錄':'雲端 Key In 回饋載入中；若超過 30 秒仍為空，請按右上「重新檢查」。';return}
+    host.className='tablewrap';
+    host.innerHTML=`<table><thead><tr><th>料號</th><th>機台</th><th>製程</th><th>每回產量</th><th>每回時間</th><th>實測日期</th><th>人員</th><th>來源／工單</th><th>狀態</th></tr></thead><tbody>${shown.map(({x,i})=>`<tr><td><b>${esc(x.part)}</b><div class="sub">${esc(x.name||'')}</div></td><td>${esc(x.machine||'—')}</td><td>${esc(x.process||'—')}</td><td>${number(x.qtyRound).toLocaleString('zh-TW')} ${esc(x.unit||'')}</td><td>${number(x.minutesRound).toFixed(2)} min</td><td>${esc(x.date||'—')}</td><td>${esc(x.operator||'—')}</td><td>${esc(x.source||'Key In')}<div class="sub">${esc(x.work_order_no||'')}</div></td><td>${isApproved(x)?'<span class="tag green">課長已確認</span>':'<span class="tag yellow">現場學習</span>'}${bad.has(i)?' <span class="tag red">異常</span>':''}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function bindTabs(){
+    document.querySelectorAll('[data-speed-status]').forEach(b=>{
+      if(b.dataset.build0111Bound)return;
+      const clean=b.cloneNode(true);clean.dataset.build0111Bound='1';b.replaceWith(clean);
+      clean.addEventListener('click',()=>{status=clean.dataset.speedStatus||'all';document.querySelectorAll('[data-speed-status]').forEach(x=>x.classList.toggle('active',x===clean));render()});
+    });
+  }
+  function install(){
+    bindTabs();render();
+    const refresh=$('refreshSpeedFeedback');
+    if(refresh&&!refresh.dataset.build0111Bound){refresh.dataset.build0111Bound='1';refresh.addEventListener('click',()=>setTimeout(render,450));}
+    const base=window.renderSpeedCenter;
+    if(typeof base==='function'&&!base.__build0111){const wrapped=function(){const out=base.apply(this,arguments);setTimeout(()=>{bindTabs();render()},80);return out};wrapped.__build0111=true;window.renderSpeedCenter=wrapped;}
+  }
+  document.addEventListener('aps-large-store-ready',()=>setTimeout(()=>{install();render()},80));
+  document.addEventListener('DOMContentLoaded',()=>{install();[500,1800,5000,12000].forEach(ms=>setTimeout(render,ms))},{once:true});
+  if(document.readyState!=='loading'){install();[500,1800,5000,12000].forEach(ms=>setTimeout(render,ms));}
+  window.APSKeyInFeedbackList0111={refresh:render,rows};
+})();
+</script>
 </body></html>
