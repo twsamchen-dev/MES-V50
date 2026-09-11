@@ -12947,6 +12947,7 @@ console.info('APS Build0029｜Read-only source audit ready');
   const esc=v=>text(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   const number=v=>{const x=Number(String(v??'').replace(/,/g,''));return Number.isFinite(x)?x:0};
   let status='all';
+  const selected=new Set();
 
   function rows(){
     const cached=window.APSLargeStore?.getSync?.(KEY,null);
@@ -12954,6 +12955,28 @@ console.info('APS Build0029｜Read-only source audit ready');
     try{const local=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(local)?local:[]}catch{return []}
   }
   function isApproved(x){return x?.is_standard===true||String(x?.is_standard)==='1'||String(x?.is_standard).toLowerCase()==='true'}
+  async function saveRows(list){
+    await window.APSLargeStore?.set?.(KEY,list,{mirrorSmall:true});
+    try{localStorage.setItem(KEY,JSON.stringify(list))}catch{}
+  }
+  async function syncApproved(row){
+    // 使用既有 Apps Script 的 savespeedfeedback：以 feedback_id 更新原 Key In 回饋，不新增重複紀錄。
+    if(!row?.feedback_id||typeof APS_CLOUD_API==='undefined')return;
+    try{
+      await fetch(APS_CLOUD_API+'?action=savespeedfeedback&_='+Date.now(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(row)});
+    }catch(err){console.warn('產速確認雲端同步失敗',err)}
+  }
+  async function approve(indices){
+    const all=rows();const targets=[...new Set(indices)].map(i=>Number(i)).filter(i=>all[i]&&!isApproved(all[i]));
+    if(!targets.length){alert('請先勾選尚待確認的產速紀錄。');return}
+    if(!confirm(`確認將 ${targets.length} 筆現場 Key In 產速設為「課長已確認」？\n確認後會同步保存到雲端產速回饋資料。`))return;
+    const now=new Date().toISOString();
+    targets.forEach(i=>{all[i]={...all[i],is_standard:true,approved_by:'11035 陳善祖',approved_at:now,updated_at:now}});
+    await saveRows(all);
+    await Promise.all(targets.map(i=>syncApproved(all[i])));
+    selected.clear();render();
+    try{window.renderSpeedCenter?.()}catch{}
+  }
   function uniqueCount(list){return new Set(list.map(x=>[n(x.part),n(x.machine),n(x.process)].join('|')).filter(x=>x!=='||')).size}
   function abnormalIndexes(list){
     const groups=new Map(),bad=new Set();
@@ -12969,7 +12992,13 @@ console.info('APS Build0029｜Read-only source audit ready');
     if(note)note.textContent=`已同步雲端 Key In 回饋：歷史 ${all.length} 筆／有效料號＋機台＋製程 ${uniqueCount(all)} 組。現場回填後會自動更新，不需在此頁另行匯入。`;
     if(!shown.length){host.className='empty';host.textContent=all.length?'目前沒有符合此狀態的產速紀錄':'雲端 Key In 回饋載入中；若超過 30 秒仍為空，請按右上「重新檢查」。';return}
     host.className='tablewrap';
-    host.innerHTML=`<table><thead><tr><th>料號</th><th>機台</th><th>製程</th><th>每回產量</th><th>每回時間</th><th>實測日期</th><th>人員</th><th>來源／工單</th><th>狀態</th></tr></thead><tbody>${shown.map(({x,i})=>`<tr><td><b>${esc(x.part)}</b><div class="sub">${esc(x.name||'')}</div></td><td>${esc(x.machine||'—')}</td><td>${esc(x.process||'—')}</td><td>${number(x.qtyRound).toLocaleString('zh-TW')} ${esc(x.unit||'')}</td><td>${number(x.minutesRound).toFixed(2)} min</td><td>${esc(x.date||'—')}</td><td>${esc(x.operator||'—')}</td><td>${esc(x.source||'Key In')}<div class="sub">${esc(x.work_order_no||'')}</div></td><td>${isApproved(x)?'<span class="tag green">課長已確認</span>':'<span class="tag yellow">現場學習</span>'}${bad.has(i)?' <span class="tag red">異常</span>':''}</td></tr>`).join('')}</tbody></table>`;
+    const pending=shown.filter(({x})=>!isApproved(x));
+    host.innerHTML=`<div class="actions" style="padding:10px 12px;margin:0;border-bottom:1px solid #314452"><button class="btn ghost" id="keyinSelectVisible">${pending.length&&pending.every(({i})=>selected.has(i))?'取消全選待確認':'全選待確認'}</button><span style="color:#aebbc6;align-self:center">已選 ${[...selected].filter(i=>shown.some(x=>x.i===i)).length} 筆</span><button class="btn green" id="keyinApproveSelected">確認選取產速</button></div><table><thead><tr><th><input type="checkbox" id="keyinHeaderCheck" ${pending.length&&pending.every(({i})=>selected.has(i))?'checked':''} title="全選待確認"></th><th>料號</th><th>機台</th><th>製程</th><th>每回產量</th><th>每回時間</th><th>實測日期</th><th>人員</th><th>來源／工單</th><th>狀態</th><th>確認</th></tr></thead><tbody>${shown.map(({x,i})=>`<tr><td>${isApproved(x)?'—':`<input type="checkbox" data-keyin-select="${i}" ${selected.has(i)?'checked':''}>`}</td><td><b>${esc(x.part)}</b><div class="sub">${esc(x.name||'')}</div></td><td>${esc(x.machine||'—')}</td><td>${esc(x.process||'—')}</td><td>${number(x.qtyRound).toLocaleString('zh-TW')} ${esc(x.unit||'')}</td><td>${number(x.minutesRound).toFixed(2)} min</td><td>${esc(x.date||'—')}</td><td>${esc(x.operator||'—')}</td><td>${esc(x.source||'Key In')}<div class="sub">${esc(x.work_order_no||'')}</div></td><td>${isApproved(x)?'<span class="tag green">課長已確認</span>':'<span class="tag yellow">現場學習</span>'}${bad.has(i)?' <span class="tag red">異常</span>':''}</td><td>${isApproved(x)?'已確認':`<button class="btn green" data-keyin-approve="${i}">確認</button>`}</td></tr>`).join('')}</tbody></table>`;
+    host.querySelectorAll('[data-keyin-select]').forEach(c=>c.addEventListener('change',()=>{const i=Number(c.dataset.keyinSelect);c.checked?selected.add(i):selected.delete(i);render()}));
+    const toggle=()=>{const on=pending.length&&pending.every(({i})=>selected.has(i));pending.forEach(({i})=>on?selected.delete(i):selected.add(i));render()};
+    host.querySelector('#keyinSelectVisible')?.addEventListener('click',toggle);host.querySelector('#keyinHeaderCheck')?.addEventListener('change',toggle);
+    host.querySelector('#keyinApproveSelected')?.addEventListener('click',()=>approve([...selected]));
+    host.querySelectorAll('[data-keyin-approve]').forEach(b=>b.addEventListener('click',()=>approve([Number(b.dataset.keyinApprove)])));
   }
   function bindTabs(){
     document.querySelectorAll('[data-speed-status]').forEach(b=>{
