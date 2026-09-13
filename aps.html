@@ -2022,13 +2022,23 @@ $('buildPool').onclick=buildPool;$('runSchedule').onclick=schedule;$('rerunSched
 (function(){
  const KEY='SK_APS_SPEED_FEEDBACK_V2';
  const MASTER_KEY='SK_APS_SPEED_MASTER_V1';
- function loadFeedback(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}}
- function saveFeedback(rows){
-   localStorage.setItem(KEY,JSON.stringify(rows));
-   try{window.APSLargeStore?.set(KEY,rows,{mirrorSmall:true})}catch(e){console.warn('產速 IndexedDB 同步失敗',e)}
+ // 產速回饋可能超過 localStorage 容量；一律以 IndexedDB 為主，localStorage 只保留舊版相容讀取。
+ function loadLargeRows(key){
+   try{const cached=window.APSLargeStore?.getSync?.(key,null);if(Array.isArray(cached))return cached}catch(e){}
+   try{const legacy=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(legacy)?legacy:[]}catch(e){return[]}
  }
- function loadStoredMaster(){try{return JSON.parse(localStorage.getItem(MASTER_KEY)||'[]')}catch(e){return[]}}
- function saveStoredMaster(rows){localStorage.setItem(MASTER_KEY,JSON.stringify(rows))}
+ function saveLargeRows(key,rows){
+   const copy=Array.isArray(rows)?rows:[];
+   try{
+     if(window.APSLargeStore?.set)return Promise.resolve(window.APSLargeStore.set(key,copy,{mirrorSmall:false}));
+     localStorage.setItem(key,JSON.stringify(copy));
+     return Promise.resolve(true);
+   }catch(e){return Promise.reject(e)}
+ }
+ function loadFeedback(){return loadLargeRows(KEY)}
+ function saveFeedback(rows){return saveLargeRows(KEY,rows)}
+ function loadStoredMaster(){return loadLargeRows(MASTER_KEY)}
+ function saveStoredMaster(rows){return saveLargeRows(MASTER_KEY,rows)}
  function feedbackRows(){return loadFeedback().map((x,i)=>{const mode=inferAPSMode(x.process,x.mode);return({...x,_feedback:true,_index:i,mode,total:Number(x.total)||Number(x.minutesRound)||0,qtyPerRound:Number(x.qtyRound)||0,unit:x.unit||'R',inw:Number(x.inw)||0,outw:Number(x.outw)||0,len:Number(x.len)||0,run:Number(x.fixedRunTime)||Number(x.minutesRound)||0,down:Number(x.unloadTime)||0,change:Number(x.changeTime)||0,setup:Number(x.setupTime)||0,speed:Number(x.speedMpm)||Number(x.speed)||0,efficiency:Number(x.efficiencyFactor)||1,version:x.version||'V2-FB',enabled:x.enabled!==false})})}
  const baseBuildSpeed=window.buildSpeed;
  function speedMasterKey(x){return[norm(x.part),norm(x.machine),norm(x.process)].join('|')}
@@ -2224,10 +2234,16 @@ function missingJobs(){const rows=window.__APS_PROCESSING_SCOPE_ROWS__?.(S.pool)
  function exportCSV(){const arr=loadFeedback();if(!arr.length){alert('尚無回饋資料');return}const headers=['產品料號','產品名稱','機台','製程','投入寬mm','產出寬mm','產出長M','每回產量','單位','每回時間min','實測日期','實測人員','備註'];const rows=arr.map(x=>[x.part,x.name,x.machine,x.process,x.inw,x.outw,x.len,x.qtyRound,x.unit,x.minutesRound,x.date,x.operator,x.note]);const csv='\ufeff'+[headers,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='SK_APS_產速回饋_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(a.href)}
 
  function exportJSON(){const payload={version:1,exportedAt:new Date().toISOString(),master:loadStoredMaster(),feedback:loadFeedback()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='SK_APS_永久產速備份_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)}
- function importJSON(file){const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(!Array.isArray(p.master)||!Array.isArray(p.feedback))throw Error('格式不正確');saveStoredMaster(p.master);saveFeedback(p.feedback);renderSpeedCenter();if(S.files.workorder)window.buildPool();alert('永久產速資料已匯入。')}catch(e){alert('匯入失敗：'+e.message)}};r.readAsText(file)}
+ function importJSON(file){const r=new FileReader();r.onload=async()=>{try{const p=JSON.parse(r.result);if(!Array.isArray(p.master)||!Array.isArray(p.feedback))throw Error('格式不正確');if(p.master.length)await saveStoredMaster(p.master);await saveFeedback(p.feedback);renderSpeedCenter();if(S.files.workorder)window.buildPool();alert(`永久產速資料已匯入：${p.feedback.length} 筆回饋。`)}catch(e){alert('匯入失敗：'+e.message)}};r.readAsText(file)}
  const oldSchedule=window.schedule;window.schedule=function(){oldSchedule();setTimeout(renderRoundUtil,0)};
  document.getElementById('saveSpeedFeedback')?.addEventListener('click',saveForm);document.getElementById('clearSpeedForm')?.addEventListener('click',clearForm);document.getElementById('refreshSpeedFeedback')?.addEventListener('click',renderSpeedCenter);document.getElementById('exportSpeedFeedback')?.addEventListener('click',exportCSV);document.getElementById('exportSpeedJSON')?.addEventListener('click',exportJSON);document.getElementById('importSpeedJSON')?.addEventListener('click',()=>document.getElementById('importSpeedJSONFile')?.click());document.getElementById('importSpeedJSONFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)importJSON(f);e.target.value='' });
  $('buildPool').onclick=window.buildPool;$('runSchedule').onclick=window.schedule;$('rerunSchedule').onclick=window.schedule;document.getElementById('homeRunSchedule').onclick=window.schedule;
+ window.addEventListener('aps-large-store-ready',()=>{
+   // 首次升級時，把舊 localStorage 產速資料搬到 IndexedDB，並立即釋放 localStorage 容量。
+   const feedback=loadFeedback(),master=loadStoredMaster();
+   if(feedback.length)saveFeedback(feedback).then(()=>{renderSpeedCenter();if(S.files.workorder)window.buildPool()}).catch(e=>console.warn('產速資料升級失敗',e));
+   if(master.length)saveStoredMaster(master).catch(e=>console.warn('產速主檔升級失敗',e));
+ });
  $('sfDate').value=new Date().toISOString().slice(0,10);renderSpeedCenter();if(loadStoredMaster().length)log('已載入永久產速主檔：'+loadStoredMaster().length+' 筆');
 })();
 </script>
